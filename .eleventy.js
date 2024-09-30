@@ -16,6 +16,13 @@ function gitSHA() {
   return gitRev().slice(0, 8)
 }
 
+function useExternalUrl(item) {
+  if (item.data.externalUrl) {
+    item.url = item.data.externalUrl
+  }
+  return item
+}
+
 module.exports = function (eleventyConfig) {
   eleventyConfig.addPlugin(EleventyRenderPlugin)
 
@@ -73,7 +80,7 @@ module.exports = function (eleventyConfig) {
     collection.getFilteredByGlob("src/discover/events/**/*.md", "!**/index.md"),
   )
   eleventyConfig.addCollection("casestudy", (collection) =>
-    collection.getFilteredByGlob("src/discover/case-studies/**/*.md", "!**/index.md"),
+    collection.getFilteredByGlob("src/discover/case-studies/**/*.md", "!**/index.md").map(useExternalUrl),
   )
 
   return {

@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "start": "eleventy --serve",
+    "start": "rm -r _site ; eleventy --serve",
     "build": "eleventy",
     "lint": "prettier -c .",
     "test": "jest --passWithNoTests",

@@ -20,6 +20,26 @@ module.exports = function (eleventyConfig) {
     header: {
       productName: `National Digital Exchange <strong class="govuk-tag govuk-phase-banner__content__tag">Alpha</strong>`,
     },
+    navigation: {
+      home: "/",
+      items: [
+        { text: "Home", href: "/" },
+        {
+          text: "Discover",
+          href: "/discover",
+        },
+        {
+          text: "Learn",
+          href: "/todo",
+        },
+        {
+          text: "Try",
+          href: "/todo",
+        },
+        { text: "Access", href: "/todo" },
+        { text: "Optimize", href: "/todo" },
+      ],
+    },
     footer: {
       meta: {
         text: `Page built from <a href="https://github.com/co-cddo/ndx/commit/${gitRev()}">${gitSHA()}</a> at ${new Date().toISOString()}`,
@@ -39,9 +59,15 @@ module.exports = function (eleventyConfig) {
     "./node_modules/govuk-frontend/dist/govuk/assets/fonts": "./assets/fonts",
   })
 
-  eleventyConfig.addCollection("news", (collection) => collection.getFilteredByGlob("src/news/**/*.md"))
-  eleventyConfig.addCollection("event", (collection) => collection.getFilteredByGlob("src/event/**/*.md"))
-  eleventyConfig.addCollection("casestudy", (collection) => collection.getFilteredByGlob("src/case-study/**/*.md"))
+  eleventyConfig.addCollection("news", (collection) =>
+    collection.getFilteredByGlob("src/discover/news/**/*.md", "!**/index.md"),
+  )
+  eleventyConfig.addCollection("event", (collection) =>
+    collection.getFilteredByGlob("src/discover/events/**/*.md", "!**/index.md"),
+  )
+  eleventyConfig.addCollection("casestudy", (collection) =>
+    collection.getFilteredByGlob("src/discover/case-studies/**/*.md", "!**/index.md"),
+  )
 
   return {
     pathPrefix: process.env.PATH_PREFIX || "/",

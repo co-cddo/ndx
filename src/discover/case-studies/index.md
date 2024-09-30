@@ -3,6 +3,9 @@ layout: collection
 title: Case Studies
 description: Case studies from the public sector
 includeInBreadcrumbs: true
+eleventyNavigation:
+  key: Case Studies
+  parent: Discover
 pagination:
   data: collections.casestudy
   size: 4
@@ -11,11 +14,11 @@ related:
     - title: Related content
       items:
         - text: Industry News
-          href: /news
+          href: /discover/news
         - text: Industry Events
-          href: /events
+          href: /discover/events
         - text: Show + Tells
-          href: /showtells
+          href: /todo
 eleventyComputed:
   aside:
     title: Something Missing?

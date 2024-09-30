@@ -3,6 +3,9 @@ layout: collection
 title: Industry News
 description: Relevant Cloud industry news
 includeInBreadcrumbs: true
+eleventyNavigation:
+  key: News
+  parent: Discover
 pagination:
   data: collections.news
   size: 4
@@ -11,11 +14,11 @@ related:
     - title: Related content
       items:
         - text: Industry Events
-          href: /events
+          href: /discover/events
         - text: Case Studies
-          href: /case-studies
+          href: /discover/case-studies
         - text: Show + Tells
-          href: /showtells
+          href: /todo
 eleventyComputed:
   aside:
     title: Something Missing?

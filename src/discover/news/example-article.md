@@ -1,9 +1,10 @@
 ---
 layout: post
-title: Example event
+title: Example news article
 author: example user
 date: 2024-09-30
-tags: cloud, finops
+eleventyNavigation:
+  parent: News
 ---
 
 Example Page Content

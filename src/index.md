@@ -24,7 +24,7 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 <div class="govuk-grid-row">
   <section class="govuk-grid-column-one-third-from-desktop">
 
-### [Discover](/todo)
+### [Discover](/discover)
 
 Discover everything going on in cloud in the UK Public Sector
 

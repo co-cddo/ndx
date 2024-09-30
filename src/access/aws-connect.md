@@ -113,9 +113,7 @@ eleventyNavigation:
 ### Forecast spend
 
 > ⚠️ This is a forecast of your spend based on historical data and current trends. It is not guaranteed and may not be accurate.
-> {{ govukInput({  label: {}, prefix: {text: "£"}, suffix: {text: "per hour"}, value: "1.00"}  ) }}
-> {{ govukInput({  label: {}, prefix: {text: "£"}, suffix: {text: "per day"}, value: "24.00"}  ) }}
-> {{ govukInput({  label: {}, prefix: {text: "£"}, suffix: {text: "per month"}, value: "60.00"}  ) }}
+> {{ govukInput({  label: {}, prefix: {text: "£"}, suffix: {text: "per hour"}, value: "1.00"}  ) }} > {{ govukInput({  label: {}, prefix: {text: "£"}, suffix: {text: "per day"}, value: "24.00"}  ) }} > {{ govukInput({  label: {}, prefix: {text: "£"}, suffix: {text: "per month"}, value: "60.00"}  ) }}
 
 {% endcall %}
 

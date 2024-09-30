@@ -24,7 +24,7 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 <div class="govuk-grid-row">
   <section class="govuk-grid-column-one-third-from-desktop">
 
-### [Discover]()
+### [Discover](/todo)
 
 Discover everything going on in cloud in the UK Public Sector
 
@@ -34,7 +34,7 @@ Discover everything going on in cloud in the UK Public Sector
 - [Show + Tells](/todo)
   </section><section class="govuk-grid-column-one-third-from-desktop">
 
-### [Learn]()
+### [Learn](/todo)
 
 Build up your personal certifications, consider career moves, or industry placements to get your team cloud ready.
 

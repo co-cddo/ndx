@@ -9,7 +9,7 @@
     "build": "eleventy",
     "lint": "prettier -c .",
     "test": "jest --passWithNoTests",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",

@@ -28,9 +28,9 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 
 Discover everything going on in cloud in the UK Public Sector
 
-- [Industry News](/news)
-- [Industry Events](/events)
-- [Case Studies](/case-studies)
+- [Industry News](/discover/news)
+- [Industry Events](/discover/events)
+- [Case Studies](/discover/case-studies)
 - [Show + Tells](/todo)
   </section><section class="govuk-grid-column-one-third-from-desktop">
 

@@ -1,4 +1,5 @@
 const govukEleventyPlugin = require("@x-govuk/govuk-eleventy-plugin")
+const { EleventyRenderPlugin } = require("@11ty/eleventy")
 const fs = require("fs")
 const util = require("util")
 
@@ -16,9 +17,15 @@ function gitSHA() {
 }
 
 module.exports = function (eleventyConfig) {
+  eleventyConfig.addPlugin(EleventyRenderPlugin)
+
   eleventyConfig.addPlugin(govukEleventyPlugin, {
     header: {
       productName: `National Digital Exchange <strong class="govuk-tag govuk-phase-banner__content__tag">Alpha</strong>`,
+      search: {
+        indexPath: "/search.json",
+        sitemapPath: "/sitemap",
+      },
     },
     navigation: {
       home: "/",

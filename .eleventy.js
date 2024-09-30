@@ -46,11 +46,12 @@ module.exports = function (eleventyConfig) {
           text: "Learn",
           href: "/todo",
         },
+        { text: "Catalog", href: "/catalog" },
         {
           text: "Try",
-          href: "/todo",
+          href: "/try",
         },
-        { text: "Access", href: "/todo" },
+        { text: "Access", href: "/access" },
         { text: "Optimize", href: "/todo" },
       ],
     },
@@ -74,13 +75,17 @@ module.exports = function (eleventyConfig) {
   })
 
   eleventyConfig.addCollection("news", (collection) =>
-    collection.getFilteredByGlob("src/discover/news/**/*.md", "!**/index.md"),
+    collection.getFilteredByGlob("src/discover/news/**/*.md", "!**/index.md").map(useExternalUrl),
   )
   eleventyConfig.addCollection("event", (collection) =>
-    collection.getFilteredByGlob("src/discover/events/**/*.md", "!**/index.md"),
+    collection.getFilteredByGlob("src/discover/events/**/*.md", "!**/index.md").map(useExternalUrl),
   )
   eleventyConfig.addCollection("casestudy", (collection) =>
     collection.getFilteredByGlob("src/discover/case-studies/**/*.md", "!**/index.md").map(useExternalUrl),
+  )
+
+  eleventyConfig.addCollection("catalog", (collection) =>
+    collection.getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md").map(useExternalUrl),
   )
 
   return {

@@ -2,70 +2,65 @@
 homepage: true
 layout: product
 includeInBreadcrumbs: true
-description: Welcome to the centre of the universe
+description: Welcome to the next generation of cloud and data sharing.</br></br>Part of the National Digital Architecture
 image:
-  src: /assets/flamingo1.png
-  alt: National Digital Exchange.
-# startButton:
-#   href: /assessment/
+  src: /assets/missionbadge.png
+  alt: National Digital Exchange Mission Badge
+startButton:
+  text: Learn more
+  href: /todo
 eleventyComputed:
   title: National Digital Exchange
 ---
 
+## Introducing the National Digital Exchange
+
+**The National Digital Exchange (NDX)** is a pioneering UK government service that transforms how public sector organizations adopt and manage cloud services. With established strategic partnerships and ready access, NDX offers consistently **secure**, **well-architected** cloud environments that are rapidly deployable and easily consumed. It underpins data and capability sharing between departments, enhancing collaboration and efficiency across the government and wider public sector.
+
+By providing turn-key access to commercial industry providers, NDX ensures that **all public sector organizations**—regardless of size or technical expertise—have equal opportunities to leverage advanced technologies. **NDX underpins the seamless sharing of data and capabilities within the public sector, eliminating friction and fostering a more connected and efficient government.**
+
+---
+
 <div class="govuk-grid-row">
   <section class="govuk-grid-column-one-third-from-desktop">
-    <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
-      <a class="govuk-link govuk-link--no-visited-state" href="#">
-        Discover
-      </a>
-    </h2>
+
+### [Discover]()
 
 Discover everything going on in cloud in the UK Public Sector
 
-- [Industry News]()
-- [Industry Events]()
-- [Case Studies]()
-- [Show + Tells]()
-
-  </section>
-
-<div class="govuk-grid-row">
-  <section class="govuk-grid-column-one-third-from-desktop">
+- [Industry News](/news)
+- [Industry Events](/events)
+- [Case Studies](/case-studies)
+- [Show + Tells](/todo)
+  </section><section class="govuk-grid-column-one-third-from-desktop">
 
 ### [Learn]()
 
 Build up your personal certifications, consider career moves, or industry placements to get your team cloud ready.
 
-- [Get Certified]()
-- [Secondments]()
-- [Apprenticeships]()
-- [Returnerships]()
+- [Get Certified](/todo)
+- [Secondments](/todo)
+- [Apprenticeships](/todo)
+- [Returnerships](/todo)
+  </section><section class="govuk-grid-column-one-third-from-desktop">
 
-  </section>
-  
-  <section class="govuk-grid-column-one-third-from-desktop">
-### [Try]()
+### [Try](/todo)
+
 Create a secure short lived cloud environment for learning, experiments and proof of concept/value
-  </section>
 
-  <section class="govuk-grid-column-one-third-from-desktop">
-    <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
-      <a class="govuk-link govuk-link--no-visited-state" href="#">
-        Develop
-      </a>
-    </h2>
-    <p class="govuk-body">
-      Create environments for your team to collaborate on developing
-    </p>
   </section>
+</div><div class="govuk-grid-row">
   <section class="govuk-grid-column-one-third-from-desktop">
-    <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
-      <a class="govuk-link govuk-link--no-visited-state" href="#">
-        Deploy
-      </a>
-    </h2>
-    <p class="govuk-body">
-      Deploy to production ready environments
-    </p>
+
+### [Access](/todo)
+
+Create turnkey production ready environments for your team to collaborate on developing and deploying to production
+
+  </section><section class="govuk-grid-column-one-third-from-desktop">
+
+### [Optimize](/todo)
+
+Optimize your existing cloud
+
   </section>
 </div>

@@ -39,6 +39,10 @@ module.exports = function (eleventyConfig) {
     "./node_modules/govuk-frontend/dist/govuk/assets/fonts": "./assets/fonts",
   })
 
+  eleventyConfig.addCollection("news", (collection) => collection.getFilteredByGlob("src/news/**/*.md"))
+  eleventyConfig.addCollection("event", (collection) => collection.getFilteredByGlob("src/event/**/*.md"))
+  eleventyConfig.addCollection("casestudy", (collection) => collection.getFilteredByGlob("src/case-study/**/*.md"))
+
   return {
     pathPrefix: process.env.PATH_PREFIX || "/",
     dataTemplateEngine: "njk",

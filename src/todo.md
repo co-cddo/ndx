@@ -1,6 +1,7 @@
 ---
 layout: page
 pageClass: not-found
+title: todo
 eleventyExcludeFromCollections: true
 ---
 

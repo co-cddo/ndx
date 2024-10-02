@@ -38,6 +38,7 @@ module.exports = function (eleventyConfig) {
       home: "/",
       items: [
         { text: "Home", href: "/" },
+        { text: "About", href: "/about/NDA/" },
         {
           text: "Discover",
           href: "/discover",

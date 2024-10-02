@@ -8,7 +8,7 @@ image:
   alt: National Digital Exchange Mission Badge
 startButton:
   text: Learn more
-  href: /about/NDA/
+  href: /About/NDA/
 eleventyComputed:
   title: National Digital Exchange
 ---

@@ -53,7 +53,7 @@ module.exports = function (eleventyConfig) {
           href: "/try",
         },
         { text: "Access", href: "/access" },
-        { text: "Optimize", href: "/todo" },
+        { text: "Optimise", href: "/optimise/" },
       ],
     },
     footer: {

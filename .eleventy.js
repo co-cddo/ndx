@@ -17,8 +17,8 @@ function gitSHA() {
 }
 
 function useExternalUrl(item) {
-  if (item.data.externalUrl) {
-    item.url = item.data.externalUrl
+  if (item.data.eleventyNavigation.url) {
+    item.url = item.data.eleventyNavigation.url
   }
   return item
 }

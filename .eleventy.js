@@ -62,7 +62,7 @@ module.exports = function (eleventyConfig) {
         },
         {
           text: "Learn",
-          href: "/todo",
+          href: "/learn",
         },
         { text: "Catalog", href: "/catalog" },
         {

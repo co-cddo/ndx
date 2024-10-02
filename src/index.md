@@ -34,14 +34,14 @@ Discover everything going on in cloud in the UK Public Sector
 - [Show + Tells](/todo)
   </section><section class="govuk-grid-column-one-third-from-desktop">
 
-### [Learn](/todo)
+### [Learn](/learn)
 
 Build up your personal certifications, consider career moves, or industry placements to get your team cloud ready.
 
-- [Get Certified](/todo)
-- [Secondments](/todo)
-- [Apprenticeships](/todo)
-- [Returnerships](/todo)
+- Get Certified
+- Secondments
+- Apprenticeships
+- Returnerships
   </section><section class="govuk-grid-column-one-third-from-desktop">
 
 ### [Try](/try)

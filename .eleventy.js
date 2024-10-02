@@ -23,6 +23,23 @@ function useExternalUrl(item) {
   return item
 }
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function extractContent(markdown, start, end) {
+  const startPattern = start ? `(${escapeRegExp(start)})` : ""
+  const endPattern = end ? `(${escapeRegExp(end)})` : ""
+
+  const regex = new RegExp(`${startPattern}([\\s\\S]*?)${endPattern}`, "m")
+  const match = markdown.match(regex)
+
+  if (match) {
+    return match.slice(1).join("").trim()
+  }
+  return ""
+}
+
 module.exports = function (eleventyConfig) {
   eleventyConfig.addPlugin(EleventyRenderPlugin)
 
@@ -88,6 +105,18 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addCollection("catalog", (collection) =>
     collection.getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md").map(useExternalUrl),
   )
+
+  eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
+    url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")
+    const baseUrl = url.replace(/\/[^\/]*$/, "/")
+    let content = (await (await fetch(url)).text())
+      .toString()
+      .replace(/!\[([^\]]+)\]\((?!https?:\/\/)([^)]+)\)/g, `![$1](${baseUrl}$2)`)
+
+    const f = extractContent(content, start, end)
+    console.log(f)
+    return f
+  })
 
   return {
     pathPrefix: process.env.PATH_PREFIX || "/",

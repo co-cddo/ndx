@@ -4,6 +4,7 @@ title: About NDX
 description: < click a link over there
 eleventyNavigation:
   key: About
+  url: /about/NDA/
   # parent: About
 sectionKey: About
 ---

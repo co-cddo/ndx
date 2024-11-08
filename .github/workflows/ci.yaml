@@ -94,7 +94,7 @@ jobs:
           fetch-depth: "0"
       - name: Semver run
         id: semver
-        uses: lukaszraczylo/semver-generator@3ce355f9c2009c644b942d327480d54b2cccb769 # 1.12.113
+        uses: lukaszraczylo/semver-generator@8771fe5a0bcae64166229b423b378652258d868c # 1.12.125
         with:
           config_file: .github/semver.yaml
           repository_local: true

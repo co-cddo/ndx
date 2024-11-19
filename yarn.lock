@@ -831,6 +831,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@kevingimbel/eleventy-plugin-mermaid@npm:^2.2.1":
+  version: 2.2.1
+  resolution: "@kevingimbel/eleventy-plugin-mermaid@npm:2.2.1"
+  dependencies:
+    htmlencode: "npm:^0.0.4"
+  checksum: 10c0/d9ab14368dd9b6f070f9e6c5884278b902a032d6a860d2a413b26e201fba7870897166a65cf2a665c1b0ac42967768147acff62129df84a418c725fe46dc9f57
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -2986,6 +2995,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"htmlencode@npm:^0.0.4":
+  version: 0.0.4
+  resolution: "htmlencode@npm:0.0.4"
+  checksum: 10c0/328aff4d168feb67821732071b3e01e9934fdbb84cd1827dcecc558b9f014db8b788af9214349dd83167a417ccdd5e83725e413dfc94cd513002441df541625b
+  languageName: node
+  linkType: hard
+
 "htmlparser2@npm:^7.1.1":
   version: 7.2.0
   resolution: "htmlparser2@npm:7.2.0"
@@ -4617,6 +4633,7 @@ __metadata:
   resolution: "ndx@workspace:."
   dependencies:
     "@11ty/eleventy": "npm:^2.0.1"
+    "@kevingimbel/eleventy-plugin-mermaid": "npm:^2.2.1"
     "@x-govuk/govuk-eleventy-plugin": "npm:^6.2.1"
     husky: "npm:^9.0.11"
     jest: "npm:^29.7.0"

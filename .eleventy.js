@@ -3,6 +3,8 @@ const { EleventyRenderPlugin } = require("@11ty/eleventy")
 const fs = require("fs")
 const util = require("util")
 
+const pluginMermaid = require("@kevingimbel/eleventy-plugin-mermaid")
+
 function gitRev() {
   const rev = fs.readFileSync(".git/HEAD").toString().trim()
   if (rev.indexOf(":") === -1) return rev
@@ -42,6 +44,7 @@ function extractContent(markdown, start, end) {
 
 module.exports = function (eleventyConfig) {
   eleventyConfig.addPlugin(EleventyRenderPlugin)
+  eleventyConfig.addPlugin(pluginMermaid)
 
   eleventyConfig.addPlugin(govukEleventyPlugin, {
     header: {
@@ -71,6 +74,7 @@ module.exports = function (eleventyConfig) {
         },
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
+        { text: "Help Me!", href: "/begin/" },
       ],
     },
     footer: {

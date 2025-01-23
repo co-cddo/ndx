@@ -3,7 +3,7 @@ layout: sub-navigation
 title: Benefits
 description: Benefits of the National Digital Architecture for the UK Public and Private Sectors
 eleventyNavigation:
-  parent: National Digital Architecture
+  parent: Digital Backbone
   key: Benefits
 sectionKey: About
 ---

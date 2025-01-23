@@ -3,7 +3,7 @@ layout: sub-navigation
 title: National Digital Resilience Platform (NDR)
 description: Recognizing the UK's dependence on digital systems, the **National Digital Resilience Platform** will aim to strengthen the nation's ability to anticipate, withstand, and recover from digital disruptions.
 eleventyNavigation:
-  parent: National Digital Architecture
+  parent: Digital Backbone
   key: National Digital Resilience Platform
   order: -2
 sectionKey: About

@@ -1,10 +1,10 @@
 ---
 layout: sub-navigation
-title: About NDX
+title: About the Digital Backbone
 description: < click a link over there
 eleventyNavigation:
   key: About
-  url: /About/NDA/
+  url: /About/Digital-Backbone/
   # parent: About
 sectionKey: About
 ---

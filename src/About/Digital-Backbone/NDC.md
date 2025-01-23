@@ -1,9 +1,9 @@
 ---
 layout: sub-navigation
 title: National Digital Code (NDC)
-description: The **National Digital Code**, much like the other aspects of the NDA, will build on existing initiatives to establish a more unified approach.
+description: The **National Digital Code**, much like the other aspects of the Digital Backbone, will build on existing initiatives to establish a more unified approach.
 eleventyNavigation:
-  parent: National Digital Architecture
+  parent: Digital Backbone
   key: National Digital Code
   order: -3
 sectionKey: About

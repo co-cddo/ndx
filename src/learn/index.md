@@ -2,6 +2,8 @@
 layout: product
 title: Learn
 description: Build up your personal certifications, consider career moves, or industry placements to get your team cloud ready.
+image:
+  src: /assets/icons/learn.svg
 includeInBreadcrumbs: true
 eleventyNavigation:
   key: Learn

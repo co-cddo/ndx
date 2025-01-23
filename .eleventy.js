@@ -54,6 +54,7 @@ module.exports = function (eleventyConfig) {
         sitemapPath: "/sitemap",
       },
     },
+    stylesheets: ["/assets/styles.css"],
     navigation: {
       home: "/",
       items: [
@@ -117,8 +118,8 @@ module.exports = function (eleventyConfig) {
       .toString()
       .replace(/!\[([^\]]+)\]\((?!https?:\/\/)([^)]+)\)/g, `![$1](${baseUrl}$2)`)
 
-    const f = extractContent(content, start, end)
-    console.log(f)
+    const f = extractContent(content, start, end).replace(end, "")
+
     return f
   })
 

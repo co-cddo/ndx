@@ -1,5 +1,7 @@
 ---
-layout: post
+layout: product
+image:
+  src: /assets/icons/access.svg
 title: Access the National Digital Exchange (NDX)
 includeInBreadcrumbs: true
 eleventyNavigation:

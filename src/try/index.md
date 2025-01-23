@@ -1,7 +1,9 @@
 ---
-layout: post
+layout: product
 title: Try
 includeInBreadcrumbs: true
+image:
+  src: /assets/icons/try.svg
 ---
 
 You can use NDX to create a secure short lived cloud environment for learning, experiments and proof of concept/value.

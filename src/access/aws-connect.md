@@ -5,9 +5,9 @@ eleventyNavigation:
   parent: access
 ---
 
-{% from "node_modules/govuk-frontend/dist/govuk/components/input/macro.njk" import govukInput %}
-{% from "node_modules/govuk-frontend/dist/govuk/components/fieldset/macro.njk" import govukFieldset %}
-{% from "node_modules/govuk-frontend/dist/govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 
 > ==⚠️ NOT A REAL FORM, DO NOT PUT REAL DATA HERE==
 

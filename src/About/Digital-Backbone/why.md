@@ -1,10 +1,10 @@
 ---
 layout: sub-navigation
-title: Why is the NDA needed?
-description: The UK Government is undertaking a significant digital transformation initiative with the National Digital Architecture (NDA).
+title: Why is the Digital Backbone needed?
+description: The UK Government is undertaking a significant digital transformation initiative with the Digital Backbone.
 eleventyNavigation:
-  parent: National Digital Architecture
-  key: Why is the NDA needed
+  parent: Digital Backbone
+  key: Why is the Digital Backbone needed
 sectionKey: About
 ---
 
@@ -22,4 +22,4 @@ Another challenge stems from the misalignment between the funding cycles of digi
 
 Finally, the UK, like many developed nations, is heavily reliant on digital systems for its critical infrastructure and public services. This dependence brings inherent risks, both from malicious cyberattacks and system failures. Currently, the UK public sector lacks adequate visibility into these national-level threats, making it challenging to prepare for and respond to them effectively. The CrowdStrike incident, for instance, highlighted how even unintentional events can disrupt public services on a large scale.
 
-The NDA aims to overcome these challenges by implementing a unified approach to digital service delivery.
+The Digital Backbone aims to overcome these challenges by implementing a unified approach to digital service delivery.

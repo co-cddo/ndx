@@ -3,7 +3,7 @@ layout: sub-navigation
 title: National Digital Exchange (NDX)
 description: The **NDX** is a centralized platform that allows for the streamlined access and utilization of data and digital services across the public sector.
 eleventyNavigation:
-  parent: National Digital Architecture
+  parent: Digital Backbone
   key: National Digital Exchange
   order: -1
 sectionKey: About

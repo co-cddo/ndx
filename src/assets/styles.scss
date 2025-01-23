@@ -1,0 +1,26 @@
+.x-govuk-masthead__image img[src$=".svg"] {
+  filter: invert(100%) saturate(1000%) brightness(1000%) contrast(100%);
+  width: 100%;
+  margin: -20% -20% -20% 0;
+}
+
+.homepage-grid {
+  $icons: (discover, access, learn, try, optimise);
+
+  h3 {
+    a {
+      background: {
+        size: 3vw;
+        repeat: no-repeat;
+        position: -0.5vw center;
+      }
+      padding-left: 2vw;
+    }
+
+    @each $icon in $icons {
+      &##{$icon} a {
+        background-image: url(/assets/icons/#{$icon}.svg);
+      }
+    }
+  }
+}

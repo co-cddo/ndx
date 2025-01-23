@@ -10,6 +10,11 @@ startButton:
   href: https://co-cddo.github.io/cloudmaturity/assessment/
 ---
 
-==Scraped from [github.com/co-cddo/cloudmaturity/blob/main/README.md](https://github.com/co-cddo/cloudmaturity/blob/main/README.md)==
+{% from "govuk/components/notification-banner/macro.njk" import govukNotificationBanner %}
+
+{{ govukNotificationBanner({
+  titleText: "Notice",
+  html: "This content was dynamically pulled from <a href='https://github.com/co-cddo/cloudmaturity'>github.com/co-cddo/cloudmaturity/</a> and may not be up to date."
+}) }}
 
 {% remoteInclude "https://github.com/co-cddo/cloudmaturity/blob/main/README.md", "![Screenshot ", "## Contributions / _❤️ Pull Requests_" %}

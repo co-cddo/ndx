@@ -2,6 +2,8 @@
 layout: product
 title: Discover everything going on in cloud in the UK Public Sector
 includeInBreadcrumbs: true
+image:
+  src: /assets/icons/discover.svg
 eleventyNavigation:
   key: Discover
 related:

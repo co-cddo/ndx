@@ -11,6 +11,8 @@ startButton:
   href: /About/NDA/
 eleventyComputed:
   title: National Digital Exchange
+styles: |
+  * {display: none !important;}
 ---
 
 ## Introducing the National Digital Exchange
@@ -21,7 +23,7 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 
 ---
 
-<div class="govuk-grid-row">
+<div class="govuk-grid-row homepage-grid">
   <section class="govuk-grid-column-one-third-from-desktop">
 
 ### [Discover](/discover)
@@ -49,7 +51,7 @@ Build up your personal certifications, consider career moves, or industry placem
 Create a secure short lived cloud environment for learning, experiments and proof of concept/value
 
   </section>
-</div><div class="govuk-grid-row">
+</div><div class="govuk-grid-row homepage-grid">
   <section class="govuk-grid-column-one-third-from-desktop">
 
 ### [Access](/access)

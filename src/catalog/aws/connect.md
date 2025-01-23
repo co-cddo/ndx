@@ -16,7 +16,7 @@ tags:
 ![](https://img.shields.io/badge/owner-private_sector-orange)
 ![](https://img.shields.io/badge/access-NDX_OIDC-green)
 
-{% from "node_modules/govuk-frontend/dist/govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 
 {{ govukButton({
   text: "Try this now for 24 hours",

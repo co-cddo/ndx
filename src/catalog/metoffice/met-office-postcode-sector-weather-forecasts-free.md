@@ -20,7 +20,7 @@ tags:
 ![](https://img.shields.io/badge/metadata_last_updated-30/09/2024_17:30-blue)
 ![](https://img.shields.io/badge/access-NDX_OIDC-green)
 
-{% from "node_modules/govuk-frontend/dist/govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 
 {{ govukButton({
   text: "Access this now in a Snowflake Cleanroom ➡"

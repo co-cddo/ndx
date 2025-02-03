@@ -75,7 +75,7 @@ module.exports = function (eleventyConfig) {
         },
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
-        { text: "Help Me!", href: "/begin/" },
+        { text: '<span class="emoji">✨</span><span class="sparkle">Begin with AI </span>', href: "/begin/" },
       ],
     },
     footer: {

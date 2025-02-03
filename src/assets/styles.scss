@@ -4,6 +4,35 @@
   margin: -20% -20% -20% 0;
 }
 
+// Make navigation emoji black and white
+.govuk-service-navigation__item a {
+  .emoji {
+    filter: grayscale(100%) invert(100%);
+  }
+  .sparkle {
+    animation: sparkle 15s ease-in-out infinite;
+    display: inline-block;
+  }
+}
+
+@keyframes sparkle {
+  0% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  25% {
+    filter: hue-rotate(90deg) brightness(1.2);
+  }
+  50% {
+    filter: hue-rotate(180deg) brightness(1.5);
+  }
+  75% {
+    filter: hue-rotate(270deg) brightness(1.2);
+  }
+  100% {
+    filter: hue-rotate(360deg) brightness(1);
+  }
+}
+
 .homepage-grid {
   $icons: (discover, access, learn, try, optimise);
 

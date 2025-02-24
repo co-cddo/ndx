@@ -1,14 +1,14 @@
 ---
 layout: sub-navigation
 title: Benefits
-description: Benefits of the National Digital Architecture for the UK Public and Private Sectors
+description: Benefits of the Digital Backbone for the UK Public and Private Sectors
 eleventyNavigation:
   parent: Digital Backbone
   key: Benefits
 sectionKey: About
 ---
 
-The National Digital Architecture, encompassing the National Digital Exchange (NDX), National Digital Resilience Platform, and National Digital Code, offers several potential benefits for both the UK public and private sectors.
+The Digital Backbone, encompassing the National Digital Exchange (NDX), National Digital Resilience Platform, and National Digital Code, offers several potential benefits for both the UK public and private sectors.
 
 ## Public Sector Benefits:
 
@@ -27,4 +27,4 @@ The National Digital Architecture, encompassing the National Digital Exchange (N
 - **Enhanced Digital Resilience across the Supply Chain:** The National Digital Resilience Platform's focus on strengthening the digital supply chain will benefit businesses operating in the UK. Improved resilience measures will create a more stable and secure digital environment for all.
 - **Clear Standards for Responsible Digital Citizenship:** The National Digital Code will establish clear standards for responsible and ethical digital behavior, setting a benchmark for businesses to follow. This will enhance trust and confidence in the UK as a digital marketplace.
 
-It is important to note that these benefits are based on the information provided in the sources and represent the anticipated outcomes of the National Digital Architecture initiative. The actual realization of these benefits will depend on various factors, including successful implementation, adoption by public and private sector stakeholders, and ongoing adaptation to the evolving digital landscape.
+It is important to note that these benefits are based on the information provided in the sources and represent the anticipated outcomes of the Digital Backbone initiative. The actual realization of these benefits will depend on various factors, including successful implementation, adoption by public and private sector stakeholders, and ongoing adaptation to the evolving digital landscape.

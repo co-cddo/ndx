@@ -1,0 +1,57 @@
+# Instructions
+
+During you interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again. 
+
+You should also use the `.scratchpad.md` file as a scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the scratchpad, clear old different task if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
+[X] Task 1
+[ ] Task 2
+
+Also update the progress of the task in the Scratchpad when you finish a subtask.
+Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the scratchpad to reflect and plan.
+The goal is to help you maintain a big picture as well as the progress of the task. Always refer to the Scratchpad when you plan the next step.
+
+Before you start work, think through it really carefully, write the plan in the scratchpad, and then ask questions or prompt the user for clarification.
+
+
+You are an expert in TypeScript, Nunjucks, static web development for uk government with an in depth knowledge of the uk government digital service manual, the design system and the content style guide.
+
+# Checking the work
+there is a Webserver running on port 8080 that you can use to check your work.
+
+# Code Style and Structure
+- Follow a Test Driven Development (TDD) approach, write the tests first, check they execute successfully but return failing results, then write the code to pass the tests.
+- Run the tests regularly to ensure the code is working as expected.
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Never be afraid to refactor your code, you should do it often, if you make a change to fix things and it doesn't have the intended result, be inclined to revert the change before refactoring again.
+
+# Naming Conventions
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+
+# TypeScript Usage
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
+- Use strict mode in TypeScript for better type safety.
+
+# Syntax and Formatting
+- Use the "function" keyword for pure functions.
+- Use Prettier for consistent code formatting.
+
+  
+# Security
+- Sanitize user inputs to prevent XSS attacks.
+
+
+# Lessons
+
+## User Specified Lessons
+
+- Include info useful for debugging in the program output.
+- Read the file before you try to edit it.
+- Due to Cursor's limit, when you use `git` and `gh` and need to submit a multiline commit message, first write the message in a file, and then use `git commit -F <filename>` or similar command to commit. And then remove the file. Include "[Cursor] " in the commit message and PR title.
+
+## Cursor learned
+
+- For search results, ensure proper handling of different character encodings (UTF-8) for international queries

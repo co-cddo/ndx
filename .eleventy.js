@@ -108,7 +108,13 @@ module.exports = function (eleventyConfig) {
   )
 
   eleventyConfig.addCollection("catalog", (collection) =>
-    collection.getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md").map(useExternalUrl),
+    collection
+      .getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md")
+      .map(useExternalUrl)
+      .sort((a, b) => {
+        // Sort alphabetically by title
+        return a.data.title.localeCompare(b.data.title)
+      }),
   )
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {

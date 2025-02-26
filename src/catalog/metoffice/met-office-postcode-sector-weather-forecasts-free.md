@@ -2,6 +2,9 @@
 layout: product
 title: Met Office Postcode Sector Weather Forecasts Free
 description: Forecast data for the next 3 days and archived forecast data for the previous day, available in hourly, three-hourly and daily timesteps.
+image:
+  src: /assets/catalog/metoffice/metoffice-logo.svg
+  alt: Met Office
 eleventyNavigation:
   parent: Catalog
 tags:
@@ -28,7 +31,7 @@ tags:
 
 ## Introduction
 
-We’ve developed weather Postcode Sector Data to help you excel in identifying weather impacts on your business and use this actionable intelligence to plan effectively and enhance your results.
+We've developed weather Postcode Sector Data to help you excel in identifying weather impacts on your business and use this actionable intelligence to plan effectively and enhance your results.
 
 ## What is in this product?
 
@@ -36,7 +39,7 @@ This product includes forecast data for the next 3 days and archived forecast da
 
 - Temperature -
 
-  Temperature, ‘Feels Like’ Temperature
+  Temperature, 'Feels Like' Temperature
 
 - Wind -
 
@@ -56,7 +59,7 @@ This product includes forecast data for the next 3 days and archived forecast da
 
 ## What is the Postcode Sector data set?
 
-Model-generated hourly forecasts for up to 14 days. It’s available for postcode sectors (e.g. EX1 1) within the UK and Northern Ireland and larger cities in the  Republic of Ireland. Provides information for over 80 parameters such as e.g. temperature, wind, rain, snow, solar, cloud and more.
+Model-generated hourly forecasts for up to 14 days. It's available for postcode sectors (e.g. EX1 1) within the UK and Northern Ireland and larger cities in the Republic of Ireland. Provides information for over 80 parameters such as e.g. temperature, wind, rain, snow, solar, cloud and more.
 
 Postcode Sector Data is created by blending together eight supercomputer Weather Prediction Models incorporating real-life surface, satellite cloud and radar rainfall observations. By combining models, we are able to cancel many of the errors out and produce better, more accurate forecasts.
 

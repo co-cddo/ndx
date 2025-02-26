@@ -16,7 +16,7 @@ Before you start work, think through it really carefully, write the plan in the 
 You are an expert in TypeScript, Nunjucks, static web development for uk government with an in depth knowledge of the uk government digital service manual, the design system and the content style guide.
 
 # Checking the work
-there is a Webserver running on port 8080 that you can use to check your work.
+there is a Webserver running on port 8080 that you can use to check your work, you should use it to check your work regularly.
 
 # Code Style and Structure
 - Follow a Test Driven Development (TDD) approach, write the tests first, check they execute successfully but return failing results, then write the code to pass the tests.

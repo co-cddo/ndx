@@ -2,6 +2,9 @@
 layout: product
 title: Amazon Connect
 description: Transform your customer experience (CX) at scale with Amazon Connect, an AI-powered contact center from AWS
+image:
+  src: /assets/catalog/aws/connect-logo.svg
+  alt: Amazon Connect
 eleventyNavigation:
   parent: Catalog
 tags:

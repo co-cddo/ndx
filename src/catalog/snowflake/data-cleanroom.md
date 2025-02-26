@@ -3,7 +3,7 @@ layout: product
 title: Snowflake Data Clean Room
 description: Use a Snowflake Data Clean Room to collaborate with other public organisations without compromising data privacy.
 image:
-  src: https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg
+  src: /assets/catalog/snowflake/snowflake-logo.svg
   alt: Snowflake
 eleventyNavigation:
   parent: Catalog
@@ -37,7 +37,7 @@ Snowflake Data Clean Rooms removes the technical and financial barriers to colla
 
 ### Tap into the open and interoperable ecosystem of the Snowflake Data Cloud
 
-Snowflake Data Clean Rooms allows you to connect to Snowflake’s impartial, open and interoperable data clean room ecosystem offering turn-key integrations across enrichment, identity, activation and public cloud providers. Collaborate with all your partners seamlessly, regardless of whether they have their own Snowflake account.
+Snowflake Data Clean Rooms allows you to connect to Snowflake's impartial, open and interoperable data clean room ecosystem offering turn-key integrations across enrichment, identity, activation and public cloud providers. Collaborate with all your partners seamlessly, regardless of whether they have their own Snowflake account.
 
 ### Securely collaborate within Snowflake Horizon built-in privacy and governance
 
@@ -51,11 +51,11 @@ Conduct attribution using advertiser conversion data and ad exposure / engagemen
 
 ### Audience Activation
 
-Instantly evaluate match rates with a supplier’s / publisher’s user base and push your audiences to respective activation channels.
+Instantly evaluate match rates with a supplier's / publisher's user base and push your audiences to respective activation channels.
 
 ### Customer Acquisition
 
-Reach more potential customers by training lookalike models with a seed audience against a publisher’s user base.
+Reach more potential customers by training lookalike models with a seed audience against a publisher's user base.
 
 ### Demand Forecasting
 

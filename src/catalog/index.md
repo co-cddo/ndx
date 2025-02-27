@@ -7,7 +7,7 @@ eleventyNavigation:
   key: Catalog
 pagination:
   data: collections.catalog
-  size: 4
+  size: 20
 related:
   sections:
     - title: Filters

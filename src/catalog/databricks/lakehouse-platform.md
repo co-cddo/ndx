@@ -9,7 +9,7 @@ eleventyNavigation:
   parent: Catalog
 tags:
   - Databricks
-  - Data
+  - data
   - Analytics
   - AI
   - Machine Learning

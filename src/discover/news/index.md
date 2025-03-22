@@ -1,7 +1,7 @@
 ---
 layout: collection
 title: Industry News
-description: Relevant Cloud industry news
+description: Relevant Cloud industry news (AI Generated Example content!)
 includeInBreadcrumbs: true
 eleventyNavigation:
   key: News

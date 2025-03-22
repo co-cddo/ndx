@@ -9,7 +9,7 @@ eleventyNavigation:
   parent: Catalog
 tags:
   - Snowflake
-  - Data
+  - data
   - Clean Room
   - Data Sharing
 ---

@@ -10,7 +10,7 @@ eleventyNavigation:
 tags:
   - Cloudflare
   - Zero Trust
-  - Security
+  - security
   - SASE
   - Identity
 ---

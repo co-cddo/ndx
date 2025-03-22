@@ -13,7 +13,7 @@ tags:
   - Workflow
   - Automation
   - IT Service Management
-  - Digital Transformation
+  - digital transformation
 ---
 
 ![](https://img.shields.io/badge/provider-servicenow-green)

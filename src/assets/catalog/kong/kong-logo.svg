@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128px" height="128px" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Kong Logo</title>
+    <g id="kong-logo" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M64,26 C43.028,26 26,43.028 26,64 C26,84.972 43.028,102 64,102 C84.972,102 102,84.972 102,64 C102,43.028 84.972,26 64,26 M64,38 C78.358,38 90,49.642 90,64 C90,78.358 78.358,90 64,90 C49.642,90 38,78.358 38,64 C38,49.642 49.642,38 64,38" fill="#003399" fill-rule="nonzero"/>
+        <path d="M64,45 L76,64 L64,83 L52,64 L64,45" fill="#003399" fill-rule="nonzero"/>
+    </g>
+</svg> 

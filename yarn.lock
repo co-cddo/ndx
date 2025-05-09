@@ -896,6 +896,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@reteps/dockerfmt@npm:^0.3.5":
+  version: 0.3.6
+  resolution: "@reteps/dockerfmt@npm:0.3.6"
+  checksum: 10c0/b6ca467ba97ea49071c44d0fbecf131fc8045165e950d0d01372c1834000c58d53f62bff42f09b851f7a9d91899047f071cd8fe57e1fc88fc27e2a3d2bdb214d
+  languageName: node
+  linkType: hard
+
 "@rollup/plugin-commonjs@npm:^28.0.0":
   version: 28.0.2
   resolution: "@rollup/plugin-commonjs@npm:28.0.2"
@@ -4639,13 +4646,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mvdan-sh@npm:^0.10.1":
-  version: 0.10.1
-  resolution: "mvdan-sh@npm:0.10.1"
-  checksum: 10c0/cfdd3c6429aad170014892f7934ff60a4418b32e4c14db10f0d3cfb7743f37385e2a3a8c58c65b7c4fbfe44838d9e8cf8c93897b9763a08224c32957a72621c0
-  languageName: node
-  linkType: hard
-
 "natural-compare@npm:^1.4.0":
   version: 1.4.0
   resolution: "natural-compare@npm:1.4.0"
@@ -4665,7 +4665,7 @@ __metadata:
     jest-environment-jsdom: "npm:^29.7.0"
     lint-staged: "npm:^15.5.0"
     prettier: "npm:^3.5.3"
-    prettier-plugin-sh: "npm:^0.16.0"
+    prettier-plugin-sh: "npm:^0.17.3"
   languageName: unknown
   linkType: soft
 
@@ -5069,15 +5069,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-sh@npm:^0.16.0":
-  version: 0.16.0
-  resolution: "prettier-plugin-sh@npm:0.16.0"
+"prettier-plugin-sh@npm:^0.17.3":
+  version: 0.17.3
+  resolution: "prettier-plugin-sh@npm:0.17.3"
   dependencies:
-    mvdan-sh: "npm:^0.10.1"
-    sh-syntax: "npm:^0.4.2"
+    "@reteps/dockerfmt": "npm:^0.3.5"
+    sh-syntax: "npm:^0.5.6"
   peerDependencies:
     prettier: ^3.0.3
-  checksum: 10c0/d83a6716d271f24da006c0bbe08fb3be18ebcf6e88cddb0d83af8c4377a04ad718e7cbd9bfb2e80e1e3f12008c920888e06c68c9f5bbe8233bf0e4e8b6de4a82
+  checksum: 10c0/dac8fdfc3335984cc6d088f01b5679ee26ee75d99d8820c73593b635c8a395fa5d6fa07184dcfa3933b913c97486d06cd325c67e0a80bd15212a9d485d3b282d
   languageName: node
   linkType: hard
 
@@ -5621,12 +5621,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sh-syntax@npm:^0.4.2":
-  version: 0.4.2
-  resolution: "sh-syntax@npm:0.4.2"
+"sh-syntax@npm:^0.5.6":
+  version: 0.5.7
+  resolution: "sh-syntax@npm:0.5.7"
   dependencies:
-    tslib: "npm:^2.6.2"
-  checksum: 10c0/0bfe3b3ffcfa7b59a91d432e2f77e6cd4ccb0f267fe6fcce95b9be4ddf34169a8e2721060e067385574e3248818860b682af24b1cb4b5803167e1666bc6fec24
+    tslib: "npm:^2.8.1"
+  checksum: 10c0/191be067717f81355f4a2959950ca1809ef20bf52e7f684d53a112dd9a7230bdaf14ec012bee2d0e8c056e50174f66dbb7af4bd90ccce49334b318760411eaae
   languageName: node
   linkType: hard
 
@@ -6038,10 +6038,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.6.2":
-  version: 2.7.0
-  resolution: "tslib@npm:2.7.0"
-  checksum: 10c0/469e1d5bf1af585742128827000711efa61010b699cb040ab1800bcd3ccdd37f63ec30642c9e07c4439c1db6e46345582614275daca3e0f4abae29b0083f04a6
+"tslib@npm:^2.8.1":
+  version: 2.8.1
+  resolution: "tslib@npm:2.8.1"
+  checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
   languageName: node
   linkType: hard
 

@@ -15,9 +15,7 @@ tags:
   - Cryptozoology
 ---
 
-![](https://img.shields.io/badge/provider-mythical-purple)
-![](https://img.shields.io/badge/owner-private_sector-orange)
-![](https://img.shields.io/badge/access-NDX_OIDC-green)
+![](https://img.shields.io/badge/provider-mythical-purple) ![](https://img.shields.io/badge/owner-private_sector-orange) ![](https://img.shields.io/badge/access-NDX_OIDC-green) ![](https://img.shields.io/badge/NDX_Partnership_Tier-Platinum-blueviolet) ![](https://img.shields.io/badge/Support-24/7_Arcane_&_Technical-orange) ![](https://img.shields.io/badge/G--Cloud_Framework-G13_Approved-blue) ![](https://img.shields.io/badge/Cyber_Essentials_Plus-Certified-green) ![](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA_Compliant-green) ![](https://img.shields.io/badge/Magical_Creature_Data_Handling-MoCA_Approved-purple) ![](https://img.shields.io/badge/ISO_27001-Information_Security_Certified-brightgreen) ![](https://img.shields.io/badge/ISO_9001-Quality_Management_Certified-brightgreen) ![](https://img.shields.io/badge/CCS_Financial_Viability_Check-Passed-blue) ![](https://img.shields.io/badge/Sustainability-Carbon_Neutral_Operations-green) ![](https://img.shields.io/badge/Efficiency-Low_Arcane_Footprint-lightgrey)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

@@ -117,6 +117,18 @@ module.exports = function (eleventyConfig) {
       }),
   )
 
+  // Add collection for reviews
+  eleventyConfig.addCollection("reviews", (collection) => {
+    // Log out what we're finding for debugging
+    const reviews = collection.getFilteredByGlob("./src/reviews/**/*.md")
+    console.log("Found " + reviews.length + " reviews")
+
+    return reviews.sort((a, b) => {
+      // Sort by date, newest first
+      return new Date(b.data.date) - new Date(a.data.date)
+    })
+  })
+
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")
     const baseUrl = url.replace(/\/[^\/]*$/, "/")
@@ -137,6 +149,7 @@ module.exports = function (eleventyConfig) {
     dir: {
       input: "./src",
       layouts: "../node_modules/@x-govuk/govuk-eleventy-plugin/layouts",
+      includes: "_includes",
     },
   }
 }

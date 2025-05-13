@@ -117,6 +117,30 @@ module.exports = function (eleventyConfig) {
       }),
   )
 
+  // Add collection for reviews
+  eleventyConfig.addCollection("reviews", (collection) => {
+    // Log out what we're finding for debugging
+    const reviews = collection.getFilteredByGlob("./src/reviews/**/*.md")
+    console.log("Found " + reviews.length + " reviews")
+
+    return reviews.sort((a, b) => {
+      // Sort by date, newest first
+      return new Date(b.data.date) - new Date(a.data.date)
+    })
+  })
+
+  // Add collection for product assessments
+  eleventyConfig.addCollection("productAssessments", (collection) => {
+    return collection.getFilteredByGlob("./src/product-assessments/**/*.md").sort((a, b) => {
+      // Sort by date, newest first, then by title
+      if (b.data.date !== a.data.date) {
+        return new Date(b.data.date) - new Date(a.data.date)
+      } else {
+        return a.data.title.localeCompare(b.data.title)
+      }
+    })
+  })
+
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")
     const baseUrl = url.replace(/\/[^\/]*$/, "/")
@@ -137,6 +161,7 @@ module.exports = function (eleventyConfig) {
     dir: {
       input: "./src",
       layouts: "../node_modules/@x-govuk/govuk-eleventy-plugin/layouts",
+      includes: "_includes",
     },
   }
 }

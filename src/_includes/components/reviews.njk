@@ -1,0 +1,83 @@
+{%- from "govuk/components/summary-list/macro.njk" import govukSummaryList -%}
+{%- from "govuk/components/inset-text/macro.njk" import govukInsetText -%}
+{%- from "govuk/components/tag/macro.njk" import govukTag -%}
+
+<div class="govuk-grid-row govuk-!-margin-top-6">
+  <div class="govuk-grid-column-full">
+    <h2 class="govuk-heading-l">User reviews</h2>
+  </div>
+</div>
+
+{%- for review in collections.reviews -%}
+  {%- if review.data.product == "mythical/unicorn-counter" -%}
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-full">
+        <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible govuk-!-margin-bottom-3">
+      </div>
+      <div class="govuk-grid-column-two-thirds">
+        {%- set ratingText -%}
+          {%- if review.data.starRating == 1 -%}Very poor{%- elif review.data.starRating == 2 -%}Poor{%- elif review.data.starRating == 3 -%}Average{%- elif review.data.starRating == 4 -%}Good{%- else -%}Excellent{%- endif -%}
+        {%- endset -%}
+        {%- set ratingHtml -%}
+          <div>
+            {%- for i in range(1, 6) -%}
+              {%- if i <= review.data.starRating -%}
+                <span class="govuk-!-margin-right-1 lit" aria-hidden="true">★</span>
+              {%- else -%}
+                <span class="govuk-!-margin-right-1" aria-hidden="true">☆</span>
+              {%- endif -%}
+            {%- endfor -%}
+            <span class="govuk-visually-hidden">{{ review.data.starRating }} out of 5 stars</span>
+          </div>
+            {%- if review.data.starRating >= 4 -%}
+              {{ govukTag({
+                text: ratingText,
+                classes: "govuk-tag--green"
+              }) }}
+            {%- elif review.data.starRating == 3 -%}
+              {{ govukTag({
+                text: ratingText,
+                classes: "govuk-tag--blue"
+              }) }}
+            {%- else -%}
+              {{ govukTag({
+                text: ratingText,
+                classes: "govuk-tag--red"
+              }) }}
+            {%- endif -%}
+        {%- endset -%}
+        {%- set dateFormatted = review.data.date | date("d MMMM yyyy") -%}
+        {{ govukSummaryList({
+          classes: "govuk-!-margin-bottom-3",
+          rows: [
+            {
+              key: {
+                text: "Rating"
+              },
+              value: {
+                html: ratingHtml
+              }
+            },
+            {
+              key: {
+                text: "Reviewed by"
+              },
+              value: {
+                text: review.data.author
+              }
+            },
+            {
+              key: {
+                text: "Date"
+              },
+              value: {
+                text: dateFormatted
+              }
+            }
+          ]
+        }) }}
+        {{- review.templateContent | safe -}}
+      </div>
+    </div>
+  {%- endif -%}
+{%- endfor -%} 

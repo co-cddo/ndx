@@ -53,3 +53,15 @@
     }
   }
 }
+
+// Review star styling
+.govuk-summary-list .govuk-summary-list__value {
+  span[aria-hidden="true"] {
+    color: #b1b4b6;
+    font-size: 1.25rem;
+
+    &.lit {
+      color: #ffdd00 !important;
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{% from "govuk/components/accordion/macro.njk" import govukAccordion %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+
+<div class="govuk-!-margin-top-9">
+  <h2 class="govuk-heading-l">Departmental Assessments</h2>
+
+  {% set dueDiligenceItems = [] %}
+  {% set riskAssessmentItems = [] %}
+
+  {% for assessment in collections.productAssessments %}
+    {% if assessment.data.product == "mythical/unicorn-counter" %}
+      {% set assessmentContent %}
+        <div class="govuk-body">
+          <p class="govuk-body-s govuk-!-margin-bottom-1">Department: {{ assessment.data.department }}</p>
+          <p class="govuk-body-s govuk-!-margin-bottom-3">Date: {{ assessment.data.date | date("d MMMM yyyy") }}</p>
+          {{ assessment.templateContent | safe }}
+        </div>
+      {% endset %}
+
+      {% if assessment.data.documentType == "Due Diligence" %}
+        {% set dueDiligenceItems = (dueDiligenceItems.push({ 
+          heading: { text: assessment.data.title }, 
+          content: { html: assessmentContent }
+        }), dueDiligenceItems) %}
+      {% elif assessment.data.documentType == "Risk Assessment" %}
+        {% set riskAssessmentItems = (riskAssessmentItems.push({ 
+          heading: { text: assessment.data.title }, 
+          content: { html: assessmentContent }
+        }), riskAssessmentItems) %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if dueDiligenceItems.length > 0 %}
+    <h3 class="govuk-heading-m govuk-!-margin-top-6">Due Diligence Reports</h3>
+    {{ govukAccordion({
+      id: "due-diligence-accordion",
+      items: dueDiligenceItems
+    }) }}
+  {% endif %}
+
+  {% if riskAssessmentItems.length > 0 %}
+    <h3 class="govuk-heading-m govuk-!-margin-top-6">Risk Assessments</h3>
+    {{ govukAccordion({
+      id: "risk-assessment-accordion",
+      items: riskAssessmentItems
+    }) }}
+  {% endif %}
+
+  {% if dueDiligenceItems.length == 0 and riskAssessmentItems.length == 0 %}
+    <p class="govuk-body">No departmental assessments are currently available for this product.</p>
+  {% endif %}
+</div> 

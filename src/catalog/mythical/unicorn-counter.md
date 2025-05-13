@@ -127,3 +127,5 @@ UnicornCount™ is available through a flexible subscription model:
 > "The ROI on UnicornCount™ has been phenomenal. We've increased unicorn tourism revenue by 250% since implementing the system." - **Highland Council**
 
 {% include "components/reviews.njk" %}
+
+{% include "components/product-assessments.njk" %}

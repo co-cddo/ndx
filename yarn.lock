@@ -4627,7 +4627,7 @@ __metadata:
     jest-environment-jsdom: "npm:^29.7.0"
     lint-staged: "npm:^16.0.0"
     prettier: "npm:^3.5.3"
-    prettier-plugin-sh: "npm:^0.17.3"
+    prettier-plugin-sh: "npm:^0.17.4"
   languageName: unknown
   linkType: soft
 
@@ -5006,15 +5006,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-sh@npm:^0.17.3":
-  version: 0.17.3
-  resolution: "prettier-plugin-sh@npm:0.17.3"
+"prettier-plugin-sh@npm:^0.17.4":
+  version: 0.17.4
+  resolution: "prettier-plugin-sh@npm:0.17.4"
   dependencies:
     "@reteps/dockerfmt": "npm:^0.3.5"
     sh-syntax: "npm:^0.5.6"
   peerDependencies:
     prettier: ^3.0.3
-  checksum: 10c0/dac8fdfc3335984cc6d088f01b5679ee26ee75d99d8820c73593b635c8a395fa5d6fa07184dcfa3933b913c97486d06cd325c67e0a80bd15212a9d485d3b282d
+  checksum: 10c0/a9619c34a3fdd32684d15518ca4ee7791410fa3784a10f310f199f5a2083cab03f4f9d95f1d1ba069f105eee632d386c39396d9dd60169259c77aef1f30c735c
   languageName: node
   linkType: hard
 

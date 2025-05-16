@@ -65,24 +65,24 @@ Reduces operational complexity with automated deployment and management, backed 
 
 ### Scalable Digital Services
 
-Deploy and manage citizen-facing applications more quickly by giving development teams a secure, fully managed platform that works across cloud and on-premises environments. Azure Red Hat OpenShift helps reduce time to launch by providing built-in automation, security features, and consistent development tools.
+Accelerate the delivery of citizen-facing applications by giving development teams a secure, fully managed Kubernetes platform on AWS. Red Hat OpenShift Service on AWS (ROSA) helps reduce time to value with built-in automation, enterprise-grade security, and consistent tooling across development and operations.
 
 ### Flexible AI and Data Workloads
 
-Support AI and data initiatives with a platform that can run complex models, manage large datasets, and scale flexibly. Azure Red Hat OpenShift allows organisations to deploy AI assistants, natural language tools, and analytics pipelines while maintaining governance and operational control.
+Support AI and data initiatives at scale with a platform optimised for running complex models and managing large datasets in AWS. ROSA enables organisations to deploy AI assistants, natural language processing tools, and real-time analytics while maintaining governance and compliance through integrated OpenShift and AWS services.
 
 ### Hybrid Cloud Consistency
 
-Run applications reliably across environments without the risk of lock-in. With Azure Red Hat OpenShift, teams can develop once and deploy anywhere - whether in a secure data centre or the public cloud - ensuring service continuity and alignment with architectural standards.
+Deliver a consistent application experience across hybrid environments. ROSA enables teams to build once and deploy anywhere - from on-premises Red Hat OpenShift to AWS - ensuring portability, service continuity, and alignment with open standards and cloud-first strategies.
 
 ### Secure Modernisation
 
-Modernise legacy applications and infrastructure with a platform designed for security and compliance. Azure Red Hat OpenShift includes role-based access control, automated patching, and built-in monitoring to support secure, resilient operations from day one.
+Modernise legacy systems with a secure, fully managed container platform. ROSA includes automated updates, role-based access control, and built-in monitoring, helping teams meet security and compliance requirements while modernising infrastructure at pace.
 
 ### Developer Productivity and Automation
 
-Increase development speed by streamlining common tasks with integrated automation, CI/CD pipelines, and infrastructure-as-code. Azure Red Hat OpenShift allows teams to focus on building services, not managing environments, by embedding DevSecOps practices into everyday workflows.
+Boost developer productivity with native support for CI/CD pipelines, GitOps workflows, and infrastructure-as-code. ROSA embeds DevSecOps into the development lifecycle, so teams can focus on delivering value without worrying about cluster operations or platform maintenance.
 
 ### Cost-Efficient Platform Operations
 
-Improve efficiency by consolidating applications onto a shared platform with built-in autoscaling, usage-based billing, and resource controls. Azure Red Hat OpenShift helps optimise cloud spend while enabling teams to deliver more with fewer operational overheads, leveraging Microsoft Site Reliability Engineering expertise.
+Optimise cloud spending by consolidating workloads on a managed Kubernetes platform with autoscaling, usage-based pricing, and resource governance. ROSA reduces operational overheads by combining OpenShift innovation with AWS infrastructure efficiency and Red Hat’s SRE-led managed service.

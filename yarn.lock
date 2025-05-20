@@ -831,12 +831,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kevingimbel/eleventy-plugin-mermaid@npm:^2.2.1":
-  version: 2.2.1
-  resolution: "@kevingimbel/eleventy-plugin-mermaid@npm:2.2.1"
+"@kevingimbel/eleventy-plugin-mermaid@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@kevingimbel/eleventy-plugin-mermaid@npm:3.0.0"
   dependencies:
-    htmlencode: "npm:^0.0.4"
-  checksum: 10c0/d9ab14368dd9b6f070f9e6c5884278b902a032d6a860d2a413b26e201fba7870897166a65cf2a665c1b0ac42967768147acff62129df84a418c725fe46dc9f57
+    he: "npm:^1.2.0"
+  checksum: 10c0/bbe4309427e2704a68f55e09d36dddd01f4f725406ba12af043d0b07a1110f8643160fcafc2044e63a1f2968347a7b9e39271f60293d3c30a04cc32724bf7e80
   languageName: node
   linkType: hard
 
@@ -2980,6 +2980,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"he@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "he@npm:1.2.0"
+  bin:
+    he: bin/he
+  checksum: 10c0/a27d478befe3c8192f006cdd0639a66798979dfa6e2125c6ac582a19a5ebfec62ad83e8382e6036170d873f46e4536a7e795bf8b95bf7c247f4cc0825ccc8c17
+  languageName: node
+  linkType: hard
+
 "highlight.js@npm:^11.5.0":
   version: 11.10.0
   resolution: "highlight.js@npm:11.10.0"
@@ -3000,13 +3009,6 @@ __metadata:
   version: 2.0.2
   resolution: "html-escaper@npm:2.0.2"
   checksum: 10c0/208e8a12de1a6569edbb14544f4567e6ce8ecc30b9394fcaa4e7bb1e60c12a7c9a1ed27e31290817157e8626f3a4f29e76c8747030822eb84a6abb15c255f0a0
-  languageName: node
-  linkType: hard
-
-"htmlencode@npm:^0.0.4":
-  version: 0.0.4
-  resolution: "htmlencode@npm:0.0.4"
-  checksum: 10c0/328aff4d168feb67821732071b3e01e9934fdbb84cd1827dcecc558b9f014db8b788af9214349dd83167a417ccdd5e83725e413dfc94cd513002441df541625b
   languageName: node
   linkType: hard
 
@@ -4620,7 +4622,7 @@ __metadata:
   resolution: "ndx@workspace:."
   dependencies:
     "@11ty/eleventy": "npm:^2.0.1"
-    "@kevingimbel/eleventy-plugin-mermaid": "npm:^2.2.1"
+    "@kevingimbel/eleventy-plugin-mermaid": "npm:^3.0.0"
     "@x-govuk/govuk-eleventy-plugin": "npm:^6.7.2"
     husky: "npm:^9.1.7"
     jest: "npm:^29.7.0"

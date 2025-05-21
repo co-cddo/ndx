@@ -1,5 +1,5 @@
 ---
 eleventyExcludeFromCollections: true
 layout: sitemap
-permalink: /sitemap
+permalink: /sitemap/
 ---

@@ -138,6 +138,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("./src/assets")
 
   return {
+    pathPrefix: process.env.PATH_PREFIX || "/",
     dataTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
     markdownTemplateEngine: "njk",

@@ -53,6 +53,9 @@ there is a Webserver running on port 8080 that you can use to check your work, y
 - Due to Cursor's limit, when you use `git` and `gh` and need to submit a multiline commit message, first write the message in a file, and then use `git commit -F <filename>` or similar command to commit. And then remove the file. Include "[Cursor] " in the commit message and PR title.
 - the server is running on port 8080, you should use it to check your work regularly with curl.
 - you can run `npm run build` to build the project and check the output for any build errors
+- When creating new pages in Eleventy, check what layouts are available by looking at other similar pages. Common layouts are 'post', 'product', 'page', 'collection' - avoid using non-existent layouts like 'govuk'.
+- When transforming content, ensure component templates (like reviews.njk and product-assessments.njk) are updated to reference the new product paths.
+- Always run `npm run build` before testing with curl to ensure the site builds correctly.
 
 ## Cursor learned
 

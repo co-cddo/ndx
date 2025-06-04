@@ -1,0 +1,54 @@
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1d70b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#003078;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00703c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#005a30;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="50" fill="url(#primaryGradient)" opacity="0.1"/>
+  
+  <!-- Central hub representing orchestration -->
+  <circle cx="60" cy="60" r="15" fill="url(#primaryGradient)"/>
+  
+  <!-- Connected nodes representing agencies -->
+  <circle cx="30" cy="30" r="8" fill="url(#accentGradient)"/>
+  <circle cx="90" cy="30" r="8" fill="url(#accentGradient)"/>
+  <circle cx="30" cy="90" r="8" fill="url(#accentGradient)"/>
+  <circle cx="90" cy="90" r="8" fill="url(#accentGradient)"/>
+  <circle cx="60" cy="25" r="6" fill="url(#accentGradient)"/>
+  <circle cx="60" cy="95" r="6" fill="url(#accentGradient)"/>
+  
+  <!-- Connection lines -->
+  <line x1="60" y1="60" x2="30" y2="30" stroke="#1d70b8" stroke-width="2" opacity="0.7"/>
+  <line x1="60" y1="60" x2="90" y2="30" stroke="#1d70b8" stroke-width="2" opacity="0.7"/>
+  <line x1="60" y1="60" x2="30" y2="90" stroke="#1d70b8" stroke-width="2" opacity="0.7"/>
+  <line x1="60" y1="60" x2="90" y2="90" stroke="#1d70b8" stroke-width="2" opacity="0.7"/>
+  <line x1="60" y1="60" x2="60" y2="25" stroke="#1d70b8" stroke-width="2" opacity="0.7"/>
+  <line x1="60" y1="60" x2="60" y2="95" stroke="#1d70b8" stroke-width="2" opacity="0.7"/>
+  
+  <!-- Document/request symbols -->
+  <rect x="26" y="26" width="8" height="8" fill="white" rx="1"/>
+  <rect x="86" y="26" width="8" height="8" fill="white" rx="1"/>
+  <rect x="26" y="86" width="8" height="8" fill="white" rx="1"/>
+  <rect x="86" y="86" width="8" height="8" fill="white" rx="1"/>
+  
+  <!-- AI/automation indicator in center -->
+  <text x="60" y="66" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">AI</text>
+  
+  <!-- Product title -->
+  <text x="130" y="35" fill="#0b0c0c" font-family="Arial, sans-serif" font-size="16" font-weight="bold">FOI</text>
+  <text x="130" y="55" fill="#0b0c0c" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Orchestrator</text>
+  
+  <!-- Campaign indicator -->
+  <rect x="130" y="65" width="60" height="15" fill="#d4351c" rx="2"/>
+  <text x="160" y="75" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="8" font-weight="bold">CAMPAIGN</text>
+  
+  <!-- Company name -->
+  <text x="130" y="95" fill="#626a6e" font-family="Arial, sans-serif" font-size="10">GovTech Solutions</text>
+</svg> 

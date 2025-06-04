@@ -56,6 +56,12 @@ there is a Webserver running on port 8080 that you can use to check your work, y
 - When creating new pages in Eleventy, check what layouts are available by looking at other similar pages. Common layouts are 'post', 'product', 'page', 'collection' - avoid using non-existent layouts like 'govuk'.
 - When transforming content, ensure component templates (like reviews.njk and product-assessments.njk) are updated to reference the new product paths.
 - Always run `npm run build` before testing with curl to ensure the site builds correctly.
+- When creating new product categories, use existing product layouts and structure - the 'product' layout works well for campaign-style products.
+- For campaign/kickstarter-style products, include visual progress indicators, clear commitment requirements, professional mockups, and realistic business cases.
+- Use placeholder images (via.placeholder.com) for mockups in campaign products to demonstrate concepts without requiring actual screenshots.
+- Campaign products should clearly differentiate themselves with warning banners and special badges to indicate they require pre-commitment.
+- When creating multiple campaign products, vary the companies, target audiences, funding levels, and timelines to show diversity in the campaign model.
+- Each campaign should have unique value propositions - FOI coordination vs planning automation demonstrates how different government challenges can be addressed.
 
 ## Cursor learned
 

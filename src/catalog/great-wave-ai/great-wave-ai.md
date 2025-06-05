@@ -23,15 +23,15 @@ tags:
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {{ govukButton({
-  text: "Introductory video",
-  href: "https://greatwave.ai/trusted-gen-ai-guide/",
+  text: "Try this now for 24 hours",
+  href: "/try/great-wave-ai",
   isStartButton: true
 }) }}
 </br>
 
 {{ govukButton({
-  text: "Chat to our team",
-  href: "https://greatwave.ai/#awb-oc__2917",
+  text: "Deploy this now",
+  href: "/access/great-wave-ai",
   isStartButton: true
 }) }}
 

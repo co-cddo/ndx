@@ -63,7 +63,12 @@ there is a Webserver running on port 8080 that you can use to check your work, y
 - When creating multiple campaign products, vary the companies, target audiences, funding levels, and timelines to show diversity in the campaign model.
 - Each campaign should have unique value propositions - FOI coordination vs planning automation demonstrates how different government challenges can be addressed.
 - When creating catalog items for UK government platforms, focus on UK-appropriate security/compliance credentials (ISO 27001, Cyber Essentials Plus, UK GDPR), NOT US standards like FedRAMP. Include UK public sector business needs (citizen journey mapping, accessibility compliance), quantified business benefits, and integration with GOV.UK standards. Structure around collaborative capabilities and cross-department use cases.
+- When creating a new section like "Challenges", follow the catalog pattern: create index page, add to navigation, configure collection in eleventy.config.js, and ensure tag consistency.
+- Government challenges should include professional badges showing complexity/impact, detailed requirements, success metrics, and links to potential campaign solutions.
+- Cross-referencing between challenges creates a cohesive problem landscape and helps users understand interconnected government needs.
+- The GOV.UK Eleventy plugin enforces case-sensitive tags - tags like "AI" and "ai" are treated as different and cause build errors. Always use uppercase tags consistently across all content files to prevent tag case conflicts. This is a known issue (Eleventy #2462) with no current configuration solution.
 
 ## Cursor learned
 
 - For search results, ensure proper handling of different character encodings (UTF-8) for international queries
+- Maintain consistent tag capitalization across all content files - use lowercase tags (e.g., 'ai' not 'AI') to prevent Eleventy build errors from tag case conflicts

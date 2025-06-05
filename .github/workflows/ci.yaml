@@ -35,7 +35,8 @@ jobs:
       - run: yarn
       - run: yarn lint
       - run: yarn test
-      - run: PATH_PREFIX=/ndx/ yarn build
+      # - run: PATH_PREFIX=/ndx/ yarn build
+      - run: yarn build
 
       - name: Tar files
         run: tar -cf site.tar ./_site

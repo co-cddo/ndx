@@ -69,6 +69,7 @@ export default function (eleventyConfig) {
           href: "/learn",
         },
         { text: "Catalog", href: "/catalog" },
+        { text: "Challenges", href: "/challenges" },
         {
           text: "Try",
           href: "/try",
@@ -108,6 +109,13 @@ export default function (eleventyConfig) {
       .getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md")
       .map(useExternalUrl)
       .sort((a, b) => a.data.title.localeCompare(b.data.title)),
+  )
+
+  eleventyConfig.addCollection("challenges", (collection) =>
+    collection
+      .getFilteredByGlob("src/challenges/**/*.md", "!**/index.md", "!**/tags.md")
+      .map(useExternalUrl)
+      .sort((a, b) => new Date(b.data.date || "2025-01-01") - new Date(a.data.date || "2025-01-01")),
   )
 
   eleventyConfig.addCollection("reviews", (collection) =>

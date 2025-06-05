@@ -47,14 +47,16 @@ Great Wave AI is a good fit if your organisation meets any of the following:
 
 ## Business Benefits
 
-### Enhance Citizen and Customer Services
-Build agents that provide accurate, always-on responses across channels - improving user experience and reducing call volumes.
+
 
 ### Reduce Operational Costs
 Automate repetitive admin and free up your teams for higher-value work.
 
 ### Accelerate Decision-Making
 Empower teams with real-time insights, summaries and next-best actions drawn from complex, unstructured data.
+
+### Enhance Citizen and Customer Services
+Build agents that provide accurate, always-on responses across channels - improving user experience and reducing call volumes.
 
 ### Strengthen Compliance and Oversight
 Ensure secure, traceable and auditable GenAI workflows that reduce risk and demonstrate control.

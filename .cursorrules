@@ -62,6 +62,9 @@ there is a Webserver running on port 8080 that you can use to check your work, y
 - Campaign products should clearly differentiate themselves with warning banners and special badges to indicate they require pre-commitment.
 - When creating multiple campaign products, vary the companies, target audiences, funding levels, and timelines to show diversity in the campaign model.
 - Each campaign should have unique value propositions - FOI coordination vs planning automation demonstrates how different government challenges can be addressed.
+- When creating a new section like "Challenges", follow the catalog pattern: create index page, add to navigation, configure collection in eleventy.config.js, and ensure tag consistency.
+- Government challenges should include professional badges showing complexity/impact, detailed requirements, success metrics, and links to potential campaign solutions.
+- Cross-referencing between challenges creates a cohesive problem landscape and helps users understand interconnected government needs.
 
 ## Cursor learned
 

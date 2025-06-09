@@ -50,7 +50,7 @@ export default function (eleventyConfig) {
     titleSuffix: "ALPHA",
     header: {
       logotype: {
-        text: "EXPERIMENTAL",
+        text: " ",
       },
       productName: `National Digital Exchange <strong class="govuk-tag govuk-phase-banner__content__tag">Alpha</strong>`,
       search: {

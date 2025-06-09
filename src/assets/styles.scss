@@ -80,8 +80,14 @@ $_font-family: system-ui, sans-serif;
 
 // govuk-body
 .experimental_header {
+  @extend .govuk-body;
   background: yellow;
-  padding: 10px;
-  text-align: center;
-  font-weight: bold;
+  padding: 5px;
+  margin-bottom: 0;
+
+  p {
+    @extend .govuk-width-container;
+    text-align: center;
+    font-weight: bold;
+  }
 }

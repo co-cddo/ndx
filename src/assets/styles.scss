@@ -8,7 +8,6 @@ $_font-family: system-ui, sans-serif;
 @use "pkg:@x-govuk/govuk-eleventy-plugin";
 
 .x-govuk-masthead__image img[src$=".svg"] {
-  filter: invert(100%) saturate(1000%) brightness(1000%) contrast(100%);
   width: 100%;
   margin: -20% -20% -20% 0;
 }
@@ -74,6 +73,7 @@ $_font-family: system-ui, sans-serif;
     }
   }
 }
+
 .govuk-footer__crown {
   display: none;
 }

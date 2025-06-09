@@ -67,6 +67,7 @@ there is a Webserver running on port 8080 that you can use to check your work, y
 - Government challenges should include professional badges showing complexity/impact, detailed requirements, success metrics, and links to potential campaign solutions.
 - Cross-referencing between challenges creates a cohesive problem landscape and helps users understand interconnected government needs.
 - The GOV.UK Eleventy plugin enforces case-sensitive tags - tags like "AI" and "ai" are treated as different and cause build errors. Always use uppercase tags consistently across all content files to prevent tag case conflicts. This is a known issue (Eleventy #2462) with no current configuration solution.
+- To override GOV.UK Eleventy plugin components: create the same directory structure in `src/_includes/components/`, copy the macro and template files, and modify as needed. The override will automatically take precedence over the plugin's default files. For example, to override the header, create `src/_includes/components/header/macro.njk` and `src/_includes/components/header/template.njk`.
 
 ## Cursor learned
 

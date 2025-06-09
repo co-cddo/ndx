@@ -7,7 +7,7 @@ eleventyNavigation:
   parent: Catalog
 pagination:
   data: collections.catalogByTag.Campaign
-  size: 20
+  size: 50
 related:
   sections:
     - title: Filters

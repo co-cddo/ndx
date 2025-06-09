@@ -1,12 +1,12 @@
 ---
 layout: collection
-title: "Catalog: GOV.UK Services"
-description: "Official government digital services and platforms provided by GOV.UK"
+title: "Catalog: AI Services"
+description: "Artificial Intelligence and machine learning solutions for UK public sector organisations"
 includeInBreadcrumbs: true
 eleventyNavigation:
   parent: Catalog
 pagination:
-  data: collections.catalogByTag.govuk
+  data: collections.catalogByTag.AI
   size: 50
 related:
   sections:
@@ -16,7 +16,6 @@ related:
           href: /catalog
         - text: GOV.UK Services
           href: /catalog/tags/govuk
-          active: true
         - text: Microsoft
           href: /catalog/tags/Microsoft
         - text: Low-code
@@ -29,10 +28,11 @@ related:
           href: /catalog/tags/Amazon
         - text: AI
           href: /catalog/tags/AI
+          active: true
         - text: Security
           href: /catalog/tags/security
         - text: Google
           href: /catalog/tags/Google
 ---
 
-This catalog shows official digital services and platforms provided by the UK government through GOV.UK. These services are pre-approved, require no procurement process, and are designed to help public sector organisations deliver better digital services to citizens.
+This catalog shows Artificial Intelligence and machine learning solutions available for UK public sector organisations. These cutting-edge AI platforms help government agencies automate processes, enhance decision-making, and improve citizen services through intelligent automation.

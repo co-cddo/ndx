@@ -23,6 +23,16 @@ related:
           active: true
         - text: Campaign Products
           href: /catalog/tags/Campaign
+        - text: Red Hat
+          href: /catalog/tags/Red%20Hat
+        - text: Amazon
+          href: /catalog/tags/Amazon
+        - text: AI
+          href: /catalog/tags/AI
+        - text: Security
+          href: /catalog/tags/security
+        - text: Google
+          href: /catalog/tags/Google
 ---
 
 This catalog shows low-code and no-code platforms that enable public sector organisations to rapidly build applications and automate processes without extensive programming knowledge. These tools accelerate digital transformation while maintaining professional standards.

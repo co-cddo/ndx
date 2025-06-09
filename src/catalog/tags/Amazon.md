@@ -1,12 +1,12 @@
 ---
 layout: collection
-title: "Catalog: GOV.UK Services"
-description: "Official government digital services and platforms provided by GOV.UK"
+title: "Catalog: Amazon Services"
+description: "Amazon Web Services (AWS) cloud solutions for UK public sector organisations"
 includeInBreadcrumbs: true
 eleventyNavigation:
   parent: Catalog
 pagination:
-  data: collections.catalogByTag.govuk
+  data: collections.catalogByTag.Amazon
   size: 50
 related:
   sections:
@@ -16,7 +16,6 @@ related:
           href: /catalog
         - text: GOV.UK Services
           href: /catalog/tags/govuk
-          active: true
         - text: Microsoft
           href: /catalog/tags/Microsoft
         - text: Low-code
@@ -27,6 +26,7 @@ related:
           href: /catalog/tags/Red%20Hat
         - text: Amazon
           href: /catalog/tags/Amazon
+          active: true
         - text: AI
           href: /catalog/tags/AI
         - text: Security
@@ -35,4 +35,4 @@ related:
           href: /catalog/tags/Google
 ---
 
-This catalog shows official digital services and platforms provided by the UK government through GOV.UK. These services are pre-approved, require no procurement process, and are designed to help public sector organisations deliver better digital services to citizens.
+This catalog shows Amazon Web Services (AWS) cloud solutions available for UK public sector organisations. These scalable, secure cloud services help government agencies modernise their infrastructure and deliver better digital services to citizens.

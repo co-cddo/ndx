@@ -23,6 +23,16 @@ related:
         - text: Campaign Products
           href: /catalog/tags/Campaign
           active: true
+        - text: Red Hat
+          href: /catalog/tags/Red%20Hat
+        - text: Amazon
+          href: /catalog/tags/Amazon
+        - text: AI
+          href: /catalog/tags/AI
+        - text: Security
+          href: /catalog/tags/security
+        - text: Google
+          href: /catalog/tags/Google
 ---
 
 ⚠️ **Campaign products require pre-commitments from public sector organisations before development proceeds.**

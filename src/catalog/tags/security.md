@@ -1,12 +1,12 @@
 ---
 layout: collection
-title: "Catalog: GOV.UK Services"
-description: "Official government digital services and platforms provided by GOV.UK"
+title: "Catalog: Security Services"
+description: "Cybersecurity and data protection solutions for UK public sector organisations"
 includeInBreadcrumbs: true
 eleventyNavigation:
   parent: Catalog
 pagination:
-  data: collections.catalogByTag.govuk
+  data: collections.catalogByTag.security
   size: 50
 related:
   sections:
@@ -16,7 +16,6 @@ related:
           href: /catalog
         - text: GOV.UK Services
           href: /catalog/tags/govuk
-          active: true
         - text: Microsoft
           href: /catalog/tags/Microsoft
         - text: Low-code
@@ -31,8 +30,9 @@ related:
           href: /catalog/tags/AI
         - text: Security
           href: /catalog/tags/security
+          active: true
         - text: Google
           href: /catalog/tags/Google
 ---
 
-This catalog shows official digital services and platforms provided by the UK government through GOV.UK. These services are pre-approved, require no procurement process, and are designed to help public sector organisations deliver better digital services to citizens.
+This catalog shows cybersecurity and data protection solutions available for UK public sector organisations. These security platforms help government agencies protect their digital infrastructure, comply with regulations, and safeguard citizen data from cyber threats.

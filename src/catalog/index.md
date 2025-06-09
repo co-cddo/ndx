@@ -17,10 +17,22 @@ related:
           active: true
         - text: GOV.UK Services
           href: /catalog/tags/govuk
-        - text: Microsoft
-          href: /catalog/tags/Microsoft
-        - text: Low-code
-          href: /catalog/tags/Low-code
         - text: Campaign Products
           href: /catalog/tags/Campaign
+        - text: "&nbsp;"
+        - text: AI
+          href: /catalog/tags/AI
+        - text: Low-code
+          href: /catalog/tags/Low-code
+        - text: Security
+          href: /catalog/tags/security
+        - text: "&nbsp;"
+        - text: Amazon
+          href: /catalog/tags/Amazon
+        - text: Google
+          href: /catalog/tags/Google
+        - text: Microsoft
+          href: /catalog/tags/Microsoft
+        - text: Red Hat
+          href: /catalog/tags/Red%20Hat
 ---

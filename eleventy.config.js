@@ -47,7 +47,11 @@ export default function (eleventyConfig) {
 
   eleventyConfig.addPlugin(govukEleventyPlugin, {
     rebrand: true,
+    titleSuffix: "ALPHA",
     header: {
+      logotype: {
+        text: " ",
+      },
       productName: `National Digital Exchange <strong class="govuk-tag govuk-phase-banner__content__tag">Alpha</strong>`,
       search: {
         indexPath: "/search.json",

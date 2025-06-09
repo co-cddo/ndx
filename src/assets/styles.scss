@@ -77,3 +77,11 @@ $_font-family: system-ui, sans-serif;
 .govuk-footer__crown {
   display: none;
 }
+
+// govuk-body
+.experimental_header {
+  background: yellow;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+}

@@ -68,6 +68,7 @@ there is a Webserver running on port 8080 that you can use to check your work, y
 - Cross-referencing between challenges creates a cohesive problem landscape and helps users understand interconnected government needs.
 - The GOV.UK Eleventy plugin enforces case-sensitive tags - tags like "AI" and "ai" are treated as different and cause build errors. Always use uppercase tags consistently across all content files to prevent tag case conflicts. This is a known issue (Eleventy #2462) with no current configuration solution.
 - To override GOV.UK Eleventy plugin components: create the same directory structure in `src/_includes/components/`, copy the macro and template files, and modify as needed. The override will automatically take precedence over the plugin's default files. For example, to override the header, create `src/_includes/components/header/macro.njk` and `src/_includes/components/header/template.njk`.
+- For catalog tag filtering: create a `catalogByTag` collection in eleventy.config.js that groups items by tags, then create individual tag pages at `/catalog/tags/{tag}/` using the `collection` layout. Update all catalog pages' navigation to include the new filter link. This provides clean URL routing and maintains pagination support.
 
 ## Cursor learned
 

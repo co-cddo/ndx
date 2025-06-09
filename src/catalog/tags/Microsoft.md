@@ -1,12 +1,12 @@
 ---
 layout: collection
-title: Catalog
-description: Catalog of all the services available in the cloud
+title: "Catalog: Microsoft Services"
+description: "Microsoft cloud and productivity services for UK public sector organisations"
 includeInBreadcrumbs: true
 eleventyNavigation:
-  key: Catalog
+  parent: Catalog
 pagination:
-  data: collections.catalog
+  data: collections.catalogByTag.Microsoft
   size: 20
 related:
   sections:
@@ -14,13 +14,15 @@ related:
       items:
         - text: All Services
           href: /catalog
-          active: true
         - text: GOV.UK Services
           href: /catalog/tags/govuk
         - text: Microsoft
           href: /catalog/tags/Microsoft
+          active: true
         - text: Low-code
           href: /catalog/tags/Low-code
         - text: Campaign Products
           href: /catalog/tags/Campaign
 ---
+
+This catalog shows Microsoft services and platforms available for UK public sector organisations. These enterprise-grade cloud services provide scalable, secure solutions for digital transformation initiatives.

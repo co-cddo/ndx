@@ -115,6 +115,29 @@ export default function (eleventyConfig) {
       .sort((a, b) => a.data.title.localeCompare(b.data.title)),
   )
 
+  // Tag-filtered catalog collections
+  eleventyConfig.addCollection("catalogByTag", (collection) => {
+    const catalog = collection
+      .getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md")
+      .map(useExternalUrl)
+      .sort((a, b) => a.data.title.localeCompare(b.data.title))
+
+    const byTag = {}
+
+    catalog.forEach((item) => {
+      if (item.data.tags) {
+        item.data.tags.forEach((tag) => {
+          if (!byTag[tag]) {
+            byTag[tag] = []
+          }
+          byTag[tag].push(item)
+        })
+      }
+    })
+
+    return byTag
+  })
+
   eleventyConfig.addCollection("challenges", (collection) =>
     collection
       .getFilteredByGlob("src/challenges/**/*.md", "!**/index.md", "!**/tags.md")

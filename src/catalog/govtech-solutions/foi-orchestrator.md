@@ -1,7 +1,7 @@
 ---
 layout: product
 title: GovTech Solutions FOI Orchestrator™
-description: Revolutionary Multi-Agency FOI Request Orchestrator requiring cross-government commitment to justify development. Using AI to centralize, route, and manage Freedom of Information requests across all responsible bodies. <br/><br/><strong>⚠️ CAMPAIGN PRODUCT - REQUIRES MINIMUM 15 AGENCY COMMITMENTS TO PROCEED</strong>
+description: Revolutionary Multi-Agency FOI Request Orchestrator requiring cross-government commitment to justify development. Using AI to centralize, route, and manage Freedom of Information requests across all responsible bodies. <br/><br/><strong>⚠️ CAMPAIGN PRODUCT - REQUIRES MINIMUM 15 AGENCY PLEDGES TO USE IF DEVELOPED</strong>
 image:
   src: /assets/catalog/govtech-solutions/foi-orchestrator-logo.svg
   alt: GovTech Solutions FOI Orchestrator
@@ -17,7 +17,7 @@ tags:
   - Government Transparency
 ---
 
-![](https://img.shields.io/badge/provider-govtech_solutions-blue) ![](https://img.shields.io/badge/status-CAMPAIGN_PHASE-red) ![](https://img.shields.io/badge/type-Pre_Commitment_Required-orange) ![](https://img.shields.io/badge/minimum_commitments-15_agencies-purple) ![](https://img.shields.io/badge/commitment_period-12_months-green) ![](https://img.shields.io/badge/development_timeline-18_months-blue) ![](https://img.shields.io/badge/estimated_cost-£2.8M-orange) ![](https://img.shields.io/badge/projected_savings-£15M_annually-brightgreen)
+![](https://img.shields.io/badge/provider-govtech_solutions-blue) ![](https://img.shields.io/badge/status-CAMPAIGN_PHASE-red) ![](https://img.shields.io/badge/type-Pre_Commitment_Required-orange) ![](https://img.shields.io/badge/minimum_commitments-15_agencies-purple) ![](https://img.shields.io/badge/commitment_period-12_months-green) ![](https://img.shields.io/badge/development_timeline-18_months-blue)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
@@ -42,7 +42,7 @@ tags:
   <div style="background: white; padding: 15px; border-radius: 5px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
       <span class="govuk-body-s"><strong>7 of 15 required commitments</strong></span>
-      <span class="govuk-body-s">47% funded</span>
+      <span class="govuk-body-s">47% of target reached</span>
     </div>
     <div style="width: 100%; height: 30px; background: #d4d4d4; border-radius: 15px; overflow: hidden;">
       <div style="width: 47%; height: 100%; background: linear-gradient(90deg, #00703c 0%, #28a745 100%); border-radius: 15px; position: relative;">
@@ -52,21 +52,21 @@ tags:
     <div style="margin-top: 15px;">
       <h4 class="govuk-heading-s">Committed Organizations:</h4>
       <ul class="govuk-list govuk-list--bullet">
-        <li>Cabinet Office (£200k commitment)</li>
-        <li>Ministry of Justice (£180k commitment)</li>
-        <li>Department for Transport (£150k commitment)</li>
-        <li>Birmingham City Council (£80k commitment)</li>
-        <li>Manchester City Council (£90k commitment)</li>
-        <li>Scottish Government (£220k commitment)</li>
-        <li>Welsh Government (£180k commitment)</li>
+        <li>Cabinet Office (committed)</li>
+        <li>Ministry of Justice (committed)</li>
+        <li>Department for Transport (committed)</li>
+        <li>Birmingham City Council (committed)</li>
+        <li>Manchester City Council (committed)</li>
+        <li>Scottish Government (committed)</li>
+        <li>Welsh Government (committed)</li>
       </ul>
-      <p class="govuk-body-s"><strong>Total committed: £1,100,000 of £2,800,000 required</strong></p>
+      <p class="govuk-body-s"><strong>7 of 15 organizations have pledged to use the product if developed</strong></p>
     </div>
   </div>
 </div>
 
 {{ govukButton({
-  text: "Express Interest & Commitment",
+  text: "Express Interest to Use This Product",
   href: "#commitment-form",
   isStartButton: true,
   classes: "govuk-button--secondary"
@@ -167,17 +167,15 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 
 - **80% reduction** in request routing time
 - **60% improvement** in response accuracy
-- **£15M annual savings** across participating agencies
+- **Significant annual savings** across participating agencies
 - **Enhanced transparency** through consistent handling
 - **Better citizen satisfaction** with streamlined process
 
 ### Return on Investment
 
-- Initial development cost: £2.8M over 18 months
-- Annual operating cost: £400k per year
-- Projected annual savings: £15M across all agencies
-- Break-even: 3.2 months after full deployment
-- 5-year ROI: 1,875%
+- Initial development will proceed once sufficient organizations pledge to use the product
+- Projected benefits include substantial efficiency gains and cost savings for all participants
+- Early adopters will help shape the final product and receive priority support
 
 ## Commitment Requirements
 
@@ -185,16 +183,12 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 
 To justify development, we require **15 public sector organizations** to commit to:
 
-- **12-month minimum usage** commitment
-- **Annual license fee** based on organization size:
-  - Central Government Departments: £150-250k/year
-  - Local Authorities (>500k population): £80-120k/year
-  - Local Authorities (<500k population): £40-80k/year
-  - Devolved Administrations: £200-300k/year
+- **12-month minimum usage** intent
+- **Pledge to use the FOI Orchestrator if developed**
 
 ### What Your Commitment Includes
 
-- Full FOI Orchestrator license for your organization
+- Early access to the FOI Orchestrator for your organization
 - Integration with existing systems and processes
 - Comprehensive staff training and change management
 - 24/7 technical support during implementation
@@ -233,7 +227,7 @@ To justify development, we require **15 public sector organizations** to commit 
 
 <div id="commitment-form" style="background: #f8f8f8; padding: 30px; margin: 30px 0; border: 2px solid #1d70b8;">
   <h2 class="govuk-heading-l">Express Your Organization's Interest</h2>
-  <p class="govuk-body">Complete this form to register your organization's potential commitment to the FOI Orchestrator project.</p>
+  <p class="govuk-body">Complete this form to register your organization's intent to use the FOI Orchestrator if it is developed. This is not a financial or contractual commitment.</p>
   
   <div class="govuk-form-group">
     <label class="govuk-label govuk-label--m" for="org-name">Organization Name</label>
@@ -263,7 +257,7 @@ To justify development, we require **15 public sector organizations** to commit 
       <div class="govuk-radios">
         <div class="govuk-radios__item">
           <input class="govuk-radios__input" id="commitment-firm" type="radio" name="commitment" value="firm">
-          <label class="govuk-label govuk-radios__label" for="commitment-firm">Firm commitment (subject to business case approval)</label>
+          <label class="govuk-label govuk-radios__label" for="commitment-firm">Firm intent to use if developed</label>
         </div>
         <div class="govuk-radios__item">
           <input class="govuk-radios__input" id="commitment-interested" type="radio" name="commitment" value="interested">
@@ -277,7 +271,7 @@ To justify development, we require **15 public sector organizations** to commit 
     </fieldset>
   </div>
   
-  <button class="govuk-button" type="submit">Submit Expression of Interest</button>
+  <button class="govuk-button" type="submit">Submit Expression of Interest to Use</button>
 </div>
 
 <div id="more-info" style="background: #f0f4f5; padding: 30px; margin: 30px 0;">
@@ -327,4 +321,4 @@ To justify development, we require **15 public sector organizations** to commit 
 
 ---
 
-**Disclaimer**: This is a campaign product requiring minimum commitments before development proceeds. GovTech Solutions reserves the right to modify specifications based on stakeholder feedback during the commitment phase. All financial commitments are subject to formal contract negotiation and legal review.
+**Disclaimer**: This is a campaign product requiring minimum commitments before development proceeds. GovTech Solutions reserves the right to modify specifications based on stakeholder feedback during the commitment phase. All expressions of interest are non-binding and do not constitute a financial commitment.

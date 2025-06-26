@@ -9,7 +9,6 @@
     "start": "rm -r _site ; eleventy --serve",
     "build": "eleventy",
     "lint": "prettier -c .",
-    "test": "jest --passWithNoTests",
     "prepare": "husky"
   },
   "repository": {
@@ -26,14 +25,9 @@
     "@11ty/eleventy": "^3.1.1",
     "@x-govuk/govuk-eleventy-plugin": "^7.0.1",
     "husky": "^9.1.7",
-    "jest": "^30.0.0",
-    "jest-environment-jsdom": "^30.0.0",
     "lint-staged": "^16.1.0",
     "prettier": "^3.5.3",
     "prettier-plugin-sh": "^0.17.4"
-  },
-  "jest": {
-    "testEnvironment": "jsdom"
   },
   "engines": {
     "npm": "please-use-yarn",

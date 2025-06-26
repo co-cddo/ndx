@@ -31,7 +31,7 @@ tags:
     <h3 class="govuk-notification-banner__heading">
       High-complexity challenge with significant impact potential
     </h3>
-    <p class="govuk-body">This challenge addresses fundamental information sharing barriers in secure environments. Solutions may be developed into major <a class="govuk-notification-banner__link" href="/catalog">collaborative campaigns</a>.</p>
+    <p class="govuk-body">This challenge addresses fundamental information sharing barriers in secure environments. Solutions may be developed into major <a class="govuk-notification-banner__link" href="/catalogue">collaborative campaigns</a>.</p>
   </div>
 </div>
 

@@ -26,20 +26,17 @@ Ready to transform your organisation with AI? Deploy MindWeave Labs SynapLyte™
 ## Onboarding Process:
 
 1. **Initial Consultation** (Week 1)
-
    - Requirements gathering
    - Security and compliance review
    - Integration planning
 
 2. **Setup & Configuration** (Week 2-3)
-
    - Environment provisioning
    - User access configuration
    - System integration setup
    - Custom training data preparation
 
 3. **Training & Testing** (Week 4)
-
    - Staff training sessions
    - AI ethics workshops
    - User acceptance testing

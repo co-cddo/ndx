@@ -31,7 +31,7 @@ tags:
     <h3 class="govuk-notification-banner__heading">
       Transform early-stage capability development with security-first approaches
     </h3>
-    <p class="govuk-body">Solutions addressing this challenge will fundamentally change how military capabilities are conceived and developed. Successful approaches may lead to <a class="govuk-notification-banner__link" href="/catalog">major transformation campaigns</a>.</p>
+    <p class="govuk-body">Solutions addressing this challenge will fundamentally change how military capabilities are conceived and developed. Successful approaches may lead to <a class="govuk-notification-banner__link" href="/catalogue">major transformation campaigns</a>.</p>
   </div>
 </div>
 

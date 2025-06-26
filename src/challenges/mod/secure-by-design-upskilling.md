@@ -31,7 +31,7 @@ tags:
     <h3 class="govuk-notification-banner__heading">
       Solutions to this challenge may be eligible for campaign funding
     </h3>
-    <p class="govuk-body">Successful proposals could be developed into <a class="govuk-notification-banner__link" href="/catalog">kickstarter-style campaigns</a> with cross-sector commitment and MOD support.</p>
+    <p class="govuk-body">Successful proposals could be developed into <a class="govuk-notification-banner__link" href="/catalogue">kickstarter-style campaigns</a> with cross-sector commitment and MOD support.</p>
   </div>
 </div>
 

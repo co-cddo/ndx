@@ -31,7 +31,7 @@ tags:
     <h3 class="govuk-notification-banner__heading">
       Highest impact challenge addressing decades-long capability support
     </h3>
-    <p class="govuk-body">This challenge addresses the most complex aspect of 'Secure by Design' - maintaining security across decades of operational life. Revolutionary solutions may lead to <a class="govuk-notification-banner__link" href="/catalog">major international campaigns</a>.</p>
+    <p class="govuk-body">This challenge addresses the most complex aspect of 'Secure by Design' - maintaining security across decades of operational life. Revolutionary solutions may lead to <a class="govuk-notification-banner__link" href="/catalogue">major international campaigns</a>.</p>
   </div>
 </div>
 

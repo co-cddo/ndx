@@ -17,7 +17,7 @@ NDX creates a complete innovation ecosystem that connects government challenges 
 
 1. **[Challenges](/challenges/)** - Government departments publish problem statements that identify specific operational needs, inefficiencies, or capability gaps requiring innovative solutions
 2. **Campaigns** - Industry and academia create kickstarter-style pre-commitment products that address these challenges, requiring buy-in from multiple organizations before development begins
-3. **[Catalog](/catalog/)** - Successfully funded campaigns become deployed solutions available for immediate procurement and use across government
+3. **[Catalog](/catalogue/)** - Successfully funded campaigns become deployed solutions available for immediate procurement and use across government
 4. **[Reviews](/reviews/)** - Users provide feedback and assessments on deployed solutions, creating a feedback loop that improves future procurement decisions
 
 This pipeline ensures that innovation is driven by real government needs, solutions are validated before development, and successful products become widely available across the public sector. It transforms traditional procurement from reactive purchasing to proactive problem-solving through collaborative innovation.

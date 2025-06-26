@@ -38,7 +38,7 @@ To run this website locally:
 ## Key Features
 
 - Discover section for news, events, and case studies
-- Catalog of cloud services
+- Catalogue of cloud services
 - Access request system for cloud services
 - Cloud Maturity Model and Assessment Tool
 

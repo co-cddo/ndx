@@ -72,7 +72,7 @@ export default function (eleventyConfig) {
           text: "Learn",
           href: "/learn",
         },
-        { text: "Catalog", href: "/catalog" },
+        { text: "Catalogue", href: "/catalogue" },
         { text: "Challenges", href: "/challenges" },
         {
           text: "Try",
@@ -80,7 +80,7 @@ export default function (eleventyConfig) {
         },
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
-        { text: '<span class="emoji">✨</span><span class="sparkle">Begin with AI </span>', href: "/begin/" },
+        { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
       ],
     },
     footer: {
@@ -108,23 +108,23 @@ export default function (eleventyConfig) {
     (value) => `<code style="white-space: pre-wrap;">${decodeURIComponent(util.inspect(value))}</code>;`,
   )
 
-  eleventyConfig.addCollection("catalog", (collection) =>
+  eleventyConfig.addCollection("catalogue", (collection) =>
     collection
-      .getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md")
+      .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")
       .map(useExternalUrl)
       .sort((a, b) => a.data.title.localeCompare(b.data.title)),
   )
 
-  // Tag-filtered catalog collections
-  eleventyConfig.addCollection("catalogByTag", (collection) => {
-    const catalog = collection
-      .getFilteredByGlob("src/catalog/**/*.md", "!**/index.md", "!**/tags.md")
+  // Tag-filtered catalogue collections
+  eleventyConfig.addCollection("catalogueByTag", (collection) => {
+    const catalogue = collection
+      .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")
       .map(useExternalUrl)
       .sort((a, b) => a.data.title.localeCompare(b.data.title))
 
     const byTag = {}
 
-    catalog.forEach((item) => {
+    catalogue.forEach((item) => {
       if (item.data.tags) {
         item.data.tags.forEach((tag) => {
           if (!byTag[tag]) {

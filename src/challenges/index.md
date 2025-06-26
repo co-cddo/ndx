@@ -30,7 +30,7 @@ Government departments are constantly facing complex problems that require innov
 
 1. **Challenge Publication**: Government departments identify and publish specific problems or capability gaps
 2. **Solution Development**: Industry and academic partners review challenges and develop innovative responses
-3. **Campaign Proposals**: Promising solutions can be developed into [kickstarter-style campaigns](/catalog) requiring cross-sector commitment
+3. **Campaign Proposals**: Promising solutions can be developed into [kickstarter-style campaigns](/catalogue) requiring cross-sector commitment
 4. **Collaborative Implementation**: Successful campaigns receive the support needed to deliver solutions at scale
 
 ## Current Active Challenges
@@ -47,7 +47,7 @@ Each challenge includes detailed problem statements, success criteria, potential
     <h3 class="govuk-notification-banner__heading">
       Challenges can now link directly to campaign products
     </h3>
-    <p class="govuk-body">When you develop a solution to a challenge, you can create a <a class="govuk-notification-banner__link" href="/catalog">kickstarter-style campaign</a> to gather the cross-sector commitment needed for implementation.</p>
+    <p class="govuk-body">When you develop a solution to a challenge, you can create a <a class="govuk-notification-banner__link" href="/catalogue">kickstarter-style campaign</a> to gather the cross-sector commitment needed for implementation.</p>
   </div>
 </div>
 

@@ -12,10 +12,10 @@ Getting started with NDX is a straightforward process designed to ensure secure 
 
 ### **Step 1: Find the Service You Wish to Provision**
 
-- **Browse Services**: Explore our catalog of cloud environments and services available through NDX.
+- **Browse Services**: Explore our catalogue of cloud environments and services available through NDX.
 - **Select a Service**: Identify the cloud service that best fits your organization's needs.
 
-[**View Service Catalog**](/catalog)
+[**View Service Catalog**](/catalogue)
 
 ---
 

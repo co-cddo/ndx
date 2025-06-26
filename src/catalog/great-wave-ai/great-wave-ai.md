@@ -23,6 +23,12 @@ tags:
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {{ govukButton({
+  text: "Demo",
+  href: "https://app.greatwave.ai/chat-agent?agentkey=4840dc7a-a704-46da-921f-aed8bec49a7d&gds=1",
+  isStartButton: true
+}) }}
+</br>
+{{ govukButton({
   text: "Try this now for 24 hours",
   href: "/try/great-wave-ai",
   isStartButton: true

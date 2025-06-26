@@ -60,19 +60,16 @@ We seek innovative AI-powered solutions that can integrate satellite imagery, so
 ### Core Capabilities Needed
 
 1. **Satellite Image Analysis**
-
    - Real-time processing of optical and radar satellite imagery
    - Detection of fish shoals, feeding patterns, and migration routes
    - Integration with ocean temperature, chlorophyll, and current data
 
 2. **AI/ML Integration**
-
    - Machine learning models for fish species identification and counting
    - Predictive analytics for population trends and migration patterns
    - Computer vision for automated analysis of underwater footage
 
 3. **Multi-Source Data Fusion**
-
    - Integration of satellite imagery, sonar data, environmental sensors
    - Fishing vessel AIS tracking and catch reporting systems
    - Weather, temperature, and oceanographic data correlation
@@ -233,13 +230,11 @@ This challenge complements ongoing DEFRA programs including:
 ### Key Technologies
 
 - **Artificial Intelligence**
-
   - Computer vision
   - Machine learning
   - Predictive analytics
 
 - **Satellite Technology**
-
   - Optical imagery analysis
   - Radar data processing
   - Real-time monitoring

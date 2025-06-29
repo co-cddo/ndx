@@ -130,9 +130,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@11ty/eleventy@npm:^3.1.1":
-  version: 3.1.1
-  resolution: "@11ty/eleventy@npm:3.1.1"
+"@11ty/eleventy@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "@11ty/eleventy@npm:3.1.2"
   dependencies:
     "@11ty/dependency-tree": "npm:^4.0.0"
     "@11ty/dependency-tree-esm": "npm:^2.0.0"
@@ -141,13 +141,13 @@ __metadata:
     "@11ty/eleventy-utils": "npm:^2.0.7"
     "@11ty/lodash-custom": "npm:^4.17.21"
     "@11ty/posthtml-urls": "npm:^1.0.1"
-    "@11ty/recursive-copy": "npm:^4.0.1"
+    "@11ty/recursive-copy": "npm:^4.0.2"
     "@sindresorhus/slugify": "npm:^2.2.1"
     bcp-47-normalize: "npm:^2.3.0"
     chokidar: "npm:^3.6.0"
     debug: "npm:^4.4.1"
     dependency-graph: "npm:^1.0.0"
-    entities: "npm:^6.0.0"
+    entities: "npm:^6.0.1"
     filesize: "npm:^10.1.6"
     gray-matter: "npm:^4.0.3"
     iso-639-1: "npm:^3.1.5"
@@ -169,7 +169,7 @@ __metadata:
     tinyglobby: "npm:^0.2.14"
   bin:
     eleventy: cmd.cjs
-  checksum: 10c0/2841b5bd48ddb63b46fd9f98491835fb9cfd49c3220a5d37058216d6755a3a09e809f44ba6dc1d94c14c92a39032112e353bb0859c5561bcc08f26a8c8188402
+  checksum: 10c0/3c1356c5a90e79fb8c481a667cbda892ec60b66be07d9a6a9727616864ddee9df01f5d44a02205002fd0361f1587c682008effc5cbc44ea32611a7b989c7bbaf
   languageName: node
   linkType: hard
 
@@ -201,6 +201,18 @@ __metadata:
     maximatch: "npm:^0.1.0"
     slash: "npm:^3.0.0"
   checksum: 10c0/6b017ca1eab0d1107fdb0d3961f236ffbf04d05340774f10a49519516694b2c3347274aa120a9c47d6f3b726728f7ebcc7ab6638062168213558ac37e593d79f
+  languageName: node
+  linkType: hard
+
+"@11ty/recursive-copy@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "@11ty/recursive-copy@npm:4.0.2"
+  dependencies:
+    errno: "npm:^1.0.0"
+    junk: "npm:^3.1.0"
+    maximatch: "npm:^0.1.0"
+    slash: "npm:^3.0.0"
+  checksum: 10c0/1e912ef3efe2c2caafa946567455b824ac629a7f265943589dfba8386434de2ead5814e82f648550cbee76983a87ca9792b799e46dab178dca4599666b3bfea8
   languageName: node
   linkType: hard
 
@@ -1170,6 +1182,13 @@ __metadata:
   version: 6.0.0
   resolution: "entities@npm:6.0.0"
   checksum: 10c0/b82a7bd5de282860f3c36a91e815e41e874fd036c83956a568b82729678492eb088359d6f7e0a4f5c00776427263fcba04959b8340fefa430c39b9bce770427e
+  languageName: node
+  linkType: hard
+
+"entities@npm:^6.0.1":
+  version: 6.0.1
+  resolution: "entities@npm:6.0.1"
+  checksum: 10c0/ed836ddac5acb34341094eb495185d527bd70e8632b6c0d59548cbfa23defdbae70b96f9a405c82904efa421230b5b3fd2283752447d737beffd3f3e6ee74414
   languageName: node
   linkType: hard
 
@@ -2312,7 +2331,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "ndx@workspace:."
   dependencies:
-    "@11ty/eleventy": "npm:^3.1.1"
+    "@11ty/eleventy": "npm:^3.1.2"
     "@kevingimbel/eleventy-plugin-mermaid": "npm:^3.0.0"
     "@x-govuk/govuk-eleventy-plugin": "npm:^7.0.1"
     husky: "npm:^9.1.7"

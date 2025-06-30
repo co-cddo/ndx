@@ -26,7 +26,7 @@
     "@x-govuk/govuk-eleventy-plugin": "^7.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
-    "prettier": "^3.6.1",
+    "prettier": "^3.6.2",
     "prettier-plugin-sh": "^0.18.0"
   },
   "engines": {

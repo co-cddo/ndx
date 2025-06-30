@@ -1,7 +1,7 @@
 ---
 layout: product
 title: MindWeave Labs SynapLyte™
-description: Transform your organisation's productivity with SynapLyte™ - An advanced AI assistant platform designed specifically for UK public sector needs. <br/><br/>NOTE THIS IS A ENTIRELY FICTIONAL PRODUCT TO DEMONSTRATE THE REVIEWS AND SHARED DUE-DILIGENCE PROCESS.
+description: Transform your organisation's productivity with SynapLyte™ - An advanced AI assistant platform designed specifically for UK public sector needs. <br/><br/>⚠️ NOTE THIS IS A ENTIRELY FICTIONAL PRODUCT TO DEMONSTRATE THE REVIEWS AND SHARED DUE-DILIGENCE PROCESS.
 image:
   src: /assets/catalogue/mindweave-labs/synaplyte-logo.svg
   alt: MindWeave Labs SynapLyte

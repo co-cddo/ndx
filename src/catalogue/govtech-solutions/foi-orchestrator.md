@@ -1,7 +1,7 @@
 ---
 layout: product
 title: GovTech Solutions FOI Orchestrator™
-description: Revolutionary Multi-Agency FOI Request Orchestrator requiring cross-government commitment to justify development. Using AI to centralize, route, and manage Freedom of Information requests across all responsible bodies. <br/><br/><strong>⚠️ CAMPAIGN PRODUCT - REQUIRES MINIMUM 15 AGENCY PLEDGES TO USE IF DEVELOPED</strong>
+description: Revolutionary Multi-Agency FOI Request Orchestrator requiring cross-government interest to justify development. Using AI to centralize, route, and manage Freedom of Information requests across all responsible bodies. <br/><br/><strong>⚠️ CAMPAIGN PRODUCT - REQUIRES MINIMUM 15 AGENCY PLEDGES TO USE IF DEVELOPED</strong>
 image:
   src: /assets/catalogue/govtech-solutions/foi-orchestrator-logo.svg
   alt: GovTech Solutions FOI Orchestrator
@@ -31,17 +31,17 @@ tags:
     <h3 class="govuk-notification-banner__heading">
       This product requires pre-commitment from at least 15 public sector organizations
     </h3>
-    <p class="govuk-body">Development will only proceed with sufficient demonstrated demand. Current commitment status shown below.</p>
+    <p class="govuk-body">Development will only proceed with sufficient demonstrated demand. Current interest status shown below.</p>
   </div>
 </div>
 
 ## Campaign Progress
 
 <div style="background: #f3f2f1; padding: 20px; margin: 20px 0; border-left: 5px solid #1d70b8;">
-  <h3 class="govuk-heading-m">Commitment Barometer</h3>
+  <h3 class="govuk-heading-m">Interest Barometer</h3>
   <div style="background: white; padding: 15px; border-radius: 5px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-      <span class="govuk-body-s"><strong>7 of 15 required commitments</strong></span>
+      <span class="govuk-body-s"><strong>7 of 15 required interests</strong></span>
       <span class="govuk-body-s">47% of target reached</span>
     </div>
     <div style="width: 100%; height: 30px; background: #d4d4d4; border-radius: 15px; overflow: hidden;">
@@ -50,15 +50,15 @@ tags:
       </div>
     </div>
     <div style="margin-top: 15px;">
-      <h4 class="govuk-heading-s">Committed Organizations:</h4>
+      <h4 class="govuk-heading-s">Interested Organizations:</h4>
       <ul class="govuk-list govuk-list--bullet">
-        <li>Cabinet Office (committed)</li>
-        <li>Ministry of Justice (committed)</li>
-        <li>Department for Transport (committed)</li>
-        <li>Birmingham City Council (committed)</li>
-        <li>Manchester City Council (committed)</li>
-        <li>Scottish Government (committed)</li>
-        <li>Welsh Government (committed)</li>
+        <li>Cabinet Office (interested)</li>
+        <li>Ministry of Justice (interested)</li>
+        <li>Department for Transport (interested)</li>
+        <li>Birmingham City Council (interested)</li>
+        <li>Manchester City Council (interested)</li>
+        <li>Scottish Government (interested)</li>
+        <li>Welsh Government (interested)</li>
       </ul>
       <p class="govuk-body-s"><strong>7 of 15 organizations have pledged to use the product if developed</strong></p>
     </div>
@@ -177,16 +177,16 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 - Projected benefits include substantial efficiency gains and cost savings for all participants
 - Early adopters will help shape the final product and receive priority support
 
-## Commitment Requirements
+## Interest Requirements
 
-### Minimum Viable Commitment
+### Minimum Viable Interest
 
-To justify development, we require **15 public sector organizations** to commit to:
+To justify development, we require **15 public sector organizations** to demonstrate interest to:
 
 - **12-month minimum usage** intent
 - **Pledge to use the FOI Orchestrator if developed**
 
-### What Your Commitment Includes
+### What Your Interest Includes
 
 - Early access to the FOI Orchestrator for your organization
 - Integration with existing systems and processes
@@ -221,7 +221,7 @@ To justify development, we require **15 public sector organizations** to commit 
 
 ### Phase 4: Launch (Month 19)
 
-- Go-live for all committed organizations
+- Go-live for all interested organizations
 - Staff training and support
 - Performance monitoring and optimization
 
@@ -253,7 +253,7 @@ To justify development, we require **15 public sector organizations** to commit 
   
   <div class="govuk-form-group">
     <fieldset class="govuk-fieldset">
-      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Commitment Level</legend>
+      <legend class="govuk-fieldset__legend govuk-fieldset__legend--m">Interest Level</legend>
       <div class="govuk-radios">
         <div class="govuk-radios__item">
           <input class="govuk-radios__input" id="commitment-firm" type="radio" name="commitment" value="firm">

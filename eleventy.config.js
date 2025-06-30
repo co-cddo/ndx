@@ -63,7 +63,7 @@ export default function (eleventyConfig) {
       home: "/",
       navigation: [
         { text: "Home", href: "/" },
-        { text: "About", href: "/About/Digital-Backbone/" },
+        // { text: "About", href: "/About/Digital-Backbone/" },
         {
           text: "Discover",
           href: "/discover",

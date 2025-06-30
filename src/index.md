@@ -2,7 +2,7 @@
 homepage: true
 layout: product
 includeInBreadcrumbs: true
-description: Welcome to the next generation of cloud and data sharing.</br></br>Part of the Digital Backbone
+description: Welcome to the next generation of cloud and data sharing.
 image:
   src: /assets/missionbadge.png
   alt: National Digital Exchange Mission Badge

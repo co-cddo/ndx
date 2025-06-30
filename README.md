@@ -61,7 +61,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact
 
 For website-related inquiries, please contact [ndx@digital.cabinet-office.gov.uk](mailto:ndx@digital.cabinet-office.gov.uk).
-
----
-
-For more information about the National Digital Exchange itself, please visit the [About NDX](/About/Digital-Backbone/NDX.md) section of this website.

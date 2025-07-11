@@ -110,15 +110,15 @@ export default function (eleventyConfig) {
 
   eleventyConfig.addFilter("date", (dateValue, format) => {
     const date = new Date(dateValue)
-    
+
     if (format === "d MMMM yyyy") {
       return date.toLocaleDateString("en-GB", {
         day: "numeric",
-        month: "long", 
-        year: "numeric"
+        month: "long",
+        year: "numeric",
       })
     }
-    
+
     // Default format if no specific format provided
     return date.toLocaleDateString("en-GB")
   })

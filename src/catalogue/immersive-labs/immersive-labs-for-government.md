@@ -10,7 +10,7 @@ eleventyNavigation:
 tags:
   - Immersive Labs
   - cybersecurity
-  - training
+  - Training
   - upskilling
   - government
   - security

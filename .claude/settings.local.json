@@ -13,7 +13,8 @@
       "Bash(yarn lint)",
       "Bash(npx prettier:*)",
       "Bash(yarn lint:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": []
   }

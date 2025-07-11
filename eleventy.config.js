@@ -108,6 +108,21 @@ export default function (eleventyConfig) {
     (value) => `<code style="white-space: pre-wrap;">${decodeURIComponent(util.inspect(value))}</code>;`,
   )
 
+  eleventyConfig.addFilter("date", (dateValue, format) => {
+    const date = new Date(dateValue)
+    
+    if (format === "d MMMM yyyy") {
+      return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long", 
+        year: "numeric"
+      })
+    }
+    
+    // Default format if no specific format provided
+    return date.toLocaleDateString("en-GB")
+  })
+
   eleventyConfig.addCollection("catalogue", (collection) =>
     collection
       .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")

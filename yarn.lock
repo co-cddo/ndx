@@ -542,9 +542,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@x-govuk/govuk-eleventy-plugin@npm:^7.1.1":
-  version: 7.1.1
-  resolution: "@x-govuk/govuk-eleventy-plugin@npm:7.1.1"
+"@x-govuk/govuk-eleventy-plugin@npm:^7.2.0":
+  version: 7.2.0
+  resolution: "@x-govuk/govuk-eleventy-plugin@npm:7.2.0"
   dependencies:
     "@11ty/eleventy": "npm:^3.0.0"
     "@11ty/eleventy-navigation": "npm:^1.0.0"
@@ -571,7 +571,7 @@ __metadata:
     rollup: "npm:^4.1.0"
     sass: "npm:^1.45.1"
     smartypants: "npm:^0.2.0"
-  checksum: 10c0/aaf450f9675aebfe147175670fd467a21dc39f384067c1e5b209553894e2e8a7fe617d893511fb7934e20f0a24f36d65659cc4c21c9746bc4b851acf5bf84233
+  checksum: 10c0/07a17c6e99d741e84d0b09dee631ae832dc3ea7b501fdb97f44468b41a036aa3fcad300c6e5893df9ecf9e438797f8336c847e8fa6a45ea804ec5ceb0dff9fc7
   languageName: node
   linkType: hard
 
@@ -2327,7 +2327,7 @@ __metadata:
   dependencies:
     "@11ty/eleventy": "npm:^3.1.2"
     "@kevingimbel/eleventy-plugin-mermaid": "npm:^3.0.0"
-    "@x-govuk/govuk-eleventy-plugin": "npm:^7.1.1"
+    "@x-govuk/govuk-eleventy-plugin": "npm:^7.2.0"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.1.2"
     prettier: "npm:^3.6.2"

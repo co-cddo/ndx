@@ -542,9 +542,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@x-govuk/govuk-eleventy-plugin@npm:^7.2.1":
-  version: 7.2.1
-  resolution: "@x-govuk/govuk-eleventy-plugin@npm:7.2.1"
+"@x-govuk/govuk-eleventy-plugin@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "@x-govuk/govuk-eleventy-plugin@npm:8.0.2"
   dependencies:
     "@11ty/eleventy": "npm:^3.0.0"
     "@11ty/eleventy-navigation": "npm:^1.0.0"
@@ -557,10 +557,12 @@ __metadata:
     govuk-frontend: "npm:^5.11.0"
     markdown-it-abbr: "npm:^2.0.0"
     markdown-it-anchor: "npm:^9.0.0"
+    markdown-it-attribution: "npm:^0.1.4"
     markdown-it-attrs: "npm:^4.3.1"
     markdown-it-deflist: "npm:^3.0.0"
     markdown-it-footnote: "npm:^4.0.0"
-    markdown-it-govuk: "npm:^0.6.0"
+    markdown-it-github-alerts: "npm:^1.0.0"
+    markdown-it-govuk: "npm:^0.7.0"
     markdown-it-image-figures: "npm:^2.0.0"
     markdown-it-ins: "npm:^4.0.0"
     markdown-it-mark: "npm:^4.0.0"
@@ -571,7 +573,7 @@ __metadata:
     rollup: "npm:^4.1.0"
     sass: "npm:^1.45.1"
     smartypants: "npm:^0.2.0"
-  checksum: 10c0/27149adbbdc80809fb6ddb3a99c253bb21f45ac45c0579c9e9a5a7ab798f927c4871099a2e4aab506880a563c20813742f77127249b6cf30ad1ae87b4ddffd07
+  checksum: 10c0/f9bf2ecae989e511e7957244da74d4bd293ecd2e969657c7c3ed827674f602eb7e38b9842244b71696e152b44d202f917f5b136683df6f57b131114c207817fe
   languageName: node
   linkType: hard
 
@@ -2006,6 +2008,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"markdown-it-attribution@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "markdown-it-attribution@npm:0.1.4"
+  checksum: 10c0/3ed79311899cb0908ee01d2ec371c37bdad67fb3ab9a3f8e1806ea52e787d63b5149860c572cab5b7fa33b8fb4d1eb6eef8c581bf7096ee5febf1d0e3f64e310
+  languageName: node
+  linkType: hard
+
 "markdown-it-attrs@npm:^4.3.1":
   version: 4.3.1
   resolution: "markdown-it-attrs@npm:4.3.1"
@@ -2029,12 +2038,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-it-govuk@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "markdown-it-govuk@npm:0.6.0"
+"markdown-it-github-alerts@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "markdown-it-github-alerts@npm:1.0.0"
+  peerDependencies:
+    markdown-it: ">= 13.0.0"
+  checksum: 10c0/2fb2186607bbd8efbafbcda2c79771a3275032710b151f58b6adf23ac3cf3579e626aab66324e4213429573ab7e6ef31a5a374569a8794b1eb318e25ab03a696
+  languageName: node
+  linkType: hard
+
+"markdown-it-govuk@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "markdown-it-govuk@npm:0.7.0"
   dependencies:
     highlight.js: "npm:^11.5.0"
-  checksum: 10c0/6c1f8add1ebfaf325d774b8fb37e7379e3d614266cd6f02144bd2d4a59a2109ddca60bb89f70f16fbb096b14bbfe0ed4387724a17478652cde9ebe0efe012003
+  checksum: 10c0/6166253c479299a8d4c7c0a66b8026e187151e84e2e71f6cdb38f0953976ea4da0949c46f685e29ee038e946fb6347d48dfa699d19adbb48279c493a4141b7d6
   languageName: node
   linkType: hard
 
@@ -2327,7 +2345,7 @@ __metadata:
   dependencies:
     "@11ty/eleventy": "npm:^3.1.2"
     "@kevingimbel/eleventy-plugin-mermaid": "npm:^3.0.0"
-    "@x-govuk/govuk-eleventy-plugin": "npm:^7.2.1"
+    "@x-govuk/govuk-eleventy-plugin": "npm:^8.0.2"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.1.5"
     prettier: "npm:^3.6.2"

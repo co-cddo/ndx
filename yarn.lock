@@ -282,12 +282,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kevingimbel/eleventy-plugin-mermaid@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "@kevingimbel/eleventy-plugin-mermaid@npm:3.0.0"
+"@kevingimbel/eleventy-plugin-mermaid@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "@kevingimbel/eleventy-plugin-mermaid@npm:3.0.1"
   dependencies:
     he: "npm:^1.2.0"
-  checksum: 10c0/bbe4309427e2704a68f55e09d36dddd01f4f725406ba12af043d0b07a1110f8643160fcafc2044e63a1f2968347a7b9e39271f60293d3c30a04cc32724bf7e80
+  checksum: 10c0/55f38e3e58b3eca337b684295e7a05b453985e3d104683802321c8c11c80c209d21d636473c7631d89214dec4c3c2c73928898a90026db2dd005e7de1407abf2
   languageName: node
   linkType: hard
 
@@ -2326,7 +2326,7 @@ __metadata:
   resolution: "ndx@workspace:."
   dependencies:
     "@11ty/eleventy": "npm:^3.1.2"
-    "@kevingimbel/eleventy-plugin-mermaid": "npm:^3.0.0"
+    "@kevingimbel/eleventy-plugin-mermaid": "npm:^3.0.1"
     "@x-govuk/govuk-eleventy-plugin": "npm:^7.2.1"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.1.5"

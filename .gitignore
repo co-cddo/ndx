@@ -15,3 +15,5 @@ _site
 *.css
 .yarn
 .scratchpad.md
+.bmad
+.claude

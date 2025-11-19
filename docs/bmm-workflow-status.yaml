@@ -45,8 +45,8 @@ workflow_status:
   phase_2_solutioning:
     - create-architecture: "docs/infrastructure-architecture.md"
     - create-epics-and-stories-final: "docs/epics.md"
-    - test-design: "recommended"
-    - validate-architecture: "optional"
+    - test-design: "skipped"
+    - validate-architecture: "skipped"
     - implementation-readiness: "docs/implementation-readiness-report.md"
 
   # Phase 3: Implementation

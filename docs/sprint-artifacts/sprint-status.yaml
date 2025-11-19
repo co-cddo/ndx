@@ -1,0 +1,63 @@
+# generated: 2025-11-18
+# project: ndx
+# project_key: ndx
+# tracking_system: file-system
+# story_location: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-18
+project: ndx
+project_key: ndx
+tracking_system: file-system
+story_location: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts
+
+development_status:
+  epic-1: contexted
+  1-1-initialize-cdk-project: done
+  1-2-convert-to-yarn-package-manager: done
+  1-3-configure-eslint-with-aws-cdk-plugin: done
+  1-4-set-up-git-integration: done
+  1-5-bootstrap-cdk-in-aws-account: done
+  1-6-create-initial-infrastructure-readme: done
+  epic-1-retrospective: optional
+
+  epic-2: contexted
+  2-1-validate-s3-bucket-name-availability: done
+  2-2-create-s3-bucket-with-cdk: done
+  2-3-validate-s3-access-pattern-for-mvp: done
+  2-4-deploy-s3-infrastructure-to-aws: done
+  epic-2-retrospective: optional
+
+  epic-3: contexted
+  3-1-create-root-package-json-deploy-script: done
+  3-2-implement-deployment-script-with-error-recovery: done
+  3-3-write-cdk-snapshot-tests: done
+  3-4-write-fine-grained-assertion-tests: backlog
+  3-5-create-integration-test-for-aws-deployment: done
+  3-6-enhance-readme-as-living-document: done
+  3-7-add-post-deployment-smoke-test: done
+  epic-3-retrospective: optional

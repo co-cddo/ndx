@@ -1,0 +1,163 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.5</storyId>
+    <title>Bootstrap CDK in AWS Account</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-5-bootstrap-cdk-in-aws-account.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to bootstrap the AWS CDK in the target AWS account and region</iWant>
+    <soThat>CDK has the necessary staging resources (S3 bucket, IAM roles) to deploy stacks</soThat>
+    <tasks>
+      - Task 1: Verify AWS CLI configuration (verify AWS CLI v2, profile exists, profile access, extract account ID, verify region)
+      - Task 2: Run CDK bootstrap (navigate to /infra, run bootstrap command, monitor output, verify stack creation, document status)
+      - Task 3: Validate CDKToolkit stack (describe stack, verify status, extract outputs, verify SSM parameter, check version compatibility, verify tags)
+      - Task 4: Test CDK deployment readiness (cdk synth, verify template, cdk diff, verify diff completes, document readiness)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">
+      <given>the AWS CLI is configured with NDX/InnovationSandboxHub profile</given>
+      <when>I run cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub</when>
+      <then>CDK bootstrap completes successfully creating: CDK staging S3 bucket (for CloudFormation templates and assets), IAM roles for CloudFormation execution, SSM parameters for bootstrap version</then>
+    </criterion>
+    <criterion id="AC2">
+      <description>Running aws cloudformation describe-stacks --stack-name CDKToolkit --profile NDX/InnovationSandboxHub shows stack exists</description>
+    </criterion>
+    <criterion id="AC3">
+      <description>The bootstrap version is compatible with CDK v2.224.0+</description>
+    </criterion>
+    <criterion id="AC4">
+      <description>Bootstrap resources are tagged with project: ndx-cdk-bootstrap</description>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/prd.md" title="NDX Infrastructure Evolution PRD" section="Infrastructure-Specific Requirements">
+        AWS Resource Configuration specifies deployment profile NDX/InnovationSandboxHub, region us-west-2. FR6 states infrastructure can be deployed to AWS via cdk deploy command (bootstrap is prerequisite).
+      </doc>
+      <doc path="docs/infrastructure-architecture.md" title="NDX Infrastructure Architecture" section="Deployment-Components">
+        Bootstrap is one-time AWS setup creating CDK staging S3 bucket, IAM execution roles, deployment roles, file publishing roles, and SSM parameters. Command: cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub. Resources persist across deployments.
+      </doc>
+      <doc path="docs/infrastructure-architecture.md" title="NDX Infrastructure Architecture" section="Development-Environment">
+        Setup commands include CDK bootstrap as step 7. Verification: aws sts get-caller-identity --profile NDX/InnovationSandboxHub should return account ID and user/role info.
+      </doc>
+      <doc path="docs/epics.md" title="Epic Breakdown" section="Story-1.5">
+        PRE-MORTEM INSIGHT: Bootstrap is one-time AWS setup required before any cdk deploy. Failure to bootstrap causes cryptic "assets bucket not found" errors. Bootstrap creates CDKToolkit CloudFormation stack. Bootstrap resources persist across stack deployments.
+      </doc>
+      <doc path="docs/architecture.md" title="Application Architecture" section="Deployment-Architecture">
+        Brownfield JAMstack application deployed to GitHub Pages. Infrastructure evolution adds AWS CDK for S3 deployment. CDK requires bootstrap before first deployment.
+      </doc>
+      <doc path="docs/sprint-artifacts/1-4-set-up-git-integration.md" title="Story 1.4 Completion" section="Dev-Agent-Record">
+        Previous story completed git configuration for /infra directory. 12 essential files tracked including cdk.json, bin/infra.ts, lib/infra-stack.ts, package.json. Quality gates passing: yarn lint, yarn build, yarn test. CDK project ready for AWS interaction.
+      </doc>
+    </docs>
+    <code>
+      <file path="infra/cdk.json" kind="configuration" symbol="app" lines="2" reason="CDK configuration defines app entry point for bootstrap and deployment operations">
+        Defines CDK app entry point as "npx ts-node --prefer-ts-exts bin/infra.ts". Bootstrap reads this to synthesize CloudFormation templates.
+      </file>
+      <file path="infra/bin/infra.ts" kind="entrypoint" symbol="app" lines="1-21" reason="CDK app entry point that instantiates stacks for bootstrap and deployment">
+        Creates CDK App and instantiates InfraStack. Environment-agnostic by default. Can be specialized for specific account/region if needed.
+      </file>
+      <file path="infra/lib/infra-stack.ts" kind="stack" symbol="InfraStack" lines="1-17" reason="Example stack from cdk init, will be deployed after bootstrap completes">
+        Empty stack class from cdk init. Defines stack structure. Will be populated with S3 bucket in Story 2.2. Bootstrap validates this compiles successfully.
+      </file>
+      <file path="infra/package.json" kind="manifest" symbol="dependencies" lines="26-29" reason="Lists CDK dependencies including aws-cdk-lib version for compatibility check">
+        Dependencies: aws-cdk-lib@2.215.0, constructs@^10.0.0. DevDependencies: aws-cdk@2.1032.0. Bootstrap version must be compatible with aws-cdk-lib version.
+      </file>
+      <file path="infra/tsconfig.json" kind="configuration" symbol="compilerOptions" reason="TypeScript configuration used during bootstrap synthesis">
+        Defines TypeScript compilation settings for CDK stack synthesis during bootstrap.
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <runtime>
+          <package name="aws-cdk-lib" version="2.215.0" />
+          <package name="constructs" version="^10.0.0" />
+        </runtime>
+        <devDependencies>
+          <package name="aws-cdk" version="2.1032.0" />
+          <package name="typescript" version="~5.9.3" />
+          <package name="ts-node" version="^10.9.2" />
+          <package name="jest" version="^29.7.0" />
+          <package name="ts-jest" version="^29.2.5" />
+          <package name="eslint" version="^9.39.1" />
+          <package name="typescript-eslint" version="^8.47.0" />
+          <package name="eslint-plugin-awscdk" version="^4.0.4" />
+        </devDependencies>
+      </node>
+      <aws>
+        <cli version="v2.x" required="true">AWS CLI v2 required for bootstrap command and CloudFormation verification</cli>
+        <profile name="NDX/InnovationSandboxHub" region="us-west-2">Pre-configured AWS profile for deployment. Must have AdministratorAccess or equivalent permissions for bootstrap.</profile>
+      </aws>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="bootstrap-prerequisite">Bootstrap must complete successfully before any cdk deploy command. Failure causes "assets bucket not found" errors.</constraint>
+    <constraint type="one-time-operation">Bootstrap is performed ONCE per AWS account/region combination. Re-running is safe (idempotent) and updates if needed.</constraint>
+    <constraint type="resource-persistence">Bootstrap resources (S3 bucket, IAM roles, SSM parameters) persist indefinitely across stack deployments. Minimal cost (~$0.01/month).</constraint>
+    <constraint type="version-compatibility">Bootstrap version must be compatible with CDK v2.224.0+ (aws-cdk-lib@2.215.0 in package.json).</constraint>
+    <constraint type="permissions-required">AWS profile credentials must have AdministratorAccess or equivalent to create S3 buckets, IAM roles, CloudFormation stacks, and SSM parameters.</constraint>
+    <constraint type="region-specific">Bootstrap is specific to account+region combination. This story bootstraps us-west-2 only.</constraint>
+    <constraint type="quality-gate">After bootstrap, cdk synth and cdk diff must complete successfully to prove CDK → AWS connection is working.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="AWS CLI - get caller identity" kind="cli-command">
+      <signature>aws sts get-caller-identity --profile NDX/InnovationSandboxHub --query Account --output text</signature>
+      <path>AWS CLI command</path>
+      <description>Retrieves AWS account ID needed for bootstrap command. Returns 12-digit account number.</description>
+    </interface>
+    <interface name="CDK Bootstrap" kind="cli-command">
+      <signature>cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub</signature>
+      <path>AWS CDK CLI</path>
+      <description>One-time bootstrap operation creating CDK staging resources. Must be run from /infra directory. Creates CDKToolkit CloudFormation stack.</description>
+    </interface>
+    <interface name="CloudFormation Stack Verification" kind="cli-command">
+      <signature>aws cloudformation describe-stacks --stack-name CDKToolkit --profile NDX/InnovationSandboxHub</signature>
+      <path>AWS CLI command</path>
+      <description>Verifies CDKToolkit stack exists and shows status (CREATE_COMPLETE or UPDATE_COMPLETE). Returns stack outputs including staging bucket name and IAM role ARNs.</description>
+    </interface>
+    <interface name="CDK Synth" kind="cli-command">
+      <signature>cdk synth --profile NDX/InnovationSandboxHub</signature>
+      <path>AWS CDK CLI</path>
+      <description>Synthesizes CloudFormation template from CDK stack. Must complete successfully after bootstrap to prove CDK → AWS connection works.</description>
+    </interface>
+    <interface name="CDK Diff" kind="cli-command">
+      <signature>cdk diff --profile NDX/InnovationSandboxHub</signature>
+      <path>AWS CDK CLI</path>
+      <description>Previews infrastructure changes. Should complete without errors after bootstrap (may show no changes if no stacks deployed yet).</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Bootstrap is validated through AWS CLI commands rather than automated tests. Quality gates: (1) Bootstrap command exits with code 0, (2) CDKToolkit CloudFormation stack has CREATE_COMPLETE status, (3) cdk synth completes successfully, (4) cdk diff completes successfully. No unit/integration tests for bootstrap operation itself.
+    </standards>
+    <locations>
+      N/A - Bootstrap is infrastructure setup operation, not code that requires test files. Validation through CLI commands and CloudFormation stack status checks.
+    </locations>
+    <ideas>
+      <testIdea ac="AC1">Verify aws --version shows AWS CLI v2.x</testIdea>
+      <testIdea ac="AC1">Verify aws configure list-profiles contains NDX/InnovationSandboxHub</testIdea>
+      <testIdea ac="AC1">Verify aws sts get-caller-identity --profile NDX/InnovationSandboxHub returns valid account ID</testIdea>
+      <testIdea ac="AC1">Run cdk bootstrap command and verify exit code 0</testIdea>
+      <testIdea ac="AC1">Check bootstrap output contains "Environment aws://ACCOUNT-ID/us-west-2 bootstrapped" success message</testIdea>
+      <testIdea ac="AC2">Run aws cloudformation describe-stacks --stack-name CDKToolkit and verify StackStatus is CREATE_COMPLETE</testIdea>
+      <testIdea ac="AC2">Verify CDKToolkit stack Outputs include StagingBucket, CloudFormationExecutionRole, DeploymentRole</testIdea>
+      <testIdea ac="AC3">Run aws ssm get-parameter --name /cdk-bootstrap/version and verify version number</testIdea>
+      <testIdea ac="AC3">Compare bootstrap version with aws-cdk-lib@2.215.0 compatibility requirements</testIdea>
+      <testIdea ac="AC4">Run aws cloudformation describe-stacks --stack-name CDKToolkit and check Tags include project: ndx-cdk-bootstrap</testIdea>
+      <testIdea ac="implicit">Run cdk synth --profile NDX/InnovationSandboxHub and verify CloudFormation template generates without errors</testIdea>
+      <testIdea ac="implicit">Run cdk diff --profile NDX/InnovationSandboxHub and verify command completes successfully</testIdea>
+    </ideas>
+  </tests>
+</story-context>

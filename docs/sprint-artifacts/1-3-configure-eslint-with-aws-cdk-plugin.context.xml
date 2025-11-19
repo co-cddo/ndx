@@ -1,0 +1,217 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.3</storyId>
+    <title>Configure ESLint with AWS CDK Plugin</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-3-configure-eslint-with-aws-cdk-plugin.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>ESLint configured with TypeScript and AWS CDK recommended rules</iWant>
+    <soThat>infrastructure code follows best practices and catches common mistakes early</soThat>
+    <tasks>
+      <task id="1" ac="1">
+        <description>Install ESLint dependencies</description>
+        <subtasks>
+          <subtask>Run `yarn add -D eslint @eslint/js typescript-eslint eslint-plugin-awscdk`</subtask>
+          <subtask>Verify all dependencies are added to package.json devDependencies</subtask>
+          <subtask>Verify node_modules contains eslint packages</subtask>
+        </subtasks>
+      </task>
+      <task id="2" ac="1,3,4">
+        <description>Create ESLint flat config file</description>
+        <subtasks>
+          <subtask>Create `eslint.config.mjs` in `/infra` directory</subtask>
+          <subtask>Import required modules: @eslint/js, typescript-eslint, eslint-plugin-awscdk</subtask>
+          <subtask>Configure recommended rules from each plugin</subtask>
+          <subtask>Set parserOptions.project: true and tsconfigRootDir</subtask>
+          <subtask>Add ignores array: node_modules, cdk.out, cdk.context.json, *.js, coverage</subtask>
+        </subtasks>
+      </task>
+      <task id="3" ac="1">
+        <description>Add lint scripts to package.json</description>
+        <subtasks>
+          <subtask>Add "lint": "eslint ." to scripts section</subtask>
+          <subtask>Add "lint:fix": "eslint . --fix" to scripts section</subtask>
+          <subtask>Verify scripts are properly formatted in package.json</subtask>
+        </subtasks>
+      </task>
+      <task id="4" ac="2">
+        <description>Validate ESLint configuration</description>
+        <subtasks>
+          <subtask>Run `yarn lint` in `/infra` directory</subtask>
+          <subtask>Verify command executes without errors</subtask>
+          <subtask>Verify exit code is 0</subtask>
+          <subtask>Verify linting output shows no violations on example stack</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      <given>the CDK project exists with TypeScript</given>
+      <when>I install and configure ESLint</when>
+      <then>ESLint is set up with: Dependencies installed (eslint, typescript-eslint, eslint-plugin-awscdk), eslint.config.mjs created using flat config format (2025 standard), Configuration includes @eslint/js recommended rules, typescript-eslint recommended type-checked rules, eslint-plugin-awscdk recommended rules, package.json has script "lint": "eslint .", package.json has script "lint:fix": "eslint . --fix"</then>
+    </criterion>
+    <criterion id="2">
+      <given>ESLint is configured</given>
+      <when>I run yarn lint on the example stack</when>
+      <then>no errors are shown</then>
+    </criterion>
+    <criterion id="3">
+      <given>ESLint is configured</given>
+      <when>I check parserOptions</when>
+      <then>parserOptions.project references tsconfig.json</then>
+    </criterion>
+    <criterion id="4">
+      <given>ESLint is configured</given>
+      <when>I check ignore patterns</when>
+      <then>ignores include node_modules, cdk.out, cdk.context.json, *.js, coverage</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>ADR-004: Use ESLint Flat Config with AWS CDK Plugin</section>
+        <snippet>Use flat config format (eslint.config.mjs) with eslint-plugin-awscdk. Flat config is 2025 standard. CDK plugin catches infrastructure anti-patterns. Modern TypeScript ESLint support.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>Technology Stack Details - ESLint Configuration</section>
+        <snippet>ESLint 9.x with @eslint/js recommended rules, typescript-eslint for TypeScript-specific linting, eslint-plugin-awscdk for AWS CDK best practices. Flat config format (eslint.config.mjs) is 2025 standard replacing .eslintrc.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Foundation & CDK Setup</title>
+        <section>Data Models and Contracts - ESLint Configuration</section>
+        <snippet>Complete ESLint flat config template provided with imports from @eslint/js, typescript-eslint, and awscdk plugin. Includes recommended configs, type-checked rules, and ignore patterns for CDK artifacts.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.3: Configure ESLint with AWS CDK Plugin</section>
+        <snippet>Complete acceptance criteria and technical notes for ESLint setup. CDK plugin provides CDK-specific best practice rules, catches common CDK anti-patterns, validates construct usage.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Testing & Quality Standards</section>
+        <snippet>FR15: CDK TypeScript code must be linted via ESLint with AWS CDK recommended rules. NFR-MAINT-1: CDK code must pass ESLint with zero errors before deployment.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-2-convert-to-yarn-package-manager.md</path>
+        <title>Story 1.2: Convert to Yarn Package Manager</title>
+        <section>Dev Agent Record - Completion Notes</section>
+        <snippet>Yarn 4.5.0 (Berry) successfully installed. 289 packages installed via Yarn. yarn build compiles TypeScript successfully. yarn test executes Jest successfully. Project structure: /infra is standalone project, not Yarn workspace.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>config</kind>
+        <symbol>scripts, devDependencies</symbol>
+        <lines>5-9, 11-18</lines>
+        <reason>Need to add ESLint dependencies and lint scripts to this file</reason>
+      </artifact>
+      <artifact>
+        <path>infra/tsconfig.json</path>
+        <kind>config</kind>
+        <symbol>compilerOptions</symbol>
+        <lines>1-32</lines>
+        <reason>ESLint parserOptions.project will reference this tsconfig for type-checking</reason>
+      </artifact>
+      <artifact>
+        <path>infra/bin/infra.ts</path>
+        <kind>source</kind>
+        <symbol>CDK app entry point</symbol>
+        <lines>all</lines>
+        <reason>TypeScript file that will be linted by ESLint</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/infra-stack.ts</path>
+        <kind>source</kind>
+        <symbol>InfraStack class</symbol>
+        <lines>all</lines>
+        <reason>Example stack TypeScript file that will be linted by ESLint</reason>
+      </artifact>
+      <artifact>
+        <path>infra/test/infra.test.ts</path>
+        <kind>test</kind>
+        <symbol>Test suite</symbol>
+        <lines>all</lines>
+        <reason>TypeScript test file that will be linted by ESLint</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="aws-cdk-lib" version="2.215.0" type="production" />
+        <package name="constructs" version="^10.0.0" type="production" />
+        <package name="typescript" version="~5.9.3" type="dev" />
+        <package name="ts-node" version="^10.9.2" type="dev" />
+        <package name="jest" version="^29.7.0" type="dev" />
+        <package name="ts-jest" version="^29.2.5" type="dev" />
+        <package name="@types/jest" version="^29.5.14" type="dev" />
+        <package name="@types/node" version="22.7.9" type="dev" />
+        <package name="aws-cdk" version="2.1032.0" type="dev" />
+        <note>Will add: eslint, @eslint/js, typescript-eslint, eslint-plugin-awscdk as devDependencies</note>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use ESLint flat config format (eslint.config.mjs) - this is the 2025 standard, legacy .eslintrc is deprecated</constraint>
+    <constraint>Enable TypeScript type-checked rules via parserOptions.project: true</constraint>
+    <constraint>Use recommended rule configs from all three plugins: @eslint/js, typescript-eslint, eslint-plugin-awscdk</constraint>
+    <constraint>Ignore patterns must exclude build artifacts: node_modules, cdk.out, cdk.context.json, *.js (compiled), coverage</constraint>
+    <constraint>ESLint must pass with zero errors - this is NFR-MAINT-1 requirement</constraint>
+    <constraint>Use Yarn 4.5.0 for installing dependencies (not npm)</constraint>
+    <constraint>Add two scripts to package.json: "lint" for checking and "lint:fix" for auto-fixing</constraint>
+    <constraint>TypeScript compiler strict mode already enabled in tsconfig.json - ESLint will leverage this</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>eslint.config.mjs module exports</name>
+      <kind>ESLint flat config</kind>
+      <signature>export default [ ...config objects ]</signature>
+      <path>infra/eslint.config.mjs</path>
+      <details>ESM module exporting array of config objects with plugins, languageOptions, rules, and ignores</details>
+    </interface>
+    <interface>
+      <name>package.json scripts</name>
+      <kind>npm/yarn scripts</kind>
+      <signature>"lint": "eslint .", "lint:fix": "eslint . --fix"</signature>
+      <path>infra/package.json</path>
+      <details>Scripts section accepts string command definitions executed by yarn</details>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      ESLint validation is part of quality gate for infrastructure code. All TypeScript files in bin/, lib/, and test/ directories must pass linting with zero errors. Exit code 0 required. Linting is static analysis, not runtime testing. Jest is used for runtime tests (separate from linting). NFR-MAINT-1 requires ESLint pass before deployment.
+    </standards>
+    <locations>
+      <location>infra/bin/*.ts - Linted by ESLint</location>
+      <location>infra/lib/*.ts - Linted by ESLint</location>
+      <location>infra/test/*.ts - Linted by ESLint</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Verify ESLint dependencies are installed: check package.json devDependencies includes eslint, @eslint/js, typescript-eslint, eslint-plugin-awscdk</idea>
+      <idea ac="1">Verify eslint.config.mjs exists and contains correct imports and config structure</idea>
+      <idea ac="1">Verify package.json scripts include "lint" and "lint:fix" commands</idea>
+      <idea ac="2">Run `yarn lint` and verify exit code is 0 (no errors)</idea>
+      <idea ac="2">Verify lint output does not show violations on bin/infra.ts, lib/infra-stack.ts, test/infra.test.ts</idea>
+      <idea ac="3">Verify eslint.config.mjs languageOptions.parserOptions.project is set to true</idea>
+      <idea ac="4">Verify eslint.config.mjs ignores array includes all 5 required patterns</idea>
+    </ideas>
+  </tests>
+</story-context>

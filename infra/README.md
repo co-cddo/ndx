@@ -216,7 +216,8 @@ yarn deploy
 4. Only uploads changed files (uses `--exact-timestamps` for efficiency)
 5. Sets cache control headers for future CloudFront optimization
 6. Validates file count matches expected (catches incomplete uploads)
-7. Reports deployment success with file count
+7. **Runs smoke test** to validate critical files exist in bucket
+8. Reports deployment success with file count
 
 **Expected output:**
 
@@ -225,7 +226,11 @@ Deploying to ndx-static-prod...
 upload: _site/index.html to s3://ndx-static-prod/index.html
 upload: _site/catalogue/index.html to s3://ndx-static-prod/catalogue/index.html
 ...
+Running smoke test...
+✓ Smoke test passed: Critical files validated
 ✓ Deployment complete: 165 files uploaded
+
+⚠️  Note: Site not publicly accessible until CloudFront CDN is configured (growth phase)
 ```
 
 ### Verify Deployment
@@ -246,7 +251,21 @@ aws s3 cp s3://ndx-static-prod/index.html /tmp/index.html --profile NDX/Innovati
 cat /tmp/index.html
 ```
 
-**Smoke test validation (Story 3.7):** Post-deployment smoke test will be added in Story 3.7 to automatically validate file presence and report deployment status.
+**Automated smoke test validation:**
+
+The deployment script includes post-deployment validation that checks critical files exist in the S3 bucket:
+
+- **index.html** (required): Deployment fails if missing with actionable error message
+- **assets/css/globus.css** (optional): Warning if missing, deployment continues
+- **assets/css/govuk-frontend.min.css** (optional): Warning if missing, deployment continues
+- **assets/js/** directory (optional): Warning if missing, deployment continues
+
+**Smoke test behavior:**
+- Runs automatically after file sync completes
+- Uses `aws s3 ls` to validate file existence (not HTTP requests, due to BLOCK_ALL configuration)
+- Deployment reports success only if smoke test passes
+- Provides actionable error messages: "Error: index.html not found in bucket. Run 'yarn build' and retry."
+- Outputs message: "Site not publicly accessible until CloudFront CDN is configured (growth phase)"
 
 ### Access Pattern
 

@@ -25,7 +25,7 @@ workflow_path: ".bmad/bmm/workflows/workflow-status/paths/method-brownfield.yaml
 workflow_status:
   # Prerequisite Phase - Documentation (if needed)
   prerequisite:
-    - document-project: "required"  # conditional: if_undocumented
+    - document-project: "docs/index.md"  # conditional: if_undocumented
 
   # Phase 0: Discovery (Optional)
   phase_0_discovery:
@@ -35,7 +35,7 @@ workflow_status:
 
   # Phase 1: Planning
   phase_1_planning:
-    - prd: "required"
+    - prd: "docs/prd.md"
     - validate-prd: "optional"
     - create-epics-and-stories: "optional"  # Early epic breakdown
     - create-design: "conditional"  # if_has_ui
@@ -43,12 +43,12 @@ workflow_status:
 
   # Phase 2: Solutioning
   phase_2_solutioning:
-    - create-architecture: "recommended"
-    - create-epics-and-stories-final: "required"
+    - create-architecture: "docs/infrastructure-architecture.md"
+    - create-epics-and-stories-final: "docs/epics.md"
     - test-design: "recommended"
     - validate-architecture: "optional"
-    - implementation-readiness: "required"
+    - implementation-readiness: "docs/implementation-readiness-report.md"
 
   # Phase 3: Implementation
   phase_3_implementation:
-    - sprint-planning: "required"
+    - sprint-planning: "docs/sprint-artifacts/sprint-status.yaml"

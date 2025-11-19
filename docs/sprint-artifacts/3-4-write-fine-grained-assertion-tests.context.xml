@@ -1,0 +1,161 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.4</storyId>
+    <title>Write Fine-Grained Assertion Tests</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-4-write-fine-grained-assertion-tests.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>specific assertion tests for critical S3 bucket properties</iWant>
+    <soThat>security and configuration requirements are explicitly validated</soThat>
+    <tasks>
+      - Task 1: Add fine-grained assertion test to existing test file (AC: #1, #2)
+        - Open infra/lib/ndx-stack.test.ts for editing
+        - Add new test case: 'S3 bucket has correct configuration'
+        - Create app and stack instances within test
+        - Use Template.fromStack() to extract CloudFormation
+        - Use template.hasResourceProperties() for S3 bucket validation
+        - Validate bucket name property
+        - Validate encryption configuration (SSE-S3, AES256)
+        - Validate versioning configuration (Status: Enabled)
+        - Validate public access block configuration (all 4 settings true)
+        - Validate tags array (project, environment, managedby)
+
+      - Task 2: Run tests and validate assertion behavior (AC: #2, #3)
+        - Run yarn test in infra directory
+        - Verify all assertion tests pass
+        - Verify test count increases (snapshot + assertion tests)
+        - Make intentional property change (e.g., disable versioning)
+        - Run yarn test again, verify test fails
+        - Confirm error message identifies specific failing property
+        - Revert change to restore passing state
+
+      - Task 3: Validate NFR requirement coverage (AC: #4)
+        - Verify encryption assertion covers NFR-SEC-2
+        - Verify public access block assertion covers NFR-SEC-1
+        - Verify versioning assertion covers FR22
+        - Verify tags assertion covers NFR-OPS-4
+        - Document which assertions map to which requirements
+        - Ensure all security-critical properties explicitly validated
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC1: Test file includes fine-grained assertions with template.hasResourceProperties() validating BucketName, BucketEncryption (SSE-S3 AES256), VersioningConfiguration (Enabled), PublicAccessBlockConfiguration (all 4 settings true), and Tags (project, environment, managedby)
+
+    AC2: Running yarn test validates all properties pass
+
+    AC3: Test failure clearly identifies which property is incorrect
+
+    AC4: Tests validate NFR requirements - Encryption enabled (NFR-SEC-2), Public access blocked (NFR-SEC-1), Versioning enabled (FR22), Tags present (NFR-OPS-4)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Testing Patterns - Fine-grained Assertion Example</section>
+        <snippet>Fine-grained assertion example showing template.hasResourceProperties() usage to validate S3 bucket configuration including encryption (AES256), versioning (Enabled), public access block (all 4 settings true), and tags. Tests use Template.fromStack() to extract CloudFormation template for validation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Deployment Automation &amp; Documentation</title>
+        <section>AC3: CDK Fine-Grained Assertions</section>
+        <snippet>Assertion tests validate: S3 bucket name ndx-static-prod, Encryption SSE-S3 enabled (AES256), Versioning Enabled, Public access all 4 settings blocked, Tags project=ndx/environment=prod/managedby=cdk. All security properties match NFR requirements.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Story 3.4: Write Fine-Grained Assertion Tests</section>
+        <snippet>Fine-grained assertions complement snapshots. Explicit validation of security-critical properties. CDK assertions library Template.hasResourceProperties() validates bucket name, encryption, versioning, public access block, tags. Tests fail early if security requirements violated.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>infra/lib/ndx-stack.test.ts</path>
+        <kind>test</kind>
+        <symbol>snapshot test</symbol>
+        <lines>1-12</lines>
+        <reason>Existing test file from Story 3.3 - ADD fine-grained assertion test to this same file. Already imports Template from aws-cdk-lib/assertions, cdk, and NdxStaticStack. Do NOT create new file.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>5-34</lines>
+        <reason>CDK stack being tested. Contains S3 bucket with encryption (S3_MANAGED), versioning (true), public access (BLOCK_ALL), tags (project/environment/managedby). These are the properties to validate in assertions.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <production>
+          <package name="aws-cdk-lib" version="2.215.0" note="CDK core library - Template.hasResourceProperties() in aws-cdk-lib/assertions" />
+          <package name="constructs" version="^10.0.0" note="CDK construct framework" />
+        </production>
+        <development>
+          <package name="jest" version="^29.7.0" note="Testing framework for assertions" />
+          <package name="ts-jest" version="^29.2.5" note="Jest TypeScript support" />
+          <package name="typescript" version="~5.9.3" note="TypeScript compiler" />
+          <package name="@types/jest" version="^29.5.14" note="Jest TypeScript types" />
+        </development>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - CRITICAL: Edit existing infra/lib/ndx-stack.test.ts file - DO NOT create new test file
+    - Add assertion test alongside existing snapshot test in same file
+    - Use Template.hasResourceProperties() API from aws-cdk-lib/assertions
+    - Validate exact property structure matching CloudFormation resource properties
+    - Test must validate ALL security-critical properties: encryption, versioning, public access, tags
+    - Follow co-location pattern (ADR-005): tests live with stack source in lib/
+    - Test naming: Use descriptive name like "S3 bucket has correct configuration"
+    - Encryption validation: BucketEncryption.ServerSideEncryptionConfiguration[0].ServerSideEncryptionByDefault.SSEAlgorithm = 'AES256'
+    - Versioning validation: VersioningConfiguration.Status = 'Enabled'
+    - Public access validation: PublicAccessBlockConfiguration with all 4 settings (BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets) = true
+    - Tags validation: Tags array with Key/Value pairs for project=ndx, environment=prod, managedby=cdk
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Template.hasResourceProperties</name>
+      <kind>CDK Assertions API</kind>
+      <signature>template.hasResourceProperties(resourceType: string, properties: object): void</signature>
+      <path>aws-cdk-lib/assertions</path>
+      <usage>Validates CloudFormation resource has specific properties. First parameter is resource type (e.g., 'AWS::S3::Bucket'), second is object with expected property values. Test fails if properties don't match.</usage>
+    </interface>
+    <interface>
+      <name>Template.fromStack</name>
+      <kind>CDK Assertions API</kind>
+      <signature>Template.fromStack(stack: cdk.Stack): Template</signature>
+      <path>aws-cdk-lib/assertions</path>
+      <usage>Extracts CloudFormation template from CDK stack for validation. Returns Template object with assertion methods like hasResourceProperties().</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use Jest testing framework with aws-cdk-lib/assertions library. Tests co-located in lib/ directory per ADR-005. Create app and stack instances in each test. Use Template.fromStack() to extract CloudFormation. Use template.hasResourceProperties() for property validation. Run tests via 'yarn test' in infra directory. All tests must pass before deployment.
+    </standards>
+
+    <locations>
+      infra/lib/*.test.ts (co-located with stack source)
+      infra/lib/__snapshots__/ (Jest snapshot files)
+    </locations>
+
+    <ideas>
+      - AC1: Test 'S3 bucket has correct configuration' using hasResourceProperties() to validate bucket name, encryption config, versioning config, public access block, and tags
+      - AC2: Verify test execution passes with current stack configuration
+      - AC3: Test failure detection by intentionally breaking a property (e.g., change versioning to false) and confirming clear error message
+      - AC4: Map assertions to requirements - encryption->NFR-SEC-2, public access->NFR-SEC-1, versioning->FR22, tags->NFR-OPS-4
+    </ideas>
+  </tests>
+</story-context>

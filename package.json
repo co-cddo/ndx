@@ -8,6 +8,7 @@
   "scripts": {
     "start": "rm -r _site ; eleventy --serve",
     "build": "eleventy",
+    "deploy": "scripts/deploy.sh",
     "lint": "prettier -c .",
     "prepare": "husky"
   },

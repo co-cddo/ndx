@@ -1,0 +1,208 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>6</storyId>
+    <title>Create Initial Infrastructure README</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-6-create-initial-infrastructure-readme.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>a `/infra/README.md` documenting setup and deployment processes</iWant>
+    <soThat>team members can understand and execute infrastructure operations</soThat>
+    <tasks>
+      - Task 1: Create README with Overview and Prerequisites sections
+      - Task 2: Document initial setup process
+      - Task 3: Document development workflow
+      - Task 4: Add troubleshooting section
+      - Task 5: Validate README quality
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. README includes Overview section (project name, purpose, architecture link, version/date)
+    2. README includes Prerequisites section (Node.js 20.17.0+, Yarn 4.5.0+, AWS CLI v2.x, profile verification)
+    3. README includes Initial Setup section (bootstrap, yarn install, yarn build)
+    4. README includes Development Workflow section (test, lint, diff, deploy commands with profile)
+    5. README includes Troubleshooting section (common errors, CloudFormation events link)
+    6. README follows CommonMark format
+    7. Code blocks use proper syntax highlighting
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Development Environment</section>
+        <snippet>Provides prerequisites (Node.js 20.17.0+, Yarn 4.5.0+, AWS CLI v2.x), setup commands including bootstrap, and daily development workflow commands. Complete documentation structure template.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Deployment Components</section>
+        <snippet>Documents CDK bootstrap command format, one-time AWS setup creating staging S3 bucket and IAM roles. Bootstrap is prerequisite for all CDK deployments.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Project Structure</section>
+        <snippet>Shows complete project structure with /infra directory containing README.md, bin/, lib/, cdk.json, package.json. README links to architecture doc.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Story 1.6</section>
+        <snippet>Living document approach with version/date tracking. Initial version 1.0, will be enhanced in Epic 3 Story 3.6. Includes complete acceptance criteria and troubleshooting scenarios.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Documentation & Maintainability</section>
+        <snippet>FR18: Infrastructure setup documented in /infra/README.md. FR19: Deployment workflow documented. NFR-MAINT-5: Complete setup instructions for team onboarding.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-5-bootstrap-cdk-in-aws-account.md</path>
+        <title>Story 1.5: Bootstrap CDK in AWS Account</title>
+        <section>Completion Notes</section>
+        <snippet>Bootstrap completed for account 568672915267 in us-west-2. CDKToolkit stack created, version 29 compatible with CDK v2.224.0+. All quality gates passing.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>infra/cdk.json</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>CDK configuration file referenced in README setup documentation</reason>
+      </file>
+      <file>
+        <path>infra/bin/infra.ts</path>
+        <kind>entrypoint</kind>
+        <symbol>N/A</symbol>
+        <reason>CDK app entry point, part of project structure documented in README</reason>
+      </file>
+      <file>
+        <path>infra/lib/infra-stack.ts</path>
+        <kind>stack</kind>
+        <symbol>InfraStack</symbol>
+        <lines>all</lines>
+        <reason>Example stack from cdk init, referenced in README as current infrastructure</reason>
+      </file>
+      <file>
+        <path>infra/package.json</path>
+        <kind>manifest</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>Contains CDK dependencies and scripts documented in README development workflow</reason>
+      </file>
+      <file>
+        <path>infra/tsconfig.json</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>TypeScript configuration for CDK project, part of setup</reason>
+      </file>
+      <file>
+        <path>infra/eslint.config.mjs</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>ESLint flat config with AWS CDK plugin, part of development workflow</reason>
+      </file>
+    </code>
+    <dependencies>
+      <nodejs>
+        <package name="@11ty/eleventy" version="^3.1.2" scope="root" />
+        <package name="@x-govuk/govuk-eleventy-plugin" version="^7.2.1" scope="root" />
+        <package name="aws-cdk-lib" version="2.215.0" scope="infra" />
+        <package name="constructs" version="^10.0.0" scope="infra" />
+        <package name="aws-cdk" version="2.1032.0" scope="infra-dev" />
+        <package name="typescript" version="~5.9.3" scope="infra-dev" />
+        <package name="jest" version="^29.7.0" scope="infra-dev" />
+        <package name="eslint" version="^9.39.1" scope="infra-dev" />
+        <package name="eslint-plugin-awscdk" version="^4.0.4" scope="infra-dev" />
+        <package name="typescript-eslint" version="^8.47.0" scope="infra-dev" />
+      </nodejs>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Documentation as living document: Must include version and last updated date for tracking changes
+    - Initial version 1.0 created in this story, will be enhanced in Epic 3 Story 3.6
+    - All AWS profile references must use "NDX/InnovationSandboxHub"
+    - All code blocks must have proper syntax highlighting (bash, typescript, json)
+    - README must follow CommonMark format for GitHub rendering
+    - Bootstrap is one-time operation already completed (account 568672915267, us-west-2)
+    - Document real account ID in bootstrap examples, not placeholder
+    - Link to docs/infrastructure-architecture.md for detailed architectural decisions
+    - All commands must be tested and accurate
+    - No broken references or placeholders in final version
+  </constraints>
+
+  <interfaces>
+    <command>
+      <name>aws sts get-caller-identity</name>
+      <kind>AWS CLI command</kind>
+      <signature>aws sts get-caller-identity --profile NDX/InnovationSandboxHub</signature>
+      <path>N/A</path>
+    </command>
+    <command>
+      <name>cdk bootstrap</name>
+      <kind>CDK CLI command</kind>
+      <signature>cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub</signature>
+      <path>N/A</path>
+    </command>
+    <command>
+      <name>cdk diff</name>
+      <kind>CDK CLI command</kind>
+      <signature>cdk diff --profile NDX/InnovationSandboxHub</signature>
+      <path>infra/</path>
+    </command>
+    <command>
+      <name>cdk deploy</name>
+      <kind>CDK CLI command</kind>
+      <signature>cdk deploy --profile NDX/InnovationSandboxHub</signature>
+      <path>infra/</path>
+    </command>
+    <command>
+      <name>yarn test</name>
+      <kind>npm script</kind>
+      <signature>yarn test</signature>
+      <path>infra/</path>
+    </command>
+    <command>
+      <name>yarn lint</name>
+      <kind>npm script</kind>
+      <signature>yarn lint</signature>
+      <path>infra/</path>
+    </command>
+    <command>
+      <name>yarn build</name>
+      <kind>npm script</kind>
+      <signature>yarn build</signature>
+      <path>infra/</path>
+    </command>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Documentation quality standards per FR18, FR19, NFR-MAINT-5: README must render correctly in GitHub, all commands execute successfully when followed step-by-step, all links resolve, no broken references. CommonMark format compliance required.
+    </standards>
+    <locations>
+      No automated tests for README documentation. Manual validation by executing all documented commands and verifying links.
+    </locations>
+    <ideas>
+      - AC#1: Verify Overview section includes project name, purpose, architecture link, version 1.0, date 2025-11-18
+      - AC#2: Verify Prerequisites lists Node.js 20.17.0+, Yarn 4.5.0+, AWS CLI v2.x, profile verification command
+      - AC#3: Verify Initial Setup documents bootstrap with account 568672915267, yarn install, yarn build
+      - AC#4: Verify Development Workflow documents yarn test, yarn lint, cdk diff, cdk deploy with correct profile
+      - AC#5: Verify Troubleshooting includes common errors from Story 1.5 and CloudFormation events link
+      - AC#6: Validate CommonMark format using markdown linter or GitHub preview
+      - AC#7: Verify all code blocks have syntax highlighting (bash, typescript, json)
+    </ideas>
+  </tests>
+</story-context>

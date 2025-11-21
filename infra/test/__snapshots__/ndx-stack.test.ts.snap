@@ -149,6 +149,15 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
       "Description": "CloudFront Distribution ID",
       "Value": "E3THG4UHYDHVWP",
     },
+    "CookieRouterFunctionArn": {
+      "Description": "ARN of CloudFront cookie router function",
+      "Value": {
+        "Fn::GetAtt": [
+          "CookieRouterFunction6BEF430A",
+          "FunctionARN",
+        ],
+      },
+    },
     "OriginId": {
       "Description": "Origin ID added to CloudFront distribution",
       "Value": "ndx-static-prod-origin",
@@ -165,6 +174,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
     "AddCloudFrontOrigin": {
       "DeletionPolicy": "Delete",
       "DependsOn": [
+        "StaticSiteBucketPolicy54AA1C72",
         "StaticSiteBucket8958EE3F",
       ],
       "Properties": {
@@ -415,6 +425,102 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
       },
       "Type": "AWS::IAM::Policy",
     },
+    "ConfigureCacheBehavior": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AddCloudFrontOrigin",
+        "CookieRouterFunction6BEF430A",
+        "NdxCookieRoutingPolicy99C7239B",
+      ],
+      "Properties": {
+        "CachePolicyId": {
+          "Ref": "NdxCookieRoutingPolicy99C7239B",
+        },
+        "DistributionId": "E3THG4UHYDHVWP",
+        "FunctionArn": {
+          "Fn::GetAtt": [
+            "CookieRouterFunction6BEF430A",
+            "FunctionARN",
+          ],
+        },
+        "FunctionEventType": "viewer-request",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CookieRouterFunction6BEF430A": {
+      "Properties": {
+        "AutoPublish": true,
+        "FunctionCode": "import cf from 'cloudfront';
+
+function handler(event) {
+  var request = event.request;
+  var cookies = request.cookies;
+
+  // Route to new origin if NDX=true (exact match, case-sensitive)
+  // Check if NDX cookie exists and has value 'true'
+  var ndxCookie = cookies['NDX'];
+
+  if (ndxCookie && ndxCookie.value === 'true') {
+    // Update origin to ndx-static-prod with OAC authentication
+    cf.updateRequestOrigin({
+      domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
+      originAccessControlConfig: {
+        enabled: true,
+        region: 'us-west-2',
+        signingBehavior: 'always',
+        signingProtocol: 'sigv4',
+        originType: 's3'
+      }
+    });
+  }
+  // Else: use default cache behavior origin (S3Origin)
+
+  return request;
+}
+",
+        "FunctionConfig": {
+          "Comment": "Routes requests based on NDX cookie value",
+          "Runtime": "cloudfront-js-2.0",
+        },
+        "Name": "ndx-cookie-router",
+      },
+      "Type": "AWS::CloudFront::Function",
+    },
+    "NdxCookieRoutingPolicy99C7239B": {
+      "Properties": {
+        "CachePolicyConfig": {
+          "Comment": "Cache policy for NDX cookie-based routing",
+          "DefaultTTL": 86400,
+          "MaxTTL": 31536000,
+          "MinTTL": 1,
+          "Name": "NdxCookieRoutingPolicy",
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "CookiesConfig": {
+              "CookieBehavior": "whitelist",
+              "Cookies": [
+                "NDX",
+              ],
+            },
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": {
+              "HeaderBehavior": "none",
+            },
+            "QueryStringsConfig": {
+              "QueryStringBehavior": "all",
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::CachePolicy",
+    },
     "StaticSiteBucket8958EE3F": {
       "DeletionPolicy": "Retain",
       "Properties": {
@@ -454,6 +560,57 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
       },
       "Type": "AWS::S3::Bucket",
       "UpdateReplacePolicy": "Retain",
+    },
+    "StaticSiteBucketPolicy54AA1C72": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "StaticSiteBucket8958EE3F",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:cloudfront::",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":distribution/E3THG4UHYDHVWP",
+                      ],
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "StaticSiteBucket8958EE3F",
+                        "Arn",
+                      ],
+                    },
+                    "/*",
+                  ],
+                ],
+              },
+              "Sid": "AllowCloudFrontServicePrincipal",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
     },
   },
   "Rules": {

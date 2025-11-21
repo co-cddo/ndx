@@ -1,7 +1,15 @@
-*.js
-!jest.config.js
-*.d.ts
-node_modules
+# Compiled JavaScript/TypeScript artifacts
+lib/**/*.js
+lib/**/*.d.ts
+lib/**/*.js.map
+!lib/functions/cookie-router.js  # This is source code, not compiled
+
+test/**/*.js
+test/**/*.d.ts
+test/**/*.js.map
+
+# Build output
+*.js.map
 
 # CDK asset staging directory
 .cdk.staging
@@ -10,6 +18,14 @@ cdk.context.json
 
 # Test coverage
 coverage
+.nyc_output
+*.log
+
+# Verification reports (temporary)
+VERIFICATION-REPORT.md
+
+# Node modules
+node_modules
 
 # macOS
 .DS_Store

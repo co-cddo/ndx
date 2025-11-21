@@ -1,0 +1,258 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>2</storyId>
+    <title>Write Fine-Grained Assertion Tests for Critical Properties</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-21</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-2-write-fine-grained-assertion-tests-for-critical-properties.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>specific assertion tests for security-critical and routing-critical properties</iWant>
+    <soThat>requirements are explicitly validated and violations caught early</soThat>
+    <tasks>
+      - [ ] Task 1: Add assertion tests for new S3 origin (AC: #1)
+      - [ ] Task 2: Add assertion tests for existing origin preservation (AC: #2)
+      - [ ] Task 3: Add assertion tests for CloudFront Function (AC: #3)
+      - [ ] Task 4: Add assertion tests for Cache Policy (AC: #4)
+      - [ ] Task 5: Add assertion tests for function attachment (AC: #5)
+      - [ ] Task 6: Run tests and validate quality (AC: #6)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC-3.2.1: New S3 Origin Validation
+    - Test validates 'ndx-static-prod-origin' exists in Origins array
+    - Test validates S3OriginConfig with empty OriginAccessIdentity (uses OAC)
+    - Test validates OriginAccessControlId = 'E3P8MA1G9Y5BYE'
+    - Test validates DomainName matches S3 bucket
+
+    AC-3.2.2: Existing Origin Preservation
+    - Test validates API Gateway origin exists and unchanged
+    - Test validates exact DomainName, OriginPath values match pre-Epic-2 state
+    - Test validates existing S3 origin unchanged (if applicable)
+    - Test explicitly validates origin count = 3 (no accidental additions/deletions)
+
+    AC-3.2.3: CloudFront Function Validation
+    - Test validates CloudFront Function resource exists
+    - Test validates FunctionConfig.Runtime = 'cloudfront-js-2.0'
+    - Test validates FunctionCode contains cookie routing logic
+    - Test validates Name = 'ndx-cookie-router'
+
+    AC-3.2.4: Cache Policy Validation
+    - Test validates CachePolicy resource exists
+    - Test validates CookiesConfig.CookieBehavior = 'whitelist'
+    - Test validates Cookies array contains 'NDX'
+    - Test validates Name = 'NdxCookieRoutingPolicy'
+
+    AC-3.2.5: Function Attachment Validation
+    - Test validates DefaultCacheBehavior has FunctionAssociations
+    - Test validates EventType = 'viewer-request'
+    - Test validates FunctionARN references ndx-cookie-router function
+    - Test validates CachePolicyId references NdxCookieRoutingPolicy
+
+    AC-3.2.6: Test Documentation and Quality
+    - Each test has comment explaining WHAT and WHY
+    - Test names are descriptive
+    - Tests pass ESLint validation (zero errors)
+    - Tests use config-driven values, not hard-coded (where applicable)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- PRD: Security and routing requirements -->
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX CloudFront Origin Routing - Product Requirements Document</title>
+        <section>Non-Functional Requirements - Security</section>
+        <snippet>NFR-SEC-1: New S3 origin must use same Origin Access Control security model as existing S3Origin. NFR-SEC-3: CDK code must not contain hardcoded distribution IDs or sensitive configuration (use parameters/context).</snippet>
+      </doc>
+
+      <!-- Architecture: Testing strategy and patterns -->
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>NDX CloudFront Origin Routing - Architecture</title>
+        <section>ADR-005: Complete Testing Pyramid</section>
+        <snippet>Decision: Implement complete testing pyramid with CDK fine-grained assertions for critical properties. Rationale: Critical property validation (assertions verify requirements), explicit validation of security-critical properties (OAC, origins, function).</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>NDX CloudFront Origin Routing - Architecture</title>
+        <section>Testing Patterns</section>
+        <snippet>CDK Fine-Grained Assertions pattern uses Template.hasResourceProperties() with Match.objectLike() for partial matching. Tests should validate specific security properties like OriginAccessControlId, origin count, and function attachment configuration.</snippet>
+      </doc>
+
+      <!-- Tech Spec: Story 3.2 details -->
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Testing, Validation & Operational Readiness</title>
+        <section>Story 3.2: Fine-Grained Assertion Tests</section>
+        <snippet>Fine-grained assertions complement snapshots by explicitly validating requirements. Assertions test security-critical properties (OAC, origins), more maintainable than snapshot-only (clearly documents requirements), tests fail early if requirements violated. Use CDK assertions library Template.hasResourceProperties() with Match.arrayWith() and Match.objectContaining() for flexible matching.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Testing, Validation & Operational Readiness</title>
+        <section>Acceptance Criteria AC-3.2.1 through AC-3.2.6</section>
+        <snippet>Story 3.2 acceptance criteria define 6 areas: new S3 origin validation (OAC E3P8MA1G9Y5BYE), existing origin preservation (API Gateway unchanged, origin count = 3), CloudFront Function validation (runtime cloudfront-js-2.0, name ndx-cookie-router), Cache Policy validation (whitelist NDX cookie), function attachment validation (viewer-request event type), and test quality (WHAT/WHY comments, descriptive names, ESLint passing).</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- Existing CDK Stack -->
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>CDK Stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>12-209</lines>
+        <reason>Main CDK stack that defines all CloudFront resources. Tests validate CloudFormation template generated from this stack. Key resources: Custom Resources for origin/cache config, CloudFront Function (ndx-cookie-router), Cache Policy (NdxCookieRoutingPolicy), S3 bucket with OAC.</reason>
+      </artifact>
+
+      <!-- Existing Test File (Story 3.1 snapshot tests) -->
+      <artifact>
+        <path>infra/test/ndx-stack.test.ts</path>
+        <kind>Test File</kind>
+        <symbol>describe('NdxStaticStack')</symbol>
+        <lines>1-155</lines>
+        <reason>Existing test file from Story 3.1 with snapshot test. Story 3.2 adds fine-grained assertion tests to same file. Current tests show pattern: Template.fromStack(), template.hasResourceProperties(), and Match.* matchers. Tests already organized in describe blocks for security and routing.</reason>
+      </artifact>
+
+      <!-- CloudFront Function Code -->
+      <artifact>
+        <path>infra/lib/functions/cookie-router.js</path>
+        <kind>CloudFront Function</kind>
+        <symbol>handler</symbol>
+        <lines>N/A</lines>
+        <reason>Cookie routing logic deployed as CloudFront Function. AC-3.2.3 validates this function's CloudFormation properties (runtime, name, code content). Tests check FunctionCode contains 'NDX' and 'cookie' keywords.</reason>
+      </artifact>
+
+      <!-- Snapshot File -->
+      <artifact>
+        <path>infra/test/__snapshots__/ndx-stack.test.ts.snap</path>
+        <kind>Snapshot</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Reference for CloudFormation structure. Use to understand resource shapes when writing assertions. Contains complete template with Distribution, Function, CachePolicy, Custom Resources, Lambda, IAM.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="aws-cdk-lib" version="2.215.0" type="production">Core CDK library</package>
+        <package name="constructs" version="^10.0.0" type="production">CDK construct framework</package>
+        <package name="jest" version="^29.7.0" type="development">Testing framework for assertion tests</package>
+        <package name="@types/jest" version="^29.5.14" type="development">Jest TypeScript types</package>
+        <package name="ts-jest" version="^29.2.5" type="development">Jest TypeScript support</package>
+        <package name="typescript" version="~5.9.3" type="development">TypeScript compiler</package>
+        <package name="eslint" version="^9.39.1" type="development">Linter for test quality validation (AC-3.2.6)</package>
+        <package name="typescript-eslint" version="^8.47.0" type="development">ESLint TypeScript integration</package>
+        <package name="eslint-plugin-awscdk" version="^4.0.4" type="development">AWS CDK best practice rules</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    1. Tests must be added to existing file infra/test/ndx-stack.test.ts (do not create new test file)
+    2. Tests must use aws-cdk-lib/assertions library (Template, Match)
+    3. Tests must validate CDK-created resources, not runtime CloudFront distribution (stack uses Custom Resources)
+    4. Origin validation tests check Custom Resource properties, not CloudFormation Distribution.Origins array directly
+    5. Use Match.objectLike() for partial matching, Match.arrayWith() for array contents
+    6. All assertion test names must be descriptive and explain validation purpose
+    7. Every test requires WHAT and WHY comments explaining validation and requirement reference
+    8. Tests must pass ESLint with zero errors (yarn lint)
+    9. CRITICAL: Always run 'yarn build' before 'yarn test' (tests execute against compiled JS in lib/ directory)
+    10. Test organization: Add new tests in existing describe('Security-critical properties') and describe('Routing functionality') blocks
+    11. Hard-coded values only for known constants: distribution ID 'E3THG4UHYDHVWP', OAC ID 'E3P8MA1G9Y5BYE', account '568672915267'
+    12. Origin count validation accounts for Custom Resource architecture (not standard CloudFront Distribution resource)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Template.hasResourceProperties</name>
+      <kind>CDK Assertions API</kind>
+      <signature>template.hasResourceProperties(resourceType: string, props: any)</signature>
+      <path>aws-cdk-lib/assertions</path>
+      <description>Validates CloudFormation resource properties match expected shape. Throws if resource not found or properties don't match.</description>
+    </interface>
+
+    <interface>
+      <name>Template.findResources</name>
+      <kind>CDK Assertions API</kind>
+      <signature>template.findResources(resourceType: string, props?: any): {[key: string]: any}</signature>
+      <path>aws-cdk-lib/assertions</path>
+      <description>Returns all CloudFormation resources of specified type. Used for counting resources (e.g., origin count validation).</description>
+    </interface>
+
+    <interface>
+      <name>Match Matchers</name>
+      <kind>CDK Assertions Utilities</kind>
+      <signature>Match.arrayWith([...]), Match.objectLike({...}), Match.stringLikeRegexp('...')</signature>
+      <path>aws-cdk-lib/assertions</path>
+      <description>Flexible matchers for partial validation. arrayWith checks array contains items, objectLike checks object contains properties, stringLikeRegexp checks string matches regex.</description>
+    </interface>
+
+    <interface>
+      <name>Custom Resource Properties</name>
+      <kind>CloudFormation Resource</kind>
+      <signature>Custom::AWS resource with properties: {DistributionId, OriginId, OriginDomainName, OriginAccessControlId, CachePolicyId, FunctionArn}</signature>
+      <path>infra/lib/ndx-stack.ts lines 122-183</path>
+      <description>NDX stack uses Custom Resources to modify existing CloudFront distribution. Tests validate Custom Resource configuration, not standard Distribution resource properties.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing framework: Jest 29.x with TypeScript support (ts-jest). CDK assertions library (Template.fromStack, Template.hasResourceProperties). Test file location: infra/test/ndx-stack.test.ts. Test organization: Nested describe blocks grouping related tests (Security-critical properties, Routing functionality). Critical build requirement: ALWAYS run 'yarn build' before 'yarn test' - tests execute against compiled JavaScript in lib/ directory, stale JS causes false test results. ESLint validation required for all test code (zero errors, zero warnings). Every test must include WHAT and WHY comments referencing requirements (FR/NFR). Snapshot storage in __snapshots__/ directory (committed to git).
+    </standards>
+
+    <locations>
+      infra/test/ndx-stack.test.ts
+      infra/test/__snapshots__/ndx-stack.test.ts.snap
+    </locations>
+
+    <ideas>
+      AC-3.2.1 Ideas:
+      - Test: Custom Resource has OriginAccessControlId = 'E3P8MA1G9Y5BYE'
+      - Test: Custom Resource OriginDomainName matches regex 'ndx-static-prod\\.s3.*amazonaws\\.com'
+      - Test: Custom Resource OriginId = 'ndx-static-prod-origin'
+      - Test: S3 bucket has PublicAccessBlockConfiguration with all blocks enabled
+
+      AC-3.2.2 Ideas:
+      - Test: Custom Resources count matches expected (2 custom resources: AddCloudFrontOrigin + ConfigureCacheBehavior)
+      - Test: Lambda IAM policy Resource ARN references correct distribution (E3THG4UHYDHVWP)
+      - Test: S3 bucket policy Condition.StringEquals['AWS:SourceArn'] references correct distribution
+      - Note: API Gateway origin preservation validated by ensuring Custom Resources don't modify existing origins
+
+      AC-3.2.3 Ideas:
+      - Test: AWS::CloudFront::Function resource Name = 'ndx-cookie-router'
+      - Test: FunctionConfig.Runtime = 'cloudfront-js-2.0'
+      - Test: FunctionCode contains regex match for 'NDX.*cookie' or 'cookie.*NDX'
+      - Test: Function Comment describes routing purpose
+
+      AC-3.2.4 Ideas:
+      - Test: AWS::CloudFront::CachePolicy resource exists
+      - Test: CachePolicyConfig.Name = 'NdxCookieRoutingPolicy'
+      - Test: ParametersInCacheKeyAndForwardedToOrigin.CookiesConfig.CookieBehavior = 'whitelist'
+      - Test: Cookies array exactly ['NDX']
+      - Test: HeaderBehavior = 'none' (per architecture)
+      - Test: EnableAcceptEncodingGzip and Brotli both true
+
+      AC-3.2.5 Ideas:
+      - Test: Custom Resource 'ConfigureCacheBehavior' has CachePolicyId property
+      - Test: Custom Resource has FunctionArn property
+      - Test: Custom Resource FunctionEventType = 'viewer-request'
+      - Test: Resource dependencies ensure CachePolicy and Function created before ConfigureCacheBehavior
+
+      AC-3.2.6 Ideas:
+      - All tests: Add /* Validates: [WHAT] */ and /* Why: [WHY with FR/NFR reference] */ comments
+      - Test names: Use descriptive strings like 'Custom Resource configured with OAC for new origin'
+      - Run 'yarn lint' after writing tests to verify zero ESLint errors
+      - Use config-driven values from cdk.Stack context where possible
+      - Final validation: Run 'yarn build && yarn test' to ensure all tests pass
+    </ideas>
+  </tests>
+</story-context>

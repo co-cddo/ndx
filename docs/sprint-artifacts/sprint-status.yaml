@@ -59,10 +59,10 @@ development_status:
   epic-2-retrospective: optional
 
   epic-3: contexted
-  3-1-write-cdk-snapshot-tests-for-cloudfront-configuration: review
-  3-2-write-fine-grained-assertion-tests-for-critical-properties: backlog
-  3-3-create-integration-test-for-real-aws-deployment: backlog
-  3-4-document-rollback-procedures: backlog
-  3-5-update-infrastructure-readme-with-operations-guide: backlog
-  3-6-create-pre-deployment-checklist-and-validation-script: backlog
+  3-1-write-cdk-snapshot-tests-for-cloudfront-configuration: done
+  3-2-write-fine-grained-assertion-tests-for-critical-properties: done
+  3-3-create-integration-test-for-real-aws-deployment: done
+  3-4-document-rollback-procedures: done
+  3-5-update-infrastructure-readme-with-operations-guide: done
+  3-6-create-pre-deployment-checklist-and-validation-script: done
   epic-3-retrospective: optional

@@ -1,1038 +1,733 @@
-# Architecture Documentation - National Digital Exchange
-
-**Generated:** 2025-11-18
-**Project:** NDX (National Digital Exchange)
-**Version:** 1.0.0 (Alpha)
-**Architecture Type:** JAMstack Static Site
-
----
+# NDX CloudFront Origin Routing - Architecture
 
 ## Executive Summary
 
-The National Digital Exchange (NDX) is a UK government initiative designed to transform public sector cloud adoption and digital procurement. The website serves as an information platform, service catalogue, and access portal for government departments to discover, learn about, try, and access cloud services from pre-approved vendors.
+This architecture implements cookie-based origin routing for the National Digital Exchange (NDX) CloudFront distribution, enabling safe testing of new UI versions via the strangler pattern. The solution uses AWS CloudFront Functions for sub-millisecond cookie inspection, routing testers with `NDX=true` cookie to a new S3 origin while preserving existing production behavior for all other users.
 
-**Key Characteristics:**
-- **Purpose:** Government cloud service catalogue and procurement platform
-- **Impact:** Projected £2B taxpayer savings
-- **Architecture:** JAMstack (JavaScript, APIs, Markup)
-- **Tech Stack:** Eleventy static site generator + GOV.UK Frontend design system
-- **Deployment:** GitHub Pages (co-cddo.github.io/ndx)
-- **Content:** 165+ markdown files, 33+ cloud service vendors
-- **Phase:** Alpha (prototype, not production service)
+**Key Architectural Decisions:**
+- **Routing Mechanism:** CloudFront Functions (sub-ms latency, cost-effective)
+- **Security:** Reuse existing Origin Access Control (E3P8MA1G9Y5BYE)
+- **Infrastructure:** Single CDK stack (`NdxStaticStack`) with imported CloudFront distribution
+- **Caching:** Modern Cache Policy with NDX cookie whitelist
 
-**Strategic Context:**
-- One-stop shop for UK government tech procurement
-- Underpins data and capability sharing between departments
-- Turn-key access to commercial cloud providers
-- Levels playing field for all public sector organizations
+## Decision Summary
 
----
+| Category | Decision | Version/Details | Affects FRs | Rationale |
+| -------- | -------- | --------------- | ----------- | --------- |
+| Routing Function | CloudFront Functions | 2025 | FR7-14, FR15-19 | Sub-millisecond latency, 6x cheaper than Lambda@Edge, perfect for simple cookie inspection |
+| Origin Access Control | Reuse existing OAC | E3P8MA1G9Y5BYE | FR2, NFR-SEC-1 | Same security model, simpler management, least-privilege access already configured |
+| CDK Stack Organization | Single stack | Modified NdxStaticStack | FR25-30 | Simpler deployment, all NDX infrastructure in one place |
+| Cache Behavior | Cache Policy with cookie whitelist | NDX cookie only | FR20-24, NFR-PERF-3 | Modern approach, optimal caching, no degradation for non-cookied users |
+| Testing Strategy | Complete pyramid | Unit + Snapshot + Assertions + Integration | FR31-35 | Fast feedback loop, regression prevention, real AWS validation |
+| Deployment Method | Standard CDK | cdk diff → cdk deploy | FR27-30, NFR-REL-1 | Zero-downtime CloudFormation updates, 10-15min propagation |
+| Monitoring | Built-in CloudFront metrics | Standard metrics only | FR41-42, NFR-OPS-5 | Sufficient for MVP, tracks errors and cache performance per origin |
+| Rollback Process | Three-tier approach | Disable function → Git revert → Remove origin | FR36-40, NFR-OPS-4 | Fast recovery (< 5 minutes), documented procedures |
 
-## Table of Contents
+## Project Structure
 
-1. [Technology Stack](#technology-stack)
-2. [Architecture Pattern](#architecture-pattern)
-3. [System Architecture](#system-architecture)
-4. [Data Architecture](#data-architecture)
-5. [Component Architecture](#component-architecture)
-6. [Content Model](#content-model)
-7. [Build Pipeline](#build-pipeline)
-8. [Deployment Architecture](#deployment-architecture)
-9. [Security Architecture](#security-architecture)
-10. [Performance Characteristics](#performance-characteristics)
-11. [Development Workflow](#development-workflow)
-12. [Testing Strategy](#testing-strategy)
-13. [Scalability & Growth](#scalability--growth)
-14. [Technical Decisions & Rationale](#technical-decisions--rationale)
-15. [Future Considerations](#future-considerations)
+```
+ndx/
+├── infra/
+│   ├── bin/
+│   │   └── infra.ts                    # CDK app entry point
+│   ├── lib/
+│   │   ├── ndx-stack.ts                # Main stack: S3 + CloudFront configuration
+│   │   └── functions/
+│   │       └── cookie-router.js        # CloudFront Function: Cookie inspection logic
+│   ├── test/
+│   │   ├── ndx-stack.test.ts           # CDK tests: Snapshot + assertions
+│   │   └── cookie-router.test.ts       # Unit tests: Function logic
+│   ├── cdk.json                        # CDK configuration
+│   ├── package.json                    # Dependencies (aws-cdk-lib, constructs)
+│   ├── tsconfig.json                   # TypeScript configuration
+│   ├── eslint.config.mjs               # ESLint configuration
+│   └── README.md                       # Infrastructure documentation
+│
+├── src/                                # Eleventy static site (unchanged)
+├── _site/                              # Built site output
+├── docs/
+│   ├── prd.md                          # Product Requirements Document
+│   ├── architecture.md                 # This document
+│   └── sprint-artifacts/               # Epic and story tracking
+└── package.json                        # Root scripts: build, deploy
+```
 
----
+## FR Category to Architecture Mapping
 
-## Technology Stack
+| FR Category | Functional Requirements | Architecture Component | Implementation Location |
+| ----------- | ----------------------- | ---------------------- | ----------------------- |
+| CloudFront Origin Management | FR1-6 | CloudFront distribution configuration | `lib/ndx-stack.ts` |
+| Cookie-Based Routing Logic | FR7-14 | CloudFront Function code | `lib/functions/cookie-router.js` |
+| Routing Function Deployment | FR15-19 | CDK Function construct | `lib/ndx-stack.ts` |
+| Cache Behavior Configuration | FR20-24 | Cache Policy resource | `lib/ndx-stack.ts` |
+| CDK Infrastructure Management | FR25-30 | CDK stack and constructs | `lib/ndx-stack.ts` |
+| Testing & Validation | FR31-35 | Jest tests | `test/*.test.ts` |
+| Rollback & Safety | FR36-40 | CloudFormation + documented procedures | `README.md` + this doc |
+| Operational Monitoring | FR41-44 | CloudWatch metrics (built-in) | AWS Console |
 
-### Core Platform
+## Technology Stack Details
+
+### Core Technologies
 
 | Component | Technology | Version | Purpose |
-|-----------|------------|---------|---------|
-| **Static Site Generator** | Eleventy | 3.1.2 | Transforms markdown/templates to static HTML |
-| **Runtime** | Node.js | 20.17.0 | Build-time JavaScript execution |
-| **Package Manager** | Yarn | 4.5.0 | Dependency management (npm blocked) |
-| **Template Engine** | Nunjucks | - | Server-side templating |
-| **Markdown Processor** | markdown-it | - | Content processing with plugins |
+| --------- | ---------- | ------- | ------- |
+| Infrastructure as Code | AWS CDK | 2.x (latest) | Define and deploy CloudFront configuration |
+| Language | TypeScript | 5.x | CDK stack and test code |
+| Runtime | Node.js | 20.17.0 | CDK execution environment |
+| Package Manager | Yarn | 4.5.0 | Dependency management |
+| Testing Framework | Jest | Latest | Unit and integration tests |
+| Linting | ESLint | Latest | Code quality |
 
-### Frontend & Design
+### AWS Resources
 
-| Component | Technology | Version | Purpose |
-|-----------|------------|---------|---------|
-| **Design System** | GOV.UK Frontend | Latest | Government design standards compliance |
-| **Eleventy Plugin** | @x-govuk/govuk-eleventy-plugin | 7.2.1 | GOV.UK integration for Eleventy |
-| **CSS Preprocessor** | SASS/SCSS | - | Styling with GOV.UK overrides |
-| **Diagram Support** | Mermaid | 3.0.0 | Embedded flowcharts and diagrams |
+| Resource | Type | Configuration |
+| -------- | ---- | ------------- |
+| CloudFront Distribution | Imported existing | E3THG4UHYDHVWP |
+| S3 Origin (new) | S3 bucket | ndx-static-prod (already deployed via CDK) |
+| S3 Origin (existing) | S3 bucket | ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky |
+| API Gateway Origin | API Gateway | 1ewlxhaey6.execute-api.us-west-2.amazonaws.com/prod (unchanged) |
+| Origin Access Control | Reused | E3P8MA1G9Y5BYE |
+| CloudFront Function | New | Cookie inspection and routing logic |
+| Cache Policy | New | NDX cookie whitelist, standard TTLs |
 
-### Development Tools
+### Integration Points
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Code Formatter** | Prettier | 3.6.2 | Consistent code style |
-| **Git Hooks** | Husky | 9.1.7 | Pre-commit automation |
-| **Staged Linting** | lint-staged | 16.1.5 | Format checking on commit |
+**CDK → CloudFront:**
+- Import existing distribution via `Distribution.fromDistributionAttributes()`
+- Add new S3 origin with OAC reference
+- Deploy CloudFront Function from local JavaScript file
+- Attach function to default cache behavior
+- Configure Cache Policy with cookie forwarding
 
-### CI/CD & Deployment
+**CloudFront Function → Origins:**
+- Function inspects `Cookie` header
+- Parses NDX cookie value
+- Routes to `ndx-static-prod` origin if `NDX=true`
+- Defaults to existing `S3Origin` otherwise
+- Execution time: < 1ms (sub-millisecond)
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **CI Platform** | GitHub Actions | Build, test, deploy automation |
-| **Hosting** | GitHub Pages | Static file hosting |
-| **Security Scanning** | CodeQL | Automated vulnerability detection |
-| **Security Hardening** | Harden Runner | CI/CD security lockdown |
-| **Scorecard** | OpenSSF Scorecard | Security posture measurement |
+**Testing → AWS:**
+- Unit tests validate function logic (no AWS calls)
+- CDK snapshot tests validate CloudFormation template
+- CDK assertions validate specific resource properties
+- Integration test deploys to test environment and validates routing
 
----
+## Implementation Patterns
 
-## Architecture Pattern
+These patterns ensure consistent implementation across all AI agents working on this project.
 
-### JAMstack Architecture
+### Naming Conventions
 
-**Definition:** JavaScript, APIs, and Markup
+**CDK Constructs (TypeScript):**
+- PascalCase for CDK construct classes: `CookieRouterFunction`
+- camelCase for construct instances: `cookieRouterFunction`, `newS3Origin`, `cachePolicy`
+- Descriptive names: `ndxCookieRouterFunction` not `function1`
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    JAMstack Pattern                      │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────┐      ┌──────────┐      ┌──────────┐     │
-│  │ Markdown │──▶   │ Eleventy │──▶   │  Static  │     │
-│  │ Content  │      │  Build   │      │   HTML   │     │
-│  └──────────┘      └──────────┘      └──────────┘     │
-│       ▲                  │                  │          │
-│       │                  │                  ▼          │
-│  ┌──────────┐      ┌──────────┐      ┌──────────┐     │
-│  │ Nunjucks │──▶   │   SASS   │──▶   │   CDN    │     │
-│  │Templates │      │  Compile │      │(GH Pages)│     │
-│  └──────────┘      └──────────┘      └──────────┘     │
-│                                             │          │
-│                                             ▼          │
-│                                       ┌──────────┐     │
-│                                       │  Browser │     │
-│                                       │ (Client) │     │
-│                                       └──────────┘     │
-└─────────────────────────────────────────────────────────┘
-```
+**Origin IDs (CloudFront):**
+- Format: `{purpose}-origin` in lowercase with hyphens
+- New origin: `ndx-static-prod-origin`
+- Existing origins: `S3Origin`, `InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A`
 
-**Characteristics:**
-- **Pre-rendered:** All pages generated at build time
-- **No Server:** Static files served directly from CDN
-- **No Database:** Content lives in markdown files
-- **No Runtime:** No server-side code execution after build
-- **Fast:** Instant page loads (static HTML)
-- **Secure:** Minimal attack surface (no dynamic backend)
+**File Names:**
+- CDK stack: `ndx-stack.ts` (existing, enhanced)
+- Function code: `cookie-router.js` (JavaScript for CloudFront Functions)
+- Test files: `{source-file-name}.test.ts` (e.g., `ndx-stack.test.ts`, `cookie-router.test.ts`)
 
----
+**CDK Resource IDs:**
+- Format: PascalCase, descriptive
+- Examples: `NdxCookieRouterFunction`, `NdxCachePolicy`, `NdxStaticProdOrigin`
 
-## System Architecture
+### Code Organization
 
-### High-Level System Diagram
+**Function Code Location:**
+- Path: `infra/lib/functions/cookie-router.js`
+- Rationale: Separate from CDK TypeScript code, easier to test independently
+- Loading: Use `fs.readFileSync()` in CDK stack to inline function code
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                      Developer Workflow                         │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │   Git Push to   │
-                    │   main branch   │
-                    └─────────────────┘
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────────┐
-│                     GitHub Actions CI/CD                        │
-├────────────────────────────────────────────────────────────────┤
-│  1. Checkout code                                              │
-│  2. Setup Node.js 20.17.0                                      │
-│  3. Install dependencies (yarn)                                │
-│  4. Run linter (prettier)                                      │
-│  5. Build site (eleventy)                                      │
-│  6. Upload artifact (_site/)                                   │
-│  7. Deploy to GitHub Pages                                     │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  GitHub Pages   │
-                    │  Static Hosting │
-                    └─────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │   End Users     │
-                    │  (Government    │
-                    │   Employees)    │
-                    └─────────────────┘
-```
+**Test Organization:**
+- All tests in `infra/test/` directory (not `__tests__/`)
+- One test file per source file
+- Test naming matches source: `ndx-stack.ts` → `ndx-stack.test.ts`
 
-### Component Interaction
+**CDK Stack Structure:**
+```typescript
+export class NdxStaticStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Build-Time Components                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────┐                                           │
-│  │   Content    │                                           │
-│  │  (Markdown)  │──┐                                        │
-│  └──────────────┘  │                                        │
-│                     │    ┌──────────────────┐               │
-│  ┌──────────────┐  ├───▶│    Eleventy      │               │
-│  │  Templates   │  │    │   Collections    │               │
-│  │ (Nunjucks)   │──┤    │   Transforms     │──┐            │
-│  └──────────────┘  │    │   Filters        │  │            │
-│                     │    └──────────────────┘  │            │
-│  ┌──────────────┐  │                           │            │
-│  │Configuration │──┘                           │            │
-│  │(.config.js)  │                              ▼            │
-│  └──────────────┘                    ┌──────────────────┐   │
-│                                      │  Static Output   │   │
-│  ┌──────────────┐                    │    (_site/)      │   │
-│  │    SASS      │───────────────────▶│                  │   │
-│  │  Stylesheets │                    │  • HTML files    │   │
-│  └──────────────┘                    │  • CSS files     │   │
-│                                      │  • Assets        │   │
-│  ┌──────────────┐                    │  • search.json   │   │
-│  │   Assets     │───────────────────▶│                  │   │
-│  │(Images, etc.)│                    └──────────────────┘   │
-│  └──────────────┘                              │            │
-│                                                 │            │
-└─────────────────────────────────────────────────┼────────────┘
-                                                  │
-                                                  ▼
-                                        ┌──────────────────┐
-                                        │   GitHub Pages   │
-                                        └──────────────────┘
-```
+    // 1. Existing S3 bucket (already defined)
 
----
+    // 2. Import existing CloudFront distribution
+    const distribution = cloudfront.Distribution.fromDistributionAttributes(...);
 
-## Data Architecture
+    // 3. Create CloudFront Function
+    const cookieRouterFunction = new cloudfront.Function(...);
 
-### Content Storage Model
+    // 4. Add new S3 origin
+    distribution.addOrigin(...);
 
-**Paradigm:** File-based content management
-
-```
-Content Model:
-├── Catalogue Entries (Product Pages)
-│   ├── Format: Markdown with YAML frontmatter
-│   ├── Location: src/catalogue/{vendor}/{product}.md
-│   ├── Schema: layout, title, description, image, tags
-│   └── Count: ~33 vendors, multiple products each
-│
-├── Reviews
-│   ├── Format: Markdown with YAML frontmatter
-│   ├── Location: src/reviews/{vendor}/{product}/*.md
-│   ├── Schema: product, author, starRating, date
-│   └── Aggregated via Eleventy collections
-│
-├── Product Assessments
-│   ├── Format: Markdown
-│   ├── Location: src/product-assessments/{vendor}/{product}/*.md
-│   └── Formal evaluation reports
-│
-├── Challenges
-│   ├── Format: Markdown
-│   ├── Location: src/challenges/{department}/*.md
-│   └── Government procurement challenges
-│
-├── Discover Content
-│   ├── News: src/discover/news/*.md
-│   ├── Events: src/discover/events/*.md
-│   └── Case Studies: src/discover/case-studies/*.md
-│
-└── Informational Pages
-    ├── About: src/About/*.md
-    ├── Learn: src/learn/*.md
-    ├── Try: src/try/*.md
-    ├── Access: src/access/*.md
-    └── Optimise: src/optimise/*.md
-```
-
-### Data Flow
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                    Content → Collection                   │
-├──────────────────────────────────────────────────────────┤
-│                                                           │
-│  1. Markdown File (src/catalogue/google/firebase.md)    │
-│     ↓                                                     │
-│  2. Eleventy reads frontmatter + content                 │
-│     ↓                                                     │
-│  3. Added to 'catalogue' collection                      │
-│     ↓                                                     │
-│  4. Indexed by tags → 'catalogueByTag'                   │
-│     ↓                                                     │
-│  5. Sorted alphabetically                                │
-│     ↓                                                     │
-│  6. Available in templates via collections.catalogue     │
-│     ↓                                                     │
-│  7. Rendered to HTML using 'product' layout              │
-│     ↓                                                     │
-│  8. Output: _site/catalogue/google/firebase/index.html   │
-│                                                           │
-└──────────────────────────────────────────────────────────┘
-```
-
-### Collections Schema
-
-**Defined in `eleventy.config.js`:**
-
-```javascript
-// Collection: catalogue
-{
-  source: "src/catalogue/**/*.md",
-  excludes: ["**/index.md", "**/tags.md"],
-  sort: (a, b) => a.data.title.localeCompare(b.data.title),
-  transform: useExternalUrl  // Supports external links
-}
-
-// Collection: catalogueByTag
-{
-  structure: {
-    "AI": [/* catalogue items tagged AI */],
-    "Google": [/* catalogue items tagged Google */],
-    // ... etc
+    // 5. Configure cache behavior with cookie policy
+    distribution.updateCacheBehavior(...);
   }
 }
+```
 
-// Collection: reviews
-{
-  source: "src/reviews/**/*.md",
-  sort: (a, b) => new Date(b.data.date) - new Date(a.data.date)
+### CloudFront Function Pattern
+
+**Function Structure:**
+```javascript
+function handler(event) {
+  var request = event.request;
+  var cookies = parseCookies(request.headers.cookie);
+
+  // Route based on NDX cookie
+  if (cookies['NDX'] === 'true') {
+    // Route to new S3 origin
+    request.origin = {
+      s3: {
+        domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
+        region: 'us-west-2',
+        authMethod: 'origin-access-control',
+        originAccessControlId: 'E3P8MA1G9Y5BYE'
+      }
+    };
+  }
+  // Else: Request unchanged, routes to default origin (S3Origin)
+
+  return request;
 }
 
-// Collection: challenges
-{
-  source: "src/challenges/**/*.md",
-  excludes: ["**/index.md"],
-  sort: (a, b) => new Date(b.data.date) - new Date(a.data.date)
+function parseCookies(cookieHeader) {
+  if (!cookieHeader) return {};
+
+  var cookies = {};
+  cookieHeader.value.split(';').forEach(function(cookie) {
+    var parts = cookie.split('=');
+    var key = parts[0].trim();
+    var value = parts[1] ? parts[1].trim() : '';
+    cookies[key] = value;
+  });
+
+  return cookies;
 }
 ```
 
-### No Traditional Database
+**Key Patterns:**
+- Use `var` (CloudFront Functions JavaScript runtime)
+- No ES6 features (arrow functions, const/let, template literals)
+- Graceful handling of missing cookie header
+- Fail-open: If error, request unchanged (routes to existing origin)
+- No console.log (adds cost, not needed for simple logic)
 
-**Rationale for file-based storage:**
-- ✅ Version controlled (full history in Git)
-- ✅ Developer-friendly (markdown editing)
-- ✅ No database infrastructure needed
-- ✅ Build-time processing (fast runtime)
-- ✅ Easy backup and portability
-- ✅ Review process via pull requests
-- ❌ No real-time updates (requires rebuild)
-- ❌ Not suitable for user-generated content
+### Error Handling
 
----
+**CloudFront Function:**
+- No explicit try-catch (keep simple)
+- Gracefully handle missing cookie header: `if (!cookieHeader) return {}`
+- Invalid cookie format: Parse fails, cookies empty, routes to existing origin
+- Function error: Request unchanged, CloudFront routes to default origin
 
-## Component Architecture
+**CDK Deployment:**
+- Let CloudFormation handle rollback automatically
+- No custom error handling in CDK code
+- Validation errors caught by `cdk synth` before deployment
 
-### Component Hierarchy
+**Tests:**
+- Use Jest `expect().toThrow()` for validation errors
+- Use `expect().rejects` for async errors
+- Test error cases: missing cookie, malformed cookie, empty value
 
-```
-┌────────────────────────────────────────────────────┐
-│                   Page Layouts                      │
-├────────────────────────────────────────────────────┤
-│  • homepage (landing page)                         │
-│  • product (service/catalogue pages)               │
-│  • collection (catalogue/challenge listings)       │
-└────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌────────────────────────────────────────────────────┐
-│              GOV.UK Base Components                 │
-├────────────────────────────────────────────────────┤
-│  • Header (service navigation)                     │
-│  • Footer (with commit metadata)                   │
-│  • Breadcrumbs                                     │
-│  • Phase Banner (ALPHA tag)                        │
-└────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌────────────────────────────────────────────────────┐
-│              Custom Components                      │
-├────────────────────────────────────────────────────┤
-│  • Header Override (prototype banner)              │
-│  • Reviews (star ratings, summary lists)           │
-│  • Product Assessments                             │
-│  • Catalogue Collection (tag filtering)            │
-└────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌────────────────────────────────────────────────────┐
-│                  GOV.UK Macros                      │
-├────────────────────────────────────────────────────┤
-│  • govukButton (CTAs)                              │
-│  • govukTag (badges)                               │
-│  • govukSummaryList (key-value pairs)              │
-│  • govukInsetText (callouts)                       │
-└────────────────────────────────────────────────────┘
+### Testing Patterns
+
+**Unit Tests (CloudFront Function):**
+```typescript
+describe('cookie-router', () => {
+  it('should route to new origin when NDX=true', () => {
+    const event = createTestEvent({ cookies: { NDX: 'true' } });
+    const result = handler(event);
+    expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
+  });
+
+  it('should use default origin when cookie missing', () => {
+    const event = createTestEvent({ cookies: {} });
+    const result = handler(event);
+    expect(result.origin).toBeUndefined(); // Unchanged
+  });
+});
 ```
 
-### Key Component Details
-
-#### Reviews Component
-**File:** `src/_includes/components/reviews.njk`
-
-**Functionality:**
-- Fetches reviews from `collections.reviews`
-- Filters by product ID
-- Renders star rating (1-5) with visual stars
-- Color-codes rating tags:
-  - 4-5 stars: Green tag ("Good"/"Excellent")
-  - 3 stars: Blue tag ("Average")
-  - 1-2 stars: Red tag ("Poor"/"Very poor")
-- Displays: Rating, Author, Date in Summary List
-- Includes review content (markdown)
-
-**Usage:**
-```njk
-{% include "components/reviews.njk" %}
+**CDK Snapshot Tests:**
+```typescript
+test('CloudFront configuration snapshot', () => {
+  const stack = new NdxStaticStack(app, 'TestStack');
+  expect(stack).toMatchSnapshot();
+});
 ```
 
-#### Catalogue Collection
-**File:** `src/_includes/catalogue-collection.njk`
+**CDK Fine-Grained Assertions:**
+```typescript
+test('New S3 origin added', () => {
+  const stack = new NdxStaticStack(app, 'TestStack');
+  expect(stack).toHaveResourceLike('AWS::CloudFront::Distribution', {
+    DistributionConfig: {
+      Origins: expect.arrayContaining([
+        expect.objectContaining({
+          Id: 'ndx-static-prod-origin',
+          S3OriginConfig: {
+            OriginAccessIdentity: '',
+            OriginAccessControlId: 'E3P8MA1G9Y5BYE'
+          }
+        })
+      ])
+    }
+  });
+});
 
-**Functionality:**
-- Renders catalogue with sidebar filters
-- Tag-based filtering (AI, Low-code, Security, vendors)
-- External URL support
-- Alphabetical sorting
-
-**Filter Categories:**
-- Service types: GOV.UK Services, Campaign Products
-- Technologies: AI, Low-code, Security
-- Vendors: Amazon, Google, IBM, Microsoft, Oracle, Red Hat
-
----
-
-## Content Model
-
-### Frontmatter Schema
-
-#### Product/Service Page
-
-```yaml
-layout: product
-title: Google Firebase
-description: Accelerate app development with Google Firebase...
-image:
-  src: /assets/catalogue/google/firebase-logo.svg
-  alt: Google Firebase
-eleventyNavigation:
-  parent: Catalogue
-  url: https://external-link.com  # Optional external link
-tags:
-  - Google
-  - Firebase
-  - App Development
-  - cloud
-  - Mobile
+test('API Gateway origin unchanged', () => {
+  const stack = new NdxStaticStack(app, 'TestStack');
+  expect(stack).toHaveResourceLike('AWS::CloudFront::Distribution', {
+    DistributionConfig: {
+      Origins: expect.arrayContaining([
+        expect.objectContaining({
+          Id: expect.stringContaining('InnovationSandbox'),
+          DomainName: '1ewlxhaey6.execute-api.us-west-2.amazonaws.com'
+        })
+      ])
+    }
+  });
+});
 ```
 
-#### Review Page
-
-```yaml
-product: mindweave-labs/synaplyte  # Vendor/product identifier
-author: John Doe
-starRating: 4  # 1-5
-date: 2025-01-15
-```
-
-#### Challenge Page
-
-```yaml
-title: DEFRA Data Integration Challenge
-date: 2025-01-10
----
-Markdown content...
-```
-
-### Content Sections
-
-| Section | Purpose | Count |
-|---------|---------|-------|
-| **About** | NDX overview, benefits, incubator | 3 pages |
-| **Catalogue** | Cloud service listings | 33+ vendors |
-| **Discover** | News, events, case studies | Variable |
-| **Challenges** | Govt procurement challenges | 2+ departments |
-| **Learn** | Training & certification | TBD |
-| **Try** | Trial environment access | TBD |
-| **Access** | Production access requests | TBD |
-| **Optimise** | Cloud optimization guidance | TBD |
-| **Begin** | AI adoption ("Begin with AI") | TBD |
-
----
-
-## Build Pipeline
-
-### Build Process Flow
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Build Pipeline                        │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌────────────┐                                         │
-│  │  Trigger   │  Push to main / PR / Tag                │
-│  └────────────┘                                         │
-│        │                                                 │
-│        ▼                                                 │
-│  ┌────────────────────────────────────────────┐         │
-│  │         GitHub Actions Workflow            │         │
-│  │         (.github/workflows/ci.yaml)        │         │
-│  └────────────────────────────────────────────┘         │
-│        │                                                 │
-│        ├──▶ Security: Harden Runner                     │
-│        ├──▶ Checkout: actions/checkout@v5               │
-│        ├──▶ Setup: actions/setup-node@v4                │
-│        │    (Node 20.17.0 from .nvmrc)                  │
-│        ├──▶ Install: corepack enable + yarn             │
-│        ├──▶ Lint: yarn lint (prettier check)            │
-│        ├──▶ Build: PATH_PREFIX=/ndx/ yarn build         │
-│        │                                                 │
-│        ▼                                                 │
-│  ┌────────────────────────────────────────────┐         │
-│  │            Build Output (_site/)           │         │
-│  ├────────────────────────────────────────────┤         │
-│  │  • HTML files (165+ pages)                 │         │
-│  │  • CSS (compiled SASS)                     │         │
-│  │  • Images, fonts, assets                   │         │
-│  │  • search.json (search index)              │         │
-│  └────────────────────────────────────────────┘         │
-│        │                                                 │
-│        ├──▶ Tar: site.tar                               │
-│        ├──▶ Upload: actions/upload-artifact@v4          │
-│        │                                                 │
-│        ▼                                                 │
-│  ┌────────────────────────────────────────────┐         │
-│  │         Publish Job (main only)            │         │
-│  ├────────────────────────────────────────────┤         │
-│  │  • Download artifact                       │         │
-│  │  • Untar files                             │         │
-│  │  • Configure GitHub Pages                  │         │
-│  │  • Deploy to Pages                         │         │
-│  └────────────────────────────────────────────┘         │
-│        │                                                 │
-│        ▼                                                 │
-│  ┌────────────┐                                         │
-│  │  Deployed  │  https://co-cddo.github.io/ndx/         │
-│  └────────────┘                                         │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Build Optimizations
-
-- **Incremental Builds:** Eleventy only rebuilds changed files (dev mode)
-- **Asset Passthrough:** Static files copied without processing
-- **SASS Compilation:** Handled by GOV.UK plugin
-- **Caching:** Yarn cache in CI (faster installs)
-- **Parallel Jobs:** Build and security scanning run concurrently
-
----
-
-## Deployment Architecture
-
-### GitHub Pages Hosting
-
-```
-┌──────────────────────────────────────────────────┐
-│          GitHub Pages Architecture               │
-├──────────────────────────────────────────────────┤
-│                                                   │
-│  User Request                                    │
-│       │                                          │
-│       ▼                                          │
-│  ┌──────────┐                                    │
-│  │   DNS    │  co-cddo.github.io                │
-│  └──────────┘                                    │
-│       │                                          │
-│       ▼                                          │
-│  ┌──────────┐                                    │
-│  │ GitHub   │  Pages CDN (Fastly)                │
-│  │   CDN    │  - Global edge nodes               │
-│  └──────────┘  - HTTPS enforced                  │
-│       │         - Automatic caching               │
-│       ▼                                          │
-│  ┌──────────┐                                    │
-│  │ Browser  │  Static HTML/CSS/JS                │
-│  └──────────┘  No server processing              │
-│                                                   │
-└──────────────────────────────────────────────────┘
-```
-
-**Deployment URL:** `https://co-cddo.github.io/ndx/`
-
-**Characteristics:**
-- **CDN:** Fastly global network
-- **HTTPS:** Enforced, automatic certificates
-- **Caching:** Aggressive browser & CDN caching
-- **No Server:** Pure static file serving
-- **Uptime:** GitHub SLA (99.9%+)
-
-### Deployment Triggers
-
-| Trigger | Action |
-|---------|--------|
-| **Push to `main`** | Full build + deploy to production |
-| **Pull Request** | Build only (no deploy) |
-| **Tag `v*.*.*`** | Build + deploy (version release) |
-
-### Rollback Strategy
-
-**Git-based rollback:**
+**Integration Test:**
 ```bash
-# Revert to previous commit
+#!/bin/bash
+# test/integration.sh
+
+# Deploy test stack
+cdk deploy TestStack --profile NDX/InnovationSandboxHub --require-approval never
+
+# Test without cookie
+curl -I https://test-distribution.cloudfront.net/ | grep "X-Cache"
+
+# Test with cookie
+curl -I -H "Cookie: NDX=true" https://test-distribution.cloudfront.net/ | grep "X-Cache"
+
+# Cleanup
+cdk destroy TestStack --force
+```
+
+## Consistency Rules
+
+### Cookie Handling
+
+**Cookie Name:**
+- Fixed: `NDX` (uppercase, exact match)
+- No variations: Not `ndx`, not `Ndx`, not `NDX-FLAG`
+
+**Cookie Value:**
+- Route to new origin: `true` (lowercase, exact match)
+- All other values: Route to existing origin
+- Missing cookie: Route to existing origin
+- Empty value: Route to existing origin
+
+**Cookie Parsing:**
+- Split on semicolon: `cookie1=value1; cookie2=value2`
+- Trim whitespace from keys and values
+- Handle missing cookie header gracefully
+- No error throwing (fail-open)
+
+### Origin Configuration
+
+**Origin IDs:**
+- New origin: `ndx-static-prod-origin`
+- Existing S3: `S3Origin` (unchanged)
+- API Gateway: Keep existing ID (unchanged)
+
+**Origin Settings:**
+- Connection attempts: 3 (match existing)
+- Connection timeout: 10 seconds (match existing)
+- Read timeout: 30 seconds (match existing)
+- Protocol: HTTPS only
+- Origin path: Empty (serve from bucket root)
+
+### Cache Behavior
+
+**Cache Policy:**
+- Name: `NdxCookieRoutingPolicy`
+- TTL: Default CloudFront values (no custom TTLs for MVP)
+- Cookie behavior: Whitelist
+- Whitelisted cookies: `['NDX']`
+- Query strings: Forward all (preserve existing behavior)
+- Headers: Forward standard set (preserve existing behavior)
+
+**Function Association:**
+- Event type: `viewer-request`
+- Function: CloudFront Function (not Lambda@Edge)
+- Execution: Before cache lookup
+
+### Deployment Process
+
+**Pre-Deployment Checklist:**
+1. Review current CloudFront config: `aws cloudfront get-distribution --id E3THG4UHYDHVWP`
+2. Run tests: `cd infra && yarn test`
+3. Run lint: `cd infra && yarn lint`
+4. Preview changes: `cd infra && cdk diff --profile NDX/InnovationSandboxHub`
+5. Verify API Gateway origin unchanged in diff output
+6. Document current config for rollback
+
+**Deployment Commands:**
+```bash
+cd infra
+cdk deploy --profile NDX/InnovationSandboxHub
+# Wait 10-15 minutes for global propagation
+```
+
+**Post-Deployment Validation:**
+```bash
+# Test without cookie (should see existing site)
+curl -I https://d7roov8fndsis.cloudfront.net/
+
+# Set cookie and test (should see new origin)
+# In browser console: document.cookie = "NDX=true; path=/"
+# Browse to https://d7roov8fndsis.cloudfront.net/
+
+# Clear cookie and test (should revert to existing site)
+# In browser console: document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"
+```
+
+**Rollback Procedures:**
+
+**Option 1: Disable Function (Fastest - < 5 minutes):**
+```bash
+# Edit ndx-stack.ts: Comment out function association
+# cacheBehavior.addFunctionAssociation(...)
+
+cdk deploy --profile NDX/InnovationSandboxHub
+```
+
+**Option 2: Git Revert (5-10 minutes):**
+```bash
 git revert HEAD
-git push origin main
-
-# CI/CD automatically redeploys previous version
+cd infra
+cdk deploy --profile NDX/InnovationSandboxHub
 ```
 
-**Manual rollback:**
+**Option 3: Remove Origin (15 minutes):**
 ```bash
-# Checkout previous version
-git checkout <previous-commit-hash>
-
-# Force push (use with caution)
-git push -f origin main
+# Edit ndx-stack.ts: Remove new origin and function
+cdk deploy --profile NDX/InnovationSandboxHub
 ```
-
----
 
 ## Security Architecture
 
-### Security Layers
+### Origin Access Control
 
-```
-┌──────────────────────────────────────────────────┐
-│              Security Architecture               │
-├──────────────────────────────────────────────────┤
-│                                                   │
-│  1. CI/CD Security                               │
-│     ├─ Harden Runner (audit egress)             │
-│     ├─ CodeQL scanning (vulnerabilities)        │
-│     ├─ OpenSSF Scorecard (best practices)       │
-│     └─ Dependabot (dependency updates)          │
-│                                                   │
-│  2. Supply Chain Security                        │
-│     ├─ Yarn lock file (pinned versions)         │
-│     ├─ Node version pinned (.nvmrc)             │
-│     └─ Auto-merge trusted updates               │
-│                                                   │
-│  3. Code Quality Security                        │
-│     ├─ Pre-commit hooks (Husky)                 │
-│     ├─ Lint-staged (format checking)            │
-│     └─ Prettier (consistent code style)         │
-│                                                   │
-│  4. Runtime Security (N/A - Static Site)         │
-│     ├─ No server-side code                      │
-│     ├─ No database                               │
-│     ├─ No user authentication                   │
-│     └─ No dynamic backend                       │
-│                                                   │
-│  5. Content Security                             │
-│     ├─ Version controlled (Git)                 │
-│     ├─ Pull request reviews                     │
-│     └─ No user-generated content                │
-│                                                   │
-│  6. Transport Security                           │
-│     ├─ HTTPS enforced (GitHub Pages)            │
-│     └─ Modern TLS (handled by GitHub)           │
-│                                                   │
-└──────────────────────────────────────────────────┘
-```
+**Configuration:**
+- OAC ID: E3P8MA1G9Y5BYE (reused from existing S3Origin)
+- Signing behavior: Sign requests
+- Origin protocol: HTTPS only
+- S3 bucket policy: Grants CloudFront read access via OAC
 
-### Threat Model
+**Rationale:**
+- Same security model as existing S3Origin
+- Least-privilege: Read-only S3 access
+- No public bucket access (BlockPublicAccess: BLOCK_ALL)
 
-**Attack Surface:** Minimal
+### Function Security
 
-| Threat | Mitigation |
-|--------|-----------|
-| **XSS** | Static HTML, no user input |
-| **SQL Injection** | No database |
-| **CSRF** | No forms/authentication |
-| **Server Compromise** | No server (static files) |
-| **Dependency Vulnerabilities** | Dependabot + CodeQL |
-| **Supply Chain Attack** | Pinned deps, verified actions |
-| **Content Tampering** | Git version control, PR reviews |
+**CloudFront Function Constraints:**
+- No network access (cannot call external APIs)
+- No filesystem access
+- No access to AWS services
+- Cannot modify response body
+- Cannot access sensitive data (only headers/cookies)
+
+**Input Validation:**
+- Cookie header parsing: Gracefully handle malformed input
+- No SQL injection risk (no database)
+- No XSS risk (no HTML generation)
+- No command injection risk (no shell execution)
+
+**Logging:**
+- No sensitive data logged (cookie values not logged)
+- CloudWatch metrics only (no verbose logs)
+- Error-level logging if needed (debug logs disabled)
 
 ### Compliance
 
-**GOV.UK Standards:**
-- GDS design principles
-- GOV.UK Frontend (accessibility compliant)
-- WCAG 2.1 AA compliance (via GOV.UK)
+**Infrastructure as Code:**
+- All changes version-controlled in Git
+- CloudFormation change sets visible before deployment
+- Audit trail via CloudFormation stack history
 
-**Security Badges:**
-- OpenSSF Best Practices
-- OpenSSF Scorecard
-- CodeQL scanning
+**Access Control:**
+- AWS Profile: `NDX/InnovationSandboxHub` (pre-configured locally)
+- IAM permissions required: CloudFormation, CloudFront, S3
+- No long-lived credentials in code
+
+## Performance Considerations
+
+### Latency Budget
+
+| Component | Target | Expected | NFR Reference |
+| --------- | ------ | -------- | ------------- |
+| Function execution | < 5ms | < 1ms | NFR-PERF-1 |
+| Cookie parsing | < 100ms | Sub-ms | NFR-PERF-4 |
+| CloudFront edge cache | Unchanged | Unchanged | NFR-PERF-3 |
+| CDK deployment | < 60 minutes | 10-15 minutes | NFR-PERF-5 |
+| Global propagation | < 15 minutes | 10-15 minutes | NFR-PERF-6 |
+
+### Caching Strategy
+
+**Cache Effectiveness:**
+- Users without cookie: Share cache (no impact)
+- Users with `NDX=true`: Separate cache (small group)
+- Cache key includes: URL + NDX cookie value
+- No degradation for non-cookied users (majority)
+
+**Cache Policy:**
+- Cookie forwarding: NDX only (not all cookies)
+- Query strings: Forward all (preserve existing behavior)
+- TTL: CloudFront defaults (no custom TTLs for MVP)
+
+### Performance Optimization
+
+**CloudFront Function:**
+- Minimal code (< 1KB, well under 10KB limit)
+- No external calls (sub-millisecond execution)
+- Simple cookie parsing (no regex, no JSON parsing)
+- Fail-fast: Missing cookie → immediate return
+
+**CDK Deployment:**
+- Single stack (no multi-stack orchestration)
+- Import existing distribution (no full replacement)
+- Incremental updates (only changes deployed)
+
+## Deployment Architecture
+
+### AWS Account & Region
+
+**Account:** 568672915267 (NDX/InnovationSandboxHub)
+**Region:** us-west-2 (CloudFront is global, but resources in us-west-2)
+
+### CDK Deployment
+
+**Stack:** `NdxStatic` (existing, enhanced)
+**Resources:**
+- CloudFront Distribution (imported)
+- CloudFront Function (new)
+- Cache Policy (new)
+- S3 Origin configuration (new)
+
+**Deployment Flow:**
+```
+Developer → CDK CLI → CloudFormation → CloudFront API → Global Edge Locations
+```
+
+**Zero-Downtime:**
+- CloudFront handles configuration updates without interruption
+- Old configuration active until new configuration fully propagated
+- No service disruption to end users
+
+### CloudFront Propagation
+
+**Timeline:**
+- CDK deploy triggers CloudFormation update: ~2-5 minutes
+- CloudFormation calls CloudFront API: ~30 seconds
+- CloudFront propagates to 225+ edge locations: ~10-15 minutes
+- Total: ~15-20 minutes from `cdk deploy` to fully active
+
+**Monitoring Propagation:**
+```bash
+# Check distribution status
+aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+# Output: "Deployed" when complete
+```
+
+## Development Environment
+
+### Prerequisites
+
+**Required Software:**
+- Node.js: 20.17.0 or higher
+- Yarn: 4.5.0 (Berry/v4)
+- AWS CLI: v2.x
+- Git: Any recent version
+
+**AWS Configuration:**
+- Profile: `NDX/InnovationSandboxHub`
+- Account: 568672915267
+- Region: us-west-2
+
+**Verification:**
+```bash
+# Check Node version
+node --version  # Should be 20.17.0+
+
+# Check Yarn version
+yarn --version  # Should be 4.5.0
+
+# Check AWS profile
+aws sts get-caller-identity --profile NDX/InnovationSandboxHub
+# Should return account 568672915267
+```
+
+### Setup Commands
+
+**Initial Setup:**
+```bash
+# Navigate to infrastructure directory
+cd infra
+
+# Install dependencies
+yarn install
+
+# Verify TypeScript compilation
+yarn build
+
+# Run tests
+yarn test
+
+# Run linter
+yarn lint
+```
+
+**Development Workflow:**
+```bash
+# 1. Make changes to ndx-stack.ts or cookie-router.js
+
+# 2. Run tests
+yarn test
+
+# 3. Preview infrastructure changes
+cdk diff --profile NDX/InnovationSandboxHub
+
+# 4. Deploy changes
+cdk deploy --profile NDX/InnovationSandboxHub
+
+# 5. Validate deployment (manual testing with cookie)
+```
+
+## Architecture Decision Records (ADRs)
+
+### ADR-001: CloudFront Functions over Lambda@Edge
+
+**Context:** Need to route requests based on cookie value with minimal latency and cost.
+
+**Decision:** Use CloudFront Functions for cookie-based routing.
+
+**Rationale:**
+- Sub-millisecond execution (vs 5-100ms for Lambda@Edge)
+- 6x cheaper ($0.10 vs $0.60 per 1M invocations)
+- Deploys globally in seconds (vs 5-8 minutes)
+- Executes at all 225+ edge locations (vs 13 regional caches)
+- Perfect for simple cookie inspection (no need for body access or external calls)
+
+**Consequences:**
+- ✅ Meets NFR-PERF-1 (< 5ms latency) easily
+- ✅ Lower operational cost at scale
+- ✅ Faster deployments and rollbacks
+- ❌ Limited to JavaScript (not Node.js)
+- ❌ Cannot call external APIs (not needed for this use case)
+- ❌ 10KB code limit (our function is < 1KB)
+
+**Status:** Accepted
 
 ---
 
-## Performance Characteristics
+### ADR-002: Reuse Existing Origin Access Control
 
-### Page Load Performance
+**Context:** New S3 origin needs secure access. Existing S3Origin uses OAC E3P8MA1G9Y5BYE.
 
-**Metrics (typical):**
-- **First Contentful Paint:** <0.5s
-- **Time to Interactive:** <1s
-- **Total Page Size:** ~200KB (including GOV.UK assets)
-- **HTML Size:** ~50KB (gzipped)
-- **CSS Size:** ~30KB (GOV.UK + custom)
-- **JS Size:** Minimal (GOV.UK components only)
+**Decision:** Reuse existing OAC for new S3 origin.
 
-**Performance Features:**
-- Pre-rendered HTML (instant first paint)
-- CDN delivery (global edge caching)
-- Minimal JavaScript (no framework overhead)
-- Static assets cached aggressively
-- No database queries
-- No API calls
+**Rationale:**
+- Same security requirements (read-only S3 access)
+- Simpler management (no additional IAM policies)
+- Consistent security model across S3 origins
+- AWS best practice for similar origins
 
-### Build Performance
+**Consequences:**
+- ✅ Consistent security model
+- ✅ Simpler IAM policy management
+- ✅ Least-privilege access already configured
+- ❌ Both origins share same access control (acceptable for MVP)
 
-**Typical Build Times:**
-- **Local Dev Build:** 2-5 seconds
-- **CI Build (cold cache):** 2-3 minutes
-- **CI Build (warm cache):** 1-2 minutes
-
-**Build Optimizations:**
-- Eleventy incremental builds (dev)
-- Yarn cache in CI
-- Passthrough copy for assets
-- Parallel CI jobs
-
-### Scalability
-
-**Static Site Advantages:**
-- Infinite horizontal scaling (CDN)
-- No database bottlenecks
-- No server capacity planning
-- Automatic global distribution
-- No peak traffic concerns
-
-**Constraints:**
-- Build time increases with content (currently fast)
-- 165+ pages build in ~5 seconds locally
+**Status:** Accepted
 
 ---
 
-## Development Workflow
+### ADR-003: Single CDK Stack for All Infrastructure
 
-### Local Development
+**Context:** Need to add CloudFront configuration. Option to create separate stack or modify existing.
 
-```
-Developer Workflow:
-1. Clone repository
-2. Install Node 20.17.0 (nvm use)
-3. Install dependencies (yarn)
-4. Start dev server (yarn start)
-5. Edit content/templates
-6. Auto-reload in browser
-7. Commit changes
-8. Pre-commit hook runs (lint-staged)
-9. Push to feature branch
-10. Create pull request
-11. CI runs tests + build
-12. Merge to main
-13. Auto-deploy to production
-```
+**Decision:** Modify existing `NdxStaticStack` to include CloudFront configuration.
 
-### Branching Strategy
+**Rationale:**
+- Simpler deployment (one stack)
+- All NDX infrastructure in one place
+- Easier to understand for developers
+- Acceptable coupling for MVP scope
 
-```
-main (protected)
-  │
-  ├── feature/catalogue-google-gemini
-  ├── feature/challenge-mod-ai
-  ├── fix/header-banner-spacing
-  └── docs/update-readme
-```
+**Consequences:**
+- ✅ Single deployment command
+- ✅ Simpler for developers to understand
+- ✅ All NDX resources together
+- ❌ S3 and CloudFront changes coupled (acceptable trade-off)
+- ❌ Stack grows larger over time (manageable for current scope)
 
-**Branch Protection:**
-- Require PR reviews
-- Require CI passing
-- No direct commits to `main`
-
-### Content Contribution Workflow
-
-```
-1. Content Author creates markdown file
-2. Adds frontmatter (title, description, tags)
-3. Places in appropriate directory
-4. Commits and pushes
-5. Creates PR
-6. Reviewer checks content
-7. CI builds preview
-8. Merge to main
-9. Auto-deploy to production
-```
+**Status:** Accepted
 
 ---
 
-## Testing Strategy
+### ADR-004: Cache Policy with NDX Cookie Whitelist
 
-### Current Testing Approach
+**Context:** CloudFront Function needs to inspect NDX cookie. Must configure cookie forwarding.
 
-**Status:** No automated test suite
+**Decision:** Use modern Cache Policy with NDX cookie whitelist.
 
-**Manual Testing:**
-- Visual review during development
-- Build verification (yarn build succeeds)
-- Lint checking (yarn lint)
-- Link checking (manual browser testing)
+**Rationale:**
+- Modern CloudFront best practice (Cache Policies introduced 2020)
+- Precise control (only NDX cookie forwarded)
+- Optimal caching (non-cookied users share cache)
+- No cache degradation for majority of users
 
-### CI Checks
+**Consequences:**
+- ✅ Meets NFR-PERF-3 (no cache effectiveness degradation)
+- ✅ Users without cookie share cache (optimal performance)
+- ✅ Users with cookie have separate cache (small group)
+- ✅ Modern, maintainable configuration
 
-- ✅ **Build Success:** Site must compile
-- ✅ **Lint Pass:** Code formatting must pass
-- ✅ **Security Scan:** CodeQL must pass
-- ❌ **Unit Tests:** None
-- ❌ **Integration Tests:** None
-- ❌ **E2E Tests:** None
-- ❌ **Accessibility Tests:** None (relies on GOV.UK compliance)
-
-### Recommended Testing Additions
-
-**Priority 1:**
-- Link checker (eleventy-plugin-broken-links)
-- HTML validation (html-validate)
-- Accessibility scanning (pa11y, axe-core)
-
-**Priority 2:**
-- Visual regression (BackstopJS, Percy)
-- Performance budgets (Lighthouse CI)
-- Content validation (schema checks)
-
-**Priority 3:**
-- E2E tests for critical paths (Playwright)
-- Screenshot testing
-- SEO checks
+**Status:** Accepted
 
 ---
 
-## Scalability & Growth
+### ADR-005: Complete Testing Pyramid
 
-### Current Scale
+**Context:** Need testing strategy for infrastructure and function code.
 
-- **Pages:** 165+ markdown files
-- **Vendors:** 33 cloud service providers
-- **Build Time:** ~5 seconds (local), ~2 minutes (CI)
-- **Deployment:** Seconds (static file copy)
+**Decision:** Implement complete testing pyramid:
+- Unit tests for CloudFront Function logic
+- CDK snapshot tests for CloudFormation template
+- CDK fine-grained assertions for critical properties
+- Integration test for real AWS validation
 
-### Growth Projections
+**Rationale:**
+- Fast feedback (unit tests run in milliseconds)
+- Regression prevention (snapshot tests catch unintended changes)
+- Critical property validation (assertions verify requirements)
+- Real-world validation (integration test catches AWS-specific issues)
 
-**Scenario: 100 vendors, 500 services**
-- **Build Time:** ~15-30 seconds (still fast)
-- **Deployment:** Unchanged (static)
-- **Performance:** No impact (pre-rendered)
-- **Content Management:** May need CMS
+**Consequences:**
+- ✅ High confidence in changes before deployment
+- ✅ Fast development feedback loop
+- ✅ Catches issues early
+- ❌ More tests to write and maintain (acceptable for critical infrastructure)
 
-**Scenario: 1000 vendors, 5000 services**
-- **Build Time:** 1-3 minutes (acceptable)
-- **Content Management:** Requires CMS (markdown becomes unwieldy)
-- **Search:** May need dedicated search service (not JSON)
-- **Organization:** Need better taxonomy/filtering
-
-### Scalability Recommendations
-
-**Short-term (current approach sufficient):**
-- Continue file-based content
-- Optimize Eleventy config
-- Add search enhancements
-
-**Medium-term (100-500 services):**
-- Consider headless CMS (Contentful, Sanity)
-- Implement full-text search (Algolia, Meilisearch)
-- Add advanced filtering UI
-
-**Long-term (1000+ services):**
-- Hybrid approach: CMS + static generation
-- Dedicated search infrastructure
-- Content API for external integrations
-- Multi-language support
+**Status:** Accepted
 
 ---
 
-## Technical Decisions & Rationale
-
-### Why Eleventy?
-
-**Pros:**
-- ✅ Simple, fast static site generator
-- ✅ No client-side framework (lightweight)
-- ✅ Flexible (multiple template engines)
-- ✅ Great for content-heavy sites
-- ✅ Strong community & plugins
-- ✅ Government sector adoption (GOV.UK plugin)
-
-**Alternatives Considered:**
-- ❌ **Next.js:** Overkill for static content, React overhead
-- ❌ **Gatsby:** GraphQL unnecessary, heavier build
-- ❌ **Hugo:** Less JavaScript ecosystem fit
-- ❌ **Jekyll:** Ruby dependency, slower
-
-### Why JAMstack?
-
-**Pros:**
-- ✅ Maximum security (no backend to hack)
-- ✅ Fast performance (pre-rendered)
-- ✅ Cheap hosting (static files)
-- ✅ Easy scaling (CDN)
-- ✅ Version controlled content
-- ✅ Developer-friendly
-
-**Cons:**
-- ❌ No real-time updates (requires rebuild)
-- ❌ Not suitable for user-generated content
-- ❌ Build time increases with content
-
-**Fit for NDX:** Excellent (mostly informational, infrequent updates)
-
-### Why GitHub Pages?
-
-**Pros:**
-- ✅ Free for public repos
-- ✅ Integrated with GitHub Actions
-- ✅ Automatic HTTPS
-- ✅ Good performance (Fastly CDN)
-- ✅ Simple deployment
-
-**Cons:**
-- ❌ No server-side capabilities
-- ❌ Limited build time (10 min max)
-- ❌ Public repos only for free tier
-
-**Alternatives:**
-- **Netlify:** Better for advanced features (forms, functions)
-- **Cloudflare Pages:** Faster CDN, more regions
-- **AWS S3 + CloudFront:** More control, higher complexity
-
-**Choice:** GitHub Pages is sufficient for alpha phase, easy migration later
-
-### Why GOV.UK Frontend?
-
-**Pros:**
-- ✅ Official UK government design system
-- ✅ Accessibility built-in (WCAG 2.1 AA)
-- ✅ Familiar to government users
-- ✅ Well-maintained components
-- ✅ Compliance with GDS standards
-
-**Cons:**
-- ❌ Less flexible than custom design
-- ❌ UK-specific (not reusable outside gov)
-
-**Fit for NDX:** Perfect (government service)
-
----
-
-## Future Considerations
-
-### Phase 2: Beyond Alpha
-
-**When NDX moves from prototype to production:**
-
-1. **User Accounts & Authentication**
-   - SSO integration (Gov.uk Verify, GOV.UK Sign In)
-   - User dashboards
-   - Service access tracking
-
-2. **Dynamic Features**
-   - User reviews (real-time submission)
-   - Service usage analytics
-   - Access request workflow
-
-3. **Backend Services**
-   - API for service metadata
-   - User management database
-   - Integration with procurement systems
-
-4. **Headless CMS**
-   - Content management UI
-   - Non-technical editor access
-   - Draft/publish workflow
-
-5. **Search Enhancement**
-   - Full-text search service
-   - Advanced filtering
-   - Faceted navigation
-
-### Migration Path (Static → Hybrid)
-
-**Recommended Approach:**
-- Keep static generation for public pages
-- Add Next.js or similar for dynamic features
-- Introduce API layer for user-specific data
-- Maintain current content in markdown (version controlled)
-- Use CMS only for non-critical content updates
-
-**Architecture Evolution:**
-```
-Current: Full Static (JAMstack)
-         ↓
-Phase 2: Hybrid (Static + API)
-         ↓
-Phase 3: Full Application (React/Next.js + API + CMS)
-```
-
-### Technical Debt to Address
-
-1. **Testing:** Add automated test suite
-2. **Search:** JSON search won't scale to 1000+ services
-3. **Content Management:** Markdown editing not user-friendly
-4. **Analytics:** Add usage tracking (Google Analytics, etc.)
-5. **Forms:** No form handling (would need Netlify Forms or API)
-
----
-
-## Appendices
-
-### Glossary
-
-- **JAMstack:** JavaScript, APIs, and Markup architecture
-- **Eleventy (11ty):** Static site generator
-- **Nunjucks:** Templating engine
-- **GOV.UK Frontend:** UK government design system
-- **GitHub Pages:** Static site hosting service
-- **Markdown:** Lightweight markup language
-- **Frontmatter:** YAML metadata at the top of markdown files
-- **Collection:** Eleventy's data grouping mechanism
-- **CDN:** Content Delivery Network
-
-### Key Files Reference
-
-| File | Purpose |
-|------|---------|
-| `eleventy.config.js` | Eleventy configuration, collections, plugins, filters |
-| `package.json` | Dependencies, scripts, Prettier config |
-| `src/index.md` | Homepage |
-| `src/_includes/components/` | Custom components |
-| `src/assets/styles.scss` | Main stylesheet |
-| `.github/workflows/ci.yaml` | CI/CD pipeline |
-| `.nvmrc` | Node version (20.17.0) |
-
-### Links & Resources
-
-- **Repository:** https://github.com/co-cddo/ndx
-- **Website:** https://co-cddo.github.io/ndx/
-- **Eleventy Docs:** https://www.11ty.dev/docs/
-- **GOV.UK Frontend:** https://frontend.design-system.service.gov.uk/
-- **GOV.UK Eleventy Plugin:** https://github.com/x-govuk/govuk-eleventy-plugin
-
----
-
-**Document Version:** 1.0.0
-**Last Updated:** 2025-11-18
-**Maintained By:** UK Central Digital and Data Office (CDDO)
-**Contact:** ndx@digital.cabinet-office.gov.uk
+_Generated by BMAD Decision Architecture Workflow v1.0_
+_Date: 2025-11-20_
+_For: cns_

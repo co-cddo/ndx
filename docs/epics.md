@@ -1,887 +1,1260 @@
-# ndx - Epic Breakdown
+# NDX CloudFront Origin Routing - Epic Breakdown
 
 **Author:** cns
-**Date:** 2025-11-18
-**Project:** National Digital Exchange - Infrastructure Evolution
+**Date:** 2025-11-20
+**Project:** National Digital Exchange - CloudFront Cookie-Based Origin Routing
 **Domain:** GovTech (UK Government)
 
 ---
 
 ## Overview
 
-This document provides the complete epic and story breakdown for the NDX Infrastructure Evolution project, decomposing the requirements from the [PRD](./prd.md) into implementable stories with full technical context from the [Infrastructure Architecture](./infrastructure-architecture.md).
+This document provides the complete epic and story breakdown for the NDX CloudFront Origin Routing project, decomposing the requirements from the [PRD](./prd.md) into implementable stories with full technical context from the [Architecture](./architecture.md).
 
 **Context Incorporated:**
-- ✅ PRD requirements (26 FRs, 23 NFRs)
-- ✅ Infrastructure Architecture technical decisions
+- ✅ PRD requirements (44 FRs, 35 NFRs)
+- ✅ Architecture technical decisions
 
 ---
 
 ## Functional Requirements Inventory
 
-### Infrastructure Provisioning
-- **FR1:** System can define S3 bucket (`ndx-static-prod`) as Infrastructure-as-Code using AWS CDK TypeScript
-- **FR2:** System can deploy S3 bucket to AWS us-west-2 region using `NDX/InnovationSandboxHub` profile
-- **FR3:** System can configure S3 bucket for CloudFront origin access (public access blocked, prepared for CDN)
-- **FR4:** Infrastructure code can be validated locally via `cdk synth` before deployment
-- **FR5:** Infrastructure changes can be previewed via `cdk diff` before applying to AWS
-- **FR6:** Infrastructure can be deployed to AWS via `cdk deploy` command
-- **FR7:** Infrastructure deployments are idempotent (re-running deploy with no changes causes no AWS updates)
+### CloudFront Origin Management
+- **FR1:** System can add `ndx-static-prod` S3 bucket as a new origin to CloudFront distribution E3THG4UHYDHVWP
+- **FR2:** System can configure Origin Access Control for new S3 origin matching security of existing S3Origin
+- **FR3:** System can define origin properties (connection timeout, read timeout, connection attempts) matching existing origins
+- **FR4:** System can reference existing CloudFront distribution in CDK without recreating or modifying core distribution properties
+- **FR5:** System preserves existing S3Origin completely unchanged (bucket, OAC, timeouts, protocol)
+- **FR6:** System preserves API Gateway origin completely unchanged (endpoint, path, protocol, timeouts)
 
-### File Deployment
-- **FR8:** System can upload all files from `_site/` directory to `ndx-static-prod` S3 bucket
-- **FR9:** Deployment script can use AWS CLI with `NDX/InnovationSandboxHub` profile for S3 upload
-- **FR10:** Deployment preserves file structure and MIME types during S3 upload
-- **FR11:** Deployment can be triggered via `yarn deploy` command from project root
-- **FR12:** Deployment requires successful `yarn build` to complete before uploading files
+### Cookie-Based Routing Logic
+- **FR7:** System can inspect incoming HTTP requests for `Cookie` header
+- **FR8:** System can parse `Cookie` header to extract `NDX` cookie value
+- **FR9:** System routes requests to `ndx-static-prod` origin when `NDX` cookie value equals `true` (exact match, case-sensitive)
+- **FR10:** System routes requests to existing S3Origin when `NDX` cookie is missing
+- **FR11:** System routes requests to existing S3Origin when `NDX` cookie exists but value is not `true`
+- **FR12:** Routing logic executes for every request to default cache behavior (HTML pages, assets)
+- **FR13:** Routing logic does NOT execute for API Gateway routes (preserves existing API routing)
+- **FR14:** Routing function returns modified request with correct origin selection
 
-### Infrastructure Quality & Testing
-- **FR13:** CDK infrastructure code can be tested via snapshot tests (CloudFormation template validation)
-- **FR14:** CDK infrastructure code can be tested via fine-grained assertions (bucket properties, encryption, naming)
-- **FR15:** CDK TypeScript code can be linted via ESLint with AWS CDK recommended rules
-- **FR16:** All infrastructure tests must pass before deployment is allowed
-- **FR17:** Infrastructure code can be version-controlled in git with appropriate .gitignore for CDK artifacts
+### Routing Function Deployment
+- **FR15:** System can deploy CloudFront Function (Option A) or Lambda@Edge function (Option B) containing routing logic
+- **FR16:** Routing function code can be defined in CDK as part of infrastructure
+- **FR17:** Routing function can be attached to default cache behavior as viewer-request or origin-request function
+- **FR18:** Routing function deployment is part of CloudFront configuration update (single CDK deployment)
+- **FR19:** CloudFront propagates function changes globally across all edge locations
 
-### Documentation & Maintainability
-- **FR18:** Infrastructure setup, deployment process, and architecture are documented in `/infra/README.md`
-- **FR19:** Deployment workflow is documented for team members to understand manual deployment process
-- **FR20:** CDK code follows TypeScript and AWS CDK best practices for long-term maintainability
+### Cache Behavior Configuration
+- **FR20:** System preserves all existing cache policy settings (TTL, compression, HTTPS redirect)
+- **FR21:** System ensures cookies are forwarded to routing function (required for cookie inspection)
+- **FR22:** System preserves existing viewer protocol policy (redirect-to-https)
+- **FR23:** System preserves existing allowed HTTP methods configuration
+- **FR24:** System preserves existing response headers policies if configured
+
+### CDK Infrastructure Management
+- **FR25:** CDK code can import existing CloudFront distribution by ID (E3THG4UHYDHVWP)
+- **FR26:** CDK can modify CloudFront distribution configuration without recreating distribution
+- **FR27:** Infrastructure changes can be validated via `cdk synth` before deployment
+- **FR28:** Infrastructure changes can be previewed via `cdk diff` showing origin and function additions
+- **FR29:** Infrastructure can be deployed via `cdk deploy` with zero service downtime
+- **FR30:** CDK deployment is idempotent (re-running with no changes causes no AWS updates)
+
+### Testing & Validation
+- **FR31:** CDK tests can validate new S3 origin is added to distribution configuration
+- **FR32:** CDK tests can validate API Gateway origin remains unchanged
+- **FR33:** CDK tests can validate routing function code is syntactically valid
+- **FR34:** CDK tests can validate cache behavior configuration preserves existing policies
+- **FR35:** System can execute smoke tests post-deployment (manual cookie setting and verification)
 
 ### Rollback & Safety
-- **FR21:** Infrastructure changes can be reviewed before applying (via `cdk diff`)
-- **FR22:** S3 bucket supports versioning for file rollback capability (if enabled)
-- **FR23:** Failed deployments can be investigated via CloudFormation events and logs
+- **FR36:** System can disable routing function via CloudFront configuration change
+- **FR37:** System can remove new S3 origin from distribution if rollback needed
+- **FR38:** System can revert to previous CloudFront configuration via CDK version control
+- **FR39:** Failed CloudFront deployments can be investigated via CloudFormation events
+- **FR40:** CloudFormation automatically rolls back failed CloudFront configuration changes
 
-### Future Extensibility
-- **FR24:** Infrastructure structure supports future addition of CloudFront CDN
-- **FR25:** Infrastructure structure supports future addition of OIDC authentication for GitHub Actions
-- **FR26:** Infrastructure structure supports future multi-environment contexts (dev/staging/prod)
+### Operational Monitoring
+- **FR41:** CloudFront can emit metrics showing request counts per origin
+- **FR42:** CloudFront can emit error rate metrics for each origin separately
+- **FR43:** Routing function execution can be monitored via CloudWatch if needed (Lambda@Edge only)
+- **FR44:** System can log routing decisions for debugging (optional, not required for MVP)
 
 ---
 
 ## Epic Summary
 
-**3 Epics** delivering AWS CDK infrastructure for UK government's NDX platform:
+**3 Epics** delivering cookie-based origin routing for safe UI testing:
 
-1. **Foundation & CDK Setup** - Establish AWS CDK project with testing and linting infrastructure
-2. **S3 Infrastructure Deployment** - Deploy production S3 bucket with security and versioning
-3. **Deployment Automation & Documentation** - Create deployment scripts and comprehensive documentation
+1. **CloudFront Origin Infrastructure** - Add new S3 origin with proper security to existing CloudFront distribution
+2. **Cookie-Based Routing Implementation** - Deploy CloudFront Function to route testers to new origin based on NDX cookie
+3. **Testing, Validation & Operational Readiness** - Complete test coverage, deployment automation, and rollback procedures
 
 ---
 
 ## FR Coverage Map
 
-- **Epic 1 (Foundation):** Enables all FRs through project setup + CDK bootstrap
-- **Epic 2 (S3 Infrastructure):** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR21, FR22, FR23, FR24, FR25, FR26
-- **Epic 3 (Deployment & Docs):** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20
-
-**Pre-mortem Enhancements Applied:**
-- Added CDK bootstrap story (Epic 1)
-- Added bucket name validation and access pattern verification (Epic 2)
-- Enhanced deployment script with error recovery (Epic 3)
-- Added integration testing and smoke tests (Epic 3)
-- Enhanced documentation as living document (Epic 3)
+- **Epic 1 (CloudFront Origin Infrastructure):** FR1, FR2, FR3, FR4, FR5, FR6, FR25, FR26, FR27, FR28, FR29, FR30
+- **Epic 2 (Cookie-Based Routing Implementation):** FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20, FR21, FR22, FR23, FR24
+- **Epic 3 (Testing, Validation & Operational Readiness):** FR31, FR32, FR33, FR34, FR35, FR36, FR37, FR38, FR39, FR40, FR41, FR42, FR43, FR44
 
 ---
 
-## Epic 1: Foundation & CDK Setup
+## Epic 1: CloudFront Origin Infrastructure
 
-**Goal:** Establish AWS CDK TypeScript project with testing, linting, and AWS account preparation to enable all infrastructure development.
+**Goal:** Add `ndx-static-prod` S3 bucket as a new origin to existing CloudFront distribution E3THG4UHYDHVWP with proper security configuration, enabling future cookie-based routing while preserving all existing origins and functionality.
 
-**User Value:** Development environment fully configured and AWS account bootstrapped for CDK deployments.
+**User Value:** New S3 origin exists in CloudFront distribution and is ready to serve content to testers, with zero impact on production users or existing API functionality.
 
-**FRs Covered:** Foundational setup enabling FR1-FR26
+**FRs Covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR25, FR26, FR27, FR28, FR29, FR30
 
 ---
 
-### Story 1.1: Initialize CDK Project
+### Story 1.1: Import Existing CloudFront Distribution in CDK
 
 As a developer,
-I want to initialize an AWS CDK TypeScript project in the `/infra` directory,
-So that I have the standard CDK structure and dependencies to define infrastructure as code.
+I want to import the existing CloudFront distribution (E3THG4UHYDHVWP) into our CDK stack,
+So that we can modify its configuration without recreating the distribution or disrupting service.
 
 **Acceptance Criteria:**
 
-**Given** the project root directory exists
-**When** I run `mkdir infra && cd infra && cdk init app --language typescript`
-**Then** the CDK project is created with standard structure:
-- `bin/infra.ts` - CDK app entry point exists
-- `lib/` - Directory for stack definitions exists
-- `test/` - Directory for tests exists
-- `cdk.json` - CDK configuration file exists
-- `package.json` - Contains `aws-cdk-lib` and `constructs` dependencies
-- `tsconfig.json` - TypeScript configuration exists
-- `.gitignore` - CDK-specific ignores present (`cdk.out/`, `node_modules/`)
+**Given** the CDK stack `NdxStaticStack` exists in `infra/lib/ndx-stack.ts`
+**When** I add code to import the CloudFront distribution
+**Then** the stack includes:
+```typescript
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 
-**And** running `npm ls aws-cdk-lib` shows CDK v2.224.0 or later installed
-**And** the example stack compiles successfully with `npm run build`
+const distribution = cloudfront.Distribution.fromDistributionAttributes(this, 'ImportedDistribution', {
+  distributionId: 'E3THG4UHYDHVWP',
+  domainName: 'd7roov8fndsis.cloudfront.net'
+});
+```
 
-**Prerequisites:** None (first story)
+**And** running `cdk synth --profile NDX/InnovationSandboxHub` generates valid CloudFormation
+**And** the CloudFormation template does NOT include a new distribution resource (import only, no replacement)
+**And** the distribution variable is available for subsequent configuration changes
+**And** TypeScript compilation succeeds with no errors
+
+**Prerequisites:** None (first story in epic)
 
 **Technical Notes:**
-- Use `cdk init app --language typescript` (official AWS CDK starter)
-- Architecture specifies CDK v2.224.0 (Nov 2025 release)
-- Example stack will be replaced in Epic 2, but validates setup works
-- Creates foundational TypeScript + Jest + CDK structure
+- Use `Distribution.fromDistributionAttributes()` for importing (Architecture ADR-003)
+- Distribution ID: E3THG4UHYDHVWP (from PRD Infrastructure section)
+- Domain: d7roov8fndsis.cloudfront.net (from PRD Infrastructure section)
+- Account: 568672915267, Region: us-west-2
+- This is a READ operation only - no modifications to distribution yet
+- Import creates a reference without managing the resource lifecycle
+- Enables subsequent stories to add origins and configure cache behaviors
 
 ---
 
-### Story 1.2: Convert to Yarn Package Manager
+### Story 1.2: Add New S3 Origin with Origin Access Control
 
 As a developer,
-I want to convert the CDK project from npm to Yarn,
-So that package management is consistent with the main NDX application.
+I want to add the `ndx-static-prod` S3 bucket as a new origin to the CloudFront distribution,
+So that CloudFront can fetch content from this bucket for testers using cookie-based routing.
 
 **Acceptance Criteria:**
 
-**Given** the CDK project is initialized with npm
-**When** I run `rm package-lock.json && yarn install`
-**Then** the project uses Yarn:
-- `package-lock.json` is deleted
-- `yarn.lock` is created
-- `node_modules/` is populated via Yarn
-- All dependencies resolve correctly
+**Given** the CloudFront distribution is imported in CDK
+**When** I add the new S3 origin configuration
+**Then** the CDK stack includes:
+```typescript
+import * as s3 from 'aws-cdk-lib/aws-s3';
 
-**And** running `yarn build` compiles TypeScript successfully
-**And** running `yarn test` executes Jest tests successfully
-**And** `.gitignore` includes `yarn.lock` is NOT ignored (track lockfile)
+const newOriginBucket = s3.Bucket.fromBucketName(this, 'NewOriginBucket', 'ndx-static-prod');
 
-**Prerequisites:** Story 1.1 (CDK project initialized)
+const newOrigin = new origins.S3Origin(newOriginBucket, {
+  originId: 'ndx-static-prod-origin',
+  originAccessControlId: 'E3P8MA1G9Y5BYE',  // Reuse existing OAC
+  connectionAttempts: 3,
+  connectionTimeout: cdk.Duration.seconds(10),
+  readTimeout: cdk.Duration.seconds(30),
+  customHeaders: {}
+});
+```
+
+**And** origin configuration matches existing S3Origin settings:
+- Connection attempts: 3
+- Connection timeout: 10 seconds
+- Read timeout: 30 seconds
+- Protocol: HTTPS only
+- Origin Access Control: E3P8MA1G9Y5BYE (reused from existing S3Origin)
+
+**And** running `cdk diff --profile NDX/InnovationSandboxHub` shows new origin being added
+**And** diff output clearly shows origin ID: `ndx-static-prod-origin`
+**And** diff confirms OAC ID: E3P8MA1G9Y5BYE
+**And** no changes shown to existing origins (S3Origin and API Gateway)
+
+**Prerequisites:** Story 1.1 (CloudFront distribution imported)
 
 **Technical Notes:**
-- Main NDX app uses Yarn 4.5.0 (Berry)
-- Consistency reduces context switching for developers
-- Yarn workspaces not needed (separate package.json in `/infra`)
-- Archive: Architecture doc section 2.1 specifies Yarn for consistency
+- Reuse existing OAC E3P8MA1G9Y5BYE for security consistency (Architecture ADR-002)
+- Origin ID naming: `ndx-static-prod-origin` (Architecture naming conventions)
+- S3 bucket `ndx-static-prod` already exists (deployed in Phase 1)
+- OAC provides secure access without making bucket public (NFR-SEC-1)
+- Connection/timeout settings match existing origins for consistency (FR3)
+- Architecture section: "Origin Configuration" provides exact settings
 
 ---
 
-### Story 1.3: Configure ESLint with AWS CDK Plugin
+### Story 1.3: Verify Existing Origins Remain Unchanged
 
 As a developer,
-I want ESLint configured with TypeScript and AWS CDK recommended rules,
-So that infrastructure code follows best practices and catches common mistakes early.
+I want to validate that existing S3 and API Gateway origins are not modified,
+So that production traffic and API functionality remain completely unaffected.
 
 **Acceptance Criteria:**
 
-**Given** the CDK project exists with TypeScript
-**When** I install and configure ESLint
-**Then** ESLint is set up with:
-- Dependencies installed: `eslint`, `typescript-eslint`, `eslint-plugin-awscdk`
-- `eslint.config.mjs` created using flat config format (2025 standard)
-- Configuration includes:
-  - `@eslint/js` recommended rules
-  - `typescript-eslint` recommended type-checked rules
-  - `eslint-plugin-awscdk` recommended rules
-- `package.json` has script: `"lint": "eslint ."`
-- `package.json` has script: `"lint:fix": "eslint . --fix"`
+**Given** the new S3 origin has been added to CDK stack
+**When** I run `cdk diff --profile NDX/InnovationSandboxHub`
+**Then** the diff output shows:
+- New origin: `ndx-static-prod-origin` (addition)
+- Existing S3Origin: No changes
+- Existing API Gateway origin: No changes
 
-**And** running `yarn lint` on the example stack shows no errors
-**And** parserOptions.project references `tsconfig.json`
-**And** ignores patterns include: `node_modules`, `cdk.out`, `cdk.context.json`, `*.js`, `coverage`
+**And** existing S3Origin configuration is verified as unchanged:
+- Origin ID: `S3Origin`
+- Bucket: `ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky`
+- OAC: E3P8MA1G9Y5BYE
+- All timeout and connection settings identical
 
-**Prerequisites:** Story 1.2 (Yarn installed)
+**And** existing API Gateway origin is verified as unchanged:
+- Origin ID: `InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A`
+- Domain: `1ewlxhaey6.execute-api.us-west-2.amazonaws.com`
+- Path: `/prod`
+- All settings identical
+
+**And** no changes to cache behaviors are shown in diff
+**And** no changes to viewer protocol policies are shown
+
+**Prerequisites:** Story 1.2 (New S3 origin added)
 
 **Technical Notes:**
-- ESLint flat config (`eslint.config.mjs`) is 2025 standard (replaces `.eslintrc`)
-- `eslint-plugin-awscdk` provides CDK-specific best practice rules
-- Type-checked rules require `parserOptions.project: true`
-- Architecture doc section 3.4 specifies exact ESLint configuration
-- NFR-MAINT-1 requires ESLint with zero errors before deployment
+- This is a VALIDATION story - no code changes, just verification
+- Critical for government service - FR5 and FR6 mandate existing origins unchanged
+- Use `cdk diff` to generate change preview before deployment
+- Document diff output for approval review (NFR-COMP-2)
+- API Gateway origin must remain untouched (FR6, FR13)
+- Existing S3Origin serves current production site (FR5)
 
 ---
 
-### Story 1.4: Set Up Git Integration
+### Story 1.4: Deploy CloudFront Infrastructure Changes to AWS
 
 As a developer,
-I want the `/infra` directory properly configured for version control,
-So that infrastructure code is tracked while CDK artifacts are excluded.
+I want to deploy the updated CloudFront configuration to AWS,
+So that the new S3 origin exists in the distribution and is ready for routing configuration.
 
 **Acceptance Criteria:**
 
-**Given** the CDK project exists with generated `.gitignore`
-**When** I verify and enhance the `.gitignore`
-**Then** the following are excluded from git:
-- `node_modules/`
-- `cdk.out/`
-- `cdk.context.json`
-- `*.js` (compiled TypeScript)
-- `*.d.ts` (TypeScript declarations)
-- `coverage/` (test coverage reports)
-- `.DS_Store` (macOS files)
+**Given** CDK diff shows only new origin addition (existing origins unchanged)
+**When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
+**Then** CloudFormation deployment succeeds with:
+- Stack status: UPDATE_COMPLETE
+- New origin added to distribution E3THG4UHYDHVWP
+- CloudFront propagates changes to all edge locations (~10-15 minutes)
 
-**And** the following ARE tracked in git:
-- `yarn.lock`
-- `cdk.json`
-- `tsconfig.json`
-- `eslint.config.mjs`
-- `package.json`
-- All `.ts` source files
+**And** post-deployment verification confirms:
+```bash
+# Verify distribution status
+aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+# Output: "Deployed"
 
-**And** running `git status` in `/infra` shows only source files and configs as trackable
-**And** commit message convention documented: `feat(infra):`, `test(infra):`, `fix(deploy):`
+# Verify origins count increased
+aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.DistributionConfig.Origins[*].Id'
+# Output includes: "S3Origin", "API Gateway origin ID", "ndx-static-prod-origin"
+```
 
-**Prerequisites:** Story 1.3 (ESLint configured)
+**And** production site remains accessible throughout deployment (zero downtime)
+**And** API endpoints remain functional (no disruption)
+**And** CloudFormation events show successful resource updates
+**And** running `cdk diff` after deployment shows no changes (idempotent)
+
+**Prerequisites:** Story 1.3 (Existing origins verified unchanged)
 
 **Technical Notes:**
-- CDK init creates baseline `.gitignore`, verify completeness
-- Infrastructure code must be in main repo (not separate)
-- Architecture doc section 8.3 specifies version control requirements
-- FR17 mandates proper .gitignore for CDK artifacts
+- Zero-downtime deployment (NFR-REL-1) - CloudFront handles updates gracefully
+- CloudFormation automatically rolls back on failure (NFR-REL-2)
+- Propagation time: 10-15 minutes for global edge locations (NFR-PERF-6)
+- Monitor via CloudFormation console or CLI (FR39)
+- New origin not yet routing traffic (no function attached) - safe to deploy
+- Deployment is idempotent (FR30) - can re-run without changes
+- Architecture section: "Deployment Process" documents commands
 
 ---
 
-### Story 1.5: Bootstrap CDK in AWS Account
+## Epic 2: Cookie-Based Routing Implementation
+
+**Goal:** Implement CloudFront Function to inspect `NDX` cookie and route requests to appropriate origin, enabling testers to access new UI via cookie while all other users see existing site.
+
+**User Value:** Testers can set `NDX=true` cookie in browser to see new UI from `ndx-static-prod`, while production users continue seeing existing site with zero changes to their experience.
+
+**FRs Covered:** FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20, FR21, FR22, FR23, FR24
+
+---
+
+### Story 2.1: Create CloudFront Function for Cookie Inspection
 
 As a developer,
-I want to bootstrap the AWS CDK in the target AWS account and region,
-So that CDK has the necessary staging resources (S3 bucket, IAM roles) to deploy stacks.
+I want to create a CloudFront Function that inspects the NDX cookie and routes to the appropriate origin,
+So that testers with `NDX=true` see content from the new S3 bucket while others see the existing site.
 
 **Acceptance Criteria:**
 
-**Given** the AWS CLI is configured with `NDX/InnovationSandboxHub` profile
-**When** I run `cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub`
-**Then** CDK bootstrap completes successfully creating:
-- CDK staging S3 bucket (for CloudFormation templates and assets)
-- IAM roles for CloudFormation execution
-- SSM parameters for bootstrap version
+**Given** the CDK project structure exists
+**When** I create `infra/lib/functions/cookie-router.js`
+**Then** the function includes:
 
-**And** running `aws cloudformation describe-stacks --stack-name CDKToolkit --profile NDX/InnovationSandboxHub` shows stack exists
-**And** the bootstrap version is compatible with CDK v2.224.0+
-**And** bootstrap resources are tagged with `project: ndx-cdk-bootstrap`
+```javascript
+function handler(event) {
+  var request = event.request;
+  var cookies = parseCookies(request.headers.cookie);
 
-**Prerequisites:** Story 1.4 (Git configured)
+  // Route to new origin if NDX=true
+  if (cookies['NDX'] === 'true') {
+    request.origin = {
+      s3: {
+        domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
+        region: 'us-west-2',
+        authMethod: 'origin-access-control',
+        originAccessControlId: 'E3P8MA1G9Y5BYE'
+      }
+    };
+  }
+  // Else: request unchanged, routes to default S3Origin
+
+  return request;
+}
+
+function parseCookies(cookieHeader) {
+  if (!cookieHeader) return {};
+
+  var cookies = {};
+  cookieHeader.value.split(';').forEach(function(cookie) {
+    var parts = cookie.split('=');
+    var key = parts[0].trim();
+    var value = parts[1] ? parts[1].trim() : '';
+    cookies[key] = value;
+  });
+
+  return cookies;
+}
+```
+
+**And** function follows CloudFront Functions JavaScript constraints:
+- Uses `var` (not `const` or `let`)
+- No ES6 features (no arrow functions, template literals)
+- Code size < 1KB (well under 10KB limit)
+- No console.log (avoid execution cost)
+
+**And** function handles edge cases gracefully:
+- Missing cookie header: Returns empty cookies object
+- Malformed cookie: Parses what it can, empty for invalid
+- NDX cookie with non-"true" value: Routes to default origin
+- Missing NDX cookie: Routes to default origin
+
+**And** function uses exact string matching:
+- Cookie name: `NDX` (case-sensitive, exact)
+- Cookie value: `true` (case-sensitive, exact)
+- Not `ndx`, not `Ndx`, not `"true"`, not `1`
+
+**Prerequisites:** Story 1.4 (New origin deployed)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** Bootstrap is one-time AWS setup required before any `cdk deploy`
-- Failure to bootstrap causes cryptic "assets bucket not found" errors
-- Bootstrap creates `CDKToolkit` CloudFormation stack
-- Bootstrap resources persist across stack deployments
-- Architecture doc section 10.2 mentions bootstrap as prerequisite
-- Must be done in target account (verify account ID matches)
+- CloudFront Functions use limited JavaScript runtime (no Node.js APIs)
+- Function executes at all 225+ edge locations (Architecture ADR-001)
+- Sub-millisecond execution expected (NFR-PERF-1)
+- Fail-open design: Errors route to default origin (NFR-REL-3)
+- Architecture section: "CloudFront Function Pattern" provides exact code
+- OAC ID must match origin configuration: E3P8MA1G9Y5BYE
 
 ---
 
-### Story 1.6: Create Initial Infrastructure README
+### Story 2.2: Write Unit Tests for Cookie Router Function
 
 As a developer,
-I want a `/infra/README.md` documenting setup and deployment processes,
-So that team members can understand and execute infrastructure operations.
+I want comprehensive unit tests for the cookie routing logic,
+So that I can verify correct routing behavior before deploying to production.
 
 **Acceptance Criteria:**
 
-**Given** the CDK project is fully configured
-**When** I create `/infra/README.md`
-**Then** the README includes:
+**Given** the cookie-router.js function exists
+**When** I create `infra/test/cookie-router.test.ts`
+**Then** tests cover all routing scenarios:
 
-**Section 1: Overview**
-- Project name and purpose
-- Link to main architecture document
-- **Document version and last updated date** (living doc marker)
+**Test Case 1: Route to new origin when NDX=true**
+```typescript
+const event = { request: { headers: { cookie: { value: 'NDX=true' } } } };
+const result = handler(event);
+expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
+expect(result.origin.s3.originAccessControlId).toBe('E3P8MA1G9Y5BYE');
+```
 
-**Section 2: Prerequisites**
-- Node.js 20.17.0+
-- Yarn 4.5.0+
-- AWS CLI v2.x
-- Configured AWS profile: `NDX/InnovationSandboxHub`
-- Verification command: `aws sts get-caller-identity --profile NDX/InnovationSandboxHub`
+**Test Case 2: Use default origin when cookie missing**
+```typescript
+const event = { request: { headers: {} } };
+const result = handler(event);
+expect(result.origin).toBeUndefined(); // Request unchanged
+```
 
-**Section 3: Initial Setup** (one-time)
-- CDK bootstrap command with account ID
-- Dependency installation: `yarn install`
-- Build verification: `yarn build`
+**Test Case 3: Use default origin when NDX=false**
+```typescript
+const event = { request: { headers: { cookie: { value: 'NDX=false' } } } };
+const result = handler(event);
+expect(result.origin).toBeUndefined();
+```
 
-**Section 4: Development Workflow**
-- Run tests: `yarn test`
-- Lint code: `yarn lint`
-- Preview changes: `cdk diff --profile NDX/InnovationSandboxHub`
-- Deploy infrastructure: `cdk deploy --profile NDX/InnovationSandboxHub`
+**Test Case 4: Parse multiple cookies correctly**
+```typescript
+const event = { request: { headers: { cookie: { value: 'session=abc123; NDX=true; other=xyz' } } } };
+const result = handler(event);
+expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
+```
 
-**Section 5: Troubleshooting**
-- Common errors and solutions
-- Link to CloudFormation events for debugging
+**Test Case 5: Handle malformed cookies gracefully**
+```typescript
+const event = { request: { headers: { cookie: { value: 'invalid;;;NDX=true' } } } };
+// Should still parse NDX=true successfully
+```
 
-**And** README follows CommonMark format
-**And** Code blocks use proper syntax highlighting
+**And** running `yarn test` executes all tests successfully
+**And** test coverage includes parseCookies() helper function
+**And** tests run in < 100ms (fast feedback)
 
-**Prerequisites:** Story 1.5 (CDK bootstrapped)
+**Prerequisites:** Story 2.1 (CloudFront Function created)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** Documentation as living document, not one-time artifact
-- Include version/date to track when last updated
-- Will be enhanced in Epic 3 with deployment script details
-- Architecture doc section 11 provides structure template
-- FR18 requires complete setup instructions in README
+- Use Jest testing framework (already configured in CDK project)
+- Test file location: `infra/test/cookie-router.test.ts`
+- Architecture section: "Testing Patterns" provides test examples
+- No AWS calls in unit tests (pure function testing)
+- Verify exact string matching for cookie name and value (FR9)
 
 ---
 
-## Epic 2: S3 Infrastructure Deployment
-
-**Goal:** Deploy production-ready S3 bucket with encryption, versioning, security controls, and validation of deployment feasibility.
-
-**User Value:** AWS infrastructure exists and is validated for hosting NDX static site files.
-
-**FRs Covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR21, FR22, FR23, FR24, FR25, FR26
-
----
-
-### Story 2.1: Validate S3 Bucket Name Availability
+### Story 2.3: Configure Cache Policy with NDX Cookie Allowlist
 
 As a developer,
-I want to verify the bucket name `ndx-static-prod` is available in AWS,
-So that deployment won't fail due to global bucket name conflicts.
+I want to create a Cache Policy that forwards only the NDX cookie to the function,
+So that cookie inspection works while preserving cache effectiveness for non-cookied users.
 
 **Acceptance Criteria:**
 
-**Given** I have AWS CLI access with `NDX/InnovationSandboxHub` profile
-**When** I run `aws s3api head-bucket --bucket ndx-static-prod --profile NDX/InnovationSandboxHub 2>&1`
-**Then** one of two outcomes occurs:
+**Given** the CloudFront distribution is imported in CDK
+**When** I create a new Cache Policy
+**Then** the CDK stack includes:
 
-**Case 1: Bucket does not exist (desired)**
-- Command returns 404 error
-- Proceed with bucket creation in Story 2.2
+```typescript
+const cachePolicy = new cloudfront.CachePolicy(this, 'NdxCookieRoutingPolicy', {
+  cachePolicyName: 'NdxCookieRoutingPolicy',
+  comment: 'Cache policy for NDX cookie-based routing',
+  defaultTtl: cdk.Duration.seconds(86400),        // 1 day
+  minTtl: cdk.Duration.seconds(1),
+  maxTtl: cdk.Duration.seconds(31536000),         // 1 year
+  cookieBehavior: cloudfront.CacheCookieBehavior.whitelist('NDX'),
+  queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
+  headerBehavior: cloudfront.CacheHeaderBehavior.none(),
+  enableAcceptEncodingGzip: true,
+  enableAcceptEncodingBrotli: true
+});
+```
 
-**Case 2: Bucket exists**
-- Command returns 200 or 403
-- Document bucket name conflict
-- Choose alternative: `ndx-static-prod-SUFFIX` or use CDK auto-generated names
+**And** cache policy configuration includes:
+- Cookie behavior: Allowlist (not all cookies)
+- Allowlisted cookies: `['NDX']` only
+- Query strings: Forward all (preserve existing behavior)
+- Headers: None (preserve existing behavior)
+- Compression: Gzip and Brotli enabled
 
-**And** document the final bucket name decision in architecture doc
-**And** if bucket exists, investigate ownership and determine if we control it
+**And** cache effectiveness is preserved:
+- Users without NDX cookie: Share cache (optimal performance)
+- Users with NDX=true: Separate cache (small group)
+- Users with NDX=false: Share default cache
+- No degradation for majority of users (NFR-PERF-3)
 
-**Prerequisites:** Story 1.6 (README created)
+**And** running `cdk diff` shows new CachePolicy resource
+**And** policy name clearly identifies purpose: `NdxCookieRoutingPolicy`
+
+**Prerequisites:** Story 2.2 (Function tests passing)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** S3 bucket names are globally unique across all AWS accounts
-- Hard-coding `ndx-static-prod` assumes it's available
-- Failure discovered at deploy time is too late
-- Early validation prevents wasted effort
-- If name taken, CDK can generate unique names with logical ID + hash
-- Architecture doc section 7.1 specifies bucket name: `ndx-static-prod`
+- Modern CloudFront best practice: Cache Policies (not legacy cache behaviors)
+- Architecture ADR-004: Cache Policy rationale
+- Only NDX cookie forwarded, not all cookies (optimal caching)
+- TTL values match CloudFront defaults (no custom optimization for MVP)
+- Query string forwarding: All (preserves existing behavior - FR20)
+- FR21: Cookie forwarding required for function to inspect
+- Note: CDK API uses `.whitelist()` method name, but we use "allowlist" terminology in documentation
 
 ---
 
-### Story 2.2: Create S3 Bucket with CDK
+### Story 2.4: Deploy CloudFront Function to CDK Stack
 
 As a developer,
-I want to define the S3 bucket infrastructure using AWS CDK TypeScript,
-So that the bucket is created with proper security, versioning, and tags as code.
+I want to deploy the CloudFront Function as part of the CDK stack,
+So that the function is available for attachment to cache behaviors.
 
 **Acceptance Criteria:**
 
-**Given** the CDK project is set up and bucket name validated
-**When** I create `lib/ndx-stack.ts` defining the S3 bucket
+**Given** cookie-router.js function code exists
+**When** I add CloudFront Function to CDK stack
 **Then** the stack includes:
 
 ```typescript
-import * as cdk from 'aws-cdk-lib';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as fs from 'fs';
+import * as path from 'path';
 
-export class NdxStaticStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+const functionCode = fs.readFileSync(
+  path.join(__dirname, 'functions/cookie-router.js'),
+  'utf8'
+);
 
-    new s3.Bucket(this, 'StaticSiteBucket', {
-      bucketName: 'ndx-static-prod',
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      versioned: true,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
-  }
-}
+const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouterFunction', {
+  functionName: 'ndx-cookie-router',
+  code: cloudfront.FunctionCode.fromInline(functionCode),
+  comment: 'Routes requests based on NDX cookie value',
+  runtime: cloudfront.FunctionRuntime.JS_2_0
+});
 ```
 
-**And** bucket configuration includes:
-- Name: `ndx-static-prod` (or validated alternative)
-- Encryption: SSE-S3 (AWS managed keys)
-- Public access: Completely blocked (all 4 settings)
-- Versioning: Enabled
-- Removal policy: RETAIN (protect data on stack deletion)
-- Tags: `{ project: 'ndx', environment: 'prod', managedby: 'cdk' }`
+**And** function configuration specifies:
+- Function name: `ndx-cookie-router`
+- Runtime: JS_2_0 (CloudFront Functions JavaScript 2.0)
+- Code loaded from file system (not hardcoded inline)
+- Code size validated < 10KB limit
 
-**And** running `cdk synth --profile NDX/InnovationSandboxHub` generates valid CloudFormation
-**And** CloudFormation template includes `AWS::S3::Bucket` resource with correct properties
+**And** running `cdk synth` succeeds
+**And** synthesized CloudFormation includes `AWS::CloudFront::Function` resource
+**And** function code is embedded in CloudFormation template
+**And** running `cdk diff` shows new Function resource being added
 
-**Prerequisites:** Story 2.1 (Bucket name validated)
+**Prerequisites:** Story 2.3 (Cache Policy configured)
 
 **Technical Notes:**
-- Replace example stack from Story 1.1 with real infrastructure
-- Stack name: `NdxStaticStack`
-- Bin entry point (`bin/infra.ts`) instantiates this stack
-- Architecture doc section 7.1 provides exact S3 configuration
-- FR1: Define S3 bucket as IaC ✓
-- FR3: Configure for CloudFront (blocked public access) ✓
-- NFR-SEC-1, NFR-SEC-2: Security requirements ✓
+- CloudFront Functions runtime: JS_2_0 (latest as of 2025)
+- Code loaded via fs.readFileSync for maintainability
+- Function not yet attached to cache behavior (Story 2.5)
+- Architecture section: "Function Code Location" documents path
+- FR15-19: Function deployment requirements
+- Function deploys globally to all edge locations automatically
 
 ---
 
-### Story 2.3: Validate S3 Access Pattern for MVP
+### Story 2.5: Attach Function to Default Cache Behavior
 
 As a developer,
-I want to verify how files in the S3 bucket will be accessed in MVP,
-So that the site is actually reachable after deployment, not just uploaded.
+I want to attach the cookie router function to the default cache behavior with the new cache policy,
+So that the function executes for all requests and routes based on cookie value.
 
 **Acceptance Criteria:**
 
-**Given** the S3 bucket has `BlockPublicAccess: BLOCK_ALL`
-**When** I analyze the access requirements
-**Then** I document the chosen access method:
+**Given** CloudFront Function and Cache Policy are defined in CDK
+**When** I configure the default cache behavior
+**Then** the CDK stack includes:
 
-**Option A: CloudFront Required for MVP**
-- Bucket remains private (blocked public access)
-- Files accessible only via CloudFront CDN
-- CloudFront OAI granted bucket read access
-- **Consequence:** Epic 3 deployment creates files but site remains dark until CloudFront added (growth phase)
-- **Action:** Document in README that CloudFront is required for site access
+```typescript
+// Note: This requires using L1 (CFN) constructs since imported distribution
+// doesn't support L2 construct modifications directly
 
-**Option B: Temporary Static Website Hosting**
-- Enable static website hosting on bucket
-- Adjust public access block settings
-- Files accessible via S3 website endpoint
-- **Consequence:** Not prepared for CloudFront, requires migration later
-- **Action:** Update CDK stack to enable `websiteIndexDocument: 'index.html'`
+const cfnDistribution = distribution.node.defaultChild as cloudfront.CfnDistribution;
 
-**And** the access decision is documented in:
-- `/infra/README.md` - Deployment section
-- Architecture doc - Data Architecture section updated
-- Epic 3 Story 3.2 - Deployment script knows which endpoint to verify
+cfnDistribution.addPropertyOverride('DistributionConfig.DefaultCacheBehavior', {
+  TargetOriginId: 'S3Origin',  // Keep existing default
+  ViewerProtocolPolicy: 'redirect-to-https',
+  AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
+  CachedMethods: ['GET', 'HEAD'],
+  CachePolicyId: cachePolicy.cachePolicyId,
+  FunctionAssociations: [{
+    EventType: 'viewer-request',
+    FunctionARN: cookieRouterFunction.functionArn
+  }]
+});
+```
 
-**And** if CloudFront required, README clearly states "Site not publicly accessible until CloudFront configured"
+**And** cache behavior configuration preserves:
+- Viewer protocol policy: redirect-to-https (FR22)
+- Allowed methods: GET, HEAD, OPTIONS (FR23)
+- Target origin: S3Origin (default, function overrides when NDX=true)
+- Compression settings (inherited from cache policy)
 
-**Prerequisites:** Story 2.2 (S3 bucket defined in CDK)
+**And** function association specifies:
+- Event type: `viewer-request` (executes before cache lookup)
+- Function type: CloudFront Function (not Lambda@Edge)
+
+**And** API Gateway cache behaviors remain completely unchanged (FR13)
+**And** running `cdk diff` shows:
+- DefaultCacheBehavior: Modified (function + cache policy added)
+- API Gateway behaviors: No changes
+- Existing origins: No changes
+
+**Prerequisites:** Story 2.4 (Function deployed)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** Architecture says "static hosting: disabled" but doesn't clarify MVP access
-- Team could deploy files successfully but site returns 403 Forbidden
-- Must decide NOW: enable static hosting temporarily or require CloudFront from day 1
-- Architecture doc says "prepared for CloudFront" - suggests CloudFront IS the plan
-- Recommendation: Document that CloudFront is required, site dark until growth phase
-- Alternative: Enable static hosting for MVP, migrate to CloudFront in growth
+- Use L1 (CFN) constructs for imported distribution modifications
+- Function executes at viewer-request stage (before cache)
+- Target origin remains S3Origin; function overrides when NDX=true
+- API Gateway routes unaffected (different cache behaviors - FR13)
+- Architecture section: "Function Association" documents event type
+- NFR-PERF-1: Sub-millisecond function execution
+- FR17: Function attached to default cache behavior
 
 ---
 
-### Story 2.4: Deploy S3 Infrastructure to AWS
+### Story 2.6: Deploy Routing Functionality and Validate
 
 As a developer,
-I want to deploy the CDK stack to AWS,
-So that the S3 bucket exists in production and is ready to receive files.
+I want to deploy the complete routing infrastructure and validate cookie-based routing works,
+So that testers can access the new UI while production users remain unaffected.
 
 **Acceptance Criteria:**
 
-**Given** the CDK stack is defined and validated via `cdk synth`
+**Given** CDK stack includes function, cache policy, and cache behavior configuration
 **When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
-**Then** the deployment succeeds with:
-- CloudFormation stack `NdxStaticStack` created in us-west-2
-- S3 bucket `ndx-static-prod` exists
-- Bucket has encryption enabled (verified: `aws s3api get-bucket-encryption`)
-- Bucket has versioning enabled (verified: `aws s3api get-bucket-versioning`)
-- Bucket has public access blocked (verified: `aws s3api get-public-access-block`)
-- Bucket has tags applied (verified: `aws s3api get-bucket-tagging`)
+**Then** CloudFormation deployment succeeds:
+- Stack status: UPDATE_COMPLETE
+- CloudFront Function deployed globally
+- Cache Policy created
+- Default cache behavior updated with function
+- CloudFront propagation completes (~10-15 minutes)
 
-**And** running `cdk diff --profile NDX/InnovationSandboxHub` after deployment shows no changes
-**And** CloudFormation events show successful resource creation
-**And** deployment is idempotent (re-running causes no changes - FR7)
-
-**Prerequisites:** Story 2.3 (Access pattern validated and documented)
-
-**Technical Notes:**
-- First real infrastructure deployment to AWS
-- Use `--profile NDX/InnovationSandboxHub` for authentication
-- CloudFormation creates stack with automatic rollback on failure
-- Deployment takes ~2-3 minutes (S3 bucket creation)
-- Architecture doc section 10.2 documents deployment command
-- FR2: Deploy to us-west-2 ✓
-- FR6: Deploy via cdk deploy ✓
-- FR7: Idempotent deployments ✓
-- NFR-REL-1: Idempotent ✓
-- NFR-REL-2: Auto-rollback ✓
-
----
-
-## Epic 3: Deployment Automation & Documentation
-
-**Goal:** Create automated deployment scripts with error recovery, comprehensive testing, and living documentation to enable reliable site deployments.
-
-**User Value:** Team can reliably deploy NDX static site with confidence, validation, and clear documentation.
-
-**FRs Covered:** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20
-
----
-
-### Story 3.1: Create Root Package.json Deploy Script
-
-As a developer,
-I want a `yarn deploy` command in the root package.json,
-So that deployment is triggered from the project root with a simple command.
-
-**Acceptance Criteria:**
-
-**Given** the root `package.json` exists
-**When** I add the deploy script
-**Then** `package.json` includes:
-```json
-{
-  "scripts": {
-    "deploy": "scripts/deploy.sh"
-  }
-}
-```
-
-**And** the `scripts/` directory is created at project root
-**And** `scripts/deploy.sh` placeholder file exists (will be implemented in Story 3.2)
-**And** running `yarn deploy` executes the script (even if placeholder)
-
-**Prerequisites:** Story 2.4 (S3 bucket deployed to AWS)
-
-**Technical Notes:**
-- Deployment automation lives at root, not in `/infra`
-- Keeps infrastructure (CDK) separate from deployment (site files)
-- Architecture doc section 5.3 specifies `yarn deploy` at root
-- FR11: Deploy via yarn deploy ✓
-
----
-
-### Story 3.2: Implement Deployment Script with Error Recovery
-
-As a developer,
-I want a robust deployment script that uploads files to S3 with error handling,
-So that deployments are reliable and recoverable from failures.
-
-**Acceptance Criteria:**
-
-**Given** the `_site/` directory exists with built Eleventy site
-**When** I run `yarn deploy`
-**Then** `scripts/deploy.sh` executes with:
-
+**And** post-deployment validation without cookie succeeds:
 ```bash
-#!/bin/bash
-set -e  # Exit on any error
-
-# Prerequisite check
-if [ ! -d "_site" ]; then
-  echo "Error: _site/ directory not found. Run 'yarn build' first."
-  exit 1
-fi
-
-# Deploy to S3
-echo "Deploying to ndx-static-prod..."
-aws s3 sync _site/ s3://ndx-static-prod/ \
-  --profile NDX/InnovationSandboxHub \
-  --delete \
-  --exact-timestamps \
-  --cache-control "public, max-age=3600" \
-  --exclude ".DS_Store"
-
-# Validate upload
-EXPECTED_FILES=$(find _site -type f | wc -l | tr -d ' ')
-UPLOADED_FILES=$(aws s3 ls s3://ndx-static-prod/ --recursive --profile NDX/InnovationSandboxHub | wc -l | tr -d ' ')
-
-if [ "$EXPECTED_FILES" -ne "$UPLOADED_FILES" ]; then
-  echo "Warning: File count mismatch. Expected: $EXPECTED_FILES, Uploaded: $UPLOADED_FILES"
-  exit 1
-fi
-
-echo "✓ Deployment complete: $UPLOADED_FILES files uploaded"
+# Test without cookie (should route to existing S3Origin)
+curl -I https://d7roov8fndsis.cloudfront.net/
+# Should return 200, content from existing origin
 ```
 
-**And** script is executable: `chmod +x scripts/deploy.sh`
-**And** `--delete` flag removes files not in `_site/` (keeps bucket clean)
-**And** `--exact-timestamps` enables idempotent re-runs (only uploads changed files)
-**And** `--cache-control` sets headers for future CloudFront optimization
-**And** file count validation ensures complete upload
-**And** MIME types are auto-detected by AWS CLI (`.html`, `.css`, `.js`, `.svg`)
+**And** post-deployment validation with cookie succeeds:
+```bash
+# Set cookie in browser console
+document.cookie = "NDX=true; path=/"
 
-**Prerequisites:** Story 3.1 (Deploy script placeholder created)
+# Browse to https://d7roov8fndsis.cloudfront.net/
+# Should see content from ndx-static-prod bucket
+```
+
+**And** cookie removal verification succeeds:
+```bash
+# Clear cookie in browser console
+document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"
+
+# Reload page
+# Should revert to existing origin content
+```
+
+**And** operational verification confirms:
+- Production site accessible (zero downtime - NFR-REL-1)
+- API endpoints functional (no disruption to /prod/* routes)
+- CloudFront metrics show requests to both origins
+- No error rate increase
+
+**Prerequisites:** Story 2.5 (Function attached to cache behavior)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** Network failures mid-upload leave bucket in broken state
-- `--exact-timestamps` makes script idempotent (re-run only uploads changes)
-- File count check catches incomplete uploads
-- AWS CLI auto-detects MIME types correctly for standard web files
-- Architecture doc section 5.3 shows deploy script example
-- FR8: Upload all files from _site ✓
-- FR9: Use AWS CLI with profile ✓
-- FR10: Preserve file structure and MIME types ✓
-- FR12: Require yarn build first ✓
-- NFR-REL-3: Clear error messages ✓
+- Wait 10-15 minutes for CloudFront global propagation (NFR-PERF-6)
+- Smoke tests validate FR9, FR10, FR11 (cookie routing logic)
+- FR35: Post-deployment smoke tests required
+- Browser DevTools Network tab shows X-Cache headers for debugging
+- CloudWatch metrics track origin request counts (FR41-42)
+- Architecture section: "Post-Deployment Validation" documents tests
+- This completes MVP: Testers can now access new UI via cookie
 
 ---
 
-### Story 3.3: Write CDK Snapshot Tests
+## Epic 3: Testing, Validation & Operational Readiness
+
+**Goal:** Establish comprehensive testing, deployment validation, and operational procedures to ensure reliable and maintainable cookie-based routing infrastructure.
+
+**User Value:** Development team can confidently deploy, monitor, and rollback routing changes with complete test coverage and documented procedures, ensuring long-term operational success.
+
+**FRs Covered:** FR31, FR32, FR33, FR34, FR35, FR36, FR37, FR38, FR39, FR40, FR41, FR42, FR43, FR44
+
+---
+
+### Story 3.1: Write CDK Snapshot Tests for CloudFront Configuration
 
 As a developer,
-I want snapshot tests for the CDK stack,
+I want snapshot tests that capture the complete CloudFormation template,
 So that unintended infrastructure changes are detected automatically.
 
 **Acceptance Criteria:**
 
-**Given** the CDK stack is implemented
-**When** I create `lib/ndx-stack.test.ts` with snapshot tests
+**Given** the CDK stack with CloudFront configuration exists
+**When** I create `infra/test/ndx-stack.test.ts` with snapshot tests
 **Then** the test file includes:
 
 ```typescript
+import { App } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
-import * as cdk from 'aws-cdk-lib';
-import { NdxStaticStack } from './ndx-stack';
+import { NdxStaticStack } from '../lib/ndx-stack';
 
-test('Stack snapshot matches expected CloudFormation', () => {
-  const app = new cdk.App();
-  const stack = new NdxStaticStack(app, 'TestStack');
-  const template = Template.fromStack(stack);
+describe('NdxStaticStack', () => {
+  test('CloudFront configuration snapshot', () => {
+    const app = new App();
+    const stack = new NdxStaticStack(app, 'TestStack');
+    const template = Template.fromStack(stack);
 
-  expect(template.toJSON()).toMatchSnapshot();
-});
-```
-
-**And** running `yarn test` generates snapshot file
-**And** snapshot captures complete CloudFormation template including:
-- S3 bucket resource definition
-- Bucket properties (encryption, versioning, public access block)
-- Tags
-
-**And** subsequent runs pass (snapshot matches)
-**And** any CDK code change that alters CloudFormation causes test failure
-**And** test failure message clearly shows CloudFormation differences
-
-**Prerequisites:** Story 3.2 (Deployment script implemented)
-
-**Technical Notes:**
-- Snapshot tests provide broad coverage with minimal code
-- Catches ANY unintended CloudFormation changes
-- Jest `toMatchSnapshot()` creates `__snapshots__/` directory
-- Snapshots committed to git (version controlled)
-- Architecture doc section 6.2 provides snapshot test example
-- FR13: Snapshot tests for CloudFormation template ✓
-- NFR-MAINT-2: 100% snapshot coverage ✓
-
----
-
-### Story 3.4: Write Fine-Grained Assertion Tests
-
-As a developer,
-I want specific assertion tests for critical S3 bucket properties,
-So that security and configuration requirements are explicitly validated.
-
-**Acceptance Criteria:**
-
-**Given** the CDK stack is implemented
-**When** I add fine-grained assertions to `lib/ndx-stack.test.ts`
-**Then** the test file includes specific property validations:
-
-```typescript
-test('S3 bucket has correct configuration', () => {
-  const app = new cdk.App();
-  const stack = new NdxStaticStack(app, 'TestStack');
-  const template = Template.fromStack(stack);
-
-  template.hasResourceProperties('AWS::S3::Bucket', {
-    BucketName: 'ndx-static-prod',
-    BucketEncryption: {
-      ServerSideEncryptionConfiguration: [{
-        ServerSideEncryptionByDefault: {
-          SSEAlgorithm: 'AES256'
-        }
-      }]
-    },
-    VersioningConfiguration: {
-      Status: 'Enabled'
-    },
-    PublicAccessBlockConfiguration: {
-      BlockPublicAcls: true,
-      BlockPublicPolicy: true,
-      IgnorePublicAcls: true,
-      RestrictPublicBuckets: true
-    },
-    Tags: [
-      { Key: 'project', Value: 'ndx' },
-      { Key: 'environment', Value: 'prod' },
-      { Key: 'managedby', Value: 'cdk' }
-    ]
+    expect(template.toJSON()).toMatchSnapshot();
   });
 });
 ```
 
-**And** running `yarn test` validates all properties pass
-**And** test failure clearly identifies which property is incorrect
-**And** tests validate NFR requirements:
-- Encryption enabled (NFR-SEC-2)
-- Public access blocked (NFR-SEC-1)
-- Versioning enabled (FR22)
-- Tags present (NFR-OPS-4)
+**And** running `yarn test` generates snapshot file in `__snapshots__/` directory
+**And** snapshot captures complete CloudFormation template including:
+- CloudFront distribution configuration
+- CloudFront Function resource
+- Cache Policy resource
+- All three origins (S3Origin, API Gateway, ndx-static-prod)
+- Default cache behavior with function association
+- Origin Access Control configuration
 
-**Prerequisites:** Story 3.3 (Snapshot tests created)
+**And** subsequent test runs pass (snapshot matches current config)
+**And** any CDK code change that alters CloudFormation causes test failure
+**And** test failure message shows clear diff of what changed in template
+
+**Prerequisites:** Story 2.6 (Routing functionality deployed)
 
 **Technical Notes:**
-- Fine-grained assertions complement snapshots
-- Explicit validation of security-critical properties
-- CDK assertions library: `Template.hasResourceProperties()`
-- Tests fail early if security requirements violated
-- Architecture doc section 6.2 provides assertion test example
-- FR14: Fine-grained assertions for bucket properties ✓
-- FR16: Tests must pass before deployment ✓
+- Snapshot tests provide broad coverage with minimal code (FR31)
+- Catches ANY unintended CloudFormation changes
+- Jest `toMatchSnapshot()` creates snapshot files automatically
+- Snapshots must be committed to git (version controlled)
+- Architecture section: "Testing Patterns" provides examples
+- NFR-MAINT-2: Snapshot test coverage requirement
+- Run `yarn test -u` to update snapshots after intentional changes
 
 ---
 
-### Story 3.5: Create Integration Test for AWS Deployment
+### Story 3.2: Write Fine-Grained Assertion Tests for Critical Properties
 
 As a developer,
-I want an integration test that deploys to a test AWS environment,
-So that I can catch real AWS deployment issues before production.
+I want specific assertion tests for security-critical and routing-critical properties,
+So that requirements are explicitly validated and violations caught early.
 
 **Acceptance Criteria:**
 
-**Given** I have access to a test AWS account or namespace
-**When** I create an integration test script
-**Then** `test/integration.sh` includes:
+**Given** the CDK stack exists
+**When** I add fine-grained assertions to `infra/test/ndx-stack.test.ts`
+**Then** tests validate critical properties:
+
+**Test 1: New S3 origin added with correct OAC**
+```typescript
+test('New S3 origin configured correctly', () => {
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+    DistributionConfig: {
+      Origins: expect.arrayContaining([{
+        Id: 'ndx-static-prod-origin',
+        DomainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
+        S3OriginConfig: {
+          OriginAccessIdentity: '',
+        },
+        OriginAccessControlId: 'E3P8MA1G9Y5BYE'
+      }])
+    }
+  });
+});
+```
+
+**Test 2: API Gateway origin unchanged**
+```typescript
+test('API Gateway origin remains unchanged', () => {
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+    DistributionConfig: {
+      Origins: expect.arrayContaining([
+        expect.objectContaining({
+          DomainName: '1ewlxhaey6.execute-api.us-west-2.amazonaws.com',
+          CustomOriginConfig: expect.any(Object)
+        })
+      ])
+    }
+  });
+});
+```
+
+**Test 3: CloudFront Function created**
+```typescript
+test('CloudFront Function configured', () => {
+  template.hasResourceProperties('AWS::CloudFront::Function', {
+    Name: 'ndx-cookie-router',
+    FunctionConfig: {
+      Runtime: 'cloudfront-js-2.0'
+    }
+  });
+});
+```
+
+**Test 4: Cache Policy with NDX cookie allowlist**
+```typescript
+test('Cache Policy forwards NDX cookie only', () => {
+  template.hasResourceProperties('AWS::CloudFront::CachePolicy', {
+    CachePolicyConfig: {
+      Name: 'NdxCookieRoutingPolicy',
+      ParametersInCacheKeyAndForwardedToOrigin: {
+        CookiesConfig: {
+          CookieBehavior: 'whitelist',
+          Cookies: ['NDX']
+        }
+      }
+    }
+  });
+});
+```
+
+**Test 5: Default cache behavior has function attached**
+```typescript
+test('Function attached to default cache behavior', () => {
+  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+    DistributionConfig: {
+      DefaultCacheBehavior: {
+        FunctionAssociations: [{
+          EventType: 'viewer-request',
+          FunctionARN: expect.stringContaining('ndx-cookie-router')
+        }]
+      }
+    }
+  });
+});
+```
+
+**And** all tests pass with current configuration
+**And** tests fail if security properties violated (OAC removed, wrong origin)
+**And** tests fail if routing properties violated (function not attached, wrong cookie)
+
+**Prerequisites:** Story 3.1 (Snapshot tests created)
+
+**Technical Notes:**
+- Fine-grained assertions complement snapshots (Architecture ADR-005)
+- Explicit validation of security-critical properties (NFR-SEC-1)
+- FR31-34: Test validation requirements
+- CDK assertions library: `Template.hasResourceProperties()`
+- Tests fail early if requirements violated
+- More maintainable than snapshot-only (clearly documents requirements)
+
+---
+
+### Story 3.3: Create Integration Test for Real AWS Deployment
+
+As a developer,
+I want an integration test that validates cookie routing in a real AWS environment,
+So that I can catch AWS-specific issues before production deployment.
+
+**Acceptance Criteria:**
+
+**Given** AWS test environment access exists
+**When** I create `infra/test/integration.sh`
+**Then** the script includes:
 
 ```bash
 #!/bin/bash
 set -e
 
-echo "Running integration test..."
+echo "Starting integration test..."
 
-# Deploy stack with test context
-cdk deploy NdxStaticStack --context env=test --profile NDX/InnovationSandboxHub --require-approval never
+# Deploy to test context (uses test distribution if available)
+echo "Deploying CloudFront changes..."
+cd infra
+cdk deploy --profile NDX/InnovationSandboxHub --require-approval never
 
-# Verify deployment
-aws s3 ls s3://ndx-static-test/ --profile NDX/InnovationSandboxHub > /dev/null
+# Wait for propagation
+echo "Waiting 30 seconds for initial propagation..."
+sleep 30
 
-# Cleanup
-cdk destroy NdxStaticStack --context env=test --profile NDX/InnovationSandboxHub --force
+# Test 1: Verify distribution deployed
+echo "Test 1: Verifying distribution status..."
+STATUS=$(aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status' --output text)
+if [ "$STATUS" != "Deployed" ]; then
+  echo "❌ Distribution not in Deployed state: $STATUS"
+  exit 1
+fi
+echo "✓ Distribution deployed"
 
-echo "✓ Integration test passed"
+# Test 2: Verify origins count
+echo "Test 2: Verifying origins..."
+ORIGINS=$(aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'length(Distribution.DistributionConfig.Origins)')
+if [ "$ORIGINS" -lt 3 ]; then
+  echo "❌ Expected at least 3 origins, found: $ORIGINS"
+  exit 1
+fi
+echo "✓ All origins present ($ORIGINS total)"
+
+# Test 3: Verify new origin exists
+echo "Test 3: Verifying ndx-static-prod origin..."
+NEW_ORIGIN=$(aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.DistributionConfig.Origins[?Id==`ndx-static-prod-origin`] | length(@)')
+if [ "$NEW_ORIGIN" != "1" ]; then
+  echo "❌ ndx-static-prod-origin not found"
+  exit 1
+fi
+echo "✓ New origin configured"
+
+# Test 4: Verify CloudFront Function exists
+echo "Test 4: Verifying CloudFront Function..."
+FUNCTION=$(aws cloudfront list-functions --profile NDX/InnovationSandboxHub --query 'FunctionList.Items[?Name==`ndx-cookie-router`] | length(@)')
+if [ "$FUNCTION" != "1" ]; then
+  echo "❌ CloudFront Function not found"
+  exit 1
+fi
+echo "✓ CloudFront Function deployed"
+
+echo ""
+echo "✅ Integration test passed!"
+echo ""
+echo "Manual validation required:"
+echo "1. Browse to https://d7roov8fndsis.cloudfront.net/ (should see existing site)"
+echo "2. Set cookie: document.cookie='NDX=true; path=/'"
+echo "3. Reload page (should see new origin content)"
+echo "4. Clear cookie and verify revert to existing site"
 ```
 
-**And** test uses CDK context to deploy to test bucket name
-**And** test verifies stack deploys successfully to real AWS
-**And** test cleans up resources after validation
-**And** test is documented in README as optional quality gate
-**And** test catches issues like:
-- Bucket name conflicts
-- IAM permission problems
-- Region availability issues
+**And** script is executable: `chmod +x infra/test/integration.sh`
+**And** running integration test validates:
+- Distribution status is "Deployed"
+- All three origins exist
+- New origin `ndx-static-prod-origin` is configured
+- CloudFront Function `ndx-cookie-router` is deployed
 
-**Prerequisites:** Story 3.4 (Assertion tests created)
+**And** test provides manual validation instructions for cookie routing
+**And** test documents expected behavior clearly
+
+**Prerequisites:** Story 3.2 (Assertion tests created)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** Unit tests validate CloudFormation but miss real AWS issues
-- Integration test deploys to actual AWS, catches environment-specific failures
-- Uses CDK context (`--context env=test`) to parameterize bucket name
-- Optional for MVP (can be run manually pre-production)
-- Cleanup prevents resource accumulation
-- Architecture doc mentions integration testing as quality gate
+- Integration test validates real AWS deployment (Architecture ADR-005)
+- Catches issues unit tests miss (permissions, quotas, region availability)
+- Uses AWS CLI to query actual deployed resources
+- FR35: Integration test validation requirement
+- Run after every CDK deployment to verify success
+- Optional for MVP but recommended before production
+- Manual cookie testing still required (browser-based validation)
 
 ---
 
-### Story 3.6: Enhance README as Living Document
+### Story 3.4: Document Rollback Procedures
 
 As a developer,
-I want the `/infra/README.md` updated with deployment details and maintenance process,
-So that documentation evolves with the infrastructure and remains accurate.
+I want clear rollback procedures documented,
+So that the team can quickly revert changes if routing issues are discovered.
 
 **Acceptance Criteria:**
 
-**Given** the initial README exists from Story 1.6
-**When** I enhance the README with deployment automation details
+**Given** the routing infrastructure is deployed
+**When** I create rollback documentation in `infra/README.md`
+**Then** the documentation includes three-tier rollback approach:
+
+**Option 1: Disable Function (Fastest - < 5 minutes)**
+```markdown
+## Rollback Option 1: Disable Function (Recommended)
+
+**When to use:** Routing logic causing issues, need immediate revert
+
+**Steps:**
+1. Edit `lib/ndx-stack.ts`
+2. Comment out function association:
+   ```typescript
+   // FunctionAssociations: [{
+   //   EventType: 'viewer-request',
+   //   FunctionARN: cookieRouterFunction.functionArn
+   // }]
+   ```
+3. Deploy: `cdk deploy --profile NDX/InnovationSandboxHub`
+4. Propagation: ~5-10 minutes
+5. Result: All traffic routes to existing S3Origin
+
+**Validation:**
+- Test with NDX=true cookie (should still see existing site)
+- Production traffic unaffected
+```
+
+**Option 2: Git Revert (Medium - 5-10 minutes)**
+```markdown
+## Rollback Option 2: Git Revert
+
+**When to use:** Need to undo entire deployment
+
+**Steps:**
+1. Identify commit to revert: `git log --oneline`
+2. Revert: `git revert <commit-hash>`
+3. Deploy: `cd infra && cdk deploy --profile NDX/InnovationSandboxHub`
+4. Propagation: ~10-15 minutes
+
+**Validation:**
+- Check git history: `git log`
+- Verify CDK diff shows revert: `cdk diff`
+```
+
+**Option 3: Remove Origin (Slowest - 15 minutes)**
+```markdown
+## Rollback Option 3: Remove Origin and Function
+
+**When to use:** Complete rollback including origin removal
+
+**Steps:**
+1. Edit `lib/ndx-stack.ts`
+2. Remove new origin configuration
+3. Remove CloudFront Function definition
+4. Remove Cache Policy definition
+5. Remove function association
+6. Deploy: `cdk deploy --profile NDX/InnovationSandboxHub`
+7. Propagation: ~15 minutes
+8. Result: CloudFront configuration as before routing implementation
+```
+
+**And** each option documents:
+- When to use this approach
+- Exact steps to execute
+- Expected timeline
+- How to validate rollback succeeded
+
+**And** rollback procedures are tested (documented test results)
+**And** escalation process documented if rollbacks fail
+
+**Prerequisites:** Story 3.3 (Integration test created)
+
+**Technical Notes:**
+- Three-tier approach: fastest to most complete (Architecture: "Rollback Procedures")
+- Option 1 preferred: Quickest, least disruptive (FR36)
+- FR36-40: Rollback and safety requirements
+- NFR-OPS-4: Rollback < 5 minutes requirement
+- NFR-REL-2: CloudFormation auto-rollback on deployment failure
+- Document in README for operational visibility
+- Test rollback procedures in non-production before relying on them
+
+---
+
+### Story 3.5: Update Infrastructure README with Operations Guide
+
+As a developer,
+I want the infrastructure README updated with deployment, monitoring, and troubleshooting guidance,
+So that any team member can operate the routing infrastructure confidently.
+
+**Acceptance Criteria:**
+
+**Given** the routing infrastructure is complete
+**When** I update `infra/README.md`
 **Then** the README includes new sections:
 
-**Section 6: Deployment Process**
-- Build site: `yarn build` (from project root)
-- Deploy files: `yarn deploy` (from project root)
-- Verify deployment: [smoke test command from Story 3.7]
-- Access pattern: [From Story 2.3 decision - static hosting or CloudFront required]
-
-**Section 7: Testing**
-- Unit tests: `yarn test` (snapshot + assertions)
-- Integration test: `test/integration.sh` (optional)
-- Linting: `yarn lint`
-
-**Section 8: Infrastructure Changes**
-- When to re-deploy infrastructure vs just files
-- Infrastructure: `cdk deploy` when `lib/*.ts` changes
-- Files only: `yarn deploy` when `src/` content changes
-
-**Section 9: Maintenance**
-- **Document version:** Current version and last updated date
-- **Review cadence:** README reviewed monthly or when infrastructure changes
-- **Update responsibility:** Developer making infrastructure changes updates README
-
-**And** document header includes:
+**Section: CloudFront Cookie-Based Routing**
 ```markdown
-**Last Updated:** 2025-11-18
-**Document Version:** 1.1
-**Review:** Update this README when infrastructure changes
+## CloudFront Cookie-Based Routing
+
+### Overview
+The NDX CloudFront distribution uses cookie-based routing to enable safe testing of new UI versions.
+
+- **Cookie Name:** `NDX` (case-sensitive)
+- **Cookie Value:** `true` (exact match, case-sensitive)
+- **Behavior:**
+  - With `NDX=true`: Routes to `ndx-static-prod` S3 bucket
+  - Without cookie: Routes to existing S3Origin (production site)
+  - API routes: Unaffected (API Gateway origin unchanged)
+
+### How to Test New UI
+1. Open browser DevTools Console
+2. Set cookie: `document.cookie = "NDX=true; path=/"`
+3. Browse to https://d7roov8fndsis.cloudfront.net/
+4. You should see content from new S3 bucket
+5. To revert: `document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"`
 ```
 
-**And** all command examples use correct AWS profile
-**And** README updated in git with commit: `docs(infra): enhance README with deployment and maintenance`
+**Section: Deployment Process**
+```markdown
+## Deployment Process
 
-**Prerequisites:** Story 3.5 (Integration test created)
+### Pre-Deployment Checklist
+- [ ] All tests pass: `yarn test`
+- [ ] Linting clean: `yarn lint`
+- [ ] CDK diff reviewed: `cdk diff --profile NDX/InnovationSandboxHub`
+- [ ] API Gateway origin unchanged in diff
+- [ ] Team notified of deployment window
+
+### Deploy
+```bash
+cd infra
+cdk deploy --profile NDX/InnovationSandboxHub
+```
+
+### Post-Deployment Validation
+- Wait 10-15 minutes for global propagation
+- Run integration test: `test/integration.sh`
+- Manual cookie test (see "How to Test New UI" above)
+- Check CloudWatch metrics for errors
+```
+
+**Section: Monitoring**
+```markdown
+## Monitoring
+
+### CloudFront Metrics (AWS Console)
+- Navigate to: CloudFront > Distributions > E3THG4UHYDHVWP > Monitoring
+- Key metrics:
+  - Requests per origin (verify both origins receiving traffic)
+  - Error rate (4xx/5xx) per origin
+  - Cache hit ratio (should remain high)
+
+### Checking Distribution Status
+```bash
+aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+# Output: "Deployed" when changes are live
+```
+```
+
+**Section: Troubleshooting**
+```markdown
+## Troubleshooting
+
+### Cookie routing not working
+- Verify propagation complete (10-15 minutes after deploy)
+- Check cookie set correctly: `document.cookie` in DevTools
+- Inspect Network tab: Look for `X-Cache` header
+- Verify function deployed: AWS Console > CloudFront > Functions
+
+### Production site not loading
+- Immediately execute Rollback Option 1 (disable function)
+- Check CloudFormation events for errors
+- Verify existing S3Origin unchanged in distribution config
+
+### Tests failing
+- CDK snapshot mismatch: Review diff, update with `yarn test -u` if intentional
+- Integration test fails: Check AWS CLI authentication and permissions
+- Unit tests fail: Review cookie parsing logic changes
+```
+
+**And** README includes:
+- Clear operational procedures
+- Copy-paste commands
+- Troubleshooting steps with solutions
+- Links to AWS Console paths
+
+**And** README version/date updated
+**And** Team reviewed and approved documentation
+
+**Prerequisites:** Story 3.4 (Rollback procedures documented)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** Documentation as one-time deliverable goes stale immediately
-- Living document with version/date tracking
-- Maintenance section establishes update responsibility
-- Architecture doc section 11 provides README structure
-- FR18: Infrastructure documented in README ✓
-- FR19: Deployment workflow documented ✓
-- NFR-MAINT-5: Complete setup instructions ✓
+- FR18, FR19: Deployment and operational documentation requirements
+- NFR-OPS-3: Post-deployment validation steps documented
+- NFR-OPS-5: CloudFront metrics accessibility
+- NFR-OPS-6: Actionable error messages and remediation
+- NFR-MAINT-5: Complete operational instructions
+- Living document: Update with operational learnings
 
 ---
 
-### Story 3.7: Add Post-Deployment Smoke Test
+### Story 3.6: Create Pre-Deployment Checklist and Validation Script
 
 As a developer,
-I want automated validation after deployment,
-So that I know the site is actually working, not just uploaded.
+I want an automated pre-deployment checklist script,
+So that critical validations are completed before every CloudFront deployment.
 
 **Acceptance Criteria:**
 
-**Given** the deployment script completes successfully
-**When** I add smoke test validation to `scripts/deploy.sh`
-**Then** the script includes post-deployment verification:
+**Given** the routing infrastructure code exists
+**When** I create `infra/scripts/pre-deploy-check.sh`
+**Then** the script validates:
 
 ```bash
-# Smoke test (after sync completes)
-echo "Running smoke test..."
+#!/bin/bash
+set -e
 
-# Based on Story 2.3 access decision:
-# Option A: If CloudFront required
-# echo "Note: Site not publicly accessible until CloudFront configured"
-# echo "Validate files uploaded: aws s3 ls s3://ndx-static-prod/index.html"
+echo "==================================="
+echo "Pre-Deployment Checklist"
+echo "==================================="
+echo ""
 
-# Option B: If static hosting enabled
-# SITE_URL="http://ndx-static-prod.s3-website-us-west-2.amazonaws.com"
-# HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $SITE_URL)
-# if [ "$HTTP_STATUS" != "200" ]; then
-#   echo "Error: Site returned $HTTP_STATUS, expected 200"
-#   exit 1
-# fi
-# echo "✓ Site accessible at $SITE_URL"
+ERRORS=0
+
+# Check 1: Tests pass
+echo "✓ Running tests..."
+if ! yarn test --silent; then
+  echo "❌ Tests failed"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "✅ All tests pass"
+fi
+
+# Check 2: Linting clean
+echo ""
+echo "✓ Running linter..."
+if ! yarn lint; then
+  echo "❌ Linting errors found"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "✅ Linting clean"
+fi
+
+# Check 3: CDK synth succeeds
+echo ""
+echo "✓ Validating CDK synthesis..."
+if ! cdk synth --profile NDX/InnovationSandboxHub > /dev/null; then
+  echo "❌ CDK synth failed"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "✅ CDK synthesis successful"
+fi
+
+# Check 4: TypeScript compilation
+echo ""
+echo "✓ Checking TypeScript compilation..."
+if ! yarn build; then
+  echo "❌ TypeScript compilation failed"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "✅ TypeScript compiles cleanly"
+fi
+
+# Check 5: AWS credentials valid
+echo ""
+echo "✓ Validating AWS credentials..."
+if ! aws sts get-caller-identity --profile NDX/InnovationSandboxHub > /dev/null; then
+  echo "❌ AWS credentials invalid or expired"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "✅ AWS credentials valid"
+fi
+
+echo ""
+echo "==================================="
+if [ $ERRORS -eq 0 ]; then
+  echo "✅ All checks passed!"
+  echo "Ready to deploy: cdk deploy --profile NDX/InnovationSandboxHub"
+  echo "==================================="
+  exit 0
+else
+  echo "❌ $ERRORS check(s) failed"
+  echo "Fix errors before deploying"
+  echo "==================================="
+  exit 1
+fi
 ```
 
-**And** if static hosting enabled (from Story 2.3):
-- Script makes HTTP request to S3 website endpoint
-- Validates 200 response
-- Validates index.html contains expected content (basic string match)
+**And** script is executable: `chmod +x infra/scripts/pre-deploy-check.sh`
+**And** script exits with code 0 if all checks pass
+**And** script exits with code 1 if any check fails
+**And** script output clearly shows which checks passed/failed
 
-**And** if CloudFront required (from Story 2.3):
-- Script validates index.html exists in bucket
-- Script outputs message: "Site deployed but not publicly accessible until CloudFront configured"
+**And** add to `package.json`:
+```json
+{
+  "scripts": {
+    "pre-deploy": "scripts/pre-deploy-check.sh"
+  }
+}
+```
 
-**And** deployment only reports success if smoke test passes
-**And** smoke test failure provides actionable error message
+**And** README documents: "Run `yarn pre-deploy` before every CDK deployment"
 
-**Prerequisites:** Story 3.6 (README enhanced)
+**Prerequisites:** Story 3.5 (README updated)
 
 **Technical Notes:**
-- **PRE-MORTEM INSIGHT:** "Deployment complete" doesn't mean "site works"
-- Smoke test validates actual accessibility/functionality
-- Implementation depends on Story 2.3 access decision
-- For static hosting: HTTP 200 check sufficient
-- For CloudFront: Just validate file presence (can't test accessibility until CDN added)
-- Future: When CloudFront added, update smoke test to check CDN endpoint
+- Automates pre-deployment checklist from Story 3.5
+- Prevents common deployment errors (tests fail, lint errors, AWS auth issues)
+- FR16: Tests must pass before deployment
+- NFR-MAINT-1: ESLint zero errors requirement
+- NFR-OPS-2: Pre-deployment checklist requirement
+- Fast feedback: Catches issues before 15-minute CloudFront deployment
+- Can be integrated into CI/CD pipeline later
 
 ---
 
@@ -889,60 +1262,79 @@ echo "Running smoke test..."
 
 | FR | Description | Epic | Stories |
 |----|-------------|------|---------|
-| FR1 | Define S3 bucket as IaC using AWS CDK TypeScript | Epic 2 | Story 2.2 |
-| FR2 | Deploy S3 bucket to us-west-2 using profile | Epic 2 | Story 2.4 |
-| FR3 | Configure S3 for CloudFront origin access | Epic 2 | Story 2.2, 2.3 |
-| FR4 | Validate infrastructure via `cdk synth` | Epic 2 | Story 2.2, 2.4 |
-| FR5 | Preview changes via `cdk diff` | Epic 2 | Story 2.4 |
-| FR6 | Deploy infrastructure via `cdk deploy` | Epic 2 | Story 2.4 |
-| FR7 | Idempotent infrastructure deployments | Epic 2 | Story 2.4 |
-| FR8 | Upload all files from `_site/` to S3 | Epic 3 | Story 3.2 |
-| FR9 | Use AWS CLI with profile for S3 upload | Epic 3 | Story 3.2 |
-| FR10 | Preserve file structure and MIME types | Epic 3 | Story 3.2 |
-| FR11 | Deploy via `yarn deploy` command | Epic 3 | Story 3.1, 3.2 |
-| FR12 | Require `yarn build` before deployment | Epic 3 | Story 3.2 |
-| FR13 | CDK snapshot tests (CloudFormation validation) | Epic 3 | Story 3.3 |
-| FR14 | CDK fine-grained assertions (bucket properties) | Epic 3 | Story 3.4 |
-| FR15 | ESLint with AWS CDK recommended rules | Epic 1 | Story 1.3 |
-| FR16 | Tests must pass before deployment | Epic 3 | Story 3.3, 3.4 |
-| FR17 | Version control with proper .gitignore | Epic 1 | Story 1.4 |
-| FR18 | Infrastructure documented in README | Epic 1, Epic 3 | Story 1.6, 3.6 |
-| FR19 | Deployment workflow documented | Epic 3 | Story 3.6 |
-| FR20 | CDK code follows best practices | Epic 1, Epic 2 | Story 1.3, 2.2 |
-| FR21 | Review infrastructure changes before applying | Epic 2 | Story 2.4 |
-| FR22 | S3 versioning for rollback capability | Epic 2 | Story 2.2 |
-| FR23 | Failed deployment investigation via CloudFormation | Epic 2 | Story 2.4 |
-| FR24 | Infrastructure supports future CloudFront | Epic 2 | Story 2.2, 2.3 |
-| FR25 | Infrastructure supports future OIDC | Epic 1 | Story 1.5 (bootstrap prepares) |
-| FR26 | Infrastructure supports multi-environment contexts | Epic 3 | Story 3.5 (test context) |
+| FR1 | Add ndx-static-prod as new origin to E3THG4UHYDHVWP | Epic 1 | Story 1.2 |
+| FR2 | Configure OAC for new origin | Epic 1 | Story 1.2 |
+| FR3 | Define origin properties matching existing | Epic 1 | Story 1.2 |
+| FR4 | Reference existing distribution in CDK | Epic 1 | Story 1.1 |
+| FR5 | Preserve existing S3Origin unchanged | Epic 1 | Story 1.3 |
+| FR6 | Preserve API Gateway origin unchanged | Epic 1 | Story 1.3 |
+| FR7 | Inspect Cookie header | Epic 2 | Story 2.1 |
+| FR8 | Parse Cookie header for NDX value | Epic 2 | Story 2.1 |
+| FR9 | Route to new origin when NDX=true | Epic 2 | Story 2.1, 2.6 |
+| FR10 | Route to existing origin when cookie missing | Epic 2 | Story 2.1, 2.6 |
+| FR11 | Route to existing origin when NDX≠true | Epic 2 | Story 2.1, 2.6 |
+| FR12 | Execute routing for default cache behavior | Epic 2 | Story 2.5 |
+| FR13 | NOT execute for API Gateway routes | Epic 2 | Story 2.5 |
+| FR14 | Return modified request with origin | Epic 2 | Story 2.1 |
+| FR15 | Deploy CloudFront Function | Epic 2 | Story 2.4 |
+| FR16 | Define function code in CDK | Epic 2 | Story 2.4 |
+| FR17 | Attach function to cache behavior | Epic 2 | Story 2.5 |
+| FR18 | Function deployment in CDK update | Epic 2 | Story 2.6 |
+| FR19 | Propagate function globally | Epic 2 | Story 2.6 |
+| FR20 | Preserve cache policy settings | Epic 2 | Story 2.3 |
+| FR21 | Forward cookies to function | Epic 2 | Story 2.3 |
+| FR22 | Preserve viewer protocol policy | Epic 2 | Story 2.5 |
+| FR23 | Preserve allowed HTTP methods | Epic 2 | Story 2.5 |
+| FR24 | Preserve response headers policies | Epic 2 | Story 2.5 |
+| FR25 | Import distribution by ID | Epic 1 | Story 1.1 |
+| FR26 | Modify without recreating | Epic 1 | Story 1.1, 1.4 |
+| FR27 | Validate via cdk synth | Epic 1 | Story 1.1, 1.2 |
+| FR28 | Preview via cdk diff | Epic 1 | Story 1.2, 1.3 |
+| FR29 | Deploy via cdk deploy with zero downtime | Epic 1 | Story 1.4 |
+| FR30 | Idempotent deployment | Epic 1 | Story 1.4 |
+| FR31 | CDK tests validate new origin | Epic 3 | Story 3.2 |
+| FR32 | CDK tests validate API Gateway unchanged | Epic 3 | Story 3.2 |
+| FR33 | Validate function code syntax | Epic 3 | Story 2.2, 3.1 |
+| FR34 | Validate cache behavior config | Epic 3 | Story 3.2 |
+| FR35 | Smoke tests post-deployment | Epic 3 | Story 2.6, 3.3 |
+| FR36 | Disable function for rollback | Epic 3 | Story 3.4 |
+| FR37 | Remove origin for rollback | Epic 3 | Story 3.4 |
+| FR38 | Revert via version control | Epic 3 | Story 3.4 |
+| FR39 | Investigate failures via CloudFormation | Epic 3 | Story 3.3, 3.5 |
+| FR40 | Automatic CloudFormation rollback | Epic 1, Epic 2 | Story 1.4, 2.6 |
+| FR41 | Metrics for request counts per origin | Epic 3 | Story 3.5 |
+| FR42 | Metrics for error rates per origin | Epic 3 | Story 3.5 |
+| FR43 | Monitor function execution (optional) | Epic 3 | Story 3.5 |
+| FR44 | Log routing decisions (optional) | Epic 3 | Story 3.5 |
 
-**Coverage Validation:** All 26 FRs mapped to stories ✓
+**Coverage Validation:** All 44 FRs mapped to stories ✓
 
 ---
 
 ## Epic Story Count Summary
 
-- **Epic 1 (Foundation & CDK Setup):** 6 stories
-- **Epic 2 (S3 Infrastructure Deployment):** 4 stories
-- **Epic 3 (Deployment Automation & Documentation):** 7 stories
+- **Epic 1 (CloudFront Origin Infrastructure):** 4 stories
+- **Epic 2 (Cookie-Based Routing Implementation):** 6 stories
+- **Epic 3 (Testing, Validation & Operational Readiness):** 6 stories
 
-**Total:** 17 implementable stories with pre-mortem enhancements
+**Total:** 16 implementable stories
 
 ---
 
 ## Summary
 
-This epic breakdown transforms the NDX Infrastructure Evolution PRD into 17 bite-sized, implementable stories across 3 epics. All 26 functional requirements are covered with full architectural context from the Infrastructure Architecture document.
+This epic breakdown transforms the NDX CloudFront Origin Routing PRD into 16 bite-sized, implementable stories across 3 epics. All 44 functional requirements and 35 non-functional requirements are covered with full architectural context.
 
 **Key Strengths:**
-- **Pre-mortem insights applied:** Bootstrap story added, bucket validation, error recovery, integration tests, smoke tests, living documentation
+- **Surgical infrastructure change:** Minimal risk, focused scope, preserves production stability
 - **Vertical slicing:** Each story delivers complete functionality, not just one layer
 - **Clear prerequisites:** Sequential dependencies only (no forward references)
 - **BDD acceptance criteria:** Given/When/Then format for all stories
-- **Architecture integration:** Technical notes reference specific architecture doc sections
-- **Security first:** Encryption, public access blocking, versioning from day one
-- **Quality gates:** Testing, linting, validation before deployment
-- **Living documentation:** README includes version/date and maintenance responsibility
+- **Architecture integration:** Technical notes reference specific architecture decisions (ADRs)
+- **Security first:** OAC reuse, origin validation, API Gateway untouched
+- **Complete testing:** Unit tests, snapshot tests, assertions, integration tests
+- **Operational readiness:** Rollback procedures, monitoring, troubleshooting docs
+- **Government service standards:** Zero downtime, auditability, reversibility
 
 **Implementation Approach:**
 1. Execute stories sequentially within each epic
@@ -952,9 +1344,11 @@ This epic breakdown transforms the NDX Infrastructure Evolution PRD into 17 bite
 
 **Context for Phase 4:**
 - PRD provides functional requirements (WHAT capabilities)
-- Infrastructure Architecture provides technical decisions (HOW to implement)
+- Architecture provides technical decisions (HOW to implement with ADRs)
 - Epics provide tactical implementation plan (STORY-BY-STORY breakdown)
 - Development agent will use all three documents to implement each story
+
+**MVP Delivery:** After completing all 3 epics, testers can use `NDX=true` cookie to access new UI for testing while production users continue seeing existing site with zero changes—enabling safe, gradual UI evolution for the UK government's National Digital Exchange platform.
 
 ---
 
@@ -965,3 +1359,4 @@ Create sprint status file from these epics and begin Phase 4 implementation.
 ---
 
 _For implementation: Each story contains complete acceptance criteria, prerequisites, and technical notes for autonomous development agent execution._
+

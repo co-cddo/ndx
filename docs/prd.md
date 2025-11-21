@@ -1,70 +1,79 @@
-# ndx - Product Requirements Document
+# NDX CloudFront Origin Routing - Product Requirements Document
 
 **Author:** cns
-**Date:** 2025-11-18
+**Date:** 2025-11-20
 **Version:** 1.0
 
 ---
 
 ## Executive Summary
 
-The National Digital Exchange (NDX) is evolving from an Alpha prototype to a production-ready platform. This PRD defines requirements for the infrastructure evolution that transitions NDX from GitHub Pages static hosting to AWS-based production infrastructure.
+The National Digital Exchange (NDX) requires a safe deployment mechanism to test UI changes before rolling them out to all government users. This PRD defines requirements for implementing cookie-based origin routing in the existing CloudFront distribution, enabling the strangler pattern for gradual UI migration.
 
-**Current State:** NDX Alpha prototype deployed to GitHub Pages - a static JAMstack site cataloging 33+ cloud vendors for UK government procurement, demonstrating £2B potential taxpayer savings.
+**Current State:** NDX production site served via CloudFront distribution E3THG4UHYDHVWP from existing S3 bucket, with API Gateway backend for dynamic functionality.
 
-**Evolution Goal:** Establish production-grade AWS infrastructure using Infrastructure-as-Code (CDK) to support the platform's transition from prototype to live government service.
+**Challenge:** Need to test new UI versions with select internal testers without impacting production users or risking breaking changes to the existing site.
 
-**Immediate Scope:** Deploy the existing Eleventy static site to AWS S3, managed through AWS CDK, with proper infrastructure hygiene (testing, linting, version control). This creates the foundation for future capabilities including OIDC-based keyless authentication for GitHub Actions deployments.
+**Solution:** Add the new CDK-managed S3 bucket (`ndx-static-prod`) as a third origin to the CloudFront distribution, with cookie-based routing logic that directs testers with `NDX=true` cookie to the new origin while all other users continue seeing the existing site.
 
 ### What Makes This Special
 
-This infrastructure evolution is **the foundation for production deployment of a critical UK government service** projected to save £2B in taxpayer funds. Rather than rushing to production with prototype infrastructure, this focuses on establishing:
+This is a **surgical, zero-risk infrastructure enhancement** that enables safe UI evolution for a critical UK government service handling £2B in procurement decisions. Rather than deploying changes directly to production or creating separate testing URLs, this approach:
 
-- **Infrastructure-as-Code best practices** using AWS CDK for reproducible, auditable deployments
-- **Security-first foundation** preparing for government compliance requirements (GDS standards, security clearance, transparency)
-- **Scalability groundwork** that supports the platform's evolution from static catalog to dynamic procurement system
-- **Modern DevOps patterns** including the future OIDC keyless authentication model for GitHub Actions
+- **Preserves production stability** - All existing users unaffected, no behavior changes without explicit opt-in
+- **Enables strangler pattern** - Foundation for gradually migrating UI without big-bang cutover
+- **Zero operational overhead** - Testers self-manage cookies in browser, no admin interface needed
+- **Instant rollback** - Remove origin or disable routing to revert in seconds
+- **Protects existing API** - API Gateway origin completely untouched, no risk to backend functionality
 
-The differentiator is taking a **methodical, engineering-first approach** to infrastructure rather than quick deployment, ensuring NDX can scale securely as a critical government service.
+The differentiator is taking a **methodical, low-risk approach** to UI evolution, ensuring the critical government procurement platform can evolve safely.
 
 ---
 
 ## Project Classification
 
-**Technical Type:** Web Application (infrastructure layer)
+**Technical Type:** Infrastructure / CDN Configuration Enhancement
 **Domain:** GovTech (UK Government Digital Service)
-**Complexity:** High
+**Complexity:** Medium
 
-This project adds infrastructure-as-code capabilities to the existing NDX static site. While the application itself remains a JAMstack Eleventy site, the deployment infrastructure is being elevated to production standards.
+This is a **focused infrastructure enhancement** to an existing CloudFront distribution. The change is surgical and contained: adding a new origin and implementing cookie-based routing logic. No application code changes, no API changes, no user-facing functionality changes for production users.
 
-**Domain Context:** As a UK government service, NDX must comply with:
-- Government Digital Service (GDS) standards
-- UK government security frameworks
-- Public sector transparency requirements
-- Accessibility standards (WCAG 2.2 AA - already met via GOV.UK Frontend)
-- Open government procurement principles
+**Why Infrastructure Project:**
+- Modifies AWS CloudFront distribution configuration
+- Adds S3 origin with Origin Access Control
+- Implements routing logic via Lambda@Edge or CloudFront Functions
+- Pure deployment infrastructure concern
 
-The infrastructure must support future capabilities including secure trial environments and production service access for government departments.
+**Domain Context:** As a UK government service, NDX infrastructure changes must:
+- Maintain zero downtime (government users cannot experience service interruption)
+- Preserve existing functionality completely (no regressions tolerated for live service)
+- Be auditable and reversible (public sector accountability)
+- Follow GDS standards for service reliability
+
+**Complexity Assessment: Medium**
+- **Not High:** Single CloudFront distribution change, well-understood AWS pattern, small tester group
+- **Not Low:** Production government service, requires precise configuration, zero-downtime requirement
 
 ---
 
 ## Success Criteria
 
-**Primary Success Metric:** Infrastructure supports seamless transition from prototype to production without degradation of current functionality.
+**Primary Success Metric:** Testers can access new UI version via cookie while all production users remain completely unaffected.
 
 **Specific Success Indicators:**
 
-1. **Deployment Reliability:** Static site deploys successfully to S3 with identical functionality to current GitHub Pages deployment
-2. **Infrastructure Quality:** CDK code passes linting, testing, and follows AWS best practices
-3. **Operational Readiness:** Infrastructure is reproducible via CDK, documented, and maintainable by the team
-4. **Foundation Validated:** S3 infrastructure successfully supports manual deployments, proving the pattern for future OIDC automation
-5. **Cost Efficiency:** AWS hosting costs remain minimal (comparable to free GitHub Pages) during static site phase
+1. **Cookie Routing Works:** Tester sets `NDX=true` cookie in browser → sees content from `ndx-static-prod` S3 bucket
+2. **Default Behavior Preserved:** Users without cookie → see existing site from original S3 origin, zero changes to their experience
+3. **Zero Downtime:** CloudFront configuration deployment causes no service interruption
+4. **API Untouched:** API Gateway origin remains completely unchanged, all backend functionality works identically
+5. **Instant Rollback:** Can disable routing or remove new origin in under 5 minutes if issues discovered
 
 **What Winning Looks Like:**
-- Team can confidently deploy updates to production S3 infrastructure using manual process
-- CDK infrastructure code is tested, linted, and version-controlled with same rigor as application code
-- Foundation is proven for future GitHub Actions + OIDC keyless authentication integration
-- Platform is ready for next phase: dynamic capabilities (trials, access requests)
+- Small group of internal CDDO testers can self-manage cookie to opt into new UI
+- Production users experience absolutely zero changes (no performance impact, no behavior changes)
+- Team has confidence to deploy UI changes to new bucket knowing only cookied users will see them
+- Foundation established for future strangler pattern UI migration phases
+- Can validate new UI with real users before committing to full rollout
 
 ---
 
@@ -72,348 +81,484 @@ The infrastructure must support future capabilities including secure trial envir
 
 ### MVP - Minimum Viable Product
 
-**Core Infrastructure:**
-1. **S3 Static Site Hosting:** Bucket configured for static website hosting with public read access
-2. **CDK Infrastructure Definition:** TypeScript CDK app defining all AWS resources as code
-3. **Manual Deployment Process:** Document and validate manual upload process to S3 bucket
-4. **AWS Profile Integration:** Use existing `NDX/InnovationSandboxHub` profile for deployments
+**CloudFront Configuration:**
+1. **Add New Origin:** Add `ndx-static-prod` S3 bucket as third origin to CloudFront distribution E3THG4UHYDHVWP
+2. **Origin Access Control:** Configure OAC for new origin to match security of existing S3Origin
+3. **Cookie-Based Routing:** Implement Lambda@Edge or CloudFront Function to inspect `NDX` cookie and route accordingly
+4. **Routing Logic:** If cookie `NDX=true` → route to `ndx-static-prod`, else → route to existing S3Origin
+5. **Preserve API Routes:** Ensure API Gateway origin routes remain completely untouched
 
-**Infrastructure Hygiene:**
-5. **CDK Testing:** Unit tests for CDK infrastructure code
-6. **CDK Linting:** ESLint configuration for CDK TypeScript code
-7. **Infrastructure Documentation:** README explaining CDK setup, deployment, and architecture
-8. **Version Control:** CDK code in git with proper .gitignore for AWS artifacts
+**CDK Implementation:**
+6. **CDK Code for CloudFront:** Define CloudFront configuration changes in CDK (infra/)
+7. **Origin Configuration:** Define new S3 origin with appropriate settings (OAC, connection timeouts, protocol)
+8. **Routing Function Code:** Lambda@Edge or CloudFront Function code for cookie inspection
+9. **Validation:** CDK tests for CloudFront configuration changes
 
-**Quality Gates:**
-9. **Build Validation:** CDK synth validates infrastructure before deployment
-10. **Diff Preview:** CDK diff shows changes before applying to AWS
+**Deployment & Validation:**
+10. **Zero-Downtime Deployment:** Deploy CloudFront changes without service interruption
+11. **Smoke Test:** Validate cookie routing works (set cookie, verify origin switch)
+12. **Rollback Plan:** Document steps to disable routing or remove origin if issues arise
 
 ### Growth Features (Post-MVP)
 
-**CI/CD Automation:**
-1. **GitHub Actions Workflow:** Automated deployment pipeline triggered on commits to main branch
-2. **OIDC Keyless Authentication:** GitHub Actions authenticates to AWS without long-lived credentials
-3. **Deployment Approvals:** Production deployment gates and approval process
-4. **Automated Testing:** Infrastructure tests run in CI/CD pipeline
+**Enhanced Routing:**
+1. **Multiple Cookie Values:** Support different cookie values for different test versions (e.g., `NDX=beta`, `NDX=canary`)
+2. **Percentage Rollout:** Route X% of traffic to new origin regardless of cookie (gradual rollout)
+3. **Header-Based Routing:** Additional routing based on custom headers for automated testing
+4. **User-Agent Routing:** Route based on browser/device for targeted testing
 
-**Production Enhancements:**
-5. **CloudFront CDN:** Global content delivery network in front of S3
-6. **Custom Domain:** DNS configuration for production domain
-7. **SSL/TLS Certificates:** AWS Certificate Manager integration
-8. **Monitoring & Logging:** CloudWatch dashboards for site health and access patterns
-9. **Backup & Versioning:** S3 versioning and backup policies
+**Observability:**
+5. **Routing Metrics:** CloudWatch metrics showing traffic split between origins
+6. **Origin Performance Comparison:** Compare response times between old and new origins
+7. **Error Rate Monitoring:** Alert if new origin has higher error rates than existing
+8. **Real User Monitoring:** Track which users are seeing which origin
 
-**Infrastructure Evolution:**
-10. **Multi-Environment:** Separate dev/staging/production environments via CDK context
-11. **Cost Monitoring:** AWS Budget alerts and cost allocation tags
-12. **Security Scanning:** Infrastructure security scanning in CI/CD
+**Automation:**
+9. **Cookie Management UI:** Simple web page to set/unset the NDX cookie (eliminates manual browser console)
+10. **Admin Dashboard:** View current routing configuration and traffic distribution
+11. **Automated Testing:** Integration tests that verify routing logic
 
 ### Vision (Future)
 
-**Dynamic Capabilities Foundation:**
-1. **API Gateway Integration:** Prepare infrastructure for future backend APIs (trial requests, access management)
-2. **Lambda Functions:** Serverless compute for dynamic features
-3. **Database Layer:** DynamoDB or RDS for user data, requests, sessions
-4. **Authentication Infrastructure:** Cognito or similar for user authentication
-5. **Trial Environment Provisioning:** Infrastructure to spin up 24-hour trial environments
+**Complete Strangler Pattern:**
+1. **Gradual Migration:** Progressively roll out new UI to 10%, 25%, 50%, 75%, 100% of users
+2. **A/B Testing Framework:** Use routing infrastructure for A/B testing different UI approaches
+3. **Feature Flags:** Route based on user feature flags for gradual feature rollouts
+4. **New UI Default:** Eventually make new origin the default, old origin becomes fallback
 
-**Enterprise Scale:**
-6. **Multi-Region Deployment:** High availability across AWS regions
-7. **WAF Integration:** Web Application Firewall for security
-8. **Compliance Automation:** Automated compliance checking against GDS standards
-9. **Disaster Recovery:** Automated backup and recovery procedures
+**Advanced Capabilities:**
+5. **Multi-Variant Testing:** Support 3+ UI versions simultaneously for testing
+6. **Geographic Routing:** Different UIs for different regions/departments
+7. **Personalized Routing:** Route based on user preferences or department policies
+8. **Automated Rollback:** Automatically switch back to old origin if error thresholds exceeded
 
 ---
 
 ## Domain-Specific Requirements (GovTech)
 
-**Minimal Government Requirements for MVP Infrastructure:**
+**Minimal Government Requirements for CloudFront Routing:**
 
-The MVP infrastructure phase has minimal government-specific requirements since it's deploying the existing static site without handling user data or dynamic capabilities:
+This infrastructure change has minimal government-specific requirements since it's purely a deployment mechanism change with no functional impact on users:
 
-1. **Open Source Requirement:** All CDK infrastructure code must be open source and publicly auditable (satisfied - code in public GitHub repository)
-2. **Region Flexibility:** No UK data residency requirement for MVP static site (us-west-2 acceptable)
-3. **Authentication:** Handled by separate systems (not infrastructure concern for MVP)
-4. **Compliance Deferral:** Heavy government compliance requirements (security clearance, data protection, cost governance) deferred until dynamic capabilities phase
+1. **Zero Service Disruption:** Government users cannot experience any downtime or service degradation during deployment (critical requirement)
+2. **Auditability:** CloudFormation stack changes must be visible and reviewable before deployment (satisfied via CDK diff)
+3. **Reversibility:** Must be able to rollback routing changes quickly if issues arise (instant via CloudFront configuration change)
+4. **No Breaking Changes:** Existing site functionality must remain 100% intact for all users without opt-in cookie
 
-**Future Considerations:** When NDX adds dynamic features (trial environments, user authentication, access requests), infrastructure will need to evolve to support UK GDPR, government security standards, and data protection requirements. The CDK foundation being built in MVP enables this future evolution.
+**GovTech-Specific Constraints:**
+- **No User Data Handling:** This is infrastructure routing only, no user data or PII involved
+- **No Compliance Changes:** Routing mechanism doesn't affect WCAG accessibility, GDS standards, or security posture
+- **Public Sector Transparency:** Infrastructure-as-code in public repository maintains open government principles
+
+**Why Minimal Requirements:** This change is transparent to end users (unless they explicitly opt in via cookie), doesn't touch authentication/authorization, doesn't handle sensitive data, and doesn't modify the application functionality - it's purely a deployment infrastructure enhancement.
 
 ---
 
 ## Infrastructure-Specific Requirements
 
-### CDK Project Structure
+**Implementation Note - CloudFront Distribution Management:**
 
-**Location & Technology:**
-- CDK code lives in `/infra` directory within main repository
-- TypeScript for CDK (industry standard)
-- AWS CDK v2 (current standard)
-- Package manager: Yarn (consistent with main application)
+For externally-managed CloudFront distributions (e.g., deployed by AWS Solutions templates like Innovation Sandbox), the approved pattern is:
 
-### AWS Resource Configuration
+1. Use `Distribution.fromDistributionAttributes()` for read-only reference (TypeScript typing)
+2. Use Custom Resource Lambda with CloudFront SDK API calls for modifications
+3. Lambda handles idempotency by checking existing configuration before making changes
 
-**S3 Bucket:**
-- Bucket name: `ndx-static-prod`
-- Purpose: Static asset storage (files only, not static website hosting)
-- Static website hosting: **Disabled** (prepared for CloudFront in growth phase)
-- Public access: Configured for CloudFront origin access (not direct public bucket)
-- Error handling: Default AWS errors (custom error pages via CloudFront later)
-- Versioning: To be determined (recommended for rollback capability)
+This pattern avoids CloudFormation import complexities and conflicts with external management tools.
 
-**Deployment Profile:**
-- AWS Profile: `NDX/InnovationSandboxHub` (pre-configured locally)
-- Region: `us-west-2`
+**Reference:** Epic 1 Stories 1.2 (implementation) and 1.3 (validation) demonstrate this pattern.
 
-### Testing & Quality Standards
+---
 
-**Industry Best Practices for CDK Testing:**
-1. **Snapshot Tests:** Capture CloudFormation template, detect unintended changes
-2. **Fine-grained Assertions:** Validate specific resource properties (bucket name, encryption, policies)
-3. **Synth Validation:** CDK synth must succeed before any deployment
-4. **Linting:** ESLint for TypeScript CDK code with AWS CDK recommended rules
+### Existing Infrastructure Context
 
-**Quality Gates:**
-- All tests pass before deployment
-- CDK synth produces valid CloudFormation
-- CDK diff reviewed before deploy
-- ESLint passes with no errors
+**CloudFront Distribution:**
+- Distribution ID: `E3THG4UHYDHVWP`
+- Domain: `d7roov8fndsis.cloudfront.net`
+- Status: Production (Deployed)
+- Account: 568672915267
+- Region: us-west-2 (Global CDN)
 
-### Build & Deployment Workflow
+**Existing Origins:**
+1. **S3Origin (ID: "S3Origin"):**
+   - Bucket: `ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky`
+   - Origin Access Control: E3P8MA1G9Y5BYE
+   - Current default cache behavior target
 
-**Separation of Concerns:**
-- **CDK (`/infra`):** Manages AWS infrastructure only (S3 bucket, future CloudFront, OIDC roles)
-- **Application (`/`):** Builds site and deploys files to infrastructure
+2. **API Gateway Origin (ID: "InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A"):**
+   - API: `1ewlxhaey6.execute-api.us-west-2.amazonaws.com`
+   - Path: `/prod`
+   - Purpose: Backend API endpoints
 
-**Deployment Script:**
-- Location: Main application `package.json`
-- Command: `yarn deploy`
-- Implementation: Shell script using AWS CLI
-- Function: Upload `_site/` contents to `ndx-static-prod` S3 bucket
-- Profile: Uses `NDX/InnovationSandboxHub` AWS profile
-- Dependencies: Requires prior `yarn build` (Eleventy build)
+**New Origin to Add:**
+3. **ndx-static-prod (New):**
+   - Bucket: `ndx-static-prod` (CDK-managed, already deployed)
+   - Origin Access Control: Reuse existing E3P8MA1G9Y5BYE or create new
+   - Purpose: New UI version for testing via cookie routing
 
-**Manual Deployment Flow (MVP):**
-```bash
-# 1. Build static site
-yarn build
+### CloudFront Configuration Changes
 
-# 2. Deploy infrastructure (first time or when infra changes)
-cd infra
-cdk diff          # Review infrastructure changes
-cdk deploy        # Apply infrastructure changes
+**Origin Configuration:**
+- Origin ID: `ndx-static-prod-origin`
+- Origin Domain: `ndx-static-prod.s3.us-west-2.amazonaws.com`
+- Origin Protocol: HTTPS only
+- Origin Path: Empty (serve from bucket root)
+- Connection Attempts: 3 (match existing)
+- Connection Timeout: 10 seconds (match existing)
+- Origin Read Timeout: 30 seconds (match existing)
+- Origin Access Control: Configure to match S3Origin security model
 
-# 3. Deploy site files
-cd ..
-yarn deploy       # Upload _site/ to S3 bucket
+**Cookie-Based Routing Implementation:**
+
+Two implementation options:
+
+**Option A: CloudFront Functions (Recommended):**
+- **Advantage:** Lower latency (runs at edge), lower cost, simpler
+- **Function Type:** Viewer request function
+- **Language:** JavaScript (CloudFront Functions runtime)
+- **Logic:** Inspect `Cookie` header, if `NDX=true` → modify origin ID
+- **Deployment:** Part of CloudFront cache behavior configuration
+
+**Option B: Lambda@Edge:**
+- **Advantage:** More powerful, can perform complex logic if needed later
+- **Function Type:** Origin request function
+- **Language:** Node.js
+- **Region:** Must be deployed to us-east-1 for Lambda@Edge
+- **Logic:** Same cookie inspection and origin selection
+
+**Routing Function Logic:**
+```javascript
+// Pseudo-code for routing function
+function handler(event) {
+  const request = event.request;
+  const cookies = parseCookies(request.headers.cookie);
+
+  // Check for NDX cookie with value "true"
+  if (cookies['NDX'] === 'true') {
+    // Route to new S3 bucket origin
+    request.origin = { s3: { /* ndx-static-prod config */ } };
+  } else {
+    // Route to existing S3 origin (default behavior)
+    request.origin = { s3: { /* existing S3Origin config */ } };
+  }
+
+  return request;
+}
 ```
 
-**Team Access:**
-- Solo deployment for MVP (single developer with AWS profile)
-- Team deployment deferred to Growth phase (GitHub Actions + OIDC)
+**Cache Behavior Configuration:**
+- **Do NOT modify API Gateway routes** - Only affect default cache behavior
+- Default cache behavior: Attach routing function
+- Preserve all existing cache policies, compression settings, viewer protocol policies
+- Ensure cookies are forwarded to function (required for cookie inspection)
 
-### Infrastructure Directory Structure
+### CDK Implementation Requirements
 
-```
-/infra
-├── bin/
-│   └── infra.ts              # CDK app entry point
-├── lib/
-│   └── ndx-stack.ts          # Stack definition (S3 bucket, etc.)
-├── test/
-│   └── ndx-stack.test.ts     # CDK tests (snapshot + assertions)
-├── cdk.json                   # CDK configuration
-├── package.json               # CDK dependencies
-├── tsconfig.json              # TypeScript config
-├── .eslintrc.js              # ESLint config
-└── README.md                  # Infrastructure documentation
-```
+**CDK Stack Updates:**
+- Update existing `NdxStaticStack` or create new `NdxCloudfrontStack`
+- Import existing CloudFront distribution (do not create new one)
+- Add new S3 origin to distribution configuration
+- Deploy routing function (CloudFront Function or Lambda@Edge)
+- Attach function to default cache behavior
+
+**Testing Requirements:**
+- Snapshot test for CloudFront configuration changes
+- Fine-grained assertions for new origin properties
+- Fine-grained assertions that API Gateway origin remains untouched
+- Test that routing function code is syntactically valid
+- Integration test: Deploy to test environment, validate cookie routing
+
+### Deployment Process
+
+**Pre-Deployment:**
+1. Review current CloudFront configuration via AWS Console
+2. Run `cdk diff` to preview infrastructure changes
+3. Verify API Gateway origin configuration is not modified in diff
+4. Document current default cache behavior configuration for rollback
+
+**Deployment:**
+5. Run `cdk deploy` to apply CloudFront changes
+6. CloudFront propagates changes globally (10-15 minutes)
+7. Monitor CloudFormation stack events for successful deployment
+
+**Post-Deployment Validation:**
+8. Without cookie: Browse site, verify existing origin serves content
+9. Set cookie `NDX=true`: Browse site, verify new origin serves content
+10. Clear cookie: Verify switched back to existing origin
+11. Check CloudFront metrics for errors or anomalies
+
+**Rollback Plan:**
+12. Option 1: Disable routing function (fastest)
+13. Option 2: Revert CloudFront configuration via `cdk deploy` with previous version
+14. Option 3: Remove new origin entirely if issues persist
 
 ---
 
 ## Functional Requirements
 
-**Purpose:** These define WHAT capabilities the infrastructure must provide. They are the complete inventory of infrastructure features that deliver the production deployment foundation.
+**Purpose:** These define WHAT capabilities the CloudFront routing infrastructure must provide. They are the complete inventory of features that enable cookie-based origin routing.
 
-**Scope:** Infrastructure layer only - not application features. Each FR describes a capability the CDK infrastructure or deployment process must support.
+**Scope:** Infrastructure layer only - CloudFront configuration, origin management, routing logic. Each FR describes a capability the system must support.
 
-### Infrastructure Provisioning
+### CloudFront Origin Management
 
-**FR1:** System can define S3 bucket (`ndx-static-prod`) as Infrastructure-as-Code using AWS CDK TypeScript
+**FR1:** System can add `ndx-static-prod` S3 bucket as a new origin to CloudFront distribution E3THG4UHYDHVWP
 
-**FR2:** System can deploy S3 bucket to AWS us-west-2 region using `NDX/InnovationSandboxHub` profile
+**FR2:** System can configure Origin Access Control for new S3 origin matching security of existing S3Origin
 
-**FR3:** System can configure S3 bucket for CloudFront origin access (public access blocked, prepared for CDN)
+**FR3:** System can define origin properties (connection timeout, read timeout, connection attempts) matching existing origins
 
-**FR4:** Infrastructure code can be validated locally via `cdk synth` before deployment
+**FR4:** System can reference existing CloudFront distribution in CDK without recreating or modifying core distribution properties
 
-**FR5:** Infrastructure changes can be previewed via `cdk diff` before applying to AWS
+**FR5:** System preserves existing S3Origin completely unchanged (bucket, OAC, timeouts, protocol)
 
-**FR6:** Infrastructure can be deployed to AWS via `cdk deploy` command
+**FR6:** System preserves API Gateway origin completely unchanged (endpoint, path, protocol, timeouts)
 
-**FR7:** Infrastructure deployments are idempotent (re-running deploy with no changes causes no AWS updates)
+### Cookie-Based Routing Logic
 
-### File Deployment
+**FR7:** System can inspect incoming HTTP requests for `Cookie` header
 
-**FR8:** System can upload all files from `_site/` directory to `ndx-static-prod` S3 bucket
+**FR8:** System can parse `Cookie` header to extract `NDX` cookie value
 
-**FR9:** Deployment script can use AWS CLI with `NDX/InnovationSandboxHub` profile for S3 upload
+**FR9:** System routes requests to `ndx-static-prod` origin when `NDX` cookie value equals `true` (exact match, case-sensitive)
 
-**FR10:** Deployment preserves file structure and MIME types during S3 upload
+**FR10:** System routes requests to existing S3Origin when `NDX` cookie is missing
 
-**FR11:** Deployment can be triggered via `yarn deploy` command from project root
+**FR11:** System routes requests to existing S3Origin when `NDX` cookie exists but value is not `true`
 
-**FR12:** Deployment requires successful `yarn build` to complete before uploading files
+**FR12:** Routing logic executes for every request to default cache behavior (HTML pages, assets)
 
-### Infrastructure Quality & Testing
+**FR13:** Routing logic does NOT execute for API Gateway routes (preserves existing API routing)
 
-**FR13:** CDK infrastructure code can be tested via snapshot tests (CloudFormation template validation)
+**FR14:** Routing function returns modified request with correct origin selection
 
-**FR14:** CDK infrastructure code can be tested via fine-grained assertions (bucket properties, encryption, naming)
+### Routing Function Deployment
 
-**FR15:** CDK TypeScript code can be linted via ESLint with AWS CDK recommended rules
+**FR15:** System can deploy CloudFront Function (Option A) or Lambda@Edge function (Option B) containing routing logic
 
-**FR16:** All infrastructure tests must pass before deployment is allowed
+**FR16:** Routing function code can be defined in CDK as part of infrastructure
 
-**FR17:** Infrastructure code can be version-controlled in git with appropriate .gitignore for CDK artifacts
+**FR17:** Routing function can be attached to default cache behavior as viewer-request or origin-request function
 
-### Documentation & Maintainability
+**FR18:** Routing function deployment is part of CloudFront configuration update (single CDK deployment)
 
-**FR18:** Infrastructure setup, deployment process, and architecture are documented in `/infra/README.md`
+**FR19:** CloudFront propagates function changes globally across all edge locations
 
-**FR19:** Deployment workflow is documented for team members to understand manual deployment process
+### Cache Behavior Configuration
 
-**FR20:** CDK code follows TypeScript and AWS CDK best practices for long-term maintainability
+**FR20:** System preserves all existing cache policy settings (TTL, compression, HTTPS redirect)
+
+**FR21:** System ensures cookies are forwarded to routing function (required for cookie inspection)
+
+**FR22:** System preserves existing viewer protocol policy (redirect-to-https)
+
+**FR23:** System preserves existing allowed HTTP methods configuration
+
+**FR24:** System preserves existing response headers policies if configured
+
+### CDK Infrastructure Management
+
+**FR25:** CDK code can import existing CloudFront distribution by ID (E3THG4UHYDHVWP)
+
+**FR26:** CDK can modify CloudFront distribution configuration without recreating distribution
+
+**FR27:** Infrastructure changes can be validated via `cdk synth` before deployment
+
+**FR28:** Infrastructure changes can be previewed via `cdk diff` showing origin and function additions
+
+**FR29:** Infrastructure can be deployed via `cdk deploy` with zero service downtime
+
+**FR30:** CDK deployment is idempotent (re-running with no changes causes no AWS updates)
+
+### Testing & Validation
+
+**FR31:** CDK tests can validate new S3 origin is added to distribution configuration
+
+**FR32:** CDK tests can validate API Gateway origin remains unchanged
+
+**FR33:** CDK tests can validate routing function code is syntactically valid
+
+**FR34:** CDK tests can validate cache behavior configuration preserves existing policies
+
+**FR35:** System can execute smoke tests post-deployment (manual cookie setting and verification)
 
 ### Rollback & Safety
 
-**FR21:** Infrastructure changes can be reviewed before applying (via `cdk diff`)
+**FR36:** System can disable routing function via CloudFront configuration change
 
-**FR22:** S3 bucket supports versioning for file rollback capability (if enabled)
+**FR37:** System can remove new S3 origin from distribution if rollback needed
 
-**FR23:** Failed deployments can be investigated via CloudFormation events and logs
+**FR38:** System can revert to previous CloudFront configuration via CDK version control
 
-### Future Extensibility (Prepared, Not Implemented in MVP)
+**FR39:** Failed CloudFront deployments can be investigated via CloudFormation events
 
-**FR24:** Infrastructure structure supports future addition of CloudFront CDN
+**FR40:** CloudFormation automatically rolls back failed CloudFront configuration changes
 
-**FR25:** Infrastructure structure supports future addition of OIDC authentication for GitHub Actions
+### Operational Monitoring
 
-**FR26:** Infrastructure structure supports future multi-environment contexts (dev/staging/prod)
+**FR41:** CloudFront can emit metrics showing request counts per origin
+
+**FR42:** CloudFront can emit error rate metrics for each origin separately
+
+**FR43:** Routing function execution can be monitored via CloudWatch if needed (Lambda@Edge only)
+
+**FR44:** System can log routing decisions for debugging (optional, not required for MVP)
 
 ---
 
 ## Non-Functional Requirements
 
+### Performance
+
+**NFR-PERF-1:** Routing function execution must add < 5ms latency to request processing
+
+**NFR-PERF-2:** Cookie parsing must handle malformed cookie headers gracefully without errors
+
+**NFR-PERF-3:** CloudFront edge cache behavior must remain unchanged (no cache effectiveness degradation)
+
+**NFR-PERF-4:** Routing logic must execute in < 100ms worst-case (CloudFront Functions: sub-millisecond expected)
+
+**NFR-PERF-5:** CDK deployment of CloudFront changes must complete within CloudFormation timeout (typically 60 minutes)
+
+**NFR-PERF-6:** CloudFront global propagation must complete within 15 minutes of deployment
+
 ### Security
 
-**NFR-SEC-1:** S3 bucket must block all public access by default (prepared for CloudFront origin access only)
+**NFR-SEC-1:** New S3 origin must use same Origin Access Control security model as existing S3Origin
 
-**NFR-SEC-2:** S3 bucket must use server-side encryption for all stored files (AWS managed keys acceptable for MVP)
+**NFR-SEC-2:** Routing function must not log cookie values containing potentially sensitive data
 
-**NFR-SEC-3:** CDK code must not contain hardcoded credentials or sensitive values
+**NFR-SEC-3:** CDK code must not contain hardcoded distribution IDs or sensitive configuration (use parameters/context)
 
-**NFR-SEC-4:** AWS Profile (`NDX/InnovationSandboxHub`) credentials must remain local, never committed to git
+**NFR-SEC-4:** Origin Access Control permissions must follow principle of least privilege (read-only S3 access)
 
-**NFR-SEC-5:** Infrastructure changes must be auditable via CloudFormation change sets and CDK diff output
+**NFR-SEC-5:** CloudFront distribution security policies (HTTPS enforcement, TLS versions) must remain unchanged
+
+**NFR-SEC-6:** Routing function must validate cookie input to prevent injection attacks
 
 ### Reliability
 
-**NFR-REL-1:** CDK deployment must be idempotent (repeated deployments with no changes cause no AWS modifications)
+**NFR-REL-1:** CloudFront distribution must maintain 99.9% availability during and after deployment
 
 **NFR-REL-2:** Failed CDK deployments must rollback automatically via CloudFormation
 
-**NFR-REL-3:** File upload failures must provide clear error messages indicating which files failed
+**NFR-REL-3:** Routing function errors must not cause request failures (graceful fallback to existing origin)
 
-**NFR-REL-4:** Infrastructure must validate successfully via `cdk synth` before any deployment attempt
+**NFR-REL-4:** CDK deployment must be idempotent (repeated deployments with no changes cause no AWS modifications)
 
-### Performance
+**NFR-REL-5:** Routing function must handle missing cookie header without errors (default to existing origin)
 
-**NFR-PERF-1:** `cdk synth` must complete in under 30 seconds
-
-**NFR-PERF-2:** `cdk diff` must complete in under 60 seconds
-
-**NFR-PERF-3:** `yarn deploy` file upload speed acceptable for ~165 static files (no specific SLA for MVP)
-
-**NFR-PERF-4:** S3 hosting costs must remain minimal during static site phase (< $5/month for storage and data transfer)
+**NFR-REL-6:** System must maintain existing origin availability if new origin fails (automatic CloudFront failover not required for MVP, but routing function must not break existing behavior)
 
 ### Maintainability
 
 **NFR-MAINT-1:** CDK code must pass ESLint with zero errors before deployment
 
-**NFR-MAINT-2:** CDK code must have 100% snapshot test coverage for all stacks
+**NFR-MAINT-2:** CDK code must have snapshot test coverage for CloudFront configuration
 
-**NFR-MAINT-3:** Infrastructure code must follow consistent TypeScript naming conventions and structure
+**NFR-MAINT-3:** Routing function code must be clearly commented explaining cookie inspection logic
 
-**NFR-MAINT-4:** All infrastructure changes must be documented in git commit messages with rationale
+**NFR-MAINT-4:** Infrastructure changes must be documented in git commit messages with rationale
 
-**NFR-MAINT-5:** `/infra/README.md` must provide complete setup instructions executable by new team members
+**NFR-MAINT-5:** CDK code must follow AWS best practices for CloudFront resource management
 
-### Portability
-
-**NFR-PORT-1:** CDK code must work across developer machines (Mac, Linux, Windows with WSL)
-
-**NFR-PORT-2:** Infrastructure must not depend on environment-specific paths or configurations (except AWS profile)
-
-**NFR-PORT-3:** CDK version and dependencies must be pinned in `package.json` for reproducible builds
+**NFR-MAINT-6:** Routing function must be maintainable by team members without CloudFront Functions expertise (simple, well-documented code)
 
 ### Operational Excellence
 
-**NFR-OPS-1:** Infrastructure deployment process must be documented with step-by-step commands
+**NFR-OPS-1:** CDK diff must clearly show CloudFront origin addition and function attachment
 
-**NFR-OPS-2:** CDK diff output must clearly show what resources will be added/modified/deleted
+**NFR-OPS-2:** Deployment process must include pre-deployment checklist (diff review, rollback plan documentation)
 
-**NFR-OPS-3:** Deployment failures must provide actionable error messages with remediation guidance
+**NFR-OPS-3:** Post-deployment validation steps must be documented and executable by any team member
 
-**NFR-OPS-4:** S3 bucket must have appropriate tagging for resource organization (e.g., `Project: NDX`, `Environment: Production`)
+**NFR-OPS-4:** Rollback process must be documented with clear steps and expected timeline (< 5 minutes)
+
+**NFR-OPS-5:** CloudFront metrics must be accessible via AWS Console for operational monitoring
+
+**NFR-OPS-6:** Deployment failures must provide actionable error messages with remediation guidance
+
+### Scalability
+
+**NFR-SCALE-1:** Routing logic must handle production traffic volume (current and 10x growth) without throttling
+
+**NFR-SCALE-2:** CloudFront Functions must scale automatically across all edge locations
+
+**NFR-SCALE-3:** Additional origins can be added in future without architectural changes
+
+**NFR-SCALE-4:** Cookie-based routing pattern must support multiple cookie values in future (extensible design)
+
+### Compliance & Auditability
+
+**NFR-COMP-1:** Infrastructure changes must be visible in CloudFormation change sets before deployment
+
+**NFR-COMP-2:** CDK diff output must be reviewed and approved before production deployment
+
+**NFR-COMP-3:** CloudFront configuration changes must be auditable via CloudFormation stack history
+
+**NFR-COMP-4:** Infrastructure-as-code must be version controlled with meaningful commit messages
+
+**NFR-COMP-5:** Routing function code must be version controlled alongside CDK infrastructure
 
 ---
 
 ## PRD Summary
 
 **Captured Requirements:**
-- **26 Functional Requirements** across 6 capability areas
-  - Infrastructure Provisioning (7)
-  - File Deployment (5)
-  - Infrastructure Quality & Testing (5)
-  - Documentation & Maintainability (3)
-  - Rollback & Safety (3)
-  - Future Extensibility (3)
+- **44 Functional Requirements** across 7 capability areas:
+  - CloudFront Origin Management (6 FRs)
+  - Cookie-Based Routing Logic (8 FRs)
+  - Routing Function Deployment (5 FRs)
+  - Cache Behavior Configuration (5 FRs)
+  - CDK Infrastructure Management (6 FRs)
+  - Testing & Validation (5 FRs)
+  - Rollback & Safety (5 FRs)
+  - Operational Monitoring (4 FRs)
 
-- **23 Non-Functional Requirements** across 6 quality dimensions
-  - Security (5)
-  - Reliability (4)
-  - Performance (4)
-  - Maintainability (5)
-  - Portability (3)
-  - Operational Excellence (4)
+- **35 Non-Functional Requirements** across 7 quality dimensions:
+  - Performance (6 NFRs)
+  - Security (6 NFRs)
+  - Reliability (6 NFRs)
+  - Maintainability (6 NFRs)
+  - Operational Excellence (6 NFRs)
+  - Scalability (4 NFRs)
+  - Compliance & Auditability (5 NFRs)
 
 **Key Deliverables:**
-1. AWS CDK TypeScript infrastructure in `/infra` directory
-2. S3 bucket `ndx-static-prod` configured for CloudFront origin access
-3. `yarn deploy` script for uploading built site to S3
-4. CDK testing suite (snapshot + assertions)
-5. ESLint configuration for CDK code
-6. Infrastructure documentation in `/infra/README.md`
+1. CloudFront distribution E3THG4UHYDHVWP enhanced with third origin (`ndx-static-prod`)
+2. Origin Access Control configured for new S3 origin matching existing security
+3. Cookie-based routing function (CloudFront Functions or Lambda@Edge) inspecting `NDX` cookie
+4. CDK code importing and modifying existing CloudFront distribution
+5. CDK tests validating origin addition and API Gateway preservation
+6. Deployment documentation with rollback procedures
 
 **Success Validation:**
-- CDK infrastructure deploys successfully to AWS us-west-2
-- Static site files upload to S3 bucket via `yarn deploy`
-- All tests pass (CDK tests + ESLint)
-- Infrastructure is reproducible and documented
-- Foundation proven for future GitHub Actions + OIDC automation
+- Testers with `NDX=true` cookie see new S3 bucket content
+- All users without cookie see existing site unchanged
+- API Gateway origin completely untouched
+- Zero downtime during CloudFront deployment
+- CloudFront propagates changes globally within 15 minutes
+- Rollback can be executed in < 5 minutes if needed
 
 ---
 
 ## Product Value Summary
 
-This PRD establishes **production-grade infrastructure foundations** for the National Digital Exchange, a UK government service projected to save £2B in taxpayer funds.
+This PRD enables **safe, low-risk UI evolution** for the National Digital Exchange, a critical UK government procurement platform handling £2B in procurement decisions.
 
-The value delivered is **methodical engineering excellence** - taking the time to build CDK infrastructure with proper testing, linting, and documentation ensures NDX can scale securely from Alpha prototype to production government service. Rather than rushing to deploy, this creates a **solid foundation** that supports future evolution including CloudFront CDN, OIDC keyless authentication, and dynamic procurement capabilities.
+The value delivered is **surgical infrastructure enhancement** - a focused, contained change that enables the strangler pattern for UI modernization without risking production stability. Rather than deploying UI changes directly to all government users or creating separate testing environments, this approach:
 
-The infrastructure-as-code approach ensures **reproducibility, auditability, and transparency** - critical requirements for a public sector platform handling government procurement decisions.
+- **Preserves production stability** - Zero risk to existing users, no behavior changes without explicit opt-in
+- **Enables progressive migration** - Foundation for gradually replacing the UI over multiple phases
+- **Minimizes operational overhead** - Self-service cookie management by technical testers, no admin tools needed
+- **Provides instant rollback** - Can disable routing in seconds if issues discovered
+
+The infrastructure-as-code approach via CDK ensures **reproducibility, auditability, and transparency** - critical requirements for a public sector platform. This methodical, low-risk approach demonstrates government service engineering best practices: make one surgical change, validate thoroughly, then build upon the foundation.
+
+**Business Impact:** Enables NDX team to confidently evolve the platform's user interface based on the Alpine.js modernization research, testing with real users before committing to full rollout - significantly reducing the risk of disruption to government procurement operations.
 
 ---
 
-_This PRD captures the infrastructure requirements for NDX's evolution to AWS production hosting - establishing the foundation for a critical UK government procurement platform._
+_This PRD captures the CloudFront cookie-based origin routing requirements for NDX - enabling safe UI evolution for a critical UK government procurement platform._
 
 _Created through collaborative discovery between cns and AI facilitator._

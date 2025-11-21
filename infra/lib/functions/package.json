@@ -1,0 +1,12 @@
+{
+  "name": "cloudfront-custom-resource",
+  "version": "1.0.0",
+  "description": "Custom Resource Lambda for CloudFront origin management",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

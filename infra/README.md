@@ -1,16 +1,47 @@
 # NDX Infrastructure
 
-**Last Updated:** 2025-11-18
-**Document Version:** 1.1
+**Last Updated:** 2025-11-21
+**Document Version:** 1.3
 **Review:** Update this README when infrastructure changes
 
 ## Overview
 
 This directory contains the AWS Cloud Development Kit (CDK) infrastructure code for the National Digital Exchange (NDX) static site deployment. The infrastructure is defined as code using TypeScript and AWS CDK v2, enabling version-controlled, testable, and repeatable deployments to AWS.
 
-**Purpose:** Deploy and manage AWS infrastructure for hosting the NDX static site on S3 with future support for CloudFront CDN, authentication, and multi-environment contexts.
+**Purpose:** Deploy and manage AWS infrastructure for hosting the NDX static site on S3 with CloudFront CDN cookie-based routing for safe testing of new UI versions.
 
-**Architecture Documentation:** For detailed architectural decisions, technology choices, and implementation patterns, see [../docs/infrastructure-architecture.md](../docs/infrastructure-architecture.md)
+**Architecture Documentation:** For detailed architectural decisions, technology choices, and implementation patterns, see [../docs/infrastructure-architecture.md](../docs/infrastructure-architecture.md) and [../docs/architecture.md](../docs/architecture.md)
+
+---
+
+## CloudFront Cookie-Based Routing
+
+### Overview
+
+The NDX CloudFront distribution uses cookie-based routing to enable safe testing of new UI versions before full production rollout. This implements the strangler pattern for gradual UI migration.
+
+- **Cookie Name:** `NDX` (case-sensitive)
+- **Cookie Value:** `true` (exact match, case-sensitive)
+- **Behavior:**
+  - With `NDX=true`: Routes to `ndx-static-prod` S3 bucket (new UI)
+  - Without cookie: Routes to existing S3Origin (production site)
+  - API routes: Unaffected (API Gateway origin unchanged)
+
+### How to Test New UI
+
+Testers can easily opt-in to see the new UI version by setting a cookie in their browser:
+
+1. Open browser DevTools Console (F12)
+2. Set cookie: `document.cookie = "NDX=true; path=/"`
+3. Browse to https://d7roov8fndsis.cloudfront.net/
+4. You should see content from new S3 bucket
+5. To revert: `document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"`
+
+**Notes:**
+- Cookie must be set exactly as shown (case-sensitive)
+- Cookie applies to all pages on the site
+- Cookie persists until manually removed or browser closed
+- No admin interface required - testers self-manage cookies
 
 ---
 
@@ -184,9 +215,113 @@ For comprehensive validation, run tests in this sequence:
 
 ## Deployment Process
 
-This section covers deploying the static site files to S3. For infrastructure changes, see the [Development Workflow](#development-workflow) section above.
+### CloudFront Infrastructure Deployment
 
-### Build the Site
+When deploying CloudFront configuration changes (origins, functions, cache behaviors), follow this process:
+
+#### Pre-Deployment Validation (Automated)
+
+**Before deploying**, run the automated pre-deployment validation script to catch issues early:
+
+```bash
+cd infra
+yarn pre-deploy
+```
+
+**What the script validates:**
+
+The pre-deployment script runs 10 automated checks to ensure your environment is ready for deployment:
+
+1. **Dependencies installed** - Verifies `node_modules` directory exists
+2. **Node.js version** - Confirms version >= 20.17.0
+3. **TypeScript compilation** - Ensures code compiles without errors
+4. **Linting clean** - Checks code quality standards
+5. **Tests pass** - Validates all Jest tests succeed
+6. **CDK synthesis** - Confirms CloudFormation template generates correctly
+7. **AWS credentials** - Verifies profile `NDX/InnovationSandboxHub` is authenticated
+8. **CDK bootstrap** - Ensures CDKToolkit stack exists in AWS account
+9. **CloudFront distribution health** - Confirms distribution E3THG4UHYDHVWP is in "Deployed" state
+10. **Origin Access Control** - Validates OAC E3P8MA1G9Y5BYE exists
+
+**Script behavior:**
+- Completes in < 30 seconds
+- Runs all checks even if early ones fail (provides complete error picture)
+- Exit code 0 = all checks passed (safe to deploy)
+- Exit code 1 = one or more checks failed (fix errors before deploying)
+
+**Example output:**
+
+```
+===================================
+Pre-Deployment Checklist
+===================================
+
+✓ Checking dependencies...
+✅ Dependencies installed
+
+✓ Validating Node.js version...
+✅ Node.js version compatible (v22.19.0)
+
+...
+
+===================================
+✅ All checks passed!
+Ready to deploy: cdk deploy --profile NDX/InnovationSandboxHub
+===================================
+```
+
+**Important:** The pre-deployment script must pass before running `cdk deploy`. If checks fail, review error messages and fix issues before attempting deployment.
+
+#### Pre-Deployment Checklist (Manual)
+
+Before deploying CloudFront changes, ensure all validations pass:
+
+- [ ] All tests pass: `yarn test`
+- [ ] Linting clean: `yarn lint`
+- [ ] CDK diff reviewed: `cdk diff --profile NDX/InnovationSandboxHub`
+- [ ] API Gateway origin unchanged in diff
+- [ ] Team notified of deployment window (CloudFront changes take 10-15 minutes to propagate)
+
+#### Deploy CloudFront Changes
+
+```bash
+cd infra
+cdk deploy --profile NDX/InnovationSandboxHub
+```
+
+**Deployment Timeline:**
+- CloudFormation update: ~2-5 minutes
+- CloudFront global propagation: ~10-15 minutes
+- Total deployment time: ~15-20 minutes
+
+#### Post-Deployment Validation
+
+After CloudFront deployment completes and propagates:
+
+1. **Verify distribution status:**
+   ```bash
+   aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+   # Output: "Deployed" when changes are live
+   ```
+
+2. **Run integration test (if available):**
+   ```bash
+   ./test/integration.sh
+   ```
+
+3. **Manual cookie routing test:**
+   - Test without cookie: Browse to site, verify existing UI loads
+   - Set cookie: `document.cookie = "NDX=true; path=/"`
+   - Reload page, verify new UI loads
+   - Clear cookie, verify revert to existing UI
+
+4. **Check CloudWatch metrics for errors** (see [Monitoring](#monitoring) section)
+
+### Static Site File Deployment
+
+This section covers deploying the static site files to S3. For infrastructure changes, see the CloudFront Infrastructure Deployment section above.
+
+#### Build the Site
 
 Before deployment, build the Eleventy static site from the project root:
 
@@ -279,6 +414,68 @@ CloudFront CDN will be added to enable public site access. CloudFront Origin Acc
 
 ---
 
+## Monitoring
+
+### CloudFront Metrics (AWS Console)
+
+Monitor CloudFront distribution health and traffic patterns through the AWS Console:
+
+**Access metrics:**
+1. Navigate to: CloudFront > Distributions > E3THG4UHYDHVWP > Monitoring
+2. Or use direct link: https://console.aws.amazon.com/cloudfront/v3/home#/distributions/E3THG4UHYDHVWP
+
+**Key metrics to monitor:**
+
+- **Requests per origin:** Verify both origins receiving traffic appropriately
+  - S3Origin (existing): Should receive majority of traffic
+  - ndx-static-prod-origin (new): Should receive traffic only from cookied users
+  - API Gateway origin: Should receive API requests unchanged
+
+- **Error rate (4xx/5xx) per origin:** Monitor for elevated error rates
+  - Compare error rates between origins
+  - Investigate spikes in 403/404 errors
+  - Watch for 5xx errors indicating infrastructure issues
+
+- **Cache hit ratio:** Should remain high (> 80%)
+  - Cookie routing should not significantly degrade caching
+  - Low cache hit ratio may indicate configuration issues
+
+### Checking Distribution Status
+
+Use AWS CLI to verify CloudFront distribution status:
+
+```bash
+aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+# Output: "Deployed" when changes are live
+# Output: "InProgress" when deployment is propagating
+```
+
+**Check function deployment:**
+
+```bash
+aws cloudfront describe-function --name ndx-cookie-router --profile NDX/InnovationSandboxHub
+```
+
+**List all origins:**
+
+```bash
+aws cloudfront get-distribution-config --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'DistributionConfig.Origins[*].Id'
+```
+
+### CloudWatch Metrics Reference
+
+CloudFront automatically emits metrics to CloudWatch. Key metrics for operational monitoring:
+
+- **Requests:** Total request count per origin (FR41)
+- **BytesDownloaded:** Data transfer volume
+- **4xxErrorRate:** Client errors (FR42)
+- **5xxErrorRate:** Server errors (FR42)
+- **CacheHitRate:** Percentage of requests served from cache
+
+**Note:** CloudFront Functions do not emit custom metrics in MVP. Monitoring relies on built-in CloudFront metrics only.
+
+---
+
 ## Infrastructure Changes
 
 Understanding when to run infrastructure deployment (`cdk deploy`) versus file deployment (`yarn deploy`) is critical for efficient operations.
@@ -356,6 +553,8 @@ Did you modify files in infra/lib/ or infra/bin/?
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3 | 2025-11-21 | Expanded Rollback Procedures section with comprehensive three-tier rollback documentation (Story 3.4). Added prerequisites, decision matrix, detailed validation commands, escalation paths, and realistic timing estimates for each option. Included expected outputs for all validation commands. |
+| 1.2 | 2025-11-21 | Added CloudFront Cookie-Based Routing section with testing guide. Updated Deployment Process with CloudFront-specific pre/post-deployment validation. Added comprehensive Monitoring section for CloudFront metrics. Enhanced Troubleshooting with CloudFront cookie routing issues and rollback procedures. Updated Overview to reflect CloudFront CDN capability. |
 | 1.1 | 2025-11-18 | Added Testing, Deployment Process, Infrastructure Changes, and Maintenance sections. Reorganized Development Workflow. Enhanced with deployment automation details and living document maintenance process. |
 | 1.0 | 2025-11-18 | Initial README created with infrastructure setup, development workflow, site access explanation, troubleshooting, and project structure. |
 
@@ -424,7 +623,604 @@ cat /tmp/index.html
 
 ## Troubleshooting
 
-### Common Errors and Solutions
+### CloudFront Cookie Routing Issues
+
+#### Cookie routing not working
+
+**Symptoms:** Setting `NDX=true` cookie does not route to new UI
+
+**Diagnostic steps:**
+1. Verify CloudFront propagation complete (10-15 minutes after deploy)
+   ```bash
+   aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+   ```
+2. Check cookie set correctly in browser DevTools: `document.cookie`
+3. Inspect Network tab: Look for `X-Cache` header in response
+4. Verify function deployed:
+   ```bash
+   aws cloudfront describe-function --name ndx-cookie-router --profile NDX/InnovationSandboxHub
+   ```
+
+**Solutions:**
+- Wait full 15 minutes for propagation if deployment just completed
+- Ensure cookie syntax exact: `document.cookie = "NDX=true; path=/"`
+- Clear browser cache and cookies, try again
+- Verify distribution status shows "Deployed" not "InProgress"
+
+#### Production site not loading
+
+**Symptoms:** Users cannot access existing site, errors on all pages
+
+**Immediate action:** Execute Rollback Option 1 (disable function)
+
+**Steps:**
+1. Edit `lib/ndx-stack.ts` and comment out function association
+2. Deploy: `cdk deploy --profile NDX/InnovationSandboxHub`
+3. Wait for propagation (~10-15 minutes)
+4. Verify site accessible without cookie
+
+**Investigation:**
+- Check CloudFormation events for deployment errors:
+  ```bash
+  aws cloudformation describe-stack-events --stack-name NdxStatic --profile NDX/InnovationSandboxHub --max-items 20
+  ```
+- Verify existing S3Origin unchanged in distribution config
+- Review CloudFront function code for syntax errors
+
+**Rollback procedures:** See [Rollback Documentation](#rollback-procedures) section below
+
+#### Tests failing
+
+**CDK snapshot mismatch:**
+- **Cause:** CloudFormation template changed
+- **Solution:** Review diff with `yarn test`, update snapshot with `yarn test -u` if change is intentional
+
+**Integration test fails:**
+- **Cause:** AWS CLI authentication or permissions
+- **Solution:** Verify AWS credentials: `aws sts get-caller-identity --profile NDX/InnovationSandboxHub`
+- Check IAM permissions for CloudFront and CloudFormation
+
+**Unit tests fail:**
+- **Cause:** Cookie parsing logic changes or function code syntax errors
+- **Solution:** Review test output, fix function code in `lib/functions/cookie-router.js`
+
+### Rollback Procedures
+
+If CloudFront cookie routing causes production issues, use these rollback procedures to quickly revert changes. This section provides three rollback options with increasing levels of completeness, allowing you to choose the appropriate approach based on the severity and nature of the issue.
+
+#### Prerequisites
+
+Before performing any rollback, ensure you have:
+
+- **AWS CLI configured** with `NDX/InnovationSandboxHub` profile
+- **CDK CLI installed** (aws-cdk@2.x)
+- **Git access** to the repository
+- **Text editor** for code changes (VS Code, vim, etc.)
+- **AWS permissions** for CloudFront and CloudFormation operations
+- **Understanding** of which Epic 2 deployment you're rolling back
+
+Verify AWS access before proceeding:
+
+```bash
+aws sts get-caller-identity --profile NDX/InnovationSandboxHub
+```
+
+Expected output should show Account: `568672915267`
+
+---
+
+#### Rollback Decision Matrix
+
+**Which rollback option should I use?**
+
+| Situation | Recommended Option | Why |
+|-----------|-------------------|-----|
+| **Routing function causing issues, origins working fine** | Option 1 | Fastest (< 5 min action), least disruptive, disables routing without removing infrastructure |
+| **Recent deployment (< 24 hours), want to undo entirely** | Option 2 | Medium speed (5-10 min), clean revert via Git history, undoes full deployment |
+| **Fundamental architecture issue with origins or cache policy** | Option 3 | Slowest (15 min), complete removal of all Epic 2 infrastructure |
+| **Previous rollback option failed** | Next higher option | Escalate: 1 → 2 → 3 |
+| **Unsure which option to use** | Option 1 first | Always start with fastest, least risky option |
+
+**Default Recommendation:** Always start with **Option 1** (fastest, least disruptive). Only escalate to Option 2 or 3 if Option 1 is insufficient or fails.
+
+---
+
+#### Option 1: Disable CloudFront Function
+
+**When to use:**
+- Cookie routing logic is causing issues (e.g., wrong origin selected, infinite redirects)
+- Origins themselves are working fine (both S3Origin and ndx-static-prod accessible)
+- Need immediate revert without removing infrastructure
+- Production site still functional but routing incorrectly
+
+**Prerequisites:**
+- AWS CLI access
+- CDK CLI installed
+- Text editor for code changes
+
+**Expected Duration:**
+- Action time: < 5 minutes (edit + deploy)
+- CloudFront propagation: 10-15 minutes
+- **Total: 12-18 minutes**
+
+**Steps:**
+
+1. **Edit the CDK stack** to comment out the function association:
+
+```bash
+# Open the stack file in your editor
+code infra/lib/ndx-stack.ts
+# Or: vim infra/lib/ndx-stack.ts
+```
+
+2. **Locate the cache behavior configuration** (approximately lines 120-140) and comment out the `FunctionAssociations` block:
+
+```typescript
+// Find this section in DefaultCacheBehavior:
+DefaultCacheBehavior: {
+  // ... other properties ...
+
+  // Comment out these lines to disable function:
+  // FunctionAssociations: [{
+  //   EventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+  //   Function: cookieRouterFunction,
+  // }],
+},
+```
+
+3. **Save the file** and preview changes:
+
+```bash
+cd infra
+cdk diff --profile NDX/InnovationSandboxHub
+```
+
+Expected diff should show function association being removed from cache behavior.
+
+4. **Deploy the change:**
+
+```bash
+cdk deploy --profile NDX/InnovationSandboxHub --require-approval never
+```
+
+Expected output: CloudFormation UPDATE_COMPLETE in 2-5 minutes
+
+5. **Wait for CloudFront propagation:**
+
+```bash
+# Check distribution status (repeat until "Deployed")
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Distribution.Status' \
+  --output text
+```
+
+Expected output: Initially `InProgress`, then `Deployed` after 10-15 minutes
+
+**Note:** Propagation times may vary based on CloudFront edge location caching. While typically 10-15 minutes, in rare cases full global propagation can take up to 24 hours.
+
+**Success Criteria:**
+
+After propagation completes, verify the rollback worked:
+
+✅ **All traffic routes to existing S3Origin** (no cookie-based routing occurs)
+✅ **NDX cookie has no effect** (setting `NDX=true` still shows existing site)
+✅ **Production site loads without errors**
+✅ **API endpoints remain functional**
+
+**Validation:**
+
+1. **Verify function not associated with cache behavior:**
+
+```bash
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Distribution.DistributionConfig.DefaultCacheBehavior.FunctionAssociations' \
+  --output json
+```
+
+Expected output: `null` or empty list `[]`
+
+2. **Test cookie routing is disabled:**
+
+Open browser DevTools Console and run:
+
+```javascript
+// Set NDX cookie
+document.cookie = "NDX=true; path=/"
+
+// Reload page - should still see EXISTING site (not new origin)
+location.reload()
+```
+
+Expected: Existing production site loads (cookie has no routing effect)
+
+3. **Verify CloudFormation stack status:**
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name NdxStaticStack \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Stacks[0].StackStatus' \
+  --output text
+```
+
+Expected output: `UPDATE_COMPLETE`
+
+**Escalation:**
+
+If Option 1 fails or is insufficient:
+- **Issue:** Function still appears associated → Try redeploying or escalate to Option 2
+- **Issue:** Site still broken → Problem may be with origins, escalate to Option 3
+- **Issue:** Propagation stuck > 30 minutes → Check CloudFormation events, consider Option 2
+
+Escalate to **Option 2** (Git Revert) if Option 1 doesn't resolve the issue.
+
+---
+
+#### Option 2: Git Revert Deployment
+
+**When to use:**
+- Need to undo an entire recent deployment (not just disable function)
+- Clear commit exists to revert (deployment was in last 24-48 hours)
+- Want clean Git history (revert preserves history better than reset)
+- Option 1 was insufficient or you want to remove all changes at once
+
+**Prerequisites:**
+- Git repository access
+- Knowledge of recent commit history
+- AWS CLI and CDK CLI access
+
+**Expected Duration:**
+- Action time: 5-10 minutes (identify commit + revert + deploy)
+- CloudFront propagation: 10-15 minutes
+- **Total: 15-25 minutes**
+
+**Steps:**
+
+1. **Identify the commit to revert** by reviewing recent history:
+
+```bash
+# From project root, view last 10 commits
+git log --oneline --max-count=10
+```
+
+Expected output:
+
+```
+a1b2c3d feat(infra): implement CloudFront cookie routing (Epic 2)  ← Target this
+e4f5g6h feat(infra): add new S3 origin with OAC (Epic 1)
+...
+```
+
+Look for commit message related to Epic 2 CloudFront Function deployment.
+
+2. **Revert the target commit:**
+
+```bash
+# Replace a1b2c3d with actual commit hash from step 1
+git revert a1b2c3d --no-edit
+```
+
+Expected output:
+
+```
+[main xyz789] Revert "feat(infra): implement CloudFront cookie routing (Epic 2)"
+ 3 files changed, 45 deletions(-)
+```
+
+3. **Preview the reverted changes:**
+
+```bash
+cd infra
+cdk diff --profile NDX/InnovationSandboxHub
+```
+
+Expected diff should show function, cache policy modifications being removed.
+
+4. **Deploy the reverted stack:**
+
+```bash
+cdk deploy --profile NDX/InnovationSandboxHub --require-approval never
+```
+
+Expected output: CloudFormation UPDATE_COMPLETE in 2-5 minutes
+
+5. **Wait for CloudFront propagation:**
+
+```bash
+# Monitor distribution status
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Distribution.Status' \
+  --output text
+```
+
+Wait until status changes from `InProgress` to `Deployed` (typically 10-15 minutes)
+
+**Success Criteria:**
+
+✅ **Git history shows revert commit** (clean history preserved)
+✅ **Configuration matches pre-Epic-2 state** (function not in distribution)
+✅ **CDK diff shows no pending changes** (deployed state matches code)
+✅ **Site functions normally** (no routing, no errors)
+
+**Validation:**
+
+1. **Confirm revert commit exists in history:**
+
+```bash
+git log --oneline --max-count=3
+```
+
+Expected: Most recent commit should be `Revert "..."`
+
+2. **Verify no pending infrastructure changes:**
+
+```bash
+cd infra
+cdk diff --profile NDX/InnovationSandboxHub
+```
+
+Expected output: "There were no differences" or minimal unrelated diffs
+
+3. **Validate distribution configuration reverted:**
+
+```bash
+# Verify function not in distribution
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Distribution.DistributionConfig.DefaultCacheBehavior.FunctionAssociations' \
+  --output json
+```
+
+Expected output: `null` or `[]`
+
+4. **Test site accessibility:**
+
+Browse to https://d7roov8fndsis.cloudfront.net/ - should load existing site without errors
+
+**Escalation:**
+
+If Option 2 fails or is insufficient:
+- **Issue:** Wrong commit reverted → Use `git revert HEAD` to undo bad revert, try again
+- **Issue:** Conflicts during revert → Resolve conflicts manually, or escalate to Option 3
+- **Issue:** Site still broken after revert → Problem may be architectural, escalate to Option 3
+
+Escalate to **Option 3** (Remove Origin) if Option 2 doesn't fully resolve the issue.
+
+---
+
+#### Option 3: Complete Infrastructure Removal
+
+**When to use:**
+- Fundamental architectural issue with new origin or cache policy
+- Both Option 1 and Option 2 failed to resolve the issue
+- Need to remove all Epic 2 infrastructure completely (origins, function, cache policy)
+- Preparing for different architectural approach
+
+**Prerequisites:**
+- Deep understanding of CDK stack structure
+- AWS CLI and CDK CLI access
+- Familiarity with CloudFront resource relationships
+- Text editor for extensive code changes
+
+**Expected Duration:**
+- Action time: 15 minutes (remove multiple resources + deploy)
+- CloudFront propagation: 10-15 minutes
+- **Total: 25-30 minutes**
+
+**Steps:**
+
+1. **Edit the CDK stack** to remove all Epic 2 infrastructure:
+
+```bash
+code infra/lib/ndx-stack.ts
+# Or: vim infra/lib/ndx-stack.ts
+```
+
+2. **Remove the following resources** (search and delete these sections):
+
+**2a. Remove new S3 origin** (approximately lines 60-75):
+
+```typescript
+// DELETE this entire section:
+// const ndxStaticOrigin = new origins.S3Origin(ndxStaticBucket, {
+//   originAccessIdentity: oai,
+// });
+```
+
+**2b. Remove CloudFront Function** (approximately lines 85-95):
+
+```typescript
+// DELETE this entire section:
+// const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouter', {
+//   code: cloudfront.FunctionCode.fromFile({ ... }),
+// });
+```
+
+**2c. Remove Cache Policy** (approximately lines 100-115):
+
+```typescript
+// DELETE this entire section:
+// const cachePolicy = new cloudfront.CachePolicy(this, 'NdxCookieRoutingPolicy', {
+//   cookieBehavior: cloudfront.CacheCookieBehavior.allowList('NDX'),
+//   ...
+// });
+```
+
+**2d. Revert cache behavior** to original configuration (approximately lines 120-140):
+
+```typescript
+DefaultCacheBehavior: {
+  Origin: existingS3Origin,  // Keep original origin
+  ViewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+  // Remove function association (should already be removed in Option 1)
+  // Remove custom cache policy reference
+  CachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED, // Use default policy
+},
+```
+
+3. **Save file and preview changes:**
+
+```bash
+cd infra
+cdk diff --profile NDX/InnovationSandboxHub
+```
+
+Expected diff should show removal of: S3 bucket, CloudFront Function, Cache Policy, origin associations
+
+4. **Deploy the changes:**
+
+```bash
+cdk deploy --profile NDX/InnovationSandboxHub --require-approval never
+```
+
+Expected output: CloudFormation UPDATE_COMPLETE in 3-5 minutes
+
+5. **Wait for CloudFront propagation:**
+
+```bash
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Distribution.Status' \
+  --output text
+```
+
+Wait until `Deployed` status (10-15 minutes)
+
+**Success Criteria:**
+
+✅ **CloudFront distribution has only 2 origins** (S3Origin and API-Gateway only)
+✅ **CloudFront Function removed** (ndx-cookie-router not in function list)
+✅ **Cache Policy removed** (NdxCookieRoutingPolicy deleted)
+✅ **Distribution matches pre-Epic-2 state**
+✅ **Site functions normally** with original configuration
+
+**Validation:**
+
+1. **Verify origin count decreased to 2:**
+
+```bash
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'length(Distribution.DistributionConfig.Origins)' \
+  --output text
+```
+
+Expected output: `2` (down from 3)
+
+2. **Verify function removed from CloudFront:**
+
+```bash
+aws cloudfront list-functions \
+  --profile NDX/InnovationSandboxHub \
+  --query "FunctionList.Items[?Name=='ndx-cookie-router'] | length(@)" \
+  --output text
+```
+
+Expected output: `0` (function deleted)
+
+3. **Verify origin list:**
+
+```bash
+aws cloudfront get-distribution \
+  --id E3THG4UHYDHVWP \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Distribution.DistributionConfig.Origins[*].Id' \
+  --output json
+```
+
+Expected output: Should show only 2 origins (S3Origin and API-Gateway), NOT ndx-static-prod-origin
+
+4. **Verify CloudFormation stack status:**
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name NdxStaticStack \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Stacks[0].StackStatus' \
+  --output text
+```
+
+Expected output: `UPDATE_COMPLETE`
+
+5. **Test site accessibility:**
+
+Browse to https://d7roov8fndsis.cloudfront.net/ - should load original site
+
+**Escalation:**
+
+If Option 3 fails:
+- **Issue:** CloudFormation deployment fails → Check stack events for specific error:
+  ```bash
+  aws cloudformation describe-stack-events \
+    --stack-name NdxStaticStack \
+    --profile NDX/InnovationSandboxHub \
+    --max-items 20 \
+    --query 'StackEvents[?ResourceStatus==`UPDATE_FAILED`].[Timestamp,ResourceType,ResourceStatusReason]' \
+    --output table
+  ```
+- **Issue:** Resources still exist after deployment → May need manual CloudFormation stack rollback
+- **Issue:** Site still broken → Contact AWS Support or investigate unrelated infrastructure issues
+
+If Option 3 fails, escalate to **AWS Support** or senior infrastructure team.
+
+---
+
+#### General Rollback Validation
+
+After completing any rollback option, perform these checks:
+
+**1. Production site health:**
+```bash
+# Test site loads
+curl -I https://d7roov8fndsis.cloudfront.net/
+```
+
+Expected: HTTP 200 OK
+
+**2. API endpoints functionality:**
+
+Test API Gateway origin still works (if applicable to your setup)
+
+**3. CloudWatch metrics:**
+
+Check CloudFront error rates haven't increased:
+- Navigate to CloudFront Console → Distribution E3THG4UHYDHVWP → Monitoring
+- Verify 4xx/5xx error rates are normal (not elevated)
+
+**4. CloudFormation stack stability:**
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name NdxStaticStack \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Stacks[0].StackStatus' \
+  --output text
+```
+
+Expected: `UPDATE_COMPLETE` (not `UPDATE_ROLLBACK_COMPLETE` or `ROLLBACK_COMPLETE`)
+
+---
+
+#### Rollback Timing Summary
+
+| Option | Action Time | Propagation Time | Total Time | When to Use |
+|--------|-------------|------------------|------------|-------------|
+| **Option 1: Disable Function** | < 5 min | 10-15 min | **12-18 min** | Routing logic issues |
+| **Option 2: Git Revert** | 5-10 min | 10-15 min | **15-25 min** | Undo recent deployment |
+| **Option 3: Remove Origin** | 15 min | 10-15 min | **25-30 min** | Complete infrastructure removal |
+
+**Note:** CloudFront propagation times are estimates. Typical propagation completes in 10-15 minutes, but edge cases can take up to 24 hours for full global propagation. Initial CloudFormation deployment completes in 2-5 minutes; the remaining time is CloudFront edge location updates.
+
+### Common Infrastructure Errors and Solutions
 
 #### 1. Profile Not Found
 

@@ -1,8 +1,16 @@
 {
   "mcpServers": {
     "aws-knowledge-mcp-server": {
-      "url": "https://knowledge-mcp.global.api.aws",
-      "type": "http"
+      "type": "http",
+      "url": "https://knowledge-mcp.global.api.aws"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ],
+      "env": {}
     }
   }
 }

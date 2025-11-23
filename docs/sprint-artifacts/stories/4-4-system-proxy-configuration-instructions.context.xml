@@ -1,0 +1,224 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.4</storyId>
+    <title>System Proxy Configuration Instructions</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-4-system-proxy-configuration-instructions.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>clear instructions for configuring my system proxy to route browser traffic through mitmproxy</iWant>
+    <soThat>I can intercept CloudFront requests and develop Try feature UI locally with real API integration</soThat>
+    <tasks>
+      - Task 1: Document macOS system proxy configuration (AC: #1)
+      - Task 2: Document Windows system proxy configuration (AC: #1)
+      - Task 3: Document Linux (GNOME) system proxy configuration (AC: #1)
+      - Task 4: Document browser-specific proxy alternative (AC: #2)
+      - Task 5: Document proxy revert instructions (AC: #3)
+      - Task 6: Add troubleshooting section (AC: #4)
+      - Task 7: Validate documentation completeness (AC: #1, #2, #3, #4)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC1">
+      <summary>Documentation includes platform-specific proxy configuration steps</summary>
+      <details>
+        - macOS: System Preferences → Network → Proxies
+        - Windows: Control Panel → Internet Options → Connections → LAN Settings
+        - Linux (GNOME): Settings → Network → Network Proxy
+        - Each platform includes screenshots or clear UI element descriptions
+        - HTTP and HTTPS proxy: localhost:8081
+        - Bypass list: localhost, 127.0.0.1, *.local
+      </details>
+    </ac>
+    <ac id="AC2">
+      <summary>Documentation includes browser-specific proxy option (alternative)</summary>
+      <details>
+        - FoxyProxy extension setup for Chrome/Firefox
+        - FoxyProxy pattern configuration for CloudFront domain only
+        - Explains when to use browser proxy vs system proxy (corporate network considerations)
+      </details>
+    </ac>
+    <ac id="AC3">
+      <summary>Documentation includes proxy revert instructions</summary>
+      <details>
+        - Instructions for each platform to revert proxy settings
+        - Explains when to disable (not actively developing, VPN conflicts, troubleshooting)
+        - Quick reference: "Uncheck 'Use proxy' or remove proxy server address"
+      </details>
+    </ac>
+    <ac id="AC4">
+      <summary>Documentation includes troubleshooting section</summary>
+      <details>
+        - "Cannot connect to CloudFront domain" → Verify mitmproxy running on port 8081
+        - "Infinite redirect loop" → Check bypass list includes localhost
+        - "VPN/Corporate proxy conflicts" → Use browser-specific proxy instead
+        - "Other sites broken" → Verify bypass list or disable system proxy when not developing
+        - Validation command: curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net
+      </details>
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/development/local-try-setup.md</path>
+        <title>Local Try Feature Development Setup Guide</title>
+        <section>mitmproxy Installation and Architecture</section>
+        <snippet>Existing documentation from Story 4.1 establishing the mitmproxy-based development workflow architecture. This file will be extended with system proxy configuration sections for macOS, Windows, and Linux platforms.</snippet>
+        <relevance>Primary documentation file to update with proxy configuration instructions</relevance>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification - Local Development Infrastructure</title>
+        <section>Dependencies and Integrations → Developer Machine System Proxy</section>
+        <snippet>Configuration scope system-wide or browser-specific. HTTP/HTTPS proxy set to localhost:8081. Bypass list: localhost, 127.0.0.1, *.local prevents recursive proxying.</snippet>
+        <relevance>Defines system proxy requirements and bypass list specification</relevance>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification</title>
+        <section>Detailed Design → Workflows (Daily Workflow)</section>
+        <snippet>Browser → mitmproxy (localhost:8081) → Conditional routing (UI requests → localhost:8080, API requests → CloudFront). System proxy configuration required for browser traffic interception.</snippet>
+        <relevance>Explains why proxy configuration is essential for local development workflow</relevance>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification</title>
+        <section>Risks → RISK-4: System proxy configuration conflicts with corporate proxy/VPN</section>
+        <snippet>Likelihood Medium, Impact Medium. Mitigation: Documentation includes browser-specific proxy option (FoxyProxy extension) as alternative to system-wide proxy.</snippet>
+        <relevance>Justifies AC2 requirement for FoxyProxy alternative documentation</relevance>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/4-2-create-mitmproxy-addon-script-for-conditional-forwarding.md</path>
+        <title>Story 4.2 Completion - mitmproxy Addon Script</title>
+        <section>Dev Agent Record → Completion Notes</section>
+        <snippet>mitmproxy listens on port 8081. Bypass list essential to prevent recursive proxying. OAuth compatibility requires preserving CloudFront Host header. Corporate network consideration requires browser-specific proxy option.</snippet>
+        <relevance>Previous story insights inform proxy configuration requirements</relevance>
+      </artifact>
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document - Try Before You Buy</title>
+        <section>Product Scope → Phase 1: Local Development Setup</section>
+        <snippet>mitmproxy Configuration: Proxy https://d7roov8fndsis.cloudfront.net/ to localhost for development. System proxy essential component of local dev setup.</snippet>
+        <relevance>PRD requirement for local development proxy configuration</relevance>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>scripts/mitmproxy-addon.py</path>
+        <kind>Python script</kind>
+        <symbol>request(flow: http.HTTPFlow)</symbol>
+        <lines>all</lines>
+        <reason>mitmproxy addon script that receives traffic from system proxy on port 8081. Understanding this routing logic helps developers understand why proxy configuration matters (UI routes → localhost:8080, API routes → CloudFront passthrough).</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>configuration</kind>
+        <symbol>dev:proxy script</symbol>
+        <lines>11</lines>
+        <reason>npm script that starts mitmproxy with --listen-port 8081 parameter. Confirms port number for system proxy configuration documentation.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@11ty/eleventy</package>
+        <version>^3.1.2</version>
+        <purpose>Static site generator serving UI on localhost:8080 (destination for UI routes from proxy)</purpose>
+      </node>
+      <python>
+        <package>mitmproxy</package>
+        <version>10.x+</version>
+        <purpose>Transparent HTTPS proxy listening on localhost:8081 (system proxy target)</purpose>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <type>Documentation Style</type>
+      <description>Follow existing local-try-setup.md documentation patterns: clear step-by-step instructions, platform-specific sections, troubleshooting guidance (established in Story 4.1)</description>
+    </constraint>
+    <constraint>
+      <type>Port Allocation</type>
+      <description>mitmproxy MUST listen on port 8081 (confirmed in package.json dev:proxy script). System proxy configuration MUST point to localhost:8081.</description>
+    </constraint>
+    <constraint>
+      <type>Bypass List Requirement</type>
+      <description>ALL platform instructions MUST include bypass list: localhost, 127.0.0.1, *.local. This prevents infinite loops from proxying localhost requests.</description>
+    </constraint>
+    <constraint>
+      <type>Platform Coverage</type>
+      <description>Document macOS, Windows, and Linux (GNOME). Include note for other Linux desktop environments (KDE, XFCE, etc.) to consult their specific proxy settings.</description>
+    </constraint>
+    <constraint>
+      <type>Corporate Network Support</type>
+      <description>MUST document FoxyProxy browser extension as alternative for developers with existing corporate proxies or VPN conflicts (AC2 requirement, mitigates RISK-4 from tech spec).</description>
+    </constraint>
+    <constraint>
+      <type>Validation Command</type>
+      <description>Provide curl command for testing proxy configuration: curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net (AC4 requirement)</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>mitmproxy Transparent Proxy</name>
+      <kind>Network proxy service</kind>
+      <signature>HTTP/HTTPS proxy listening on localhost:8081</signature>
+      <path>N/A (external mitmproxy process started via yarn dev:proxy)</path>
+      <notes>System proxy routes browser traffic to this port. mitmproxy addon script (scripts/mitmproxy-addon.py) then performs conditional forwarding based on URL patterns.</notes>
+    </interface>
+    <interface>
+      <name>Local NDX Server</name>
+      <kind>Development web server</kind>
+      <signature>HTTP server on localhost:8080 serving Eleventy-built UI</signature>
+      <path>N/A (external Eleventy process started via yarn start)</path>
+      <notes>Destination for UI routes forwarded by mitmproxy addon script. Browser traffic flow: Browser → System Proxy (8081) → mitmproxy addon → localhost:8080 (UI) or CloudFront (API).</notes>
+    </interface>
+    <interface>
+      <name>FoxyProxy Extension Pattern API</name>
+      <kind>Browser extension configuration</kind>
+      <signature>Pattern-based proxy routing: *d7roov8fndsis.cloudfront.net* → localhost:8081</signature>
+      <path>N/A (browser extension configuration)</path>
+      <notes>Alternative to system-wide proxy for developers with corporate proxy conflicts. Isolates proxy configuration to browser only, not affecting other system network traffic.</notes>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Story 4.4 is documentation-only with no code implementation. Testing consists of manual validation: (1) Developer following instructions on fresh machine for each platform, (2) Verifying browser traffic routes through mitmproxy console logs, (3) Testing bypass list prevents localhost recursion loops, (4) Confirming validation command (curl) produces expected output.
+    </standards>
+    <locations>
+      No automated tests for Story 4.4 (documentation story). Story 4.6 (validation script) will create automated checks for proxy configuration prerequisites, but cannot automate the configuration itself (requires platform-specific UI interactions).
+    </locations>
+    <ideas>
+      <idea ac="AC1">
+        Manual test: Follow macOS proxy configuration steps on clean macOS machine. Verify mitmproxy console shows browser requests when navigating to CloudFront domain.
+      </idea>
+      <idea ac="AC1">
+        Manual test: Follow Windows proxy configuration steps on Windows machine. Verify bypass list prevents localhost requests from appearing in mitmproxy console.
+      </idea>
+      <idea ac="AC1">
+        Manual test: Follow Linux (GNOME) proxy configuration steps. Test with curl validation command to confirm proxy routing works.
+      </idea>
+      <idea ac="AC2">
+        Manual test: Install FoxyProxy extension and configure pattern for CloudFront domain. Verify only CloudFront requests route through proxy, other sites direct.
+      </idea>
+      <idea ac="AC3">
+        Manual test: Follow revert instructions for one platform. Verify proxy disabled, CloudFront domain no longer routes through mitmproxy.
+      </idea>
+      <idea ac="AC4">
+        Manual test: Run validation command (curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net). Verify connection attempt appears in mitmproxy console logs. Check for SSL warning (expected before certificate trust in Story 4.5).
+      </idea>
+      <idea ac="AC4">
+        Manual test: Simulate "infinite redirect loop" by omitting bypass list. Verify troubleshooting guidance resolves issue when bypass list added.
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

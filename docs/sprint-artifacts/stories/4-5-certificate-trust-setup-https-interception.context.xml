@@ -1,0 +1,315 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.5</storyId>
+    <title>Certificate Trust Setup (HTTPS Interception)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-5-certificate-trust-setup-https-interception.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to trust mitmproxy's SSL certificate</iWant>
+    <soThat>I can intercept HTTPS requests from the CloudFront domain without browser security warnings</soThat>
+    <tasks>
+- Task 1: Document mitmproxy CA certificate generation and location (AC: #1)
+  - 1.1: Add "Certificate Trust Setup" section to local-try-setup.md
+  - 1.2: Document auto-generation: mitmproxy creates certificate on first run
+  - 1.3: Document certificate path: `~/.mitmproxy/mitmproxy-ca-cert.pem`
+  - 1.4: Explain purpose: HTTPS interception without browser warnings
+  - 1.5: Explain why required: CloudFront uses HTTPS, mitmproxy must decrypt to conditionally route
+
+- Task 2: Document macOS certificate trust steps (AC: #2)
+  - 2.1: Add "Certificate Trust - macOS" section
+  - 2.2: Step 1: Open `~/.mitmproxy/mitmproxy-ca-cert.pem` (double-click or drag to Keychain Access)
+  - 2.3: Step 2: Find "mitmproxy" certificate in System or login keychain
+  - 2.4: Step 3: Double-click certificate → Trust section → "When using this certificate: Always Trust"
+  - 2.5: Step 4: Close certificate info window, authenticate with password
+  - 2.6: Step 5: Verify certificate shows green checkmark in Keychain Access
+
+- Task 3: Document Windows certificate trust steps (AC: #2)
+  - 3.1: Add "Certificate Trust - Windows" section
+  - 3.2: Step 1: Double-click `~/.mitmproxy/mitmproxy-ca-cert.pem` in File Explorer
+  - 3.3: Step 2: Click "Install Certificate" → Current User → Next
+  - 3.4: Step 3: Select "Place all certificates in the following store"
+  - 3.5: Step 4: Browse → Select "Trusted Root Certification Authorities"
+  - 3.6: Step 5: Next → Finish → Security warning appears → Click "Yes"
+  - 3.7: Step 6: Verify certificate installed in Certificate Manager (certmgr.msc)
+
+- Task 4: Document Linux certificate trust steps (AC: #2)
+  - 4.1: Add "Certificate Trust - Linux" section
+  - 4.2: Step 1: Convert PEM to CRT: `sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/mitmproxy.crt`
+  - 4.3: Step 2: Update CA certificates: `sudo update-ca-certificates`
+  - 4.4: Step 3: Verify output shows "1 added" in update command
+  - 4.5: Note for other Linux distros: Arch uses `trust anchor`, Fedora uses `update-ca-trust`
+  - 4.6: Note for browser-specific trust: Firefox maintains own cert store, may need manual import
+
+- Task 5: Add security warnings section (AC: #3)
+  - 5.1: Add "Security Considerations" section
+  - 5.2: Warning 1: Only trust certificate on development machines (never production)
+  - 5.3: Warning 2: mitmproxy can decrypt ALL HTTPS traffic routed through proxy
+  - 5.4: Warning 3: Remove certificate trust when finished with local Try development
+  - 5.5: Document certificate removal steps for each platform
+  - 5.6: Emphasize: Certificate is for local development only, not for production use
+
+- Task 6: Document certificate removal steps (AC: #3)
+  - 6.1: Add "Removing Certificate Trust" section
+  - 6.2: macOS removal: Keychain Access → Find "mitmproxy" → Right-click → Delete
+  - 6.3: Windows removal: Certificate Manager (certmgr.msc) → Trusted Root → mitmproxy → Delete
+  - 6.4: Linux removal: `sudo rm /usr/local/share/ca-certificates/mitmproxy.crt &amp;&amp; sudo update-ca-certificates --fresh`
+  - 6.5: Verify removal: Browse to CloudFront domain, SSL warning should appear
+
+- Task 7: Add validation steps and troubleshooting (AC: #4)
+  - 7.1: Add "Validation" section with 6-step verification process
+  - 7.2: Step 1: Start mitmproxy: `yarn dev:proxy`
+  - 7.3: Step 2: Start NDX server: `yarn dev` (localhost:8080)
+  - 7.4: Step 3: Verify system proxy configured (reference Story 4.4)
+  - 7.5: Step 4: Browse to `https://d7roov8fndsis.cloudfront.net`
+  - 7.6: Step 5: Verify no SSL warnings in browser
+  - 7.7: Step 6: Check mitmproxy console - UI requests to localhost:8080, API requests to CloudFront
+  - 7.8: Add troubleshooting: "SSL warning persists" → Restart browser, verify certificate trust, check certificate path
+
+- Task 8: Validate documentation completeness (AC: #1, #2, #3, #4)
+  - 8.1: Review all platform sections for clarity
+  - 8.2: Verify security warnings prominent and clear
+  - 8.3: Test validation steps on at least one platform
+  - 8.4: Verify certificate removal steps documented
+  - 8.5: Spell-check and grammar review
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+AC1: Documentation includes mitmproxy CA certificate location and generation
+- Given mitmproxy has been run for the first time
+- When I navigate to the "Certificate Trust Setup" section in `/docs/development/local-try-setup.md`
+- Then it documents:
+  - Certificate auto-generation on first mitmproxy run
+  - Certificate path: `~/.mitmproxy/mitmproxy-ca-cert.pem`
+  - Certificate purpose: Enables HTTPS interception without browser warnings
+- And explains why certificate trust is required (CloudFront uses HTTPS, mitmproxy must decrypt to route)
+
+AC2: Documentation includes platform-specific certificate trust steps
+- Given developers use macOS, Windows, or Linux
+- When I read platform-specific trust instructions
+- Then it includes step-by-step guidance for:
+  - macOS: Keychain Access → Import → Trust → "Always Trust"
+  - Windows: Certificate Manager → Install → "Trusted Root Certification Authorities"
+  - Linux: Copy to ca-certificates → `sudo update-ca-certificates`
+- And each platform section includes clear UI navigation paths
+- And instructions specify certificate file to trust: `~/.mitmproxy/mitmproxy-ca-cert.pem`
+
+AC3: Documentation includes security warnings about certificate trust
+- Given trusting CA certificates has security implications
+- When I read the "Security Considerations" section
+- Then it includes warnings:
+  - "Only trust this certificate on development machines"
+  - "Never trust mitmproxy certificate in production environments"
+  - "Certificate enables mitmproxy to decrypt all HTTPS traffic routed through proxy"
+  - "Remove certificate trust when finished with local Try development"
+- And includes instructions for removing certificate trust (revert steps)
+
+AC4: Documentation includes validation steps to confirm certificate trust working
+- Given certificate has been trusted
+- When I read the "Validation" section
+- Then it includes validation steps:
+  1. Ensure mitmproxy running: `yarn dev:proxy`
+  2. Ensure system proxy configured (Story 4.4)
+  3. Browse to `https://d7roov8fndsis.cloudfront.net`
+  4. Verify no SSL warnings appear in browser
+  5. Verify UI content loads from localhost:8080 (check mitmproxy console logs)
+  6. Verify API calls pass through to CloudFront (check mitmproxy console for `/api/*` requests)
+- And includes troubleshooting if SSL warnings persist
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/development/local-try-setup.md</path>
+        <title>Local Try Feature Development Setup</title>
+        <section>SSL Certificate Warnings (Troubleshooting)</section>
+        <snippet>Browser shows "Your connection is not private" - mitmproxy CA certificate not trusted. Certificate location: ~/.mitmproxy/mitmproxy-ca-cert.pem. Story 4.5 provides platform-specific trust instructions. Security Note: Only trust on development machines.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>NFR → Security (CA Certificate Trust)</section>
+        <snippet>CA Certificate Trust: mitmproxy CA certificate trusted ONLY on developer machines (never production). HTTPS Interception: Documentation warns about certificate trust implications (enables traffic decryption). Threat: Trusted CA certificate enables MITM attacks if compromised. Mitigation: Certificate trust limited to developer machines, documentation warns users.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Dependencies → mitmproxy CA Certificate</section>
+        <snippet>Auto-generated on first run at ~/.mitmproxy/mitmproxy-ca-cert.pem, must be trusted system-wide. Story 4.5 documents platform-specific trust setup for macOS, Windows, Linux.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-034: Content Security Policy (CSP) Headers</section>
+        <snippet>Implement strict CSP headers to prevent XSS attacks. Prevents XSS attacks that could steal sessionStorage JWT tokens. Government security requirement.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document</title>
+        <section>Feature 2: Try Before You Buy - Phase 1: mitmproxy Configuration</section>
+        <snippet>Certificate trust essential for local development with CloudFront domain. NFR-TRY-SEC-4: API calls use HTTPS only - certificate trust enables interception without compromising security.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document</title>
+        <section>NFR-TRY-TEST-1: E2E tests</section>
+        <snippet>E2E tests require HTTPS interception (foundation for future Playwright testing). Certificate trust is development infrastructure prerequisite.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>scripts/mitmproxy-addon.py</path>
+        <kind>Python script</kind>
+        <symbol>request function</symbol>
+        <lines>N/A</lines>
+        <reason>mitmproxy addon performs conditional routing (UI → localhost, API → CloudFront). HTTPS interception requires trusted CA certificate to decrypt CloudFront HTTPS traffic.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>npm configuration</kind>
+        <symbol>dev:proxy script</symbol>
+        <lines>N/A</lines>
+        <reason>Starts mitmproxy with addon script. First run auto-generates CA certificate at ~/.mitmproxy/mitmproxy-ca-cert.pem that must be trusted.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@11ty/eleventy</package>
+        <version>^3.1.2</version>
+        <purpose>Static site generator - local server on port 8080</purpose>
+      </node>
+      <python>
+        <package>mitmproxy</package>
+        <version>10.x+</version>
+        <purpose>Transparent HTTPS proxy - generates CA certificate on first run</purpose>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+Development Infrastructure Constraints:
+- Certificate trust setup is platform-specific (macOS, Windows, Linux have different certificate stores)
+- Story 4.5 is documentation-only (no code changes, only updates to docs/development/local-try-setup.md)
+- Certificate trust is prerequisite for Stories 4.2-4.4 to function (mitmproxy cannot intercept HTTPS without trusted CA)
+- Security constraint: Documentation must warn against trusting certificate on production machines
+- Reversibility constraint: Documentation must include certificate removal steps for all platforms
+
+Epic 4 Dependencies:
+- Story 4.1 (mitmproxy setup documentation) provides foundation
+- Story 4.2 (addon script) requires HTTPS interception to route CloudFront requests
+- Story 4.3 (npm scripts) starts mitmproxy which generates CA certificate
+- Story 4.4 (system proxy) routes traffic to mitmproxy, but SSL warnings appear without Story 4.5
+- Story 4.6 (validation script) will check if CA certificate exists
+
+Architecture Alignment:
+- ADR-015: Architecture Handoff Documentation - Story 4.5 provides epic-specific certificate trust guidance
+- Brownfield Constraint: Cannot modify Innovation Sandbox CloudFront distribution (external system uses HTTPS)
+- Development Only: Certificate trust is for local development infrastructure, not production deployment
+- Production Parity: Real Innovation Sandbox API uses HTTPS, certificate trust enables testing OAuth and API integration
+</constraints>
+
+  <interfaces>
+mitmproxy CA Certificate:
+- Location: ~/.mitmproxy/mitmproxy-ca-cert.pem
+- Auto-generated: On first mitmproxy run (yarn dev:proxy)
+- Format: PEM (Privacy Enhanced Mail) certificate
+- Purpose: Enables mitmproxy to act as trusted Certificate Authority for HTTPS interception
+- Trust Requirement: Must be installed in OS/browser certificate store to avoid SSL warnings
+
+Platform-Specific Certificate Stores:
+- macOS: Keychain Access (System or login keychain)
+  - UI Path: Applications → Utilities → Keychain Access
+  - Import: Double-click .pem file or drag to Keychain Access
+  - Trust: Certificate properties → Trust section → "When using this certificate: Always Trust"
+
+- Windows: Certificate Manager (Trusted Root Certification Authorities)
+  - UI Path: certmgr.msc or double-click .pem → Install Certificate
+  - Store: "Place all certificates in the following store" → Trusted Root Certification Authorities
+  - Verification: certmgr.msc → Trusted Root Certification Authorities → Certificates → mitmproxy
+
+- Linux: ca-certificates system directory
+  - Ubuntu/Debian: /usr/local/share/ca-certificates/ → sudo update-ca-certificates
+  - Arch: sudo trust anchor ~/.mitmproxy/mitmproxy-ca-cert.pem
+  - Fedora/RHEL: /etc/pki/ca-trust/source/anchors/ → sudo update-ca-trust
+  - Firefox: Maintains own cert store (manual import: Settings → Privacy &amp; Security → Certificates → View Certificates → Authorities → Import)
+
+HTTPS Interception Flow:
+- Browser requests https://d7roov8fndsis.cloudfront.net
+- System proxy routes to mitmproxy (localhost:8081)
+- mitmproxy intercepts HTTPS connection, presents certificate signed by mitmproxy CA
+- If CA trusted: Browser accepts certificate, mitmproxy decrypts traffic, routes according to addon script
+- If CA not trusted: Browser shows SSL warning (NET::ERR_CERT_AUTHORITY_INVALID)
+</interfaces>
+
+  <tests>
+    <standards>
+Epic 4 is development infrastructure (not production code). Testing focuses on documentation completeness and manual validation:
+
+Documentation Review:
+- Manual review by developer following instructions on fresh machine (one platform)
+- Verify all steps clear and actionable
+- Test validation steps produce expected results (no SSL warnings)
+- Confirm security warnings prominent and understandable
+
+Platform Testing:
+- Test certificate trust on at least one platform (macOS, Windows, or Linux)
+- Verify browser accepts HTTPS connections to CloudFront domain without warnings
+- Test certificate removal restores SSL warnings (proves certificate was trusted)
+
+No Automated Tests:
+- Story 4.5 is documentation-only (certificate trust manual process)
+- Validation script (Story 4.6) will check if certificate exists, but cannot automate trust itself
+</standards>
+    <locations>
+docs/development/local-try-setup.md (documentation artifact - manual review)
+</locations>
+    <ideas>
+AC1 Validation (Certificate documentation):
+- Manual review: "Certificate Trust Setup" section exists in local-try-setup.md
+- Verify: Certificate path documented (~/.mitmproxy/mitmproxy-ca-cert.pem)
+- Verify: Auto-generation on first run documented
+- Verify: Purpose explained (HTTPS interception without browser warnings)
+- Verify: Why required explained (CloudFront HTTPS, mitmproxy must decrypt)
+
+AC2 Validation (Platform-specific trust steps):
+- Manual review: macOS section documents Keychain Access steps with "Always Trust"
+- Manual review: Windows section documents Certificate Manager with "Trusted Root Certification Authorities"
+- Manual review: Linux section documents ca-certificates with sudo update-ca-certificates
+- Verify: Each platform section includes clear UI navigation paths
+- Verify: Certificate file path specified in each section
+
+AC3 Validation (Security warnings):
+- Manual review: "Security Considerations" section exists
+- Verify: Warning "Only trust on development machines" present
+- Verify: Warning "Never trust in production environments" present
+- Verify: Warning about HTTPS traffic decryption present
+- Verify: Removal instructions documented
+
+AC4 Validation (Validation steps):
+- Manual review: "Validation" section exists with 6-step verification
+- Verify: Step 1 documented (yarn dev:proxy)
+- Verify: Step 2 documented (system proxy configured - Story 4.4 reference)
+- Verify: Step 3 documented (browse to CloudFront domain)
+- Verify: Step 4 documented (no SSL warnings)
+- Verify: Step 5 documented (UI from localhost:8080 in mitmproxy console)
+- Verify: Step 6 documented (API passthrough to CloudFront in mitmproxy console)
+- Verify: Troubleshooting for persistent SSL warnings documented
+
+Manual End-to-End Test (Optional - platform-specific):
+- Follow platform-specific trust instructions on fresh machine
+- Run yarn dev:proxy (mitmproxy starts)
+- Run yarn dev (NDX server starts on port 8080)
+- Configure system proxy per Story 4.4
+- Browse to https://d7roov8fndsis.cloudfront.net
+- Expected: No SSL warnings in browser
+- Expected: NDX homepage loads from localhost:8080 (mitmproxy console shows routing)
+- Test certificate removal: Follow removal steps, browse again, expect SSL warning restored
+</ideas>
+  </tests>
+</story-context>

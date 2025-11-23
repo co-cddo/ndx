@@ -7,8 +7,14 @@
   "type": "module",
   "scripts": {
     "start": "rm -r _site ; eleventy --serve",
-    "build": "eleventy",
+    "build": "yarn build:try-js && eleventy",
+    "build:try-js": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020",
+    "build:try-js:watch": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "deploy": "scripts/deploy.sh",
+    "dev:proxy": "mitmproxy --listen-port 8081 --mode transparent --set confdir=~/.mitmproxy -s scripts/mitmproxy-addon.py",
+    "validate-setup": "bash scripts/validate-local-setup.sh",
     "lint": "prettier -c .",
     "prepare": "husky"
   },
@@ -24,11 +30,17 @@
   "homepage": "https://github.com/co-cddo/ndx#readme",
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
+    "@types/jest": "^29.5.14",
     "@x-govuk/govuk-eleventy-plugin": "^7.2.1",
+    "esbuild": "^0.24.2",
     "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
-    "prettier-plugin-sh": "^0.18.0"
+    "prettier-plugin-sh": "^0.18.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
   },
   "engines": {
     "npm": "please-use-yarn",

@@ -1,0 +1,58 @@
+---
+layout: post
+title: Signing you in...
+---
+
+<div class="govuk-width-container">
+  <main class="govuk-main-wrapper" id="main-content" role="main">
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <h1 class="govuk-heading-l">Signing you in...</h1>
+
+        <div id="callback-content">
+          <p class="govuk-body">Please wait while we complete the sign in process.</p>
+          <div class="govuk-!-margin-top-6">
+            <div class="govuk-!-font-size-80 govuk-!-text-align-centre">⏳</div>
+          </div>
+        </div>
+
+        <div id="error-content" style="display: none;">
+          <div class="govuk-error-summary" aria-labelledby="error-summary-title" role="alert">
+            <h2 class="govuk-error-summary__title" id="error-summary-title">
+              There was a problem
+            </h2>
+            <div class="govuk-error-summary__body">
+              <p id="error-message" class="govuk-body"></p>
+              <p class="govuk-body">
+                <a href="/" class="govuk-link">Return to home page</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  // OAuth callback handler
+  import { handleOAuthCallback, parseOAuthError } from './assets/try.bundle.js';
+
+  // Check for OAuth errors first (from Story 5.2)
+  const error = parseOAuthError();
+  if (error) {
+    document.getElementById('callback-content').style.display = 'none';
+    document.getElementById('error-content').style.display = 'block';
+    document.getElementById('error-message').textContent = error.message;
+
+    // Auto-redirect to home after 5 seconds
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 5000);
+  } else {
+    // No error, proceed with token extraction and redirect (Story 5.3)
+    document.addEventListener('DOMContentLoaded', () => {
+      handleOAuthCallback();
+    });
+  }
+</script>

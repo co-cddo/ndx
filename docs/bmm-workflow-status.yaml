@@ -38,7 +38,7 @@ workflow_status:
     - prd: "docs/prd.md"
     - validate-prd: "optional"
     - create-epics-and-stories: "optional"  # Early epic breakdown
-    - create-design: "conditional"  # if_has_ui
+    - create-design: "docs/ux-design-specification.md"  # Completed 2025-11-22 for Try Before You Buy feature
     - create-epics-and-stories-after-ux: "optional"  # Epic breakdown with UX context
 
   # Phase 2: Solutioning

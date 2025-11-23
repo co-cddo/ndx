@@ -1,0 +1,133 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>1</storyId>
+    <title>mitmproxy Setup Documentation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/4-1-mitmproxy-setup-documentation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>comprehensive documentation for setting up mitmproxy for local Try feature development</iWant>
+    <soThat>I can quickly configure my local development environment and understand the proxy architecture</soThat>
+    <tasks>
+- [ ] Task 1: Create `/docs/development/local-try-setup.md` file (AC: #1, #2)
+  - [ ] 1.1: Write Prerequisites section with all dependencies listed (AC1)
+  - [ ] 1.2: Create Architecture section with request flow diagram/description (AC2)
+  - [ ] 1.3: Add Overview section explaining purpose (local UI dev with real API backend)
+
+- [ ] Task 2: Document platform-specific mitmproxy installation (AC: #3, #4, #5)
+  - [ ] 2.1: Write macOS installation steps (AC3)
+  - [ ] 2.2: Write Windows installation steps (AC4)
+  - [ ] 2.3: Write Linux installation steps (AC5)
+  - [ ] 2.4: Include installation verification command for all platforms
+
+- [ ] Task 3: Create Troubleshooting section (AC: #6)
+  - [ ] 3.1: Document port conflict resolution
+  - [ ] 3.2: Document mitmproxy PATH/virtual environment issues
+  - [ ] 3.3: Add placeholders referencing future stories (4.4 proxy config, 4.5 certificate trust)
+  - [ ] 3.4: Document OAuth redirect preservation (addon design detail)
+
+- [ ] Task 4: Write Validation section (AC: #7)
+  - [ ] 4.1: Document dependency verification steps
+  - [ ] 4.2: Document port availability checks
+  - [ ] 4.3: Add placeholder for end-to-end validation (once Story 4.3 complete)
+  - [ ] 4.4: Cross-reference Story 4.6 automated validation script
+
+- [ ] Task 5: Review and finalize documentation (AC: All)
+  - [ ] 5.1: Read documentation end-to-end for clarity
+  - [ ] 5.2: Verify all acceptance criteria addressed
+  - [ ] 5.3: Test installation steps on at least one platform (macOS recommended)
+  - [ ] 5.4: Get peer review from another developer
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC1: Prerequisites section exists**
+- **Given** the documentation file exists at `/docs/development/local-try-setup.md`
+- **When** I read the Prerequisites section
+- **Then** it lists all required dependencies:
+  - Python 3.8+ (with installation links for macOS/Windows/Linux)
+  - mitmproxy (installation command: `pip install mitmproxy`)
+  - Node.js 20.17.0+ (reference to existing development-guide.md)
+  - Yarn 4.5.0 (reference to existing development-guide.md)
+  - Port 8080 and 8081 availability check instructions
+
+**AC2: Architecture diagram shows request flow**
+- **Given** I read the Architecture section
+- **When** I review the diagram or textual flow description
+- **Then** it clearly shows:
+  - Browser → mitmproxy (localhost:8081)
+  - mitmproxy conditional routing:
+    - UI routes (`/`, `/catalogue/*`, `/try`, `/assets/*`) → localhost:8080 (local NDX server)
+    - API routes (`/api/*`) → CloudFront (`d7roov8fndsis.cloudfront.net` - real Innovation Sandbox backend)
+  - NDX server (Eleventy) on localhost:8080
+
+**AC3: Configuration steps for macOS provided**
+- **Given** I am a macOS developer
+- **When** I follow the macOS configuration section
+- **Then** it includes step-by-step instructions for:
+  - Installing mitmproxy via pip: `pip install mitmproxy`
+  - Verifying installation: `mitmproxy --version`
+  - Starting mitmproxy (will be covered in Story 4.3, but referenced)
+  - System proxy configuration (will be covered in Story 4.4, but referenced)
+  - Certificate trust setup (will be covered in Story 4.5, but referenced)
+
+**AC4: Configuration steps for Windows provided**
+- **Given** I am a Windows developer
+- **When** I follow the Windows configuration section
+- **Then** it includes step-by-step instructions for:
+  - Installing Python 3.8+ (link to python.org)
+  - Installing mitmproxy via pip: `pip install mitmproxy`
+  - Verifying installation: `mitmproxy --version`
+  - System proxy configuration (will be covered in Story 4.4, but referenced)
+  - Certificate trust setup (will be covered in Story 4.5, but referenced)
+
+**AC5: Configuration steps for Linux provided**
+- **Given** I am a Linux developer
+- **When** I follow the Linux configuration section
+- **Then** it includes step-by-step instructions for:
+  - Installing Python 3.8+ (distribution-specific package manager)
+  - Installing mitmproxy via pip: `pip install mitmproxy`
+  - Verifying installation: `mitmproxy --version`
+  - System proxy configuration (will be covered in Story 4.4, but referenced)
+  - Certificate trust setup (will be covered in Story 4.5, but referenced)
+
+**AC6: Troubleshooting section addresses common issues**
+- **Given** I encounter setup problems
+- **When** I read the Troubleshooting section
+- **Then** it includes solutions for common issues:
+  - **Port already in use**: How to check (`lsof -Pi :8080` / `lsof -Pi :8081`) and resolve (kill process or change port)
+  - **mitmproxy not found**: Python PATH configuration, virtual environments
+  - **SSL certificate warnings**: Reference to Story 4.5 certificate trust setup
+  - **Proxy not intercepting requests**: System proxy configuration verification (reference to Story 4.4)
+  - **OAuth redirects not working**: Explanation that CloudFront domain must be preserved (addon script maintains domain)
+
+**AC7: Validation steps confirm correct setup**
+- **Given** I completed all configuration steps
+- **When** I read the Validation section
+- **Then** it includes verification steps:
+  - Check mitmproxy installed: `mitmproxy --version` shows version number
+  - Check ports available: `lsof -Pi :8080` and `lsof -Pi :8081` show no conflicts (or provides alternative port check for Windows)
+  - Check NDX server starts: `yarn dev` serves on localhost:8080
+  - Check mitmproxy starts: `yarn dev:proxy` (once Story 4.3 complete)
+  - End-to-end test: Browse to CloudFront domain through proxy, verify UI loads from localhost
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>{{docs_artifacts}}</docs>
+    <code>{{code_artifacts}}</code>
+    <dependencies>{{dependencies_artifacts}}</dependencies>
+  </artifacts>
+
+  <constraints>{{constraints}}</constraints>
+  <interfaces>{{interfaces}}</interfaces>
+  <tests>
+    <standards>{{test_standards}}</standards>
+    <locations>{{test_locations}}</locations>
+    <ideas>{{test_ideas}}</ideas>
+  </tests>
+</story-context>

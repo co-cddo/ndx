@@ -1,4 +1,4 @@
-# generated: 2025-11-20
+# generated: 2025-11-22
 # project: ndx
 # project_key: ndx
 # tracking_system: file-system
@@ -29,7 +29,7 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-11-20
+generated: 2025-11-22
 project: ndx
 project_key: ndx
 tracking_system: file-system
@@ -42,6 +42,7 @@ workflow_status:
   epics: /Users/cns/httpdocs/cddo/ndx/docs/epics.md
 
 development_status:
+  # Epic 1: CloudFront Origin Infrastructure (COMPLETED)
   epic-1: done
   1-1-import-existing-cloudfront-distribution-in-cdk: done
   1-2-add-new-s3-origin-with-origin-access-control: done
@@ -49,6 +50,7 @@ development_status:
   1-4-deploy-cloudfront-infrastructure-changes-to-aws: done
   epic-1-retrospective: optional
 
+  # Epic 2: Cookie-Based Routing Implementation (COMPLETED)
   epic-2: done
   2-1-create-cloudfront-function-for-cookie-inspection: done
   2-2-write-unit-tests-for-cookie-router-function: done
@@ -58,6 +60,7 @@ development_status:
   2-6-deploy-routing-functionality-and-validate: done
   epic-2-retrospective: optional
 
+  # Epic 3: Testing, Validation & Operational Readiness (COMPLETED)
   epic-3: contexted
   3-1-write-cdk-snapshot-tests-for-cloudfront-configuration: done
   3-2-write-fine-grained-assertion-tests-for-critical-properties: done
@@ -66,3 +69,75 @@ development_status:
   3-5-update-infrastructure-readme-with-operations-guide: done
   3-6-create-pre-deployment-checklist-and-validation-script: done
   epic-3-retrospective: optional
+
+  # Epic 4: Local Development Infrastructure (Feature 2 - Try Before You Buy)
+  epic-4: contexted
+  4-1-mitmproxy-setup-documentation: done
+  4-2-create-mitmproxy-addon-script-for-conditional-forwarding: done
+  4-3-mitmproxy-run-configuration: done
+  4-4-system-proxy-configuration-instructions: done
+  4-5-certificate-trust-setup-https-interception: done
+  4-6-setup-validation-script: done
+  epic-4-retrospective: optional
+
+  # Epic 5: Authentication Foundation
+  epic-5: in-progress
+  5-1-sign-in-out-button-ui-components: done
+  5-2-sign-in-oauth-redirect-flow: done
+  5-3-jwt-token-extraction-from-url: done
+  5-4-sessionstorage-jwt-persistence: backlog
+  5-5-sign-out-functionality: backlog
+  5-6-api-authorization-header-injection: backlog
+  5-7-authentication-status-check-api: backlog
+  5-8-401-unauthorized-response-handling: backlog
+  5-9-empty-state-ui-for-unauthenticated-try-page: backlog
+  5-10-automated-accessibility-tests-for-auth-ui: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Catalogue Integration & Sandbox Requests
+  epic-6: backlog
+  6-0-ux-review-checkpoint-gate: backlog
+  6-1-parse-try-metadata-from-product-yaml-frontmatter: backlog
+  6-2-generate-try-before-you-buy-tag-system: backlog
+  6-3-catalogue-tag-filter-for-try-before-you-buy: backlog
+  6-4-try-this-now-for-24-hours-button-on-product-pages: backlog
+  6-5-try-button-authentication-check: backlog
+  6-6-lease-request-modal-overlay-ui: backlog
+  6-7-fetch-and-display-aup-from-innovation-sandbox-api: backlog
+  6-8-aup-checkbox-and-continue-button-state: backlog
+  6-9-submit-lease-request-and-handle-responses: backlog
+  6-10-epic-6-7-integration-testing: backlog
+  6-11-automated-accessibility-tests-for-catalogue-try-ui: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Try Sessions Dashboard
+  epic-7: backlog
+  7-1-create-try-page-route-and-layout: backlog
+  7-2-fetch-and-display-user-leases: backlog
+  7-3-render-sessions-table-with-govuk-design-system: backlog
+  7-4-status-badge-display-with-color-coding: backlog
+  7-5-expiry-date-formatting-relative-and-absolute: backlog
+  7-6-budget-display-with-cost-formatting: backlog
+  7-7-launch-aws-console-button-for-active-sessions: backlog
+  7-8-remaining-lease-duration-display-for-active-sessions: backlog
+  7-9-link-to-catalogue-filter-from-try-page: backlog
+  7-10-first-time-user-guidance-on-try-page: backlog
+  7-11-aws-sso-portal-url-configuration: backlog
+  7-12-end-to-end-user-journey-validation: backlog
+  7-13-automated-accessibility-tests-for-dashboard-ui: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: Accessible & Mobile-Friendly Experience + Brownfield Audit
+  epic-8: backlog
+  8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: backlog
+  8-2-automated-accessibility-testing-in-ci-pipeline: backlog
+  8-3-comprehensive-wcag-22-audit-for-try-feature-ui: backlog
+  8-4-govuk-design-system-component-compliance-audit: backlog
+  8-5-mobile-responsive-design-validation: backlog
+  8-6-performance-and-security-validation: backlog
+  8-7-keyboard-navigation-testing: backlog
+  8-8-screen-reader-testing-nvda-jaws-voiceover: backlog
+  8-9-focus-management-and-visual-focus-indicators: backlog
+  8-10-error-messaging-accessibility: backlog
+  8-11-wcag-22-aa-compliance-certification: backlog
+  epic-8-retrospective: optional

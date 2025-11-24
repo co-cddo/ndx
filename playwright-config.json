@@ -1,0 +1,11 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "proxy": {
+        "server": "http://localhost:8081"
+      },
+      "headless": false
+    }
+  }
+}

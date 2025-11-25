@@ -16,35 +16,31 @@
  * @module try-page
  */
 
-import { authState } from '../auth/auth-provider';
-import { fetchUserLeases, Lease } from '../api/sessions-service';
-import {
-  renderSessionsTable,
-  renderLoadingState,
-  renderErrorState,
-} from './components/sessions-table';
+import { authState } from "../auth/auth-provider"
+import { fetchUserLeases, Lease } from "../api/sessions-service"
+import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
 
 /**
  * Container element ID for try sessions content.
  */
-const CONTAINER_ID = 'try-sessions-container';
+const CONTAINER_ID = "try-sessions-container"
 
 /**
  * Current state of the try page.
  */
 interface TryPageState {
-  loading: boolean;
-  error: string | null;
-  leases: Lease[];
+  loading: boolean
+  error: string | null
+  leases: Lease[]
 }
 
 let currentState: TryPageState = {
   loading: false,
   error: null,
   leases: [],
-};
+}
 
-let container: HTMLElement | null = null;
+let container: HTMLElement | null = null
 
 /**
  * Initialize the try page component.
@@ -64,52 +60,52 @@ let container: HTMLElement | null = null;
  * ```
  */
 export function initTryPage(): void {
-  container = document.getElementById(CONTAINER_ID);
+  container = document.getElementById(CONTAINER_ID)
   if (!container) {
     // Not on /try page, skip initialization
-    return;
+    return
   }
 
   // Subscribe to auth state changes (ADR-024)
   // Callback is called immediately with current state
   authState.subscribe((isAuthenticated) => {
     if (isAuthenticated) {
-      loadAndRenderSessions();
+      loadAndRenderSessions()
     } else {
-      renderEmptyState(container!);
+      renderEmptyState(container!)
     }
-  });
+  })
 
   // Set up retry button handler
-  container.addEventListener('click', (event) => {
-    const target = event.target as HTMLElement;
-    if (target.dataset.action === 'retry-fetch') {
-      loadAndRenderSessions();
+  container.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement
+    if (target.dataset.action === "retry-fetch") {
+      loadAndRenderSessions()
     }
-  });
+  })
 }
 
 /**
  * Load sessions from API and render the table.
  */
 async function loadAndRenderSessions(): Promise<void> {
-  if (!container) return;
+  if (!container) return
 
   // Show loading state
-  currentState = { loading: true, error: null, leases: [] };
+  currentState = { loading: true, error: null, leases: [] }
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
     ${renderLoadingState()}
-  `;
+  `
 
   // Fetch sessions
-  const result = await fetchUserLeases();
+  const result = await fetchUserLeases()
 
   if (result.success && result.leases) {
-    currentState = { loading: false, error: null, leases: result.leases };
-    renderAuthenticatedState(container, result.leases);
+    currentState = { loading: false, error: null, leases: result.leases }
+    renderAuthenticatedState(container, result.leases)
   } else {
-    currentState = { loading: false, error: result.error || 'Unknown error', leases: [] };
+    currentState = { loading: false, error: result.error || "Unknown error", leases: [] }
     // Render error state with helpful navigation (still allow browsing catalogue)
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
@@ -126,7 +122,7 @@ async function loadAndRenderSessions(): Promise<void> {
       </a>
 
       ${renderFirstTimeGuidance()}
-    `;
+    `
   }
 }
 
@@ -152,7 +148,7 @@ export function renderEmptyState(container: HTMLElement): void {
         <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
       </svg>
     </a>
-  `;
+  `
 }
 
 /**
@@ -164,23 +160,24 @@ export function renderEmptyState(container: HTMLElement): void {
  * @param leases - User's leases to display
  */
 export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]): void {
-  const hasLeases = leases.length > 0;
-  const activeCount = leases.filter(l => l.status === 'Active').length;
-  const pendingCount = leases.filter(l => l.status === 'Pending').length;
+  const hasLeases = leases.length > 0
+  const activeCount = leases.filter((l) => l.status === "Active").length
+  const pendingCount = leases.filter((l) => l.status === "Pending").length
 
   // Build summary text
-  let summaryText = '';
+  let summaryText = ""
   if (hasLeases) {
-    const parts = [];
-    if (activeCount > 0) parts.push(`${activeCount} active`);
-    if (pendingCount > 0) parts.push(`${pendingCount} pending`);
-    summaryText = parts.length > 0 ? `You have ${parts.join(' and ')} session${activeCount + pendingCount > 1 ? 's' : ''}.` : '';
+    const parts = []
+    if (activeCount > 0) parts.push(`${activeCount} active`)
+    if (pendingCount > 0) parts.push(`${pendingCount} pending`)
+    summaryText =
+      parts.length > 0 ? `You have ${parts.join(" and ")} session${activeCount + pendingCount > 1 ? "s" : ""}.` : ""
   }
 
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
 
-    ${summaryText ? `<p class="govuk-body-l">${summaryText}</p>` : ''}
+    ${summaryText ? `<p class="govuk-body-l">${summaryText}</p>` : ""}
 
     ${renderSessionsTable(leases)}
 
@@ -194,8 +191,8 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
       Browse products you can try
     </a>
 
-    ${!hasLeases ? renderFirstTimeGuidance() : ''}
-  `;
+    ${!hasLeases ? renderFirstTimeGuidance() : ""}
+  `
 }
 
 /**
@@ -218,5 +215,5 @@ function renderFirstTimeGuidance(): string {
         <li>Your sandbox session will appear here within minutes</li>
       </ol>
     </div>
-  `;
+  `
 }

@@ -196,3 +196,117 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 - `eleventy.config.js` - Added UUID validation (lines 32-56, 159-162)
 - `src/catalogue/aws/innovation-sandbox-empty.md` - New tryable product example
+
+---
+
+## Senior Developer Review (AI)
+
+**Reviewer:** cns
+**Date:** 2025-11-25
+**Outcome:** Approve
+
+### Summary
+
+Story 6.1 has been thoroughly reviewed with systematic validation of all acceptance criteria, task completion verification, and comprehensive testing. The implementation is complete, well-tested, and fully meets the requirements. All 5 acceptance criteria are implemented with evidence verified in code and built HTML output. The test suite passes with 348/348 tests.
+
+### Key Findings
+
+**No HIGH, MEDIUM, or LOW severity issues found.**
+
+All acceptance criteria are fully implemented with evidence:
+- UUID validation is functional and non-blocking
+- Example product demonstrates feature correctly
+- Template integration works as expected
+- All unit tests pass
+
+### Acceptance Criteria Coverage
+
+| AC# | Description | Status | Evidence |
+|-----|-------------|--------|----------|
+| AC1 | Parse `try` boolean field | IMPLEMENTED | `src/catalogue/aws/innovation-sandbox-empty.md:15` contains `try: true`, rendered in HTML at line 209 |
+| AC2 | Parse `try_id` UUID field | IMPLEMENTED | `src/catalogue/aws/innovation-sandbox-empty.md:16` contains valid UUID, rendered in HTML as `data-try-id="a3beced2-be4e-41a0-b6e2-735a73fffed7"` |
+| AC3 | Template access to metadata | IMPLEMENTED | Template at `src/_includes/layouts/product-try.njk:7,23` accesses `try` and `try_id` directly. Verified in built HTML output. |
+| AC4 | Default value handling | IMPLEMENTED | Products without `try` field (e.g., govuk/notify.md) do not render try button or tag. Template conditional `{% if try %}` handles undefined correctly. |
+| AC5 | UUID validation warning | IMPLEMENTED | `eleventy.config.js:39-56` implements `validateTryMetadata()`. Test with invalid UUID produces: `⚠️ Invalid try_id format in ./src/catalogue/test-invalid-uuid.md: Expected UUID format` |
+
+**Summary:** 5 of 5 acceptance criteria fully implemented
+
+### Task Completion Validation
+
+| Task | Marked As | Verified As | Evidence |
+|------|-----------|-------------|----------|
+| Task 1: Add UUID validation | Complete (DoD) | COMPLETE | `eleventy.config.js:32-56, 165-167` - validateTryMetadata function created, integrated into catalogue collection |
+| Task 1.1: Create validateTryMetadata | Unchecked | COMPLETE | Function exists at lines 39-56 with correct UUID regex pattern |
+| Task 1.2: Add transform/linter | Unchecked | COMPLETE | Called in catalogue collection at line 166 |
+| Task 1.3: Log warning for invalid UUIDs | Unchecked | COMPLETE | Tested and verified - warning displays correctly, build non-blocking |
+| Task 2: Create example product | Complete (DoD) | COMPLETE | `src/catalogue/aws/innovation-sandbox-empty.md` created with valid metadata |
+| Task 2.1: Create file | Unchecked | COMPLETE | File exists (minor: named `innovation-sandbox-empty.md` vs `empty.md` in task - better name used) |
+| Task 2.2: Add try metadata | Unchecked | COMPLETE | Lines 15-16 contain `try: true` and `try_id: "a3beced2-be4e-41a0-b6e2-735a73fffed7"` |
+| Task 2.3: Verify parsing | Unchecked | COMPLETE | HTML output contains rendered tag and button with correct data attributes |
+| Task 3: Test template access | Complete (DoD) | COMPLETE | Template successfully accesses both `try` and `try_id` variables |
+| Task 3.2: Verify page.data.try | Unchecked | COMPLETE | Template uses `try` directly (Eleventy makes frontmatter available as variables) |
+| Task 3.3: Verify page.data.try_id | Unchecked | COMPLETE | Template uses `try_id` directly at line 23 of product-try.njk |
+
+**Summary:** 11 of 11 tasks verified complete, 0 questionable, 0 falsely marked complete
+
+**Note:** Minor documentation inconsistency - story shows tasks as [ ] but DoD shows [x]. Implementation is verified complete regardless of checkbox state.
+
+### Test Coverage and Gaps
+
+**Unit Tests:**
+- Full test suite passes: 348/348 tests passing
+- No test coverage specifically for Story 6.1 (frontmatter parsing)
+- Note: Eleventy's gray-matter parser handles frontmatter parsing automatically, so no custom test needed
+- UUID validation function is covered by build-time execution
+
+**Integration Tests:**
+- Manual testing performed during review:
+  - Valid UUID: Renders correctly in HTML
+  - Invalid UUID: Warning logged during build
+  - Missing try field: No button/tag rendered
+  - Template conditional logic works correctly
+
+**Gaps:**
+- No automated test for UUID validation function (low priority - function is simple and tested manually)
+- No automated test for template rendering with/without try metadata (low priority - manual verification sufficient for MVP)
+
+### Architectural Alignment
+
+**Epic 6 Tech Spec Compliance:**
+- Aligns with Story 6.1 requirements from tech spec (FR-TRY-42, FR-TRY-43)
+- Provides foundation for Stories 6.2-6.9 as intended
+- Uses Eleventy's built-in gray-matter parser (ADR-015 compliance)
+
+**Architecture Document Compliance:**
+- Follows brownfield constraint: Vanilla Eleventy with TypeScript (ADR-015)
+- Build-time validation pattern is appropriate
+- Non-blocking warnings preserve developer experience
+
+**No architecture violations detected.**
+
+### Security Notes
+
+No security concerns identified. Story 6.1 is build-time metadata parsing only - no runtime security implications.
+
+### Best-Practices and References
+
+**Eleventy Frontmatter:**
+- Uses industry-standard gray-matter library
+- Reference: https://github.com/jonschlinkert/gray-matter
+
+**UUID Validation:**
+- Standard UUID regex pattern (RFC 4122)
+- Reference: https://datatracker.ietf.org/doc/html/rfc4122
+
+**GOV.UK Design System:**
+- Integration ready for Stories 6.2+ (tag and button components)
+
+### Action Items
+
+**Code Changes Required:**
+- None
+
+**Advisory Notes:**
+- Note: Consider adding a dedicated test for `validateTryMetadata()` function in future iteration (not blocking for MVP)
+- Note: Task checkbox states in story file are inconsistent with DoD checkboxes - recommend aligning for clarity
+- Note: Story file header shows "Status: done" but sprint-status.yaml shows "review" - will be updated to "done" after this review

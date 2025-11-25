@@ -25,6 +25,37 @@ export interface ConfigurationResponse {
 }
 
 /**
+ * Raw API response from /api/configurations endpoint.
+ * The Innovation Sandbox API uses JSend format with nested data.
+ * @internal
+ */
+interface RawConfigurationResponse {
+  /** JSend status field */
+  status?: string;
+  /** Nested data object */
+  data?: {
+    /** Acceptable Use Policy text/HTML content */
+    termsOfService?: string;
+    /** Alternative field name for AUP (for compatibility) */
+    aup?: string;
+    /** Leases configuration */
+    leases?: {
+      /** Maximum leases per user */
+      maxLeasesPerUser?: number;
+      /** Maximum duration in hours */
+      maxDurationHours?: number;
+      /** Maximum budget */
+      maxBudget?: number;
+    };
+  };
+  /** Legacy flat fields (for backwards compatibility) */
+  termsOfService?: string;
+  aup?: string;
+  maxLeases?: number;
+  leaseDuration?: number;
+}
+
+/**
  * Result from fetching configurations.
  */
 export interface ConfigurationsResult {
@@ -108,17 +139,34 @@ export async function fetchConfigurations(): Promise<ConfigurationsResult> {
       };
     }
 
-    const data: ConfigurationResponse = await response.json();
+    const rawData: RawConfigurationResponse = await response.json();
 
-    // Validate response has required fields
-    if (!data.aup || typeof data.aup !== 'string') {
+    // Extract AUP from nested JSend data structure first, then fallback to flat fields
+    // API returns: { status: "success", data: { termsOfService: "...", leases: {...} } }
+    const aupContent =
+      rawData.data?.termsOfService ||
+      rawData.data?.aup ||
+      rawData.termsOfService ||
+      rawData.aup;
+
+    // Extract lease config from nested structure or flat fields
+    const maxLeases =
+      rawData.data?.leases?.maxLeasesPerUser ??
+      rawData.maxLeases ??
+      DEFAULT_CONFIG.maxLeases;
+    const leaseDuration =
+      rawData.data?.leases?.maxDurationHours ??
+      rawData.leaseDuration ??
+      DEFAULT_CONFIG.leaseDuration;
+
+    // Validate response has AUP content
+    if (!aupContent || typeof aupContent !== 'string') {
       console.warn('[configurations-service] Invalid AUP in response, using fallback');
       return {
         success: true,
         data: {
           ...DEFAULT_CONFIG,
-          ...data,
-          aup: data.aup || DEFAULT_CONFIG.aup,
+          aup: DEFAULT_CONFIG.aup,
         },
       };
     }
@@ -126,9 +174,9 @@ export async function fetchConfigurations(): Promise<ConfigurationsResult> {
     return {
       success: true,
       data: {
-        maxLeases: data.maxLeases ?? DEFAULT_CONFIG.maxLeases,
-        leaseDuration: data.leaseDuration ?? DEFAULT_CONFIG.leaseDuration,
-        aup: data.aup,
+        maxLeases,
+        leaseDuration,
+        aup: aupContent,
       },
     };
   } catch (error) {

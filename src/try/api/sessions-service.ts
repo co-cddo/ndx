@@ -10,6 +10,7 @@
  */
 
 import { callISBAPI, checkAuthStatus } from './api-client';
+import { authState } from '../auth/auth-provider';
 import { config } from '../config';
 
 /**
@@ -116,6 +117,13 @@ export async function fetchUserLeases(): Promise<LeasesResult> {
     const authStatus = await checkAuthStatus();
     if (!authStatus.authenticated || !authStatus.user?.email) {
       console.error('[sessions-service] User not authenticated or email not available');
+
+      // DEFECT FIX: Clear invalid token from sessionStorage and notify subscribers.
+      // This handles the case where token exists locally but is invalid server-side
+      // (e.g., API returns 200 with authenticated:false instead of 401).
+      // Without this, UI shows "signed in" state but API calls fail.
+      authState.logout();
+
       return {
         success: false,
         error: 'Please sign in to view your sessions.',

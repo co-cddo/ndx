@@ -15,7 +15,7 @@
 import { test, expect } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 
-const BASE_URL = "https://d7roov8fndsis.cloudfront.net"
+const BASE_URL = "https://ndx.digital.cabinet-office.gov.uk"
 const PRODUCT_PAGE = "/catalogue/aws/innovation-sandbox-empty"
 const CATALOGUE_PAGE = "/catalogue"
 const TRY_FILTER_PAGE = "/catalogue/tags/try-before-you-buy"

@@ -42,7 +42,7 @@
 The Try Before You Buy feature enables local UI development with real Innovation Sandbox API integration. This setup uses **mitmproxy** as a transparent proxy to route requests:
 
 - **UI routes** (`/`, `/catalogue/*`, `/try`, `/assets/*`) → `localhost:8080` (local NDX server)
-- **API routes** (`/api/*`) → CloudFront (`d7roov8fndsis.cloudfront.net` - real Innovation Sandbox backend)
+- **API routes** (`/api/*`) → CloudFront (`ndx.digital.cabinet-office.gov.uk` - real Innovation Sandbox backend)
 
 **Benefits:**
 - **Production Parity:** Real Innovation Sandbox API testing (authentication, leases, AUP)
@@ -108,7 +108,7 @@ If ports are in use, see [Troubleshooting - Port Conflicts](#port-already-in-use
               │                               │
               ▼                               ▼
 ┌──────────────────────────┐    ┌────────────────────────────────┐
-│ localhost:8080           │    │ d7roov8fndsis.cloudfront.net   │
+│ localhost:8080           │    │ ndx.digital.cabinet-office.gov.uk   │
 │ (NDX Eleventy Server)    │    │ (Innovation Sandbox Backend)   │
 │                          │    │                                │
 │ - Local UI changes       │    │ - OAuth authentication         │
@@ -528,7 +528,7 @@ FoxyProxy enables pattern-based proxy routing, so only CloudFront domain request
 2. Click **Add New Pattern**
 3. Configure pattern:
    - **Pattern Name:** `CloudFront Domain`
-   - **Pattern:** `*d7roov8fndsis.cloudfront.net*`
+   - **Pattern:** `*ndx.digital.cabinet-office.gov.uk*`
    - **Type:** `Wildcard`
    - **Whitelist/Blacklist:** `Whitelist` (route matching requests through proxy)
 4. Click **Save**
@@ -540,7 +540,7 @@ FoxyProxy enables pattern-based proxy routing, so only CloudFront domain request
 
 **Step 5: Verify Configuration**
 
-Navigate to `https://d7roov8fndsis.cloudfront.net` in your browser. The FoxyProxy icon should show:
+Navigate to `https://ndx.digital.cabinet-office.gov.uk` in your browser. The FoxyProxy icon should show:
 - **Green:** Request routed through proxy (CloudFront domain matched)
 
 Navigate to any other site (e.g., `https://google.com`). The FoxyProxy icon should show:
@@ -605,7 +605,7 @@ curl https://google.com
 
 **Purpose:** Trust mitmproxy's CA certificate to enable HTTPS interception without browser security warnings.
 
-**Why This is Needed:** The CloudFront domain (`https://d7roov8fndsis.cloudfront.net`) uses HTTPS. For mitmproxy to intercept and route these requests, it must decrypt the HTTPS traffic. This requires your operating system and browser to trust mitmproxy's self-signed CA certificate.
+**Why This is Needed:** The CloudFront domain (`https://ndx.digital.cabinet-office.gov.uk`) uses HTTPS. For mitmproxy to intercept and route these requests, it must decrypt the HTTPS traffic. This requires your operating system and browser to trust mitmproxy's self-signed CA certificate.
 
 **Security Note:** ⚠️ **Only trust this certificate on development machines. Never use in production environments.** This certificate enables mitmproxy to decrypt all HTTPS traffic routed through the proxy. Remove trust when finished with local Try development.
 
@@ -886,7 +886,7 @@ Certificate Trust Settings dialog appears:
 
 **Step 5: Test**
 
-Navigate to `https://d7roov8fndsis.cloudfront.net` in Firefox. You should see no SSL warnings.
+Navigate to `https://ndx.digital.cabinet-office.gov.uk` in Firefox. You should see no SSL warnings.
 
 **Visual Guide:**
 
@@ -916,7 +916,7 @@ Firefox Settings
 2. **HTTPS Decryption Capability**
    - Trusting this certificate enables mitmproxy to decrypt **all HTTPS traffic** routed through the proxy
    - This includes passwords, API tokens, and sensitive data
-   - Only traffic to the CloudFront domain (`d7roov8fndsis.cloudfront.net`) is proxied when system proxy configured correctly
+   - Only traffic to the CloudFront domain (`ndx.digital.cabinet-office.gov.uk`) is proxied when system proxy configured correctly
 
 3. **Scope Limitation**
    - System proxy configuration should include bypass list (`localhost, 127.0.0.1, *.local`)
@@ -953,7 +953,7 @@ Firefox Settings
 
 **Verification After Removal:**
 
-Browse to `https://d7roov8fndsis.cloudfront.net` - you should see SSL warnings again (proves certificate trust was removed).
+Browse to `https://ndx.digital.cabinet-office.gov.uk` - you should see SSL warnings again (proves certificate trust was removed).
 
 ---
 
@@ -1236,7 +1236,7 @@ The mitmproxy CA certificate must be installed and trusted:
 
 #### Cannot Connect to CloudFront Domain
 
-**Symptom:** Browser shows "Unable to connect" or "Connection refused" when navigating to `https://d7roov8fndsis.cloudfront.net`
+**Symptom:** Browser shows "Unable to connect" or "Connection refused" when navigating to `https://ndx.digital.cabinet-office.gov.uk`
 
 **Cause:** mitmproxy not running on port 8081
 
@@ -1303,7 +1303,7 @@ The mitmproxy CA certificate must be installed and trusted:
 Use **Browser-Specific Proxy** instead of system proxy:
 
 1. Install FoxyProxy extension (see [Alternative: Browser-Specific Proxy](#alternative-browser-specific-proxy))
-2. Configure FoxyProxy with pattern: `*d7roov8fndsis.cloudfront.net*` → `localhost:8081`
+2. Configure FoxyProxy with pattern: `*ndx.digital.cabinet-office.gov.uk*` → `localhost:8081`
 3. Corporate proxy settings remain unchanged
 4. Only CloudFront domain routes through mitmproxy
 
@@ -1339,7 +1339,7 @@ Use **Browser-Specific Proxy** instead of system proxy:
 
 #### Validation Command Fails
 
-**Symptom:** `curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net` returns error
+**Symptom:** `curl -x http://localhost:8081 https://ndx.digital.cabinet-office.gov.uk` returns error
 
 **Possible Causes and Solutions:**
 
@@ -1352,12 +1352,12 @@ Use **Browser-Specific Proxy** instead of system proxy:
 
 3. **"Could not resolve host"**
    - DNS issue unrelated to proxy
-   - Test with: `curl https://d7roov8fndsis.cloudfront.net` (without proxy)
+   - Test with: `curl https://ndx.digital.cabinet-office.gov.uk` (without proxy)
 
 **Expected Successful Output:**
 
 ```bash
-$ curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net
+$ curl -x http://localhost:8081 https://ndx.digital.cabinet-office.gov.uk
 # Shows HTML content or SSL warning (if certificate not yet trusted)
 # mitmproxy console displays request log entry
 ```
@@ -1403,7 +1403,7 @@ $ curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net
 
 The mitmproxy addon script is designed to preserve the CloudFront domain for OAuth callbacks. The Innovation Sandbox OAuth provider expects callback URLs like:
 ```
-https://d7roov8fndsis.cloudfront.net/callback?token=...
+https://ndx.digital.cabinet-office.gov.uk/callback?token=...
 ```
 
 The addon script ensures:
@@ -1685,7 +1685,7 @@ yarn start
 
 **Browser:**
 ```
-Navigate to: https://d7roov8fndsis.cloudfront.net
+Navigate to: https://ndx.digital.cabinet-office.gov.uk
 ```
 
 **Expected behavior:**
@@ -1697,7 +1697,7 @@ Navigate to: https://d7roov8fndsis.cloudfront.net
 
 **Verify in mitmproxy console:**
 - UI requests show `→ localhost:8080` destination
-- API requests (if any) show `→ d7roov8fndsis.cloudfront.net` passthrough
+- API requests (if any) show `→ ndx.digital.cabinet-office.gov.uk` passthrough
 
 ---
 

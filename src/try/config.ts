@@ -23,8 +23,6 @@ export interface TryConfig {
   requestTimeout: number;
   /** OAuth login URL */
   oauthLoginUrl: string;
-  /** OAuth callback URL */
-  oauthCallbackUrl: string;
 }
 
 /**
@@ -101,7 +99,6 @@ export const config: TryConfig = {
   apiBaseUrl: getConfigValue('API_BASE_URL', DEFAULT_API_BASE_URL),
   requestTimeout: parseInt(getConfigValue('REQUEST_TIMEOUT', String(DEFAULT_REQUEST_TIMEOUT)), 10),
   oauthLoginUrl: getConfigValue('OAUTH_LOGIN_URL', '/api/auth/login'),
-  oauthCallbackUrl: getConfigValue('OAUTH_CALLBACK_URL', '/callback.html'),
 };
 
 /**

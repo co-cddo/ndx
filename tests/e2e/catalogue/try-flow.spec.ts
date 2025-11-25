@@ -8,7 +8,7 @@
 
 import { test, expect } from "@playwright/test"
 
-const BASE_URL = "https://d7roov8fndsis.cloudfront.net"
+const BASE_URL = "https://ndx.digital.cabinet-office.gov.uk"
 const PRODUCT_PAGE = "/catalogue/aws/innovation-sandbox-empty"
 const TRY_PAGE = "/try"
 const TOKEN_KEY = "isb-jwt"
@@ -168,27 +168,27 @@ test.describe("Try Before You Buy - Unauthenticated User", () => {
   })
 })
 
-test.describe("Try Before You Buy - Catalogue Filter", () => {
-  test("AC #9: Try Before You Buy filter shows tryable products", async ({
+test.describe("NDX:Try - Catalogue Filter", () => {
+  test("AC #9: NDX:Try filter shows tryable products", async ({
     page,
   }) => {
     await page.goto(`${BASE_URL}/catalogue/tags/try-before-you-buy`)
 
     // Verify filter page loads
-    await expect(page.locator("h1")).toContainText("Try Before You Buy")
+    await expect(page.locator("h1")).toContainText("NDX:Try")
 
     // Verify at least one tryable product appears
     const productList = page.locator(".app-document-list")
     await expect(productList).toBeVisible()
   })
 
-  test("AC #10: Try Before You Buy tag visible on product card", async ({
+  test("AC #10: NDX:Try tag visible on product card", async ({
     page,
   }) => {
     await page.goto(`${BASE_URL}/catalogue`)
 
-    // Find a product with Try tag
-    const tryTag = page.locator('.govuk-tag:has-text("Try Before You Buy")')
+    // Find a product with NDX:Try tag
+    const tryTag = page.locator('.govuk-tag:has-text("NDX:Try")')
 
     // Should have at least one tryable product
     const count = await tryTag.count()

@@ -145,6 +145,10 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
     },
   },
   "Outputs": {
+    "AlternateDomainStatus": {
+      "Description": "Next step for alternate domain configuration",
+      "Value": "Pending: Create ACM cert for ndx.digital.cabinet-office.gov.uk in us-east-1, then add certificateArn to config",
+    },
     "CloudFrontDistributionId": {
       "Description": "CloudFront Distribution ID",
       "Value": "E3THG4UHYDHVWP",
@@ -213,7 +217,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "6aba838c70e08a8bf199aa0c3cb51b3d2fea8b149844a707b18533de235f7bd0.zip",
+          "S3Key": "c29e914dbbf334f5e5ef9651190be9572b45c3a4237393381b2afe918f0f7796.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",

@@ -98,7 +98,7 @@ export class NdxStaticStack extends cdk.Stack {
       'ImportedDistribution',
       {
         distributionId: config.distributionId,
-        domainName: 'd7roov8fndsis.cloudfront.net',
+        domainName: 'ndx.digital.cabinet-office.gov.uk',
       }
     );
 
@@ -215,6 +215,46 @@ export class NdxStaticStack extends cdk.Stack {
     configureCacheBehavior.node.addDependency(cookieRouterFunction);
     // Also ensure origin is added before configuring cache behavior
     configureCacheBehavior.node.addDependency(addOriginResource);
+
+    // Alternate domain name configuration (e.g., ndx.digital.cabinet-office.gov.uk)
+    // Prerequisites:
+    // 1. Create ACM certificate in us-east-1 manually (aws acm request-certificate)
+    // 2. Add DNS validation CNAME records to your DNS provider
+    // 3. Wait for certificate to be validated (~5-30 minutes)
+    // 4. Add certificateArn to config and deploy
+    if (config.alternateDomainName && config.certificateArn) {
+      const configureAlternateDomain = new cdk.CustomResource(
+        this,
+        'ConfigureAlternateDomainName',
+        {
+          serviceToken: addOriginProvider.serviceToken,
+          properties: {
+            DistributionId: config.distributionId,
+            AlternateDomainName: config.alternateDomainName,
+            CertificateArn: config.certificateArn,
+          },
+        }
+      );
+
+      // Ensure cache behavior is configured before adding domain
+      configureAlternateDomain.node.addDependency(configureCacheBehavior);
+
+      new cdk.CfnOutput(this, 'AlternateDomainName', {
+        value: config.alternateDomainName,
+        description: 'Alternate domain name configured on CloudFront',
+      });
+
+      new cdk.CfnOutput(this, 'CertificateArn', {
+        value: config.certificateArn,
+        description: 'ACM Certificate ARN (us-east-1)',
+      });
+    } else if (config.alternateDomainName) {
+      // Certificate ARN not yet provided - output instructions
+      new cdk.CfnOutput(this, 'AlternateDomainStatus', {
+        value: `Pending: Create ACM cert for ${config.alternateDomainName} in us-east-1, then add certificateArn to config`,
+        description: 'Next step for alternate domain configuration',
+      });
+    }
 
     // Output the distribution ID for reference
     new cdk.CfnOutput(this, 'CloudFrontDistributionId', {

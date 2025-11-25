@@ -7,10 +7,10 @@
     <li class="app-document-list__item">
       <h{{ headingLevel }} class="app-document-list__item-title">
         <a class="govuk-link" href="{{ item.url | pretty }}">{{ item.data.title | smart }}</a>
-        {# Story 6.2: Add Try Before You Buy tag for tryable products #}
+        {# Story 6.2: Add NDX:Try tag for tryable products #}
         {% if item.data.try %}
         {{ govukTag({
-          text: "Try Before You Buy",
+          text: "NDX:Try",
           classes: "govuk-tag--green govuk-!-margin-left-2"
         }) }}
         {% endif %}

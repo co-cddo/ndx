@@ -14,6 +14,7 @@
 
 import { initTryPage, renderEmptyState, renderAuthenticatedState } from './try-page';
 import { authState } from '../auth/auth-provider';
+import { fetchUserLeases } from '../api/sessions-service';
 
 // Mock the authState module
 jest.mock('../auth/auth-provider', () => ({
@@ -23,12 +24,27 @@ jest.mock('../auth/auth-provider', () => ({
   },
 }));
 
+// Mock the sessions-service module
+jest.mock('../api/sessions-service', () => ({
+  fetchUserLeases: jest.fn(),
+  isLeaseActive: jest.fn((lease: { status: string }) => lease.status === 'Active'),
+  isLeasePending: jest.fn((lease: { status: string }) => lease.status === 'Pending'),
+}));
+
+const mockFetchUserLeases = fetchUserLeases as jest.MockedFunction<typeof fetchUserLeases>;
+
 describe('Try Page Component (Story 5.9)', () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
     // Reset mocks
     jest.resetAllMocks();
+
+    // Default mock for fetchUserLeases - return empty leases
+    mockFetchUserLeases.mockResolvedValue({
+      success: true,
+      leases: [],
+    });
 
     // Create container element
     container = document.createElement('div');
@@ -77,7 +93,7 @@ describe('Try Page Component (Story 5.9)', () => {
       expect(container.innerHTML).toContain('Sign in to view your try sessions');
     });
 
-    it('should render authenticated state when authenticated', () => {
+    it('should render authenticated state when authenticated', async () => {
       // Arrange
       let subscribeCallback: (isAuth: boolean) => void = () => {};
       (authState.subscribe as jest.Mock).mockImplementation((cb) => {
@@ -87,6 +103,10 @@ describe('Try Page Component (Story 5.9)', () => {
       // Act
       initTryPage();
       subscribeCallback(true);
+
+      // Wait for async operations to complete
+      await Promise.resolve();
+      await Promise.resolve();
 
       // Assert
       expect(container.innerHTML).toContain('Your try sessions');
@@ -207,7 +227,7 @@ describe('Try Page Component (Story 5.9)', () => {
   describe('renderAuthenticatedState', () => {
     it('should render heading for authenticated users', () => {
       // Act
-      renderAuthenticatedState(container);
+      renderAuthenticatedState(container, []);
 
       // Assert
       const heading = container.querySelector('h1');
@@ -217,25 +237,63 @@ describe('Try Page Component (Story 5.9)', () => {
 
     it('should render placeholder content', () => {
       // Act
-      renderAuthenticatedState(container);
+      renderAuthenticatedState(container, []);
 
       // Assert
-      expect(container.innerHTML).toContain('sandbox sessions');
+      // With empty leases, it shows the first-time guidance which mentions sandbox
+      expect(container.innerHTML).toContain('sandbox');
     });
 
     it('should include link to catalogue', () => {
       // Act
-      renderAuthenticatedState(container);
+      renderAuthenticatedState(container, []);
 
       // Assert
       const link = container.querySelector('a.govuk-link') as HTMLAnchorElement;
       expect(link).not.toBeNull();
       expect(link.href).toContain('/catalogue');
     });
+
+    it('should show summary text when leases exist', () => {
+      // Arrange
+      const mockLeases = [
+        { id: '1', productName: 'Test Product', status: 'Active', expiresAt: new Date().toISOString(), budgetAmount: 50, budgetUsed: 10, launchUrl: 'https://example.com' },
+        { id: '2', productName: 'Test Product 2', status: 'Pending', expiresAt: new Date().toISOString(), budgetAmount: 50, budgetUsed: 0, launchUrl: '' },
+      ];
+
+      // Act
+      renderAuthenticatedState(container, mockLeases as any);
+
+      // Assert
+      expect(container.innerHTML).toContain('1 active');
+      expect(container.innerHTML).toContain('1 pending');
+    });
+
+    it('should show first-time guidance when no leases', () => {
+      // Act
+      renderAuthenticatedState(container, []);
+
+      // Assert
+      expect(container.innerHTML).toContain('New to Try Before You Buy?');
+      expect(container.innerHTML).toContain('Innovation Sandbox');
+    });
+
+    it('should not show first-time guidance when leases exist', () => {
+      // Arrange
+      const mockLeases = [
+        { id: '1', productName: 'Test', status: 'Active', expiresAt: new Date().toISOString(), budgetAmount: 50, budgetUsed: 10, launchUrl: 'https://example.com' },
+      ];
+
+      // Act
+      renderAuthenticatedState(container, mockLeases as any);
+
+      // Assert
+      expect(container.innerHTML).not.toContain('New to Try Before You Buy?');
+    });
   });
 
   describe('AC #5: Dynamic State Update on Auth Change', () => {
-    it('should re-render when auth state changes from false to true', () => {
+    it('should re-render when auth state changes from false to true', async () => {
       // Arrange
       let subscribeCallback: (isAuth: boolean) => void = () => {};
       (authState.subscribe as jest.Mock).mockImplementation((cb) => {
@@ -251,11 +309,16 @@ describe('Try Page Component (Story 5.9)', () => {
 
       // Auth state changes - authenticated
       subscribeCallback(true);
+
+      // Wait for async operations to complete
+      await Promise.resolve();
+      await Promise.resolve();
+
       expect(container.innerHTML).toContain('Your try sessions');
       expect(container.innerHTML).not.toContain('Sign in to view your try sessions');
     });
 
-    it('should re-render when auth state changes from true to false', () => {
+    it('should re-render when auth state changes from true to false', async () => {
       // Arrange
       let subscribeCallback: (isAuth: boolean) => void = () => {};
       (authState.subscribe as jest.Mock).mockImplementation((cb) => {
@@ -267,6 +330,11 @@ describe('Try Page Component (Story 5.9)', () => {
 
       // First render - authenticated
       subscribeCallback(true);
+
+      // Wait for async operations to complete
+      await Promise.resolve();
+      await Promise.resolve();
+
       expect(container.innerHTML).toContain('Your try sessions');
 
       // Auth state changes - unauthenticated (signed out)

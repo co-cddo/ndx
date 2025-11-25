@@ -16,12 +16,7 @@
 import { authState } from '../auth/auth-provider';
 import { openAupModal, closeAupModal, aupModal } from './components/aup-modal';
 import { createLease } from '../api/leases-service';
-
-/**
- * Session storage key for storing return URL after login.
- * Used to redirect user back to product page after OAuth callback.
- */
-const RETURN_URL_KEY = 'isb-return-url';
+import { storeReturnURL } from '../auth/oauth-flow';
 
 /**
  * Initialize try button click handlers.
@@ -64,8 +59,8 @@ function handleTryButtonClick(event: Event): void {
 
   // Story 6.5: Check authentication
   if (!authState.isAuthenticated()) {
-    // Store return URL for post-login redirect
-    storeReturnUrl();
+    // Store return URL for post-login redirect (uses oauth-flow's storage)
+    storeReturnURL();
 
     // Redirect to OAuth login
     window.location.href = '/api/auth/login';
@@ -126,34 +121,3 @@ async function handleLeaseAccept(tryId: string): Promise<void> {
   }
 }
 
-/**
- * Store current page URL for return after OAuth login.
- *
- * The URL is stored in sessionStorage and used by the OAuth callback
- * to redirect the user back to the product page.
- */
-function storeReturnUrl(): void {
-  if (typeof sessionStorage === 'undefined') {
-    console.warn('[TryButton] sessionStorage not available');
-    return;
-  }
-
-  sessionStorage.setItem(RETURN_URL_KEY, window.location.href);
-}
-
-/**
- * Get and clear the stored return URL.
- *
- * Used by OAuth callback to get the URL to redirect to after login.
- *
- * @returns {string | null} The stored return URL, or null if not set
- */
-export function getAndClearReturnUrl(): string | null {
-  if (typeof sessionStorage === 'undefined') {
-    return null;
-  }
-
-  const url = sessionStorage.getItem(RETURN_URL_KEY);
-  sessionStorage.removeItem(RETURN_URL_KEY);
-  return url;
-}

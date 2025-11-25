@@ -434,7 +434,7 @@ describe('CloudFront Cookie Router', () => {
             NDX: { value: 'legacy' }
           },
           headers: {
-            host: { value: 'd7roov8fndsis.cloudfront.net' }
+            host: { value: 'ndx.digital.cabinet-office.gov.uk' }
           },
           uri: '/index.html',
           method: 'GET'
@@ -454,7 +454,7 @@ describe('CloudFront Cookie Router', () => {
         request: {
           cookies: {},
           headers: {
-            host: { value: 'd7roov8fndsis.cloudfront.net' }
+            host: { value: 'ndx.digital.cabinet-office.gov.uk' }
           },
           uri: '/page.html',
           method: 'GET'

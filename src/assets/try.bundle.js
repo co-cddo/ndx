@@ -408,8 +408,7 @@ var config = {
   ssoRoleName: getConfigValue("SSO_ROLE_NAME", DEFAULT_SSO_ROLE_NAME),
   apiBaseUrl: getConfigValue("API_BASE_URL", DEFAULT_API_BASE_URL),
   requestTimeout: parseInt(getConfigValue("REQUEST_TIMEOUT", String(DEFAULT_REQUEST_TIMEOUT)), 10),
-  oauthLoginUrl: getConfigValue("OAUTH_LOGIN_URL", "/api/auth/login"),
-  oauthCallbackUrl: getConfigValue("OAUTH_CALLBACK_URL", "/callback.html")
+  oauthLoginUrl: getConfigValue("OAUTH_LOGIN_URL", "/api/auth/login")
 };
 
 // src/try/api/sessions-service.ts
@@ -422,6 +421,7 @@ async function fetchUserLeases() {
     const authStatus = await checkAuthStatus();
     if (!authStatus.authenticated || !authStatus.user?.email) {
       console.error("[sessions-service] User not authenticated or email not available");
+      authState.logout();
       return {
         success: false,
         error: "Please sign in to view your sessions."
@@ -1018,24 +1018,26 @@ async function fetchConfigurations() {
         error: getErrorMessage2(response.status)
       };
     }
-    const data = await response.json();
-    if (!data.aup || typeof data.aup !== "string") {
+    const rawData = await response.json();
+    const aupContent = rawData.data?.termsOfService || rawData.data?.aup || rawData.termsOfService || rawData.aup;
+    const maxLeases = rawData.data?.leases?.maxLeasesPerUser ?? rawData.maxLeases ?? DEFAULT_CONFIG.maxLeases;
+    const leaseDuration = rawData.data?.leases?.maxDurationHours ?? rawData.leaseDuration ?? DEFAULT_CONFIG.leaseDuration;
+    if (!aupContent || typeof aupContent !== "string") {
       console.warn("[configurations-service] Invalid AUP in response, using fallback");
       return {
         success: true,
         data: {
           ...DEFAULT_CONFIG,
-          ...data,
-          aup: data.aup || DEFAULT_CONFIG.aup
+          aup: DEFAULT_CONFIG.aup
         }
       };
     }
     return {
       success: true,
       data: {
-        maxLeases: data.maxLeases ?? DEFAULT_CONFIG.maxLeases,
-        leaseDuration: data.leaseDuration ?? DEFAULT_CONFIG.leaseDuration,
-        aup: data.aup
+        maxLeases,
+        leaseDuration,
+        aup: aupContent
       }
     };
   } catch (error) {
@@ -1532,7 +1534,6 @@ async function createLease(leaseTemplateId) {
 }
 
 // src/try/ui/try-button.ts
-var RETURN_URL_KEY2 = "isb-return-url";
 function initTryButton() {
   const tryButtons = document.querySelectorAll(
     "button[data-try-id], a[data-try-id]"
@@ -1551,7 +1552,7 @@ function handleTryButtonClick(event) {
     return;
   }
   if (!authState.isAuthenticated()) {
-    storeReturnUrl();
+    storeReturnURL();
     window.location.href = "/api/auth/login";
     return;
   }
@@ -1587,13 +1588,6 @@ async function handleLeaseAccept(tryId) {
       aupModal.showError(result.error || "An error occurred. Please try again.");
       break;
   }
-}
-function storeReturnUrl() {
-  if (typeof sessionStorage === "undefined") {
-    console.warn("[TryButton] sessionStorage not available");
-    return;
-  }
-  sessionStorage.setItem(RETURN_URL_KEY2, window.location.href);
 }
 
 // src/try/main.ts

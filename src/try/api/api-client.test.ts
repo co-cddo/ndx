@@ -282,6 +282,18 @@ describe('API Client - checkAuthStatus', () => {
     roles: ['user'],
   };
 
+  // Create the wrapped response format that the API actually returns
+  function createAuthStatusResponse(user: UserData) {
+    return {
+      authenticated: true,
+      session: {
+        user,
+        iat: Date.now(),
+        exp: Date.now() + 3600000,
+      },
+    };
+  }
+
   beforeEach(() => {
     mockFetch.mockReset();
     sessionStorage.clear();
@@ -298,7 +310,7 @@ describe('API Client - checkAuthStatus', () => {
   describe('AC #1: Auth Status API Call', () => {
     it('should call /api/auth/login/status endpoint', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(mockUserData), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(mockUserData)), 200));
 
       // Act
       await checkAuthStatus();
@@ -311,7 +323,7 @@ describe('API Client - checkAuthStatus', () => {
 
     it('should include Authorization header in request', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(mockUserData), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(mockUserData)), 200));
 
       // Act
       await checkAuthStatus();
@@ -325,7 +337,7 @@ describe('API Client - checkAuthStatus', () => {
   describe('AC #2: Response Parsing', () => {
     it('should return authenticated: true with user data on 200 OK', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(mockUserData), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(mockUserData)), 200));
 
       // Act
       const result = await checkAuthStatus();
@@ -337,7 +349,7 @@ describe('API Client - checkAuthStatus', () => {
 
     it('should return correct user data structure', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(mockUserData), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(mockUserData)), 200));
 
       // Act
       const result = await checkAuthStatus();
@@ -427,7 +439,7 @@ describe('API Client - checkAuthStatus', () => {
   describe('AC #5: TypeScript Type Safety', () => {
     it('should return AuthStatusResult type with authenticated boolean', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(mockUserData), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(mockUserData)), 200));
 
       // Act
       const result: AuthStatusResult = await checkAuthStatus();
@@ -438,7 +450,7 @@ describe('API Client - checkAuthStatus', () => {
 
     it('should return optional user data that matches UserData interface', async () => {
       // Arrange
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(mockUserData), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(mockUserData)), 200));
 
       // Act
       const result = await checkAuthStatus();
@@ -473,13 +485,26 @@ describe('API Client - checkAuthStatus', () => {
         ...mockUserData,
         roles: ['user', 'admin', 'reviewer'],
       };
-      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(adminUser), 200));
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(createAuthStatusResponse(adminUser)), 200));
 
       // Act
       const result = await checkAuthStatus();
 
       // Assert
       expect(result.user?.roles).toEqual(['user', 'admin', 'reviewer']);
+    });
+
+    it('should return authenticated: false when response has authenticated: false', async () => {
+      // Arrange
+      const notAuthResponse = { authenticated: false };
+      mockFetch.mockResolvedValueOnce(createMockResponse(JSON.stringify(notAuthResponse), 200));
+
+      // Act
+      const result = await checkAuthStatus();
+
+      // Assert
+      expect(result.authenticated).toBe(false);
+      expect(result.user).toBeUndefined();
     });
   });
 });

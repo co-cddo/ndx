@@ -384,6 +384,7 @@ describe('OAuth Flow Utilities', () => {
     const validJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
 
     beforeEach(() => {
+      jest.useFakeTimers();
       sessionStorage.clear();
       delete (window as any).location;
       delete (window as any).history;
@@ -397,10 +398,15 @@ describe('OAuth Flow Utilities', () => {
       };
     });
 
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
     it('should extract token, cleanup URL, and redirect to return URL', () => {
       sessionStorage.setItem('auth-return-to', 'https://ndx.gov.uk/catalogue');
 
       handleOAuthCallback();
+      jest.runAllTimers(); // Flush the setTimeout redirect
 
       // Token extracted
       expect(sessionStorage.getItem('isb-jwt')).toBe(validJWT);
@@ -417,6 +423,7 @@ describe('OAuth Flow Utilities', () => {
 
     it('should redirect to home page if no return URL', () => {
       handleOAuthCallback();
+      jest.runAllTimers(); // Flush the setTimeout redirect
 
       expect(sessionStorage.getItem('isb-jwt')).toBe(validJWT);
       expect((window as any).location.href).toBe('/');
@@ -427,6 +434,7 @@ describe('OAuth Flow Utilities', () => {
       sessionStorage.setItem('auth-return-to', 'https://ndx.gov.uk/catalogue');
 
       handleOAuthCallback();
+      // No timer flush needed - direct redirect when no token
 
       // Token not stored
       expect(sessionStorage.getItem('isb-jwt')).toBeNull();
@@ -442,6 +450,7 @@ describe('OAuth Flow Utilities', () => {
       (window as any).location.search = '?token=';
 
       handleOAuthCallback();
+      // No timer flush needed - direct redirect when empty token
 
       expect(sessionStorage.getItem('isb-jwt')).toBeNull();
       expect((window as any).location.href).toBe('/');
@@ -460,6 +469,7 @@ describe('OAuth Flow Utilities', () => {
       sessionStorage.setItem('auth-return-to', 'https://ndx.gov.uk/catalogue?tag=aws&sort=name');
 
       handleOAuthCallback();
+      jest.runAllTimers(); // Flush the setTimeout redirect
 
       expect((window as any).location.href).toBe('https://ndx.gov.uk/catalogue?tag=aws&sort=name');
     });
@@ -468,6 +478,7 @@ describe('OAuth Flow Utilities', () => {
       sessionStorage.setItem('auth-return-to', 'https://ndx.gov.uk/product#details');
 
       handleOAuthCallback();
+      jest.runAllTimers(); // Flush the setTimeout redirect
 
       expect((window as any).location.href).toBe('https://ndx.gov.uk/product#details');
     });
@@ -477,9 +488,14 @@ describe('OAuth Flow Utilities', () => {
     const validJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
 
     beforeEach(() => {
+      jest.useFakeTimers();
       sessionStorage.clear();
       delete (window as any).location;
       delete (window as any).history;
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
     });
 
     it('should complete full OAuth flow: sign in → extract → redirect', () => {
@@ -506,6 +522,7 @@ describe('OAuth Flow Utilities', () => {
       };
 
       handleOAuthCallback();
+      jest.runAllTimers(); // Flush the setTimeout redirect
 
       // Verify all steps completed correctly:
       // - Token extracted and stored

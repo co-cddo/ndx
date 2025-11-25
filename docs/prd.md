@@ -180,7 +180,7 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
 
 **CloudFront Distribution:**
 - Distribution ID: `E3THG4UHYDHVWP`
-- Domain: `d7roov8fndsis.cloudfront.net`
+- Domain: `ndx.digital.cabinet-office.gov.uk`
 - Status: Production (Deployed)
 - Account: 568672915267
 - Region: us-west-2 (Global CDN)
@@ -619,7 +619,7 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 ### MVP - Minimum Viable Product
 
 **Phase 1: Local Development Setup (Dev Infrastructure)**
-1. **mitmproxy Configuration:** Proxy `https://d7roov8fndsis.cloudfront.net/` to localhost for development
+1. **mitmproxy Configuration:** Proxy `https://ndx.digital.cabinet-office.gov.uk/` to localhost for development
 2. **API Route Exclusion:** Exclude `/api/*` routes (proxy only UI, not API calls)
 3. **Playwright Validation:** Prove proxy works for home page and API calls return expected responses
 

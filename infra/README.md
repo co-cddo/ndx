@@ -66,7 +66,7 @@ javascript:(function(){const c=document.cookie.split(';').find(c=>c.trim().start
 
 1. Open browser DevTools Console (F12)
 2. Set cookie: `document.cookie = "NDX=legacy; path=/"`
-3. Browse to https://d7roov8fndsis.cloudfront.net/
+3. Browse to https://ndx.digital.cabinet-office.gov.uk/
 4. You should see content from legacy S3 bucket
 5. To revert to new site: `document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"`
 
@@ -1036,7 +1036,7 @@ Expected output: `null` or `[]`
 
 4. **Test site accessibility:**
 
-Browse to https://d7roov8fndsis.cloudfront.net/ - should load existing site without errors
+Browse to https://ndx.digital.cabinet-office.gov.uk/ - should load existing site without errors
 
 **Escalation:**
 
@@ -1207,7 +1207,7 @@ Expected output: `UPDATE_COMPLETE`
 
 5. **Test site accessibility:**
 
-Browse to https://d7roov8fndsis.cloudfront.net/ - should load original site
+Browse to https://ndx.digital.cabinet-office.gov.uk/ - should load original site
 
 **Escalation:**
 
@@ -1235,7 +1235,7 @@ After completing any rollback option, perform these checks:
 **1. Production site health:**
 ```bash
 # Test site loads
-curl -I https://d7roov8fndsis.cloudfront.net/
+curl -I https://ndx.digital.cabinet-office.gov.uk/
 ```
 
 Expected: HTTP 200 OK

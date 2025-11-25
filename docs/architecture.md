@@ -422,15 +422,15 @@ cdk deploy --profile NDX/InnovationSandboxHub
 **Post-Deployment Validation:**
 ```bash
 # Test without cookie (should see NEW site - default behavior)
-curl -I https://d7roov8fndsis.cloudfront.net/
+curl -I https://ndx.digital.cabinet-office.gov.uk/
 
 # Test URI rewriting
-curl -I https://d7roov8fndsis.cloudfront.net/try  # Should return 200
-curl -I https://d7roov8fndsis.cloudfront.net/About/  # Should return 200
+curl -I https://ndx.digital.cabinet-office.gov.uk/try  # Should return 200
+curl -I https://ndx.digital.cabinet-office.gov.uk/About/  # Should return 200
 
 # Set cookie and test (should see LEGACY origin)
 # In browser console: document.cookie = "NDX=legacy; path=/"
-# Browse to https://d7roov8fndsis.cloudfront.net/
+# Browse to https://ndx.digital.cabinet-office.gov.uk/
 
 # Clear cookie and test (should revert to NEW site)
 # In browser console: document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"
@@ -728,7 +728,7 @@ yarn test:e2e:accessibility
 Playwright tests leverage the mitmproxy infrastructure established in Epic 4:
 - Proxy port: 8081 (configured in playwright-config.json)
 - UI routes: Forwarded to localhost:8080
-- API routes: Forwarded to production CloudFront (d7roov8fndsis.cloudfront.net)
+- API routes: Forwarded to production CloudFront (ndx.digital.cabinet-office.gov.uk)
 - HTTPS: Certificate trust configured per Epic 4 Story 4.5
 
 **Reference:** See Epic 4 tech spec for complete mitmproxy architecture.

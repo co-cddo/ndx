@@ -3,11 +3,11 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {% block content %}
-  {# Story 6.2: Add Try Before You Buy tag at top of content for tryable products #}
+  {# Story 6.2: Add NDX:Try tag at top of content for tryable products #}
   {% if try %}
   <div class="govuk-!-margin-bottom-4">
     {{ govukTag({
-      text: "Try Before You Buy",
+      text: "NDX:Try",
       classes: "govuk-tag--green"
     }) }}
   </div>

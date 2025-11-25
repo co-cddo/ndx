@@ -1,10 +1,10 @@
 ---
 layout: layouts/product-try
-title: AWS Innovation Sandbox - Empty Account
-description: A clean AWS account for evaluation and experimentation through the Innovation Sandbox programme
+title: NDX:Try for AWS
+description: A clean AWS account for evaluation and experimentation
 image:
   src: /assets/catalogue/aws/connect-logo.svg
-  alt: AWS Innovation Sandbox
+  alt: NDX:Try for AWS
 eleventyNavigation:
   parent: Catalogue
 tags:
@@ -18,10 +18,10 @@ try_id: "a3beced2-be4e-41a0-b6e2-735a73fffed7"
 
 ![](https://img.shields.io/badge/provider-aws-green)
 ![](https://img.shields.io/badge/owner-public_sector-blue)
-![](https://img.shields.io/badge/access-Innovation_Sandbox-purple)
+![](https://img.shields.io/badge/access-NDX:Try-purple)
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 
-The AWS Innovation Sandbox - Empty Account provides government organisations with a clean AWS environment for evaluation, experimentation, and proof-of-concept development.
+NDX:Try for AWS provides government organisations with a clean AWS environment for evaluation, experimentation, and proof-of-concept development.
 
 ## Overview
 
@@ -53,17 +53,17 @@ Hands-on exploration of AWS services for team upskilling.
 
 Compare AWS capabilities against other cloud providers.
 
-### Innovation Sprints
+### Rapid Prototyping
 
-Rapid prototyping during hackathons or innovation events.
+Quick prototyping during hackathons or innovation events.
 
 ## Constraints
 
 - **Budget limit**: $50 maximum spend
 - **Duration**: 24 hours from activation
 - **Purpose**: Evaluation only (non-production use)
-- **Region**: EU (London) - eu-west-2
+- **Regions**: US East (N. Virginia) - us-east-1, US West (Oregon) - us-west-2
 
 ## Support
 
-For technical issues during your sandbox session, contact the Innovation Sandbox team at innovation-sandbox@digital.cabinet-office.gov.uk.
+For technical issues during your sandbox session, contact the NDX team at ndx@dsit.gov.uk.

@@ -22,7 +22,7 @@ Requirements:
 Architecture:
     Browser → mitmproxy (localhost:8081) → Conditional routing:
         - UI requests → localhost:8080 (local Eleventy server)
-        - API requests → CloudFront (d7roov8fndsis.cloudfront.net)
+        - API requests → CloudFront (ndx.digital.cabinet-office.gov.uk)
 
 For more information, see: /docs/development/local-try-setup.md
 """
@@ -37,14 +37,15 @@ logging.basicConfig(
 )
 
 # Configuration constants
-CLOUDFRONT_DOMAIN = "d7roov8fndsis.cloudfront.net"
+CLOUDFRONT_DOMAIN = "ndx.digital.cabinet-office.gov.uk"
 LOCAL_SERVER_HOST = "localhost"
 LOCAL_SERVER_PORT = 8080
 
 # UI routes that should be forwarded to local development server
 UI_ROUTES = [
     "/",                # Homepage
-    "/catalogue/",      # Product catalogue pages
+    "/catalogue",       # Product catalogue pages (exact match)
+    "/catalogue/",      # Product catalogue pages (with trailing slash or subpaths)
     "/try",             # Try sessions dashboard
     "/assets/",         # Static assets (CSS, JS, images)
 ]
@@ -62,7 +63,7 @@ def request(flow: http.HTTPFlow) -> None:
         flow: mitmproxy HTTPFlow object containing request/response data
 
     Routing Logic:
-        1. Check if request is to CloudFront domain (d7roov8fndsis.cloudfront.net)
+        1. Check if request is to CloudFront domain (ndx.digital.cabinet-office.gov.uk)
         2. If CloudFront domain:
            a. If path starts with /api/ → Pass through unchanged (API)
            b. Else if path matches UI routes → Forward to localhost:8080 (UI)

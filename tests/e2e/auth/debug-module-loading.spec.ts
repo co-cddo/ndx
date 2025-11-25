@@ -13,15 +13,15 @@ test("Debug: Check if try.bundle.js loads and exports functions", async ({ page 
   })
 
   // Navigate to homepage with token (like the actual OAuth flow)
-  // Use waitUntil: 'commit' to check URL as early as possible
-  const response = await page.goto("/?token=test123", { waitUntil: 'commit' })
+  // Use waitUntil: 'networkidle' to ensure page is fully loaded before checking
+  const response = await page.goto("/?token=test123", { waitUntil: 'networkidle' })
   console.log("=== Navigation Response ===")
   console.log("Response URL:", response?.url())
   console.log("Request URL:", response?.request().url())
-  console.log("Page URL after commit:", page.url())
+  console.log("Page URL after load:", page.url())
 
-  // Wait a moment for scripts to execute
-  await page.waitForTimeout(1000)
+  // Wait for any redirects to complete (OAuth callback may redirect)
+  await page.waitForLoadState('networkidle')
 
   // Check if token was stored
   const storedToken = await page.evaluate(() => sessionStorage.getItem('isb-jwt'))

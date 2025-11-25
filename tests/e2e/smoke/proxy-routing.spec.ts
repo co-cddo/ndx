@@ -6,7 +6,7 @@ test.describe("Proxy Routing Validation", () => {
 
     // Access the homepage through CloudFront URL
     // mitmproxy should forward this to localhost:8080
-    const response = await page.goto("https://d7roov8fndsis.cloudfront.net/")
+    const response = await page.goto("https://ndx.digital.cabinet-office.gov.uk/")
 
     expect(response).not.toBeNull()
     expect(response!.status()).toBe(200)
@@ -27,7 +27,7 @@ test.describe("Proxy Routing Validation", () => {
 
     // Access an API endpoint that doesn't exist
     // mitmproxy should pass this through to CloudFront (not localhost)
-    const response = await page.goto("https://d7roov8fndsis.cloudfront.net/api/foo", {
+    const response = await page.goto("https://ndx.digital.cabinet-office.gov.uk/api/foo", {
       waitUntil: "domcontentloaded",
     })
 

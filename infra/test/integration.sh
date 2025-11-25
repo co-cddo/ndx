@@ -212,7 +212,7 @@ if [ $ERRORS -eq 0 ]; then
   echo "-------------------------------"
   echo "Cookie-based routing must be validated manually in browser:"
   echo ""
-  echo "1. Browse to https://d7roov8fndsis.cloudfront.net/"
+  echo "1. Browse to https://ndx.digital.cabinet-office.gov.uk/"
   echo "   → Should see existing site (without cookie)"
   echo ""
   echo "2. Open browser DevTools Console and set cookie:"

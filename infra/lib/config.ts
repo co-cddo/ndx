@@ -5,6 +5,12 @@ export interface EnvironmentConfig {
   readonly bucketName: string;
   readonly region: string;
   readonly account: string;
+  // Alternate domain name (CNAME) configuration
+  // Step 1: Create ACM certificate in us-east-1 manually, add DNS validation records
+  // Step 2: Once validated, add certificateArn here
+  // Step 3: Add alternateDomainName and deploy
+  readonly alternateDomainName?: string;
+  readonly certificateArn?: string; // ACM certificate ARN in us-east-1
 }
 
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
@@ -14,6 +20,8 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     bucketName: 'ndx-static-prod',
     region: 'us-west-2',
     account: '568672915267',
+    alternateDomainName: 'ndx.digital.cabinet-office.gov.uk',
+    certificateArn: 'arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6',
   },
   test: {
     distributionId: 'E3TESTDISTID',

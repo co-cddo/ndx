@@ -24,6 +24,9 @@ interface CloudFormationCustomResourceEvent {
     CachePolicyId?: string;
     FunctionArn?: string;
     FunctionEventType?: string;
+    // Alternate domain name configuration
+    AlternateDomainName?: string;
+    CertificateArn?: string;
   };
 }
 
@@ -68,7 +71,9 @@ export async function handler(
     OriginAccessControlId,
     CachePolicyId,
     FunctionArn,
-    FunctionEventType
+    FunctionEventType,
+    AlternateDomainName,
+    CertificateArn
   } = ResourceProperties;
 
   // Physical resource ID for this custom resource
@@ -100,6 +105,16 @@ export async function handler(
         );
         if (CachePolicyId) messages.push(`Cache policy ${CachePolicyId} configured`);
         if (FunctionArn) messages.push(`Function ${FunctionArn} attached`);
+      }
+
+      // Configure alternate domain name if properties provided
+      if (AlternateDomainName && CertificateArn) {
+        await configureAlternateDomainName(
+          DistributionId,
+          AlternateDomainName,
+          CertificateArn
+        );
+        messages.push(`Alternate domain ${AlternateDomainName} configured`);
       }
 
       await sendResponse(event, {
@@ -300,6 +315,74 @@ async function configureCacheBehavior(
   );
 
   console.log('Cache behavior updated successfully');
+}
+
+/**
+ * Configure alternate domain name (CNAME) and SSL certificate
+ * Idempotent - checks if domain already exists in aliases
+ */
+async function configureAlternateDomainName(
+  distributionId: string,
+  domainName: string,
+  certificateArn: string
+): Promise<void> {
+  console.log(`Configuring alternate domain ${domainName} for distribution ${distributionId}`);
+
+  // Get current distribution config
+  const configResponse = await cloudfront.send(
+    new GetDistributionConfigCommand({ Id: distributionId })
+  );
+
+  if (!configResponse.DistributionConfig || !configResponse.ETag) {
+    throw new Error('Failed to get distribution config');
+  }
+
+  const config = configResponse.DistributionConfig;
+  const etag = configResponse.ETag;
+
+  // Initialize Aliases if not present
+  if (!config.Aliases) {
+    config.Aliases = { Quantity: 0, Items: [] };
+  }
+  if (!config.Aliases.Items) {
+    config.Aliases.Items = [];
+  }
+
+  // Check if domain already exists (idempotency)
+  const existingIndex = config.Aliases.Items.findIndex(
+    (alias: string) => alias.toLowerCase() === domainName.toLowerCase()
+  );
+
+  if (existingIndex >= 0) {
+    console.log(`Domain ${domainName} already exists in aliases`);
+  } else {
+    // Add new domain
+    config.Aliases.Items.push(domainName);
+    config.Aliases.Quantity = config.Aliases.Items.length;
+    console.log(`Added ${domainName} to aliases. Total aliases: ${config.Aliases.Quantity}`);
+  }
+
+  // Configure SSL certificate for custom domain
+  config.ViewerCertificate = {
+    ACMCertificateArn: certificateArn,
+    SSLSupportMethod: 'sni-only',
+    MinimumProtocolVersion: 'TLSv1.2_2021',
+    Certificate: certificateArn,
+    CertificateSource: 'acm',
+  };
+  console.log(`Configured SSL certificate: ${certificateArn}`);
+
+  // Update distribution with new config
+  console.log('Updating distribution...');
+  await cloudfront.send(
+    new UpdateDistributionCommand({
+      Id: distributionId,
+      DistributionConfig: config,
+      IfMatch: etag,
+    })
+  );
+
+  console.log('Alternate domain name configured successfully');
 }
 
 /**

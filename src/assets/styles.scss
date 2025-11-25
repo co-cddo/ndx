@@ -198,6 +198,18 @@ body.aup-modal-open {
   overflow: hidden;
 }
 
+// Document list title with inline tag - Story 6.2
+.app-document-list__item-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5em;
+
+  .govuk-tag {
+    flex-shrink: 0;
+  }
+}
+
 // govuk-body
 .experimental_header {
   @extend .govuk-body;

@@ -48,6 +48,22 @@ The CloudFront Function automatically rewrites URIs to work correctly with S3:
 
 If issues are detected with the new site, testers can temporarily view the legacy content:
 
+#### Option 1: Browser Bookmarklet (Recommended)
+
+Create a browser bookmark with this URL to toggle between origins with one click:
+
+```javascript
+javascript:(function(){const c=document.cookie.split(';').find(c=>c.trim().startsWith('NDX='));if(c&&c.split('=')[1]==='legacy'){document.cookie='NDX=;path=/;max-age=0';alert('NDX cookie deleted (using new origin)');}else{document.cookie='NDX=legacy;path=/';alert('NDX cookie set to legacy (using old origin)');}location.reload();})();
+```
+
+**To create the bookmarklet:**
+1. Create a new bookmark in your browser
+2. Name it "Toggle NDX Origin"
+3. Paste the JavaScript code above as the URL
+4. Click the bookmark while on any NDX page to toggle between origins
+
+#### Option 2: DevTools Console
+
 1. Open browser DevTools Console (F12)
 2. Set cookie: `document.cookie = "NDX=legacy; path=/"`
 3. Browse to https://d7roov8fndsis.cloudfront.net/

@@ -4,6 +4,9 @@ export default {
   roots: ['<rootDir>/src'],
   testMatch: ['**/__tests__/**/*.ts', '**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js'],
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js'
+  },
   collectCoverageFrom: [
     'src/try/**/*.ts',
     '!src/try/**/*.test.ts',

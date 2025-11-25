@@ -14,7 +14,5 @@
   {{ content | safe }}
 {% endblock %}
 
-{% block scripts %}
-  {# Load try.bundle.js to initialize TryPage component (Story 5.9, 7.x) #}
-  <script type="module" src="/assets/try.bundle.js"></script>
-{% endblock %}
+{# Note: try.bundle.js is loaded globally via eleventy.config.js scripts array #}
+{# This ensures try.bundle.js is available on all pages for OAuth callback handling #}

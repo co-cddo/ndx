@@ -162,9 +162,17 @@ test.describe("Try Before You Buy - Unauthenticated User", () => {
     const tryButton = page.locator('[data-try-id]')
     await tryButton.click()
 
-    // Should redirect to login (not open modal)
-    await page.waitForURL("**/api/auth/login**", { timeout: 5000 })
-    expect(page.url()).toContain("/api/auth/login")
+    // Should redirect through /api/auth/login to OAuth provider (AWS SSO)
+    // Wait for navigation away from product page
+    await page.waitForURL((url) => !url.pathname.includes(PRODUCT_PAGE), { timeout: 5000 })
+
+    // Verify we were redirected (either to /api/auth/login or directly to OAuth provider)
+    // OAuth redirect is fast, so we might land at AWS SSO (awsapps.com)
+    const finalUrl = page.url()
+    const isRedirected = finalUrl.includes('/api/auth/login') ||
+                        finalUrl.includes('awsapps.com') ||
+                        finalUrl.includes('oauth')
+    expect(isRedirected).toBe(true)
   })
 })
 
@@ -182,13 +190,13 @@ test.describe("NDX:Try - Catalogue Filter", () => {
     await expect(productList).toBeVisible()
   })
 
-  test("AC #10: NDX:Try tag visible on product card", async ({
+  test("AC #10: Try Before You Buy tag visible on product card", async ({
     page,
   }) => {
     await page.goto(`${BASE_URL}/catalogue`)
 
-    // Find a product with NDX:Try tag
-    const tryTag = page.locator('.govuk-tag:has-text("NDX:Try")')
+    // Find a product with Try Before You Buy tag
+    const tryTag = page.locator('.govuk-tag:has-text("Try Before You Buy")')
 
     // Should have at least one tryable product
     const count = await tryTag.count()

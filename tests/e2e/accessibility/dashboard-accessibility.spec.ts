@@ -58,7 +58,8 @@ test.describe("Dashboard Accessibility - WCAG 2.2 AA Compliance", () => {
       await page.goto("/try/");
 
       const nav = page.locator('nav, [role="navigation"]');
-      await expect(nav).toBeVisible();
+      // Should have at least one navigation landmark
+      await expect(nav.first()).toBeVisible();
     });
 
     test("Skip to main content link is present", async ({ page }) => {

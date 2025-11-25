@@ -31,7 +31,5 @@
   {% include "layouts/shared/related.njk" %}
 {% endblock %}
 
-{% block scripts %}
-  {# Load try.bundle.js to initialize TryButton click handlers (Story 6.5) #}
-  <script type="module" src="/assets/try.bundle.js"></script>
-{% endblock %}
+{# Note: try.bundle.js is loaded by base template (govuk/template.njk) for all pages #}
+{# This ensures OAuth callbacks work on all pages and Try button handlers initialize #}

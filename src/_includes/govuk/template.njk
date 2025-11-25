@@ -66,7 +66,8 @@
 
     {% block bodyEnd %}{% endblock %}
 
-    {# Try feature OAuth callback handler - needed on all pages for post-auth redirect #}
+    {# Try feature OAuth callback handler - needed on all pages for post-auth redirect (Story 5.3) #}
+    {# Loaded globally since OAuth redirects can land on any page #}
     <script type="module" src="/assets/try.bundle.js"></script>
   </body>
 </html>

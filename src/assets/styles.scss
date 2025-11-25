@@ -137,6 +137,8 @@ $_font-family: system-ui, sans-serif;
     border: 2px solid #b1b4b6;
     background: #fff;
     margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
   }
 
   &__aup-content {

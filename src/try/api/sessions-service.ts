@@ -17,7 +17,7 @@ import { config } from '../config';
  * Lease status values.
  * API returns various status strings including 'ManuallyTerminated'.
  */
-export type LeaseStatus = 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'ManuallyTerminated';
+export type LeaseStatus = 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'ManuallyTerminated' | 'Failed';
 
 /**
  * Raw lease data from API response.
@@ -228,6 +228,9 @@ function transformLease(raw: RawLease): Lease {
       break;
     case 'ManuallyTerminated':
       status = 'ManuallyTerminated';
+      break;
+    case 'Failed':
+      status = 'Failed';
       break;
   }
 

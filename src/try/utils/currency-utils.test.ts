@@ -43,21 +43,39 @@ describe('Currency Utilities', () => {
     });
   });
 
+  describe('formatUSD with custom decimals', () => {
+    it('should format with 4 decimals for AWS microdollar precision', () => {
+      expect(formatUSD(12.3456, 4)).toBe('$12.3456');
+    });
+
+    it('should format zero with 4 decimals', () => {
+      expect(formatUSD(0, 4)).toBe('$0.0000');
+    });
+
+    it('should format whole numbers with 4 decimals', () => {
+      expect(formatUSD(50, 4)).toBe('$50.0000');
+    });
+  });
+
   describe('formatBudget', () => {
-    it('should format budget with current and max spend', () => {
-      expect(formatBudget(12.5, 50)).toBe('$12.50 / $50.00');
+    it('should format budget with 4 decimals for current, 2 for max (Story 7.6)', () => {
+      expect(formatBudget(12.3456, 50)).toBe('$12.3456 / $50.00');
     });
 
     it('should handle zero current spend', () => {
-      expect(formatBudget(0, 50)).toBe('$0.00 / $50.00');
+      expect(formatBudget(0, 50)).toBe('$0.0000 / $50.00');
     });
 
     it('should handle full budget usage', () => {
-      expect(formatBudget(50, 50)).toBe('$50.00 / $50.00');
+      expect(formatBudget(50, 50)).toBe('$50.0000 / $50.00');
     });
 
     it('should handle over-budget scenario', () => {
-      expect(formatBudget(60, 50)).toBe('$60.00 / $50.00');
+      expect(formatBudget(60.1234, 50)).toBe('$60.1234 / $50.00');
+    });
+
+    it('should handle very precise AWS costs', () => {
+      expect(formatBudget(0.0001, 50)).toBe('$0.0001 / $50.00');
     });
   });
 

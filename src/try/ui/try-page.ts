@@ -19,6 +19,7 @@
 import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
+import "./styles/sessions-table.css"
 
 /**
  * Container element ID for try sessions content.
@@ -41,6 +42,7 @@ let currentState: TryPageState = {
 }
 
 let container: HTMLElement | null = null
+let refreshTimer: number | null = null
 
 /**
  * Initialize the try page component.
@@ -95,6 +97,7 @@ async function loadAndRenderSessions(): Promise<void> {
   currentState = { loading: true, error: null, leases: [] }
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
+    <p class="govuk-body-l">Manage your AWS sandbox environments</p>
     ${renderLoadingState()}
   `
 
@@ -109,6 +112,7 @@ async function loadAndRenderSessions(): Promise<void> {
     // Render error state with helpful navigation (still allow browsing catalogue)
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
+      <p class="govuk-body-l">Manage your AWS sandbox environments</p>
       ${renderErrorState(currentState.error!)}
 
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
@@ -137,6 +141,9 @@ async function loadAndRenderSessions(): Promise<void> {
  * @param container - DOM element to render into
  */
 export function renderEmptyState(container: HTMLElement): void {
+  // Stop auto-refresh timer when showing empty state
+  stopAutoRefresh()
+
   container.innerHTML = `
     <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
     <p class="govuk-body">
@@ -155,6 +162,7 @@ export function renderEmptyState(container: HTMLElement): void {
  * Render authenticated state with sessions table.
  *
  * Story 7.2-7.10: Full sessions dashboard implementation.
+ * Story 7.5: Auto-refresh expiry dates every minute.
  *
  * @param container - DOM element to render into
  * @param leases - User's leases to display
@@ -176,6 +184,7 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
+    <p class="govuk-body-l">Manage your AWS sandbox environments</p>
 
     ${summaryText ? `<p class="govuk-body-l">${summaryText}</p>` : ""}
 
@@ -193,6 +202,9 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
     ${!hasLeases ? renderFirstTimeGuidance() : ""}
   `
+
+  // Story 7.5: Start auto-refresh timer for relative expiry times (refresh every 60 seconds)
+  startAutoRefresh()
 }
 
 /**
@@ -216,4 +228,37 @@ function renderFirstTimeGuidance(): string {
       </ol>
     </div>
   `
+}
+
+/**
+ * Start auto-refresh timer for relative expiry times.
+ *
+ * Story 7.5: AC requires expiry dates to update automatically every minute.
+ * This ensures relative time displays (e.g., "in 2 hours") stay current.
+ *
+ * Clears any existing timer before starting a new one to prevent multiple timers.
+ */
+function startAutoRefresh(): void {
+  // Clear existing timer if any
+  stopAutoRefresh()
+
+  // Refresh table display every 60 seconds (AC requirement)
+  refreshTimer = window.setInterval(() => {
+    if (container && currentState.leases.length > 0 && !currentState.loading) {
+      // Re-render table with current leases to update relative times
+      renderAuthenticatedState(container, currentState.leases)
+    }
+  }, 60000) // 60 seconds
+}
+
+/**
+ * Stop auto-refresh timer.
+ *
+ * Called when navigating away from sessions view or when user signs out.
+ */
+function stopAutoRefresh(): void {
+  if (refreshTimer !== null) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
 }

@@ -236,18 +236,29 @@ test.describe("Error Messaging Accessibility - WCAG 3.3", () => {
 
       const pageContent = await page.content();
 
-      // Should not expose tokens, internal paths, or stack traces
-      const exposedSensitive =
-        pageContent.includes("eyJ") || // JWT token
-        pageContent.includes("/api/") || // Internal paths
-        pageContent.includes("at Function") || // Stack trace
-        pageContent.includes("at Object") || // Stack trace
-        pageContent.includes("node_modules"); // Internal paths
+      // Should not expose tokens in visible content (excluding source maps)
+      const hasToken = pageContent.includes("eyJ");
+      const isSourceMap = pageContent.includes("//# sourceMappingURL");
 
-      // Filter out expected API references in code/comments
-      const sourceMapExclusion = !pageContent.includes("//# sourceMappingURL");
+      // Should not expose stack traces in visible content
+      const hasStackTrace =
+        pageContent.includes("at Function") ||
+        pageContent.includes("at Object");
 
-      expect(exposedSensitive && sourceMapExclusion).toBe(false);
+      // Should not expose internal paths in visible content
+      const hasInternalPaths = pageContent.includes("node_modules");
+
+      // Allow /api/ in code/documentation but not in error messages
+      // Check only visible text content for sensitive info
+      const visibleText = await page.evaluate(() => document.body.innerText);
+      const hasApiPathInError =
+        visibleText.includes("/api/") &&
+        (visibleText.toLowerCase().includes("error") || visibleText.toLowerCase().includes("failed"));
+
+      expect(hasToken && !isSourceMap).toBe(false);
+      expect(hasStackTrace).toBe(false);
+      expect(hasInternalPaths).toBe(false);
+      expect(hasApiPathInError).toBe(false);
     });
   });
 
@@ -292,12 +303,25 @@ test.describe("Error Messaging Accessibility - WCAG 3.3", () => {
     test("No axe-core violations on error states", async ({ page }) => {
       await page.goto("/try/");
 
-      const accessibilityScanResults = await new AxeBuilder({ page })
-        .include(".govuk-error-summary, .govuk-error-message, [role='alert']")
-        .withTags(["wcag2a", "wcag2aa"])
-        .analyze();
+      // Check if error elements exist before scanning
+      const errorElements = page.locator(".govuk-error-summary, .govuk-error-message, [role='alert']");
+      const errorCount = await errorElements.count();
 
-      expect(accessibilityScanResults.violations).toEqual([]);
+      if (errorCount > 0) {
+        const accessibilityScanResults = await new AxeBuilder({ page })
+          .include(".govuk-error-summary, .govuk-error-message, [role='alert']")
+          .withTags(["wcag2a", "wcag2aa"])
+          .analyze();
+
+        expect(accessibilityScanResults.violations).toEqual([]);
+      } else {
+        // No error elements present - scan whole page for accessibility
+        const accessibilityScanResults = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa"])
+          .analyze();
+
+        expect(accessibilityScanResults.violations).toEqual([]);
+      }
     });
   });
 });

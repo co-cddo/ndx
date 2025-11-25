@@ -19,11 +19,12 @@ import { formatBudget, calculateBudgetPercentage } from '../../utils/currency-ut
  * Status badge color mapping per Story 7.4.
  */
 const STATUS_COLORS: Record<LeaseStatus, string> = {
-  Pending: 'govuk-tag--yellow',
+  Pending: 'govuk-tag--blue',
   Active: 'govuk-tag--green',
   Expired: 'govuk-tag--grey',
   Terminated: 'govuk-tag--red',
   ManuallyTerminated: 'govuk-tag--red',
+  Failed: 'govuk-tag--red',
 };
 
 /**
@@ -35,6 +36,7 @@ const STATUS_LABELS: Record<LeaseStatus, string> = {
   Expired: 'Expired',
   Terminated: 'Terminated',
   ManuallyTerminated: 'Ended',
+  Failed: 'Failed',
 };
 
 /**
@@ -51,13 +53,14 @@ export function renderSessionsTable(leases: Lease[]): string {
   const rows = leases.map(renderSessionRow).join('');
 
   return `
-    <table class="govuk-table">
+    <table class="govuk-table sessions-table">
       <caption class="govuk-table__caption govuk-table__caption--m govuk-visually-hidden">
         Your sandbox sessions
       </caption>
       <thead class="govuk-table__head">
         <tr class="govuk-table__row">
           <th scope="col" class="govuk-table__header">Product</th>
+          <th scope="col" class="govuk-table__header">AWS Account ID</th>
           <th scope="col" class="govuk-table__header">Status</th>
           <th scope="col" class="govuk-table__header">Expires</th>
           <th scope="col" class="govuk-table__header">Budget</th>
@@ -82,34 +85,39 @@ function renderSessionRow(lease: Lease): string {
   const expiry = formatExpiry(lease.expiresAt);
   const budget = formatBudget(lease.currentSpend, lease.maxSpend);
   const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend);
+  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`;
   const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null;
   const actions = renderActions(lease);
 
   return `
     <tr class="govuk-table__row">
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="Product">
         <strong>${escapeHtml(lease.leaseTemplateName)}</strong>
         ${remaining ? `<br><span class="govuk-body-s govuk-!-margin-top-1">${remaining}</span>` : ''}
       </td>
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="AWS Account ID">
+        <code class="govuk-!-font-size-16">${lease.awsAccountId}</code>
+      </td>
+      <td class="govuk-table__cell" data-label="Status">
         <strong class="govuk-tag ${statusClass}">${STATUS_LABELS[lease.status] || lease.status}</strong>
       </td>
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="Expiry" aria-label="Session expires ${expiry}">
         ${expiry}
       </td>
-      <td class="govuk-table__cell">
-        ${budget}
+      <td class="govuk-table__cell" data-label="Budget">
+        <span aria-label="${budgetAriaLabel}">
+          ${budget}
+        </span>
         <br>
         <progress
           value="${budgetPercentage}"
           max="100"
           aria-label="Budget usage ${budgetPercentage}%"
           class="sessions-budget-progress"
-          style="width: 100px; height: 8px;"
         ></progress>
         <span class="govuk-body-s">${budgetPercentage}%</span>
       </td>
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="Actions">
         ${actions}
       </td>
     </tr>

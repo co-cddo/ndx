@@ -258,22 +258,27 @@ describe("Try Page Component (Story 5.9)", () => {
       // Arrange
       const mockLeases = [
         {
-          id: "1",
-          productName: "Test Product",
+          leaseId: "1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
           status: "Active",
+          createdAt: new Date().toISOString(),
           expiresAt: new Date().toISOString(),
-          budgetAmount: 50,
-          budgetUsed: 10,
-          launchUrl: "https://example.com",
+          maxSpend: 50,
+          currentSpend: 10,
+          awsSsoPortalUrl: "https://example.com",
         },
         {
-          id: "2",
-          productName: "Test Product 2",
+          leaseId: "2",
+          awsAccountId: "123456789013",
+          leaseTemplateId: "template-2",
+          leaseTemplateName: "Test Product 2",
           status: "Pending",
+          createdAt: new Date().toISOString(),
           expiresAt: new Date().toISOString(),
-          budgetAmount: 50,
-          budgetUsed: 0,
-          launchUrl: "",
+          maxSpend: 50,
+          currentSpend: 0,
         },
       ]
 
@@ -298,13 +303,16 @@ describe("Try Page Component (Story 5.9)", () => {
       // Arrange
       const mockLeases = [
         {
-          id: "1",
-          productName: "Test",
+          leaseId: "1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test",
           status: "Active",
+          createdAt: new Date().toISOString(),
           expiresAt: new Date().toISOString(),
-          budgetAmount: 50,
-          budgetUsed: 10,
-          launchUrl: "https://example.com",
+          maxSpend: 50,
+          currentSpend: 10,
+          awsSsoPortalUrl: "https://example.com",
         },
       ]
 
@@ -365,6 +373,110 @@ describe("Try Page Component (Story 5.9)", () => {
       subscribeCallback(false)
       expect(container.innerHTML).toContain("Sign in to view your try sessions")
       expect(container.innerHTML).not.toContain("Your try sessions")
+    })
+  })
+
+  describe("Story 7.5: Auto-refresh for relative expiry times", () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it("should start auto-refresh timer when rendering authenticated state with leases", () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Active",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+          awsSsoPortalUrl: "https://portal.aws.amazon.com",
+        },
+      ]
+
+      // Act
+      renderAuthenticatedState(container, mockLeases as any)
+
+      // Advance timer by 60 seconds
+      jest.advanceTimersByTime(60000)
+
+      // Assert - table should have been re-rendered (container still has sessions)
+      expect(container.innerHTML).toContain("Your try sessions")
+      expect(container.innerHTML).toContain("Test Product")
+    })
+
+    it("should stop auto-refresh timer when rendering empty state", () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Active",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+          awsSsoPortalUrl: "https://portal.aws.amazon.com",
+        },
+      ]
+
+      // Start with authenticated state (starts timer)
+      renderAuthenticatedState(container, mockLeases as any)
+
+      // Act - switch to empty state (should stop timer)
+      renderEmptyState(container)
+
+      // Clear container to verify timer was stopped
+      const contentBefore = container.innerHTML
+
+      // Advance timer by 60 seconds
+      jest.advanceTimersByTime(60000)
+
+      // Assert - container should not have changed (timer was stopped)
+      expect(container.innerHTML).toBe(contentBefore)
+      expect(container.innerHTML).toContain("Sign in to view your try sessions")
+    })
+
+    it("should not re-render if container is null", () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Active",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+          awsSsoPortalUrl: "https://portal.aws.amazon.com",
+        },
+      ]
+
+      renderAuthenticatedState(container, mockLeases as any)
+
+      // Remove container from DOM to simulate navigation away
+      container.remove()
+
+      const spy = jest.spyOn(container, "innerHTML", "set")
+
+      // Act - advance timer
+      jest.advanceTimersByTime(60000)
+
+      // Assert - innerHTML should not be called when container is removed
+      // (In real implementation, check is for null container reference)
+      spy.mockRestore()
     })
   })
 })

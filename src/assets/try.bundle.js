@@ -499,6 +499,9 @@ function transformLease(raw) {
     case "ManuallyTerminated":
       status = "ManuallyTerminated";
       break;
+    case "Failed":
+      status = "Failed";
+      break;
   }
   return {
     leaseId: raw.leaseId,
@@ -603,16 +606,16 @@ function formatExpiry(expiresAt) {
 }
 
 // src/try/utils/currency-utils.ts
-function formatUSD(amount) {
+function formatUSD(amount, decimals = 2) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
   }).format(amount);
 }
 function formatBudget(currentSpend, maxSpend) {
-  return `${formatUSD(currentSpend)} / ${formatUSD(maxSpend)}`;
+  return `${formatUSD(currentSpend, 4)} / ${formatUSD(maxSpend, 2)}`;
 }
 function calculateBudgetPercentage(currentSpend, maxSpend) {
   if (maxSpend === 0) return 0;
@@ -621,18 +624,20 @@ function calculateBudgetPercentage(currentSpend, maxSpend) {
 
 // src/try/ui/components/sessions-table.ts
 var STATUS_COLORS = {
-  Pending: "govuk-tag--yellow",
+  Pending: "govuk-tag--blue",
   Active: "govuk-tag--green",
   Expired: "govuk-tag--grey",
   Terminated: "govuk-tag--red",
-  ManuallyTerminated: "govuk-tag--red"
+  ManuallyTerminated: "govuk-tag--red",
+  Failed: "govuk-tag--red"
 };
 var STATUS_LABELS = {
   Pending: "Pending",
   Active: "Active",
   Expired: "Expired",
   Terminated: "Terminated",
-  ManuallyTerminated: "Ended"
+  ManuallyTerminated: "Ended",
+  Failed: "Failed"
 };
 function renderSessionsTable(leases) {
   if (leases.length === 0) {
@@ -640,13 +645,14 @@ function renderSessionsTable(leases) {
   }
   const rows = leases.map(renderSessionRow).join("");
   return `
-    <table class="govuk-table">
+    <table class="govuk-table sessions-table">
       <caption class="govuk-table__caption govuk-table__caption--m govuk-visually-hidden">
         Your sandbox sessions
       </caption>
       <thead class="govuk-table__head">
         <tr class="govuk-table__row">
           <th scope="col" class="govuk-table__header">Product</th>
+          <th scope="col" class="govuk-table__header">AWS Account ID</th>
           <th scope="col" class="govuk-table__header">Status</th>
           <th scope="col" class="govuk-table__header">Expires</th>
           <th scope="col" class="govuk-table__header">Budget</th>
@@ -664,33 +670,38 @@ function renderSessionRow(lease) {
   const expiry = formatExpiry(lease.expiresAt);
   const budget = formatBudget(lease.currentSpend, lease.maxSpend);
   const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend);
+  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`;
   const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null;
   const actions = renderActions(lease);
   return `
     <tr class="govuk-table__row">
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="Product">
         <strong>${escapeHtml(lease.leaseTemplateName)}</strong>
         ${remaining ? `<br><span class="govuk-body-s govuk-!-margin-top-1">${remaining}</span>` : ""}
       </td>
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="AWS Account ID">
+        <code class="govuk-!-font-size-16">${lease.awsAccountId}</code>
+      </td>
+      <td class="govuk-table__cell" data-label="Status">
         <strong class="govuk-tag ${statusClass}">${STATUS_LABELS[lease.status] || lease.status}</strong>
       </td>
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="Expiry" aria-label="Session expires ${expiry}">
         ${expiry}
       </td>
-      <td class="govuk-table__cell">
-        ${budget}
+      <td class="govuk-table__cell" data-label="Budget">
+        <span aria-label="${budgetAriaLabel}">
+          ${budget}
+        </span>
         <br>
         <progress
           value="${budgetPercentage}"
           max="100"
           aria-label="Budget usage ${budgetPercentage}%"
           class="sessions-budget-progress"
-          style="width: 100px; height: 8px;"
         ></progress>
         <span class="govuk-body-s">${budgetPercentage}%</span>
       </td>
-      <td class="govuk-table__cell">
+      <td class="govuk-table__cell" data-label="Actions">
         ${actions}
       </td>
     </tr>
@@ -767,6 +778,7 @@ var currentState = {
   leases: []
 };
 var container = null;
+var refreshTimer = null;
 function initTryPage() {
   container = document.getElementById(CONTAINER_ID);
   if (!container) {
@@ -791,6 +803,7 @@ async function loadAndRenderSessions() {
   currentState = { loading: true, error: null, leases: [] };
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
+    <p class="govuk-body-l">Manage your AWS sandbox environments</p>
     ${renderLoadingState()}
   `;
   const result = await fetchUserLeases();
@@ -801,6 +814,7 @@ async function loadAndRenderSessions() {
     currentState = { loading: false, error: result.error || "Unknown error", leases: [] };
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
+      <p class="govuk-body-l">Manage your AWS sandbox environments</p>
       ${renderErrorState(currentState.error)}
 
       <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
@@ -818,6 +832,7 @@ async function loadAndRenderSessions() {
   }
 }
 function renderEmptyState(container2) {
+  stopAutoRefresh();
   container2.innerHTML = `
     <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
     <p class="govuk-body">
@@ -844,6 +859,7 @@ function renderAuthenticatedState(container2, leases) {
   }
   container2.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
+    <p class="govuk-body-l">Manage your AWS sandbox environments</p>
 
     ${summaryText ? `<p class="govuk-body-l">${summaryText}</p>` : ""}
 
@@ -861,6 +877,7 @@ function renderAuthenticatedState(container2, leases) {
 
     ${!hasLeases ? renderFirstTimeGuidance() : ""}
   `;
+  startAutoRefresh();
 }
 function renderFirstTimeGuidance() {
   return `
@@ -878,6 +895,20 @@ function renderFirstTimeGuidance() {
       </ol>
     </div>
   `;
+}
+function startAutoRefresh() {
+  stopAutoRefresh();
+  refreshTimer = window.setInterval(() => {
+    if (container && currentState.leases.length > 0 && !currentState.loading) {
+      renderAuthenticatedState(container, currentState.leases);
+    }
+  }, 6e4);
+}
+function stopAutoRefresh() {
+  if (refreshTimer !== null) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 }
 
 // src/try/ui/utils/focus-trap.ts

@@ -315,12 +315,16 @@ export function cleanupURLAfterExtraction(): void {
  * ```
  */
 export function handleOAuthCallback(): void {
+  console.log('[handleOAuthCallback] Starting OAuth callback handling');
+
   // Step 1: Extract token from URL
   const tokenExtracted = extractTokenFromURL();
+  console.log('[handleOAuthCallback] Token extracted:', tokenExtracted);
 
   if (!tokenExtracted) {
     // No token found (possibly OAuth error already handled by parseOAuthError)
     // Redirect to home page and clear return URL
+    console.log('[handleOAuthCallback] No token - redirecting to home');
     clearReturnURL();
     window.location.href = '/';
     return;
@@ -328,13 +332,20 @@ export function handleOAuthCallback(): void {
 
   // Step 2: Clean up URL (remove token from address bar)
   cleanupURLAfterExtraction();
+  console.log('[handleOAuthCallback] URL cleaned, current URL:', window.location.href);
 
   // Step 3: Get return URL (original page before OAuth redirect)
   const returnURL = getReturnURL();
+  console.log('[handleOAuthCallback] Retrieved return URL:', returnURL);
 
   // Step 4: Clear return URL from sessionStorage
   clearReturnURL();
 
   // Step 5: Redirect to original page
-  window.location.href = returnURL;
+  // Use setTimeout to ensure the redirect happens after current execution context completes
+  console.log('[handleOAuthCallback] Scheduling redirect to:', returnURL);
+  setTimeout(() => {
+    console.log('[handleOAuthCallback] Executing redirect now...');
+    window.location.href = returnURL;
+  }, 0);
 }

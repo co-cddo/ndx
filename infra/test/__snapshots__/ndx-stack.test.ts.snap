@@ -213,7 +213,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "42ab8f54fdeb1ced79213ac70c6afc6f0882c0471f4924130392f1e79fc2574d.zip",
+          "S3Key": "6aba838c70e08a8bf199aa0c3cb51b3d2fea8b149844a707b18533de235f7bd0.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",
@@ -462,25 +462,36 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
 function handler(event) {
   var request = event.request;
   var cookies = request.cookies;
+  var uri = request.uri;
 
-  // Route to new origin if NDX=true (exact match, case-sensitive)
-  // Check if NDX cookie exists and has value 'true'
+  // Handle directory-style URLs for S3 compatibility
+  // e.g., /About/ -> /About/index.html, /try -> /try/index.html
+  if (uri.endsWith('/')) {
+    request.uri = uri + 'index.html';
+  } else if (uri.indexOf('.') === -1) {
+    // No file extension (no dot in URI) - treat as directory
+    request.uri = uri + '/index.html';
+  }
+
+  // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
   var ndxCookie = cookies['NDX'];
 
-  if (ndxCookie && ndxCookie.value === 'true') {
-    // Update origin to ndx-static-prod with OAC authentication
-    cf.updateRequestOrigin({
-      domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-      originAccessControlConfig: {
-        enabled: true,
-        region: 'us-west-2',
-        signingBehavior: 'always',
-        signingProtocol: 'sigv4',
-        originType: 's3'
-      }
-    });
+  if (ndxCookie && ndxCookie.value === 'legacy') {
+    // Use default cache behavior origin (old S3Origin) - no modification needed
+    return request;
   }
-  // Else: use default cache behavior origin (S3Origin)
+
+  // Default: route to ndx-static-prod with OAC authentication
+  cf.updateRequestOrigin({
+    domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
+    originAccessControlConfig: {
+      enabled: true,
+      region: 'us-west-2',
+      signingBehavior: 'always',
+      signingProtocol: 'sigv4',
+      originType: 's3'
+    }
+  });
 
   return request;
 }

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context version="1.0" story-id="5-9" generated="2025-11-24">
+  <metadata>
+    <story-file>docs/sprint-artifacts/stories/5-9-empty-state-ui-for-unauthenticated-try-page.md</story-file>
+    <epic>Epic 5: Authentication Foundation</epic>
+    <dependencies>
+      <dependency story="5.1" status="done">Sign In/Out Button UI Components - AuthState class</dependency>
+      <dependency story="5.8" status="done">401 Unauthorized Response Handling</dependency>
+    </dependencies>
+  </metadata>
+
+  <documentation>
+    <doc type="architecture" path="docs/try-before-you-buy-architecture.md">
+      <excerpt name="ADR-024">
+        Authentication State Management using Observer pattern.
+        Components subscribe to auth state changes.
+        Automatically updates when user signs in/out (no manual reload needed).
+      </excerpt>
+      <excerpt name="ADR-020">
+        Progressive Enhancement Pattern.
+        HTML-first with JavaScript enhancement.
+        Static HTML shell with JS populating content.
+        noscript message for JavaScript-disabled users.
+      </excerpt>
+    </doc>
+    <doc type="prd" path="docs/prd.md">
+      <excerpt name="FR-TRY-26">Show unauthenticated message when user not signed in</excerpt>
+      <excerpt name="FR-TRY-27">Show sign in button on /try page</excerpt>
+      <excerpt name="FR-TRY-29">Empty state if no leases</excerpt>
+    </doc>
+  </documentation>
+
+  <artifacts>
+    <code type="existing" path="src/try/auth/auth-provider.ts" relevance="critical">
+      <purpose>AuthState singleton with subscribe/notify pattern</purpose>
+      <patterns>
+        <pattern name="authState">Singleton instance exported for application-wide use</pattern>
+        <pattern name="subscribe">Subscribe to auth state changes with callback</pattern>
+        <pattern name="isAuthenticated">Check if JWT token exists in sessionStorage</pattern>
+      </patterns>
+      <key-lines>
+        <line n="115-120">subscribe(listener) - Register callback for auth changes</line>
+        <line n="141-144">notify() - Trigger all subscribers</line>
+        <line n="217">export const authState = new AuthState()</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/main.ts" relevance="high">
+      <purpose>Main entry point - add initTryPage() call here</purpose>
+      <patterns>
+        <pattern name="DOMContentLoaded">Initialize components after DOM ready</pattern>
+        <pattern name="initAuthNav">Example of component initialization</pattern>
+      </patterns>
+      <key-lines>
+        <line n="23-32">DOMContentLoaded handler - add initTryPage() here</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/ui/auth-nav.ts" relevance="medium">
+      <purpose>Example of AuthState subscription pattern</purpose>
+      <notes>
+        Uses authState.subscribe() to react to auth changes.
+        Pattern to follow for try-page component.
+      </notes>
+    </code>
+
+    <code type="to-create" path="src/try.md">
+      <purpose>Eleventy page template for /try route</purpose>
+      <template>
+---
+title: Your Try Sessions
+layout: base.njk
+---
+
+<div id="try-sessions-container">
+  <noscript>
+    <p class="govuk-body">JavaScript is required to view and manage your try sessions.</p>
+    <p class="govuk-body"><a href="/api/auth/login" class="govuk-link">Sign in</a> to continue.</p>
+  </noscript>
+</div>
+
+<script src="/assets/try.bundle.js"></script>
+      </template>
+    </code>
+
+    <code type="to-create" path="src/try/ui/try-page.ts">
+      <purpose>Try page component with auth-based rendering</purpose>
+      <implementation-notes>
+        <note>Import authState from auth-provider</note>
+        <note>Subscribe to auth state changes on init</note>
+        <note>Render empty state if unauthenticated</note>
+        <note>Render sessions placeholder if authenticated (Story 7.2 completes this)</note>
+        <note>Use GOV.UK Design System classes</note>
+      </implementation-notes>
+    </code>
+  </artifacts>
+
+  <govuk-components>
+    <component name="govuk-heading-l" usage="Page heading 'Sign in to view your try sessions'"/>
+    <component name="govuk-body" usage="Body text paragraph"/>
+    <component name="govuk-button govuk-button--start" usage="Sign in CTA button with arrow icon"/>
+    <component name="govuk-link" usage="Links in noscript fallback"/>
+  </govuk-components>
+
+  <constraints>
+    <constraint type="govuk-design-system">
+      Must use GOV.UK Design System components and classes.
+      Heading: govuk-heading-l
+      Body: govuk-body
+      Button: govuk-button govuk-button--start
+    </constraint>
+    <constraint type="progressive-enhancement">
+      Page must provide noscript fallback for users without JavaScript.
+      Core functionality (sign in link) accessible without JS.
+    </constraint>
+    <constraint type="accessibility">
+      Start button must include arrow SVG icon (GOV.UK pattern).
+      All elements keyboard accessible.
+      Focus management on page load.
+    </constraint>
+  </constraints>
+
+  <acceptance-criteria-mapping>
+    <ac number="1" description="Empty State Display for Unauthenticated Users">
+      <implementation>Check authState.isAuthenticated() on subscribe callback, render empty state if false</implementation>
+      <validation>Manual test: Visit /try without token, verify empty state shown</validation>
+    </ac>
+    <ac number="2" description="Sign In Button Functionality">
+      <implementation>Button href="/api/auth/login"</implementation>
+      <validation>Click button, verify redirect to OAuth</validation>
+    </ac>
+    <ac number="3" description="Return to /try Page After Auth">
+      <implementation>OAuth callback preserves return URL (existing functionality)</implementation>
+      <validation>After auth, verify returned to /try page</validation>
+    </ac>
+    <ac number="4" description="GOV.UK Design System Compliance">
+      <implementation>Use govuk-heading-l, govuk-body, govuk-button--start classes</implementation>
+      <validation>Inspect elements, verify correct classes applied</validation>
+    </ac>
+    <ac number="5" description="Dynamic State Update on Auth Change">
+      <implementation>authState.subscribe() triggers re-render on auth change</implementation>
+      <validation>Sign in via another tab, verify /try page updates</validation>
+    </ac>
+  </acceptance-criteria-mapping>
+
+  <learnings-from-previous>
+    <learning story="5.1" key="authState-subscription">
+      auth-nav.ts shows how to subscribe to AuthState changes.
+      Callback receives boolean isAuthenticated parameter.
+      Immediately called on subscribe with current state.
+    </learning>
+    <learning story="5.8" key="401-redirect">
+      401 responses automatically redirect to OAuth.
+      checkAuthStatus() can verify server-side auth state.
+    </learning>
+  </learnings-from-previous>
+
+  <testing-notes>
+    <note name="unit-tests">
+      Test renderEmptyState() generates correct HTML.
+      Test authState subscription callback invoked.
+      Mock sessionStorage for authenticated/unauthenticated states.
+    </note>
+    <note name="manual-testing">
+      Visit /try without token - see empty state.
+      Click Sign in - redirect to OAuth.
+      Complete OAuth - return to /try, see sessions placeholder.
+    </note>
+  </testing-notes>
+</story-context>

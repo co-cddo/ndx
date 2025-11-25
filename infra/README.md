@@ -1,7 +1,7 @@
 # NDX Infrastructure
 
-**Last Updated:** 2025-11-21
-**Document Version:** 1.3
+**Last Updated:** 2025-11-25
+**Document Version:** 1.4
 **Review:** Update this README when infrastructure changes
 
 ## Overview
@@ -18,30 +18,48 @@ This directory contains the AWS Cloud Development Kit (CDK) infrastructure code 
 
 ### Overview
 
-The NDX CloudFront distribution uses cookie-based routing to enable safe testing of new UI versions before full production rollout. This implements the strangler pattern for gradual UI migration.
+The NDX CloudFront distribution uses cookie-based routing to enable safe rollback to legacy content if issues arise. By default, all traffic is served from the new `ndx-static-prod` S3 bucket.
 
 - **Cookie Name:** `NDX` (case-sensitive)
-- **Cookie Value:** `true` (exact match, case-sensitive)
+- **Cookie Value:** `legacy` (exact match, case-sensitive)
 - **Behavior:**
-  - With `NDX=true`: Routes to `ndx-static-prod` S3 bucket (new UI)
-  - Without cookie: Routes to existing S3Origin (production site)
-  - API routes: Unaffected (API Gateway origin unchanged)
+  - **Default (no cookie):** Routes to `ndx-static-prod` S3 bucket (new site)
+  - **With `NDX=legacy`:** Routes to existing S3Origin (legacy site)
+  - **API routes:** Unaffected (API Gateway origin unchanged)
 
-### How to Test New UI
+### URI Rewriting for S3 Compatibility
 
-Testers can easily opt-in to see the new UI version by setting a cookie in their browser:
+The CloudFront Function automatically rewrites URIs to work correctly with S3:
+
+| Request URI | Rewritten To | Reason |
+|-------------|--------------|--------|
+| `/About/` | `/About/index.html` | Trailing slash |
+| `/try` | `/try/index.html` | No file extension |
+| `/catalogue/aws` | `/catalogue/aws/index.html` | No file extension |
+| `/assets/style.css` | `/assets/style.css` | Has extension (unchanged) |
+| `/index.html` | `/index.html` | Has extension (unchanged) |
+
+**Rules:**
+1. If URI ends with `/` → append `index.html`
+2. If URI has no `.` (no file extension) → append `/index.html`
+3. Otherwise → leave URI unchanged
+
+### How to Test Legacy Fallback
+
+If issues are detected with the new site, testers can temporarily view the legacy content:
 
 1. Open browser DevTools Console (F12)
-2. Set cookie: `document.cookie = "NDX=true; path=/"`
+2. Set cookie: `document.cookie = "NDX=legacy; path=/"`
 3. Browse to https://d7roov8fndsis.cloudfront.net/
-4. You should see content from new S3 bucket
-5. To revert: `document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"`
+4. You should see content from legacy S3 bucket
+5. To revert to new site: `document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"`
 
 **Notes:**
-- Cookie must be set exactly as shown (case-sensitive)
+- Cookie must be set exactly as shown (case-sensitive: `legacy` not `LEGACY`)
 - Cookie applies to all pages on the site
 - Cookie persists until manually removed or browser closed
 - No admin interface required - testers self-manage cookies
+- Default behavior (no cookie) serves the new site
 
 ---
 
@@ -310,12 +328,18 @@ After CloudFront deployment completes and propagates:
    ```
 
 3. **Manual cookie routing test:**
-   - Test without cookie: Browse to site, verify existing UI loads
-   - Set cookie: `document.cookie = "NDX=true; path=/"`
-   - Reload page, verify new UI loads
-   - Clear cookie, verify revert to existing UI
+   - Test without cookie: Browse to site, verify **new UI loads** (default behavior)
+   - Set cookie: `document.cookie = "NDX=legacy; path=/"`
+   - Reload page, verify **legacy UI loads**
+   - Clear cookie: `document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"`
+   - Reload page, verify revert to new UI
 
-4. **Check CloudWatch metrics for errors** (see [Monitoring](#monitoring) section)
+4. **Test URI rewriting:**
+   - Browse to `/try` (no trailing slash) - should load correctly
+   - Browse to `/About/` (with trailing slash) - should load correctly
+   - Browse to `/assets/css/govuk-frontend.min.css` - should load CSS file
+
+5. **Check CloudWatch metrics for errors** (see [Monitoring](#monitoring) section)
 
 ### Static Site File Deployment
 
@@ -553,6 +577,7 @@ Did you modify files in infra/lib/ or infra/bin/?
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4 | 2025-11-25 | **Inverted routing logic**: Default now routes to ndx-static-prod (new site), NDX=legacy cookie routes to old origin. Added URI rewriting for S3 compatibility: trailing slashes and extensionless URLs automatically append /index.html. Added CloudFront invalidation to deploy script. |
 | 1.3 | 2025-11-21 | Expanded Rollback Procedures section with comprehensive three-tier rollback documentation (Story 3.4). Added prerequisites, decision matrix, detailed validation commands, escalation paths, and realistic timing estimates for each option. Included expected outputs for all validation commands. |
 | 1.2 | 2025-11-21 | Added CloudFront Cookie-Based Routing section with testing guide. Updated Deployment Process with CloudFront-specific pre/post-deployment validation. Added comprehensive Monitoring section for CloudFront metrics. Enhanced Troubleshooting with CloudFront cookie routing issues and rollback procedures. Updated Overview to reflect CloudFront CDN capability. |
 | 1.1 | 2025-11-18 | Added Testing, Deployment Process, Infrastructure Changes, and Maintenance sections. Reorganized Development Workflow. Enhanced with deployment automation details and living document maintenance process. |
@@ -627,7 +652,7 @@ cat /tmp/index.html
 
 #### Cookie routing not working
 
-**Symptoms:** Setting `NDX=true` cookie does not route to new UI
+**Symptoms:** Setting `NDX=legacy` cookie does not route to legacy UI
 
 **Diagnostic steps:**
 1. Verify CloudFront propagation complete (10-15 minutes after deploy)
@@ -643,9 +668,22 @@ cat /tmp/index.html
 
 **Solutions:**
 - Wait full 15 minutes for propagation if deployment just completed
-- Ensure cookie syntax exact: `document.cookie = "NDX=true; path=/"`
+- Ensure cookie syntax exact: `document.cookie = "NDX=legacy; path=/"` (case-sensitive!)
 - Clear browser cache and cookies, try again
 - Verify distribution status shows "Deployed" not "InProgress"
+
+#### URLs returning 404 or Access Denied
+
+**Symptoms:** Directory-style URLs like `/try` or `/About/` returning errors
+
+**Diagnostic steps:**
+1. Verify the CloudFront Function is attached and published
+2. Check if the file exists in S3 with the correct path (e.g., `/try/index.html`)
+
+**Solutions:**
+- The CloudFront Function should automatically rewrite `/try` → `/try/index.html`
+- Ensure the content exists at the rewritten path in S3
+- Verify function is published (not just saved as draft)
 
 #### Production site not loading
 

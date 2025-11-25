@@ -1,0 +1,250 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5</storyId>
+    <title>Sign Out Functionality</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-5-sign-out-functionality.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>government user</asA>
+    <iWant>to sign out of NDX</iWant>
+    <soThat>I can end my session and clear my authentication</soThat>
+    <tasks>
+      <task id="1" ac="1,5">Implement signOut Function
+        <subtask id="1.1">Add signOut() method to src/try/auth/auth-provider.ts</subtask>
+        <subtask id="1.2">Clear sessionStorage with sessionStorage.removeItem('isb-jwt')</subtask>
+        <subtask id="1.3">Call AuthState.notify() to update all subscribers</subtask>
+        <subtask id="1.4">Redirect to home page with window.location.href = '/'</subtask>
+        <subtask id="1.5">Write unit tests for signOut function</subtask>
+      </task>
+      <task id="2" ac="1,2">Wire Sign Out Button Event Handler
+        <subtask id="2.1">Attach click event listener to sign out button</subtask>
+        <subtask id="2.2">Call signOut() on button click</subtask>
+        <subtask id="2.3">Verify button handler works in multiple browsers</subtask>
+        <subtask id="2.4">Write unit tests for event handler attachment</subtask>
+      </task>
+      <task id="3" ac="2,5">Verify UI State Updates
+        <subtask id="3.1">Verify navigation shows "Sign in" after sign out</subtask>
+        <subtask id="3.2">Verify AuthState subscribers receive notification</subtask>
+        <subtask id="3.3">Test UI state consistency across page navigations</subtask>
+        <subtask id="3.4">Write E2E test for sign out UI flow</subtask>
+      </task>
+      <task id="4" ac="3">Validate Feature Access Blocked
+        <subtask id="4.1">Navigate to /try page after sign out</subtask>
+        <subtask id="4.2">Verify empty state message displayed</subtask>
+        <subtask id="4.3">Verify no session data accessible</subtask>
+        <subtask id="4.4">Write E2E test for /try page access after sign out</subtask>
+      </task>
+      <task id="5" ac="4">Test API Authorization Cleared
+        <subtask id="5.1">Make API call after sign out</subtask>
+        <subtask id="5.2">Verify no Authorization header present</subtask>
+        <subtask id="5.3">Verify API returns 401 Unauthorized</subtask>
+        <subtask id="5.4">Write unit test for API client without token</subtask>
+      </task>
+      <task id="6" ac="1,2,3,4,5">E2E Test Suite for Sign Out
+        <subtask id="6.1">Create tests/e2e/auth/sign-out.spec.ts</subtask>
+        <subtask id="6.2">Test: Sign out clears sessionStorage</subtask>
+        <subtask id="6.3">Test: Sign out redirects to home page</subtask>
+        <subtask id="6.4">Test: Navigation updates to show "Sign in"</subtask>
+        <subtask id="6.5">Test: /try page shows empty state after sign out</subtask>
+        <subtask id="6.6">Run full E2E suite and verify passing</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1" title="Sign Out Button Click">
+      Given I am authenticated (JWT in sessionStorage)
+      When I click the "Sign out" button
+      Then client-side JavaScript clears sessionStorage (sessionStorage.removeItem('isb-jwt'))
+      And I am redirected to home page (/)
+    </criterion>
+    <criterion id="2" title="UI State Update">
+      Given I have clicked "Sign out"
+      When the home page loads
+      Then I see "Sign in" button (not "Sign out")
+      And the navigation reflects unauthenticated state
+    </criterion>
+    <criterion id="3" title="Feature Access Blocked">
+      Given I have signed out
+      When I navigate to /try page
+      Then I see the unauthenticated empty state
+      And I cannot access authenticated features
+    </criterion>
+    <criterion id="4" title="API Authorization Cleared">
+      Given I have signed out
+      When I make subsequent API calls
+      Then requests do NOT include Authorization header
+      And API calls return 401 Unauthorized
+    </criterion>
+    <criterion id="5" title="AuthState Event Notification">
+      Given I click "Sign out"
+      When sessionStorage is cleared
+      Then AuthState.notify() is called
+      And all subscribed components update to unauthenticated state
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics/epic-5-authentication-foundation.md</path>
+        <title>Epic 5: Authentication Foundation</title>
+        <section>Story 5.5: Sign Out Functionality (Lines 231-289)</section>
+        <snippet>Story 5.5 defines sign out flow: clear sessionStorage, notify subscribers via ADR-024 event pattern, redirect to home page. FR-TRY-7, FR-TRY-14 covered.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy Architecture</title>
+        <section>ADR-024: Authentication State Management</section>
+        <snippet>Event-driven pattern using AuthState class with subscribe/notify. Sign out triggers notify() to update all subscribed components (nav links, try buttons, /try page).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>NDX Architecture</title>
+        <section>Testing Architecture (ADR-006)</section>
+        <snippet>Multi-layer testing: Jest for unit tests, Playwright for E2E. E2E tests in tests/e2e/ directory. Auth tests in tests/e2e/auth/.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/5-4-sessionstorage-jwt-persistence.md</path>
+        <title>Story 5.4: sessionStorage JWT Persistence</title>
+        <section>Dev Agent Record - Learnings</section>
+        <snippet>Token key 'isb-jwt' consistent. AuthState pattern validated. Playwright infrastructure ready. E2E test patterns established in tests/e2e/auth/sessionstorage-persistence.spec.ts.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/try/auth/auth-provider.ts</path>
+        <kind>service</kind>
+        <symbol>AuthState.logout()</symbol>
+        <lines>188-196</lines>
+        <reason>EXISTING logout() method already implemented - removes token from sessionStorage and calls notify(). Story 5.5 may only need to wire the event handler.</reason>
+      </file>
+      <file>
+        <path>src/try/ui/auth-nav.ts</path>
+        <kind>component</kind>
+        <symbol>handleSignOut() (commented out), renderAuthNav()</symbol>
+        <lines>68-123</lines>
+        <reason>Contains commented handleSignOut function and TODO for Story 5.5. Sign out link already rendered with data-action="signout". Need to uncomment and wire event listener.</reason>
+      </file>
+      <file>
+        <path>src/try/main.ts</path>
+        <kind>entry-point</kind>
+        <symbol>initAuthNav()</symbol>
+        <lines>23-32</lines>
+        <reason>Initializes auth navigation on DOMContentLoaded. Already calls initAuthNav(). No changes expected.</reason>
+      </file>
+      <file>
+        <path>src/try/auth/auth-provider.test.ts</path>
+        <kind>test</kind>
+        <symbol>AuthState tests</symbol>
+        <lines>all</lines>
+        <reason>Existing unit tests for AuthState. Add tests for logout() method and sign out flow.</reason>
+      </file>
+      <file>
+        <path>tests/e2e/auth/sessionstorage-persistence.spec.ts</path>
+        <kind>e2e-test</kind>
+        <symbol>sessionStorage E2E tests</symbol>
+        <lines>all</lines>
+        <reason>Reference for E2E test patterns. Use similar structure for sign-out.spec.ts.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="@playwright/test" version="^1.56.1" />
+        <package name="jest" version="^29.7.0" />
+        <package name="jest-environment-jsdom" version="^29.7.0" />
+        <package name="typescript" version="^5.7.2" />
+        <package name="esbuild" version="^0.24.2" />
+        <package name="ts-jest" version="^29.2.5" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="ADR-024">Use event-driven AuthState pattern for state changes - call notify() after modifying sessionStorage</constraint>
+    <constraint source="ADR-016">Use sessionStorage (not localStorage) with key 'isb-jwt' for token storage</constraint>
+    <constraint source="PRD FR-TRY-7">Sign out must clear session and redirect to home page</constraint>
+    <constraint source="PRD FR-TRY-14">Sign out must update navigation to show "Sign in" button</constraint>
+    <constraint source="Architecture">No server-side logout required (JWT stateless). Future SSO logout abstracted in auth-provider interface.</constraint>
+    <constraint source="Testing">All acceptance criteria must have corresponding E2E tests</constraint>
+    <constraint source="GOV.UK">Use govuk-header__link class for sign out link styling</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>authState.logout()</name>
+      <kind>method</kind>
+      <signature>logout(): void - Removes JWT from sessionStorage and calls notify()</signature>
+      <path>src/try/auth/auth-provider.ts:188</path>
+    </interface>
+    <interface>
+      <name>authState.notify()</name>
+      <kind>method</kind>
+      <signature>notify(): void - Notifies all subscribed listeners of auth state change</signature>
+      <path>src/try/auth/auth-provider.ts:141</path>
+    </interface>
+    <interface>
+      <name>authState.isAuthenticated()</name>
+      <kind>method</kind>
+      <signature>isAuthenticated(): boolean - Returns true if JWT token exists in sessionStorage</signature>
+      <path>src/try/auth/auth-provider.ts:82</path>
+    </interface>
+    <interface>
+      <name>Sign Out Link</name>
+      <kind>DOM element</kind>
+      <signature>a[data-action="signout"] - Sign out link rendered in #auth-nav container</signature>
+      <path>src/try/ui/auth-nav.ts:74</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest for unit tests with jsdom environment. Playwright for E2E tests with mitmproxy proxy integration (port 8081).
+      Test files follow naming: *.test.ts for unit tests, *.spec.ts for E2E tests.
+      Unit tests in src/**/*.test.ts, E2E tests in tests/e2e/**/*.spec.ts.
+      Mock sessionStorage and window.location in unit tests. Use real browser context in E2E tests.
+    </standards>
+    <locations>
+      <location>src/try/auth/auth-provider.test.ts</location>
+      <location>tests/e2e/auth/</location>
+      <location>tests/e2e/auth/sign-out.spec.ts (to be created)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Unit test: authState.logout() removes token from sessionStorage</idea>
+      <idea ac="1">Unit test: authState.logout() calls notify() after removing token</idea>
+      <idea ac="1,2">E2E test: Click sign out button → verify redirect to home page</idea>
+      <idea ac="2">E2E test: After sign out, navigation shows "Sign in" (not "Sign out")</idea>
+      <idea ac="3">E2E test: After sign out, /try page shows unauthenticated empty state</idea>
+      <idea ac="4">Unit test: API calls without token do not include Authorization header</idea>
+      <idea ac="5">Unit test: Sign out triggers AuthState.notify() and updates all subscribers</idea>
+      <idea ac="1,2,3,4,5">E2E test suite: Full sign in → sign out → verify state flow</idea>
+    </ideas>
+  </tests>
+
+  <implementation-notes>
+    <note priority="high">
+      DISCOVERY: logout() method already exists in auth-provider.ts (lines 188-196).
+      It already clears sessionStorage and calls notify().
+      Primary task is wiring the event handler in auth-nav.ts.
+    </note>
+    <note priority="high">
+      DISCOVERY: handleSignOut() function exists but is commented out in auth-nav.ts (lines 118-122).
+      Uncomment and wire to sign out link event listener.
+    </note>
+    <note priority="medium">
+      auth-nav.ts line 79 has TODO: "Story 5.5: Add event listener for sign out"
+      Need to uncomment the event listener attachment in renderAuthNav() function.
+    </note>
+    <note priority="low">
+      Future consideration: Production SSO may require server-side logout endpoint.
+      Current implementation is client-side only (JWT stateless).
+    </note>
+  </implementation-notes>
+</story-context>

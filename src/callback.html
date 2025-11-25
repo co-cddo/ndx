@@ -36,7 +36,7 @@ title: Signing you in...
 
 <script type="module">
   // OAuth callback handler
-  import { handleOAuthCallback, parseOAuthError } from './assets/try.bundle.js';
+  import { handleOAuthCallback, parseOAuthError } from '/assets/try.bundle.js';
 
   // Check for OAuth errors first (from Story 5.2)
   const error = parseOAuthError();
@@ -51,8 +51,7 @@ title: Signing you in...
     }, 5000);
   } else {
     // No error, proceed with token extraction and redirect (Story 5.3)
-    document.addEventListener('DOMContentLoaded', () => {
-      handleOAuthCallback();
-    });
+    // Execute immediately - DOMContentLoaded may have already fired since script is at page bottom
+    handleOAuthCallback();
   }
 </script>

@@ -27,9 +27,9 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         // Proxy is set at the use level above, not in launchOptions
-        launchOptions: {
-          headless: process.env.CI ? true : false,
-        },
+        // launchOptions: {
+        // headless: process.env.CI ? true : false,
+        // },
       },
     },
   ],
@@ -37,9 +37,9 @@ export default defineConfig({
   // Run dev server in CI (if needed)
   webServer: process.env.CI
     ? {
-        command: "yarn start",
-        url: "http://localhost:8080",
-        reuseExistingServer: false,
-      }
+      command: "yarn start",
+      url: "http://localhost:8080",
+      reuseExistingServer: false,
+    }
     : undefined,
 })

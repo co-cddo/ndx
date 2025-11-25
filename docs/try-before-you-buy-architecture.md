@@ -526,44 +526,39 @@ Most government services are desktop-first. This feature must support full try f
 
 ### Authentication Flow Architecture
 
-**ADR-023: OAuth Callback Page Pattern**
-- **Decision:** Dedicated `/callback` page handles OAuth redirect and token extraction
+**ADR-023: OAuth Callback Page Pattern (REVISED)**
+- **Decision:** Homepage (`/`) handles OAuth redirect and token extraction
 - **Rationale:**
-  - Separates OAuth flow from application logic
-  - Prevents token exposure in URL history on application pages
-  - Simplifies OAuth redirect configuration (single callback URL)
-  - Follows OAuth best practices (dedicated callback endpoint)
+  - OAuth provider (Innovation Sandbox) redirects to `https://ndx.gov.uk/` after authentication
+  - Homepage script detects `?token=` parameter and extracts JWT token
+  - Simplifies user experience (lands on familiar homepage after auth)
+  - Maintains security (token still extracted and removed from URL immediately)
 - **Implementation:**
-  - Eleventy generates static `/callback.html` page
-  - JavaScript on `/callback` page:
-    1. Extracts `?token=...` from URL query params
-    2. Stores token in sessionStorage with key `isb-jwt`
-    3. Calls `/api/auth/login/status` to verify token
-    4. Redirects to original destination (stored in sessionStorage before OAuth redirect) or home page
-    5. Cleans up URL (removes token from browser history)
+  - Homepage (`src/index.md`) includes OAuth callback handler script
+  - JavaScript on homepage:
+    1. Checks for `?token=` parameter in URL
+    2. If present, extracts token and stores in sessionStorage with key `isb-jwt`
+    3. Cleans up URL (removes token from browser history using `history.replaceState`)
+    4. Redirects to original destination (stored in sessionStorage before OAuth redirect) or stays on homepage
   ```typescript
-  // /callback page JavaScript
+  // Homepage OAuth callback handler
+  import { handleOAuthCallback, parseOAuthError } from '/assets/try.bundle.js';
+
   const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  const hasToken = urlParams.has('token');
+  const hasError = urlParams.has('error');
 
-  if (token) {
-    sessionStorage.setItem('isb-jwt', token);
-
-    // Verify token
-    const isValid = await verifyToken(token);
-
-    if (isValid) {
-      // Get original destination
-      const returnTo = sessionStorage.getItem('auth-return-to') || '/';
-      sessionStorage.removeItem('auth-return-to');
-
-      // Clean up URL and redirect
-      window.history.replaceState({}, document.title, '/callback');
-      window.location.href = returnTo;
-    }
+  if (hasToken) {
+    // Extract token, store in sessionStorage, clean URL, redirect
+    handleOAuthCallback();
+  } else if (hasError) {
+    // Display OAuth error message to user
+    const error = parseOAuthError();
+    // Show error UI on homepage
   }
   ```
-- **Impact:** Secure OAuth flow, token not exposed in application URLs
+- **Impact:** Secure OAuth flow, token not exposed in URL history, simpler user experience
+- **Note:** Dedicated `/callback` page exists but is NOT used by OAuth provider
 
 **ADR-024: Authentication State Management**
 - **Decision:** Reactive authentication state using event-driven pattern
@@ -1106,7 +1101,7 @@ Most government services are desktop-first. This feature must support full try f
   - Aligns with existing Eleventy static site architecture
   - No server-side runtime required (cost-effective, simple)
   - Innovation Sandbox API is external service (no backend to deploy)
-  - OAuth callback handled by external OAuth provider
+  - OAuth callback handled on homepage (OAuth provider redirects to https://ndx.gov.uk/)
   - CDN distribution for performance (government service requirement)
 - **Build Pipeline:**
   ```bash
@@ -1120,11 +1115,11 @@ Most government services are desktop-first. This feature must support full try f
 - **Output Structure:**
   ```
   _site/                        # Build output directory
-  ├── index.html                # Home page
+  ├── index.html                # Home page (handles OAuth callback with ?token= parameter)
   ├── try/
   │   └── index.html            # /try page (static HTML shell)
   ├── callback/
-  │   └── index.html            # OAuth callback page
+  │   └── index.html            # Legacy OAuth callback page (NOT USED - OAuth redirects to homepage)
   ├── catalogue/
   │   └── aws/
   │       ├── lambda.html       # Product pages with Try button
@@ -1191,19 +1186,19 @@ Most government services are desktop-first. This feature must support full try f
     development: {
       apiBaseURL: 'http://localhost:3000/api',
       oauthLoginURL: 'http://localhost:3000/auth/login',
-      oauthCallbackURL: 'http://localhost:3000/callback',
+      oauthCallbackURL: 'http://localhost:3000/',  // OAuth redirects to homepage
       environment: 'development',
     },
     staging: {
       apiBaseURL: 'https://staging-api.innovation-sandbox.aws.amazon.com',
       oauthLoginURL: 'https://staging.ndx.gov.uk/api/auth/login',
-      oauthCallbackURL: 'https://staging.ndx.gov.uk/callback',
+      oauthCallbackURL: 'https://staging.ndx.gov.uk/',  // OAuth redirects to homepage
       environment: 'staging',
     },
     production: {
       apiBaseURL: 'https://api.innovation-sandbox.aws.amazon.com',
       oauthLoginURL: 'https://ndx.gov.uk/api/auth/login',
-      oauthCallbackURL: 'https://ndx.gov.uk/callback',
+      oauthCallbackURL: 'https://ndx.gov.uk/',  // OAuth redirects to homepage
       environment: 'production',
     },
   };

@@ -1,0 +1,20 @@
+{% extends "layouts/base.njk" %}
+
+{% block beforeContent %}
+  {{ govukBreadcrumbs({
+    classes: "govuk-!-display-none-print",
+    items: breadcrumbItems
+  }) if showBreadcrumbs }}
+{% endblock %}
+
+{% block content %}
+  {# Note: H1 heading is rendered by JavaScript in try-page.ts based on auth state #}
+  {# - Unauthenticated: "Sign in to view your try sessions" #}
+  {# - Authenticated: "Your try sessions" #}
+  {{ content | safe }}
+{% endblock %}
+
+{% block scripts %}
+  {# Load try.bundle.js to initialize TryPage component (Story 5.9, 7.x) #}
+  <script type="module" src="/assets/try.bundle.js"></script>
+{% endblock %}

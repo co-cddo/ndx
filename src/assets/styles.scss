@@ -78,6 +78,126 @@ $_font-family: system-ui, sans-serif;
   display: none;
 }
 
+// AUP Modal styles - Story 6.6
+// Moved from JavaScript to comply with CSP (no inline styles)
+.aup-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+
+  &[aria-hidden="true"] {
+    display: none;
+  }
+}
+
+.aup-modal {
+  background: #fff;
+  max-width: 640px;
+  width: 100%;
+  border-radius: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  margin: auto;
+
+  &__header {
+    padding: 20px 30px;
+    border-bottom: 1px solid #b1b4b6;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__body {
+    padding: 20px 30px;
+  }
+
+  &__info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f3f2f1;
+    border-left: 4px solid #1d70b8;
+  }
+
+  &__info-text {
+    margin: 0;
+
+    & + & {
+      margin-top: 10px;
+    }
+  }
+
+  &__aup-container {
+    padding: 15px;
+    border: 2px solid #b1b4b6;
+    background: #fff;
+    margin-bottom: 20px;
+  }
+
+  &__aup-content {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  &__checkbox-group {
+    margin-bottom: 20px;
+  }
+
+  &__footer {
+    padding: 20px 30px;
+    border-top: 1px solid #b1b4b6;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-start;
+  }
+
+  &__error {
+    padding: 15px;
+    margin-bottom: 20px;
+    background: #f3f2f1;
+    border-left: 4px solid #d4351c;
+    color: #d4351c;
+
+    // Hidden by default, shown via class
+    &--hidden {
+      display: none;
+    }
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    color: #505a5f;
+  }
+
+  &__spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #b1b4b6;
+    border-top-color: #1d70b8;
+    border-radius: 50%;
+    animation: aup-spin 1s linear infinite;
+  }
+}
+
+@keyframes aup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Body scroll lock when modal is open
+body.aup-modal-open {
+  overflow: hidden;
+}
+
 // govuk-body
 .experimental_header {
   @extend .govuk-body;

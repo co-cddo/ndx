@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This architecture implements cookie-based origin routing for the National Digital Exchange (NDX) CloudFront distribution, enabling safe testing of new UI versions via the strangler pattern. The solution uses AWS CloudFront Functions for sub-millisecond cookie inspection, routing testers with `NDX=true` cookie to a new S3 origin while preserving existing production behavior for all other users.
+This architecture implements cookie-based origin routing for the National Digital Exchange (NDX) CloudFront distribution, enabling safe rollback to legacy content if issues arise. The solution uses AWS CloudFront Functions for sub-millisecond cookie inspection and URI rewriting. By default, all traffic routes to the new `ndx-static-prod` S3 origin. Users can opt-out to the legacy origin by setting `NDX=legacy` cookie.
 
 **Key Architectural Decisions:**
 - **Routing Mechanism:** CloudFront Functions (sub-ms latency, cost-effective)
@@ -100,10 +100,13 @@ ndx/
 - Configure Cache Policy with cookie forwarding
 
 **CloudFront Function → Origins:**
-- Function inspects `Cookie` header
+- Function inspects `Cookie` header and URI
+- Rewrites directory-style URIs for S3 compatibility:
+  - `/About/` → `/About/index.html` (trailing slash)
+  - `/try` → `/try/index.html` (no file extension)
 - Parses NDX cookie value
-- Routes to `ndx-static-prod` origin if `NDX=true`
-- Defaults to existing `S3Origin` otherwise
+- Routes to existing `S3Origin` if `NDX=legacy`
+- **Defaults to `ndx-static-prod`** origin otherwise (inverted logic)
 - Execution time: < 1ms (sub-millisecond)
 
 **Testing → AWS:**
@@ -176,47 +179,53 @@ export class NdxStaticStack extends cdk.Stack {
 
 **Function Structure:**
 ```javascript
+import cf from 'cloudfront';
+
 function handler(event) {
   var request = event.request;
-  var cookies = parseCookies(request.headers.cookie);
+  var cookies = request.cookies;
+  var uri = request.uri;
 
-  // Route based on NDX cookie
-  if (cookies['NDX'] === 'true') {
-    // Route to new S3 origin
-    request.origin = {
-      s3: {
-        domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-        region: 'us-west-2',
-        authMethod: 'origin-access-control',
-        originAccessControlId: 'E3P8MA1G9Y5BYE'
-      }
-    };
+  // Handle directory-style URLs for S3 compatibility
+  // e.g., /About/ -> /About/index.html, /try -> /try/index.html
+  if (uri.endsWith('/')) {
+    request.uri = uri + 'index.html';
+  } else if (uri.indexOf('.') === -1) {
+    // No file extension (no dot in URI) - treat as directory
+    request.uri = uri + '/index.html';
   }
-  // Else: Request unchanged, routes to default origin (S3Origin)
 
-  return request;
-}
+  // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
+  var ndxCookie = cookies['NDX'];
 
-function parseCookies(cookieHeader) {
-  if (!cookieHeader) return {};
+  if (ndxCookie && ndxCookie.value === 'legacy') {
+    // Use default cache behavior origin (old S3Origin) - no modification needed
+    return request;
+  }
 
-  var cookies = {};
-  cookieHeader.value.split(';').forEach(function(cookie) {
-    var parts = cookie.split('=');
-    var key = parts[0].trim();
-    var value = parts[1] ? parts[1].trim() : '';
-    cookies[key] = value;
+  // Default: route to ndx-static-prod with OAC authentication
+  cf.updateRequestOrigin({
+    domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
+    originAccessControlConfig: {
+      enabled: true,
+      region: 'us-west-2',
+      signingBehavior: 'always',
+      signingProtocol: 'sigv4',
+      originType: 's3'
+    }
   });
 
-  return cookies;
+  return request;
 }
 ```
 
 **Key Patterns:**
 - Use `var` (CloudFront Functions JavaScript runtime)
-- No ES6 features (arrow functions, const/let, template literals)
-- Graceful handling of missing cookie header
-- Fail-open: If error, request unchanged (routes to existing origin)
+- Use CloudFront `cf.updateRequestOrigin()` API for origin switching
+- URI rewriting happens before origin selection
+- **Inverted logic**: Default routes to new origin, `NDX=legacy` opts out
+- Graceful handling of missing cookie (routes to new origin)
+- Fail-open: If error, request unchanged (routes to new origin)
 - No console.log (adds cost, not needed for simple logic)
 
 ### Error Handling
@@ -242,16 +251,28 @@ function parseCookies(cookieHeader) {
 **Unit Tests (CloudFront Function):**
 ```typescript
 describe('cookie-router', () => {
-  it('should route to new origin when NDX=true', () => {
-    const event = createTestEvent({ cookies: { NDX: 'true' } });
+  it('should route to new origin by default (no cookie)', () => {
+    const event = createTestEvent({ uri: '/index.html', cookies: {} });
     const result = handler(event);
     expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
   });
 
-  it('should use default origin when cookie missing', () => {
-    const event = createTestEvent({ cookies: {} });
+  it('should use legacy origin when NDX=legacy', () => {
+    const event = createTestEvent({ uri: '/index.html', cookies: { NDX: { value: 'legacy' } } });
     const result = handler(event);
-    expect(result.origin).toBeUndefined(); // Unchanged
+    expect(result.origin).toBeUndefined(); // Uses default origin
+  });
+
+  it('should rewrite trailing slash URIs', () => {
+    const event = createTestEvent({ uri: '/About/', cookies: {} });
+    const result = handler(event);
+    expect(result.uri).toBe('/About/index.html');
+  });
+
+  it('should rewrite extensionless URIs', () => {
+    const event = createTestEvent({ uri: '/try', cookies: {} });
+    const result = handler(event);
+    expect(result.uri).toBe('/try/index.html');
   });
 });
 ```
@@ -325,16 +346,32 @@ cdk destroy TestStack --force
 - No variations: Not `ndx`, not `Ndx`, not `NDX-FLAG`
 
 **Cookie Value:**
-- Route to new origin: `true` (lowercase, exact match)
-- All other values: Route to existing origin
-- Missing cookie: Route to existing origin
-- Empty value: Route to existing origin
+- Route to legacy origin: `legacy` (lowercase, exact match)
+- All other values: Route to **new origin** (ndx-static-prod)
+- Missing cookie: Route to **new origin** (ndx-static-prod)
+- Empty value: Route to **new origin** (ndx-static-prod)
 
 **Cookie Parsing:**
-- Split on semicolon: `cookie1=value1; cookie2=value2`
-- Trim whitespace from keys and values
-- Handle missing cookie header gracefully
-- No error throwing (fail-open)
+- CloudFront Functions provide parsed cookies object
+- Access via `request.cookies['NDX'].value`
+- Handle missing cookie gracefully (routes to new origin)
+- No error throwing (fail-open to new origin)
+
+### URI Rewriting
+
+**Rules:**
+1. If URI ends with `/` → append `index.html`
+2. If URI has no `.` (no file extension) → append `/index.html`
+3. Otherwise → leave URI unchanged
+
+**Examples:**
+| Input | Output | Rule |
+|-------|--------|------|
+| `/About/` | `/About/index.html` | Trailing slash |
+| `/try` | `/try/index.html` | No extension |
+| `/catalogue/aws` | `/catalogue/aws/index.html` | No extension |
+| `/assets/style.css` | `/assets/style.css` | Has extension |
+| `/index.html` | `/index.html` | Has extension |
 
 ### Origin Configuration
 
@@ -384,14 +421,18 @@ cdk deploy --profile NDX/InnovationSandboxHub
 
 **Post-Deployment Validation:**
 ```bash
-# Test without cookie (should see existing site)
+# Test without cookie (should see NEW site - default behavior)
 curl -I https://d7roov8fndsis.cloudfront.net/
 
-# Set cookie and test (should see new origin)
-# In browser console: document.cookie = "NDX=true; path=/"
+# Test URI rewriting
+curl -I https://d7roov8fndsis.cloudfront.net/try  # Should return 200
+curl -I https://d7roov8fndsis.cloudfront.net/About/  # Should return 200
+
+# Set cookie and test (should see LEGACY origin)
+# In browser console: document.cookie = "NDX=legacy; path=/"
 # Browse to https://d7roov8fndsis.cloudfront.net/
 
-# Clear cookie and test (should revert to existing site)
+# Clear cookie and test (should revert to NEW site)
 # In browser console: document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"
 ```
 
@@ -608,6 +649,90 @@ cdk deploy --profile NDX/InnovationSandboxHub
 # 5. Validate deployment (manual testing with cookie)
 ```
 
+## Testing Architecture
+
+### Overview
+
+The NDX project uses a multi-layer testing strategy to ensure quality and compliance:
+- **Unit Tests:** Jest for TypeScript/JavaScript business logic
+- **E2E Tests:** Playwright for end-to-end user flows
+- **Accessibility Tests:** Playwright + axe-core for WCAG 2.2 compliance
+
+### Playwright E2E Testing
+
+**Purpose:** Validate user journeys, authentication flows, and accessibility compliance
+
+**Architecture:**
+```
+Developer → Playwright Test → playwright.config.ts → mitmproxy (port 8081) → Localhost App
+                                                   ↓
+                                            CloudFront API (prod)
+```
+
+**Key Components:**
+- **Playwright:** Modern E2E testing framework (headless Chromium, Firefox, WebKit)
+- **mitmproxy:** Local proxy forwarding UI to localhost, API to production
+- **playwright-config.json:** Proxy configuration (http://localhost:8081)
+- **playwright.config.ts:** Test runner configuration, browser settings
+
+**Test Organization:**
+```
+tests/
+├── e2e/
+│   ├── auth/
+│   │   ├── sign-in.spec.ts
+│   │   ├── sign-out.spec.ts
+│   │   └── token-persistence.spec.ts
+│   ├── accessibility/
+│   │   ├── auth-ui-a11y.spec.ts
+│   │   └── wcag-audit.spec.ts
+│   └── integration/
+│       ├── lease-request-flow.spec.ts
+│       └── try-sessions-dashboard.spec.ts
+└── fixtures/
+    └── test-data.ts
+```
+
+**CI Integration:**
+- **GitHub Actions:** .github/workflows/test.yml
+- **Test Execution:** On PR and push to main
+- **Services:** mitmproxy started as container service
+- **Artifacts:** Playwright test videos/traces on failure
+
+### Test Execution
+
+**Local Development:**
+```bash
+# Start mitmproxy (Terminal 1)
+yarn dev:proxy
+
+# Start local app server (Terminal 2)
+yarn start
+
+# Run E2E tests (Terminal 3)
+yarn test:e2e
+
+# Run specific test suite
+yarn test:e2e:auth
+yarn test:e2e:accessibility
+```
+
+**CI Pipeline:**
+```bash
+# Automated on PR/push
+# Runs: yarn test (Jest) && yarn test:e2e (Playwright)
+```
+
+### Integration with mitmproxy (Epic 4)
+
+Playwright tests leverage the mitmproxy infrastructure established in Epic 4:
+- Proxy port: 8081 (configured in playwright-config.json)
+- UI routes: Forwarded to localhost:8080
+- API routes: Forwarded to production CloudFront (d7roov8fndsis.cloudfront.net)
+- HTTPS: Certificate trust configured per Epic 4 Story 4.5
+
+**Reference:** See Epic 4 tech spec for complete mitmproxy architecture.
+
 ## Architecture Decision Records (ADRs)
 
 ### ADR-001: CloudFront Functions over Lambda@Edge
@@ -728,6 +853,43 @@ cdk deploy --profile NDX/InnovationSandboxHub
 
 ---
 
+### ADR-006: Playwright for E2E Testing
+
+**Context:** Need automated testing for authentication, accessibility (WCAG 2.2), and user journeys. PRD requires E2E tests with proxy integration (NFR-TRY-TEST-1).
+
+**Decision:** Use Playwright as E2E testing framework.
+
+**Rationale:**
+- Modern, fast, actively maintained by Microsoft
+- Excellent accessibility testing support (integrates with axe-core)
+- Native multi-browser support (Chromium, Firefox, WebKit)
+- Built-in proxy configuration support (works with mitmproxy)
+- Strong TypeScript support (matches project stack)
+- Robust CI/CD integration (GitHub Actions)
+- Auto-wait and retry logic reduces flaky tests
+
+**Alternatives Considered:**
+- **Cypress:** More opinionated, less flexible proxy config, no multi-browser initially
+- **Selenium:** Older, slower, more complex setup
+- **Puppeteer:** Chromium-only, less accessibility tooling
+
+**Consequences:**
+- ✅ Meets PRD NFR-TRY-TEST-1 through NFR-TRY-TEST-7
+- ✅ Enables Epic 8 accessibility testing (WCAG 2.2)
+- ✅ Integrates with existing mitmproxy infrastructure (Epic 4)
+- ✅ Supports authentication flow testing (OAuth mocking)
+- ❌ Additional dependency to maintain
+- ❌ CI pipeline needs browser installation (~200MB)
+
+**Status:** Accepted (Story 8.0)
+
+**Implementation:** Story 8.0 establishes infrastructure, Stories 5.11, 5.10, 8.2+ use it.
+
+---
+
 _Generated by BMAD Decision Architecture Workflow v1.0_
-_Date: 2025-11-20_
+_Date: 2025-11-25_
 _For: cns_
+
+**Change Log:**
+- 2025-11-25: Inverted routing logic (default to new origin, NDX=legacy opts out). Added URI rewriting for S3 compatibility.

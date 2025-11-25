@@ -29,6 +29,32 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
+// UUID validation for try_id field (Story 6.1)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUUID(value) {
+  return UUID_REGEX.test(value)
+}
+
+function validateTryMetadata(data, inputPath) {
+  // Only validate catalogue pages that have try metadata
+  if (!inputPath.includes("/catalogue/") || !data.try_id) {
+    return
+  }
+
+  // Validate try_id format if present
+  if (data.try_id && !isValidUUID(data.try_id)) {
+    console.warn(
+      `⚠️ Invalid try_id format in ${inputPath}: Expected UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000)`,
+    )
+  }
+
+  // Warn if try_id present but try not set to true
+  if (data.try_id && data.try !== true) {
+    console.warn(`⚠️ ${inputPath} has try_id but try is not set to true`)
+  }
+}
+
 function extractContent(markdown, start, end) {
   const startPattern = start ? `(${escapeRegExp(start)})` : ""
   const endPattern = end ? `(${escapeRegExp(end)})` : ""
@@ -83,6 +109,11 @@ export default function (eleventyConfig) {
         { text: "Optimise", href: "/optimise/" },
         { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
       ],
+      // Auth navigation placeholder - rendered via slots.end in service navigation
+      // This is populated by JavaScript (Story 5.1)
+      slots: {
+        end: '<span id="auth-nav" class="app-auth-nav"></span>',
+      },
     },
     footer: {
       meta: {
@@ -124,12 +155,19 @@ export default function (eleventyConfig) {
     return date.toLocaleDateString("en-GB")
   })
 
-  eleventyConfig.addCollection("catalogue", (collection) =>
-    collection
+  eleventyConfig.addCollection("catalogue", (collection) => {
+    const items = collection
       .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")
       .map(useExternalUrl)
-      .sort((a, b) => a.data.title.localeCompare(b.data.title)),
-  )
+      .sort((a, b) => a.data.title.localeCompare(b.data.title))
+
+    // Validate try metadata for each catalogue item (Story 6.1)
+    items.forEach((item) => {
+      validateTryMetadata(item.data, item.inputPath)
+    })
+
+    return items
+  })
 
   // Tag-filtered catalogue collections
   eleventyConfig.addCollection("catalogueByTag", (collection) => {
@@ -152,6 +190,15 @@ export default function (eleventyConfig) {
     })
 
     return byTag
+  })
+
+  // Story 6.3: Collection for "Try Before You Buy" filtered products
+  eleventyConfig.addCollection("catalogueTryable", (collection) => {
+    return collection
+      .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")
+      .map(useExternalUrl)
+      .filter((item) => item.data.try === true)
+      .sort((a, b) => a.data.title.localeCompare(b.data.title))
   })
 
   eleventyConfig.addCollection("challenges", (collection) =>

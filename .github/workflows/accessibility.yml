@@ -1,0 +1,86 @@
+# Story 8.2: Automated Accessibility Testing in CI Pipeline
+#
+# Runs pa11y-ci and axe-core accessibility tests on every PR
+# to ensure WCAG 2.2 AA compliance before merge.
+#
+# ADR-037: Mandatory accessibility testing gate
+# - PR blocked if ANY WCAG 2.2 AA violations detected
+# - Zero tolerance policy for accessibility regressions
+
+name: Accessibility Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  accessibility:
+    name: WCAG 2.2 AA Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build site
+        run: yarn build
+
+      - name: Install pa11y-ci
+        run: npm install -g pa11y-ci
+
+      - name: Start server
+        run: |
+          npx http-server _site -p 8080 &
+          sleep 5
+
+      - name: Run pa11y-ci accessibility tests
+        run: pa11y-ci --config .pa11yci.json
+
+      - name: Upload accessibility report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: |
+            pa11y-report.json
+          retention-days: 30
+
+  lighthouse:
+    name: Lighthouse Accessibility Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build site
+        run: yarn build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          configPath: .lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

@@ -50,5 +50,24 @@ fi
 
 echo "✓ Smoke test passed: Critical files validated"
 echo "✓ Deployment complete: $UPLOADED_FILES files uploaded"
+
+# CloudFront cache invalidation
+DISTRIBUTION_ID="E3THG4UHYDHVWP"
+echo "Invalidating CloudFront cache for distribution $DISTRIBUTION_ID..."
+
+INVALIDATION_ID=$(aws cloudfront create-invalidation \
+  --distribution-id "$DISTRIBUTION_ID" \
+  --paths "/*" \
+  --profile NDX/InnovationSandboxHub \
+  --query 'Invalidation.Id' \
+  --output text)
+
+if [ -z "$INVALIDATION_ID" ]; then
+  echo "Warning: Failed to create CloudFront invalidation"
+else
+  echo "✓ CloudFront invalidation created: $INVALIDATION_ID"
+  echo "  Cache invalidation typically completes in 1-2 minutes"
+fi
+
 echo ""
-echo "⚠️  Note: Site not publicly accessible until CloudFront CDN is configured (growth phase)"
+echo "✓ Deployment complete!"

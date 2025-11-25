@@ -61,7 +61,7 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: Testing, Validation & Operational Readiness (COMPLETED)
-  epic-3: contexted
+  epic-3: done
   3-1-write-cdk-snapshot-tests-for-cloudfront-configuration: done
   3-2-write-fine-grained-assertion-tests-for-critical-properties: done
   3-3-create-integration-test-for-real-aws-deployment: done
@@ -81,63 +81,94 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: Authentication Foundation
-  epic-5: in-progress
-  5-1-sign-in-out-button-ui-components: done
+  # COMPREHENSIVE REVIEW TRIGGERED (2025-11-24): User reports try page empty, try now button not working
+  epic-5: review
+  5-1-sign-in-out-button-ui-components: done  # Fixed: #auth-nav via eleventy.config.js serviceNavigation.slots.end
   5-2-sign-in-oauth-redirect-flow: done
   5-3-jwt-token-extraction-from-url: done
-  5-4-sessionstorage-jwt-persistence: backlog
-  5-5-sign-out-functionality: backlog
-  5-6-api-authorization-header-injection: backlog
-  5-7-authentication-status-check-api: backlog
-  5-8-401-unauthorized-response-handling: backlog
-  5-9-empty-state-ui-for-unauthenticated-try-page: backlog
-  5-10-automated-accessibility-tests-for-auth-ui: backlog
+  5-4-sessionstorage-jwt-persistence: done
+  5-5-sign-out-functionality: done  # Fixed: Sign out UI tests passing (22/24)
+  5-6-api-authorization-header-injection: done
+  5-7-authentication-status-check-api: review  # NEEDS E2E REVIEW
+  5-8-401-unauthorized-response-handling: review  # NEEDS E2E REVIEW
+  5-9-empty-state-ui-for-unauthenticated-try-page: review  # NEEDS E2E REVIEW - try page empty
+  5-10-automated-accessibility-tests-for-auth-ui: review  # NEEDS E2E REVIEW
+  5-11-authentication-e2e-test-suite: review  # NEEDS E2E REVIEW
   epic-5-retrospective: optional
 
   # Epic 6: Catalogue Integration & Sandbox Requests
-  epic-6: backlog
-  6-0-ux-review-checkpoint-gate: backlog
-  6-1-parse-try-metadata-from-product-yaml-frontmatter: backlog
-  6-2-generate-try-before-you-buy-tag-system: backlog
-  6-3-catalogue-tag-filter-for-try-before-you-buy: backlog
-  6-4-try-this-now-for-24-hours-button-on-product-pages: backlog
-  6-5-try-button-authentication-check: backlog
-  6-6-lease-request-modal-overlay-ui: backlog
-  6-7-fetch-and-display-aup-from-innovation-sandbox-api: backlog
-  6-8-aup-checkbox-and-continue-button-state: backlog
-  6-9-submit-lease-request-and-handle-responses: backlog
-  6-10-epic-6-7-integration-testing: backlog
-  6-11-automated-accessibility-tests-for-catalogue-try-ui: backlog
+  # USER REPORTS: Try now button doesn't work
+  epic-6: review
+  6-0-ux-review-checkpoint-gate: review  # NEEDS E2E REVIEW
+  6-1-parse-try-metadata-from-product-yaml-frontmatter: review  # NEEDS E2E REVIEW
+  6-2-generate-try-before-you-buy-tag-system: review  # NEEDS E2E REVIEW
+  6-3-catalogue-tag-filter-for-try-before-you-buy: review  # NEEDS E2E REVIEW
+  6-4-try-this-now-for-24-hours-button-on-product-pages: review  # CRITICAL: Button doesn't work
+  6-5-try-button-authentication-check: review  # NEEDS E2E REVIEW
+  6-6-lease-request-modal-overlay-ui: review  # NEEDS E2E REVIEW
+  6-7-fetch-and-display-aup-from-innovation-sandbox-api: review  # NEEDS E2E REVIEW
+  6-8-aup-checkbox-and-continue-button-state: review  # NEEDS E2E REVIEW
+  6-9-submit-lease-request-and-handle-responses: review  # NEEDS E2E REVIEW
+  6-10-epic-6-7-integration-testing: review  # NEEDS E2E REVIEW
+  6-11-automated-accessibility-tests-for-catalogue-try-ui: review  # NEEDS E2E REVIEW
   epic-6-retrospective: optional
 
   # Epic 7: Try Sessions Dashboard
-  epic-7: backlog
-  7-1-create-try-page-route-and-layout: backlog
-  7-2-fetch-and-display-user-leases: backlog
-  7-3-render-sessions-table-with-govuk-design-system: backlog
-  7-4-status-badge-display-with-color-coding: backlog
-  7-5-expiry-date-formatting-relative-and-absolute: backlog
-  7-6-budget-display-with-cost-formatting: backlog
-  7-7-launch-aws-console-button-for-active-sessions: backlog
-  7-8-remaining-lease-duration-display-for-active-sessions: backlog
-  7-9-link-to-catalogue-filter-from-try-page: backlog
-  7-10-first-time-user-guidance-on-try-page: backlog
-  7-11-aws-sso-portal-url-configuration: backlog
-  7-12-end-to-end-user-journey-validation: backlog
-  7-13-automated-accessibility-tests-for-dashboard-ui: backlog
+  # USER REPORTS: Try page is empty
+  epic-7: review
+  7-1-create-try-page-route-and-layout: review  # CRITICAL: Try page empty
+  7-2-fetch-and-display-user-leases: review  # NEEDS E2E REVIEW
+  7-3-render-sessions-table-with-govuk-design-system: review  # NEEDS E2E REVIEW
+  7-4-status-badge-display-with-color-coding: review  # NEEDS E2E REVIEW
+  7-5-expiry-date-formatting-relative-and-absolute: review  # NEEDS E2E REVIEW
+  7-6-budget-display-with-cost-formatting: review  # NEEDS E2E REVIEW
+  7-7-launch-aws-console-button-for-active-sessions: review  # NEEDS E2E REVIEW
+  7-8-remaining-lease-duration-display-for-active-sessions: review  # NEEDS E2E REVIEW
+  7-9-link-to-catalogue-filter-from-try-page: review  # NEEDS E2E REVIEW
+  7-10-first-time-user-guidance-on-try-page: review  # NEEDS E2E REVIEW
+  7-11-aws-sso-portal-url-configuration: review  # NEEDS E2E REVIEW
+  7-12-end-to-end-user-journey-validation: review  # NEEDS E2E REVIEW
+  7-13-automated-accessibility-tests-for-dashboard-ui: review  # NEEDS E2E REVIEW
   epic-7-retrospective: optional
 
   # Epic 8: Accessible & Mobile-Friendly Experience + Brownfield Audit
-  epic-8: backlog
-  8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: backlog
-  8-2-automated-accessibility-testing-in-ci-pipeline: backlog
-  8-3-comprehensive-wcag-22-audit-for-try-feature-ui: backlog
-  8-4-govuk-design-system-component-compliance-audit: backlog
-  8-5-mobile-responsive-design-validation: backlog
-  8-6-performance-and-security-validation: backlog
-  8-7-keyboard-navigation-testing: backlog
-  8-8-screen-reader-testing-nvda-jaws-voiceover: backlog
-  8-9-focus-management-and-visual-focus-indicators: backlog
-  8-10-error-messaging-accessibility: backlog
-  8-11-wcag-22-aa-compliance-certification: backlog
+  epic-8: review
+  8-0-e2e-testing-infrastructure-setup-playwright-ci: review  # NEEDS E2E REVIEW
+  8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: done
+  8-2-automated-accessibility-testing-in-ci-pipeline: review  # NEEDS E2E REVIEW
+  8-3-comprehensive-wcag-22-audit-for-try-feature-ui: review  # NEEDS E2E REVIEW
+  8-4-govuk-design-system-component-compliance-audit: review  # NEEDS E2E REVIEW
+  8-5-mobile-responsive-design-validation: review  # NEEDS E2E REVIEW
+  8-6-performance-and-security-validation: review  # NEEDS E2E REVIEW
+  8-7-keyboard-navigation-testing: review  # NEEDS E2E REVIEW
+  8-8-screen-reader-testing-nvda-jaws-voiceover: review  # NEEDS E2E REVIEW
+  8-9-focus-management-and-visual-focus-indicators: review  # NEEDS E2E REVIEW
+  8-10-error-messaging-accessibility: review  # NEEDS E2E REVIEW
+  8-11-wcag-22-aa-compliance-certification: review  # NEEDS E2E REVIEW
   epic-8-retrospective: optional
+
+# ============================================================
+# REGRESSION FIX SUMMARY (2025-11-24)
+# ============================================================
+# Problem: govukEleventyPlugin header template overriding custom header
+# - Custom header at src/_includes/components/header/template.njk NOT being used
+# - Built HTML had NO #auth-nav element
+# - Try page <main> content was empty (no #try-sessions-container)
+#
+# Solution Applied:
+# 1. Added #auth-nav via serviceNavigation.slots.end in eleventy.config.js
+# 2. Created custom try-page.njk layout for Try page content
+# 3. Updated auth-nav.ts to use govuk-service-navigation__link class
+# 4. Updated src/try/index.md to use the custom layout
+#
+# Files Modified:
+# - eleventy.config.js (line 114-116): Added slots.end with auth-nav span
+# - src/_includes/layouts/try-page.njk (NEW): Custom layout for try page
+# - src/try/index.md: Changed layout to layouts/try-page.njk
+# - src/try/ui/auth-nav.ts: Updated CSS classes for service navigation
+#
+# Test Results After Fix:
+# - E2E Auth Tests: 22/24 passing (2 redirect timeout flakes)
+# - #auth-nav element present in all pages
+# - #try-sessions-container renders correctly on /try page
+# ============================================================

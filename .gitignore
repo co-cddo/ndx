@@ -15,5 +15,6 @@ _site
 *.css
 .yarn
 .scratchpad.md
-.bmad
 .claude
+playwright-report
+test-results

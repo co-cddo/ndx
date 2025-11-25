@@ -8,8 +8,8 @@
   "scripts": {
     "start": "rm -r _site ; eleventy --serve",
     "build": "yarn build:try-js && eleventy",
-    "build:try-js": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020",
-    "build:try-js:watch": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --watch",
+    "build:try-js": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --format=esm",
+    "build:try-js:watch": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --format=esm --watch",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
@@ -18,7 +18,7 @@
     "test:e2e:auth": "playwright test tests/e2e/auth",
     "test:e2e:accessibility": "playwright test tests/e2e/accessibility",
     "deploy": "scripts/deploy.sh",
-    "dev:proxy": "mitmproxy --listen-port 8081 --set confdir=~/.mitmproxy -s scripts/mitmproxy-addon.py",
+    "dev:proxy": "mitmdump --listen-port 8081 --set confdir=~/.mitmproxy -s scripts/mitmproxy-addon.py",
     "validate-setup": "bash scripts/validate-local-setup.sh",
     "lint": "prettier -c .",
     "prepare": "husky"
@@ -35,6 +35,7 @@
   "homepage": "https://github.com/co-cddo/ndx#readme",
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
+    "@axe-core/playwright": "^4.11.0",
     "@playwright/test": "^1.56.1",
     "@types/jest": "^29.5.14",
     "@x-govuk/govuk-eleventy-plugin": "^7.2.1",

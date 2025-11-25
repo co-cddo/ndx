@@ -23,12 +23,12 @@ import { storeReturnURL } from '../auth/oauth-flow';
  * This function should be called on DOMContentLoaded to set up the sign in/out buttons
  * in the GOV.UK header navigation.
  *
- * Expects a placeholder element with id="auth-nav" in the header:
- * ```html
- * <li class="govuk-header__navigation-item" id="auth-nav">
- *   <!-- Sign in/out button injected here by JavaScript -->
- * </li>
+ * Expects a placeholder element with id="auth-nav" in the service navigation.
+ * This is configured in eleventy.config.js via serviceNavigation.navigation:
+ * ```javascript
+ * { html: '<span id="auth-nav"></span>' }
  * ```
+ * Which renders as an element that JavaScript can find and populate.
  *
  * @example
  * ```typescript
@@ -71,22 +71,22 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
     // Note: Actual sign out functionality will be added in Story 5.5
     // For now, this is a placeholder link that doesn't do anything
     container.innerHTML = `
-      <a href="#" class="govuk-header__link" data-module="auth-nav" data-action="signout">
+      <a href="#" class="govuk-service-navigation__link govuk-header__link" data-module="sign-out-button" data-action="signout">
         Sign out
       </a>
     `;
 
-    // TODO Story 5.5: Add event listener for sign out
-    // const signOutLink = container.querySelector('[data-action="signout"]');
-    // if (signOutLink) {
-    //   signOutLink.addEventListener('click', handleSignOut);
-    // }
+    // Story 5.5: Add event listener for sign out
+    const signOutLink = container.querySelector('[data-action="signout"]');
+    if (signOutLink) {
+      signOutLink.addEventListener('click', handleSignOut);
+    }
   } else {
     // Render "Sign in" button
     // Links to OAuth login endpoint (handled by Innovation Sandbox)
     // Story 5.2: Add click handler to store return URL before OAuth redirect
     container.innerHTML = `
-      <a href="/api/auth/login" class="govuk-header__link" id="sign-in-button">
+      <a href="/api/auth/login" class="govuk-service-navigation__link govuk-header__link" id="sign-in-button">
         Sign in
       </a>
     `;
@@ -103,20 +103,20 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
 }
 
 /**
- * Handle sign out button click (Story 5.5 - not yet implemented).
+ * Handle sign out button click.
  *
- * This function will be implemented in Story 5.5: Sign Out Functionality.
- * Planned behavior:
+ * Story 5.5: Sign Out Functionality
+ * Behavior:
  * 1. Prevent default link behavior
- * 2. Clear JWT token from sessionStorage
+ * 2. Clear JWT token from sessionStorage via authState.logout()
  * 3. Notify AuthState subscribers (updates nav to show "Sign in")
  * 4. Redirect to home page
  *
  * @param {Event} event - Click event
  * @private
  */
-// function handleSignOut(event: Event): void {
-//   event.preventDefault();
-//   authState.logout();
-//   window.location.href = '/';
-// }
+function handleSignOut(event: Event): void {
+  event.preventDefault();
+  authState.logout();
+  window.location.href = '/';
+}

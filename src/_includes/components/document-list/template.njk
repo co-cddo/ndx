@@ -1,0 +1,42 @@
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{% set headingLevel = params.headingLevel or 2 %}
+
+{% if params.items.length > 0 %}
+  <ol class="app-document-list{%- if params.classes %} {{ params.classes }}{% endif %}">
+  {% for item in params.items %}
+    <li class="app-document-list__item">
+      <h{{ headingLevel }} class="app-document-list__item-title">
+        <a class="govuk-link" href="{{ item.url | pretty }}">{{ item.data.title | smart }}</a>
+        {# Story 6.2: Add Try Before You Buy tag for tryable products #}
+        {% if item.data.try %}
+        {{ govukTag({
+          text: "Try Before You Buy",
+          classes: "govuk-tag--green govuk-!-margin-left-2"
+        }) }}
+        {% endif %}
+      </h{{ headingLevel }}>
+      {% if item.data.description %}
+      <p class="app-document-list__item-description">
+        {{ item.data.description | markdown("inline") | safe }}
+      </p>
+      {% endif %}
+      {% if item.data.date or item.data.tags %}
+      <ul class="app-document-list__item-metadata">
+        {% if item.data.date %}
+        <li class="app-document-list__attribute">
+          <time datetime="{{ item.date | isoDate }}">{{ item.date | govukDate }}</time>
+        </li>
+        {% endif %}
+        {% if item.data.tags %}
+        <li class="app-document-list__attribute">
+          Tags: {{ item.data.tags | join(", ") }}
+        </li>
+        {% endif %}
+      </ul>
+      {% endif %}
+    </li>
+  {% endfor %}
+  </ol>
+{% else %}
+  <p class="govuk-body">No documents found.</p>
+{% endif %}

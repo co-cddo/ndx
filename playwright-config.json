@@ -5,7 +5,7 @@
       "proxy": {
         "server": "http://localhost:8081"
       },
-      "headless": false
+      "headless": true
     }
   }
 }

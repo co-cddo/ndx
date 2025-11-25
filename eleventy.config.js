@@ -234,6 +234,7 @@ export default function (eleventyConfig) {
     "./node_modules/govuk-frontend/dist/govuk/assets": "./assets",
   })
   eleventyConfig.addPassthroughCopy("./src/assets")
+  eleventyConfig.addPassthroughCopy("./src/robots.txt")
 
   return {
     pathPrefix: process.env.PATH_PREFIX || "/",

@@ -11,6 +11,8 @@
  */
 
 import { callISBAPI } from './api-client';
+import { config } from '../config';
+import { getHttpErrorMessage } from '../utils/error-utils';
 
 /**
  * Configuration response from /api/configurations endpoint.
@@ -101,11 +103,6 @@ const DEFAULT_CONFIG: ConfigurationResponse = {
 const CONFIGURATIONS_ENDPOINT = '/api/configurations';
 
 /**
- * Request timeout in milliseconds.
- */
-const REQUEST_TIMEOUT = 10000;
-
-/**
  * Fetch configurations including AUP from the Innovation Sandbox API.
  *
  * @returns Promise resolving to ConfigurationsResult
@@ -120,7 +117,7 @@ const REQUEST_TIMEOUT = 10000;
  */
 export async function fetchConfigurations(): Promise<ConfigurationsResult> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
 
   try {
     const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
@@ -135,7 +132,7 @@ export async function fetchConfigurations(): Promise<ConfigurationsResult> {
       console.error('[configurations-service] API error:', response.status, response.statusText);
       return {
         success: false,
-        error: getErrorMessage(response.status),
+        error: getHttpErrorMessage(response.status, 'configuration'),
       };
     }
 
@@ -197,31 +194,6 @@ export async function fetchConfigurations(): Promise<ConfigurationsResult> {
       success: false,
       error: 'Unable to load configuration. Please try again.',
     };
-  }
-}
-
-/**
- * Get user-friendly error message for HTTP status codes.
- * ADR-032: User-Friendly Error Messages
- *
- * @param status - HTTP status code
- * @returns User-friendly error message
- */
-function getErrorMessage(status: number): string {
-  switch (status) {
-    case 401:
-      return 'Please sign in to continue.';
-    case 403:
-      return 'You do not have permission to access this resource.';
-    case 404:
-      return 'Configuration not found. Please contact support.';
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      return 'The sandbox service is temporarily unavailable. Please try again later.';
-    default:
-      return 'An unexpected error occurred. Please try again.';
   }
 }
 

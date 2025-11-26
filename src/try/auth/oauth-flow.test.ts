@@ -23,11 +23,13 @@ describe('OAuth Flow Utilities', () => {
 
     // Reset window.location mock for tests
     // TypeScript workaround: delete and reassign location
+    // IMPORTANT: Include 'origin' for sanitizeReturnUrl validation
     delete (window as any).location;
     (window as any).location = {
       pathname: '/some-page',
       href: 'https://ndx.gov.uk/some-page',
       search: '',
+      origin: 'https://ndx.gov.uk',
     };
   });
 
@@ -392,6 +394,7 @@ describe('OAuth Flow Utilities', () => {
         pathname: '/callback',
         href: '',
         search: `?token=${validJWT}`,
+        origin: 'https://ndx.gov.uk',
       };
       (window as any).history = {
         replaceState: jest.fn(),
@@ -504,6 +507,7 @@ describe('OAuth Flow Utilities', () => {
         pathname: '/catalogue',
         href: 'https://ndx.gov.uk/catalogue',
         search: '',
+        origin: 'https://ndx.gov.uk',
       };
       storeReturnURL();
       expect(sessionStorage.getItem('auth-return-to')).toBe('https://ndx.gov.uk/catalogue');
@@ -516,6 +520,7 @@ describe('OAuth Flow Utilities', () => {
         pathname: '/callback',
         href: '',
         search: `?token=${validJWT}`,
+        origin: 'https://ndx.gov.uk',
       };
       (window as any).history = {
         replaceState: jest.fn(),
@@ -541,6 +546,7 @@ describe('OAuth Flow Utilities', () => {
         pathname: '/try',
         href: 'https://ndx.gov.uk/try',
         search: '',
+        origin: 'https://ndx.gov.uk',
       };
       storeReturnURL();
 
@@ -548,6 +554,7 @@ describe('OAuth Flow Utilities', () => {
       (window as any).location = {
         pathname: '/callback',
         href: '',
+        origin: 'https://ndx.gov.uk',
         search: '?error=access_denied',
       };
 

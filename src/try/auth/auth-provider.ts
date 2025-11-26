@@ -7,19 +7,28 @@
  *
  * Key Design Decisions:
  * - Uses sessionStorage (not localStorage) for JWT token storage (clears on browser close)
- * - Token key: 'isb-jwt' (consistent across all Epic 5+ stories)
+ * - Token key: 'isb-jwt' (consistent across all Epic 5+ stories via shared constants)
  * - Reactive pattern: subscribers notified immediately when auth state changes
  * - Singleton instance exported for application-wide use
+ * - H7: subscribe() returns unsubscribe function for cleanup
  *
  * @module auth-provider
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-024|ADR-024: Authentication State Management}
  */
+
+import { JWT_TOKEN_KEY } from '../constants';
 
 /**
  * Type definition for authentication state change listeners.
  * Callbacks receive the current authentication state as a boolean.
  */
 type AuthStateListener = (isAuthenticated: boolean) => void;
+
+/**
+ * Type definition for unsubscribe function returned by subscribe().
+ * Call this function to remove the listener and prevent memory leaks.
+ */
+type Unsubscribe = () => void;
 
 /**
  * AuthState class manages authentication state using an event-driven pattern.
@@ -53,13 +62,7 @@ class AuthState {
    */
   private listeners: AuthStateListener[] = [];
 
-  /**
-   * sessionStorage key for JWT token storage.
-   * CRITICAL: This key must match across all Epic 5+ stories.
-   * @private
-   * @constant
-   */
-  private readonly TOKEN_KEY = 'isb-jwt';
+  // TOKEN_KEY imported from '../constants' as JWT_TOKEN_KEY
 
   /**
    * Check if user is currently authenticated.
@@ -87,7 +90,7 @@ class AuthState {
       return false;
     }
 
-    const token = sessionStorage.getItem(this.TOKEN_KEY);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
     return token !== null && token !== '';
   }
 
@@ -98,11 +101,14 @@ class AuthState {
    * - Immediately with the current auth state (upon subscription)
    * - Whenever the auth state changes (via notify())
    *
+   * H7: Returns an unsubscribe function for cleanup to prevent memory leaks.
+   *
    * @param {AuthStateListener} listener - Callback function to invoke on auth state changes
+   * @returns {Unsubscribe} Function to call to unsubscribe and remove the listener
    *
    * @example
    * ```typescript
-   * authState.subscribe((isAuthenticated) => {
+   * const unsubscribe = authState.subscribe((isAuthenticated) => {
    *   const navElement = document.getElementById('auth-nav');
    *   if (isAuthenticated) {
    *     navElement.innerHTML = '<a href="#" data-action="signout">Sign out</a>';
@@ -110,13 +116,24 @@ class AuthState {
    *     navElement.innerHTML = '<a href="/api/auth/login">Sign in</a>';
    *   }
    * });
+   *
+   * // Later, when component unmounts or is no longer needed:
+   * unsubscribe();
    * ```
    */
-  subscribe(listener: AuthStateListener): void {
+  subscribe(listener: AuthStateListener): Unsubscribe {
     this.listeners.push(listener);
 
     // Immediately call listener with current state (prevents initial render delay)
     listener(this.isAuthenticated());
+
+    // H7: Return unsubscribe function for cleanup
+    return () => {
+      const index = this.listeners.indexOf(listener);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
   }
 
   /**
@@ -166,7 +183,7 @@ class AuthState {
       return;
     }
 
-    sessionStorage.setItem(this.TOKEN_KEY, token);
+    sessionStorage.setItem(JWT_TOKEN_KEY, token);
     this.notify();
   }
 
@@ -191,7 +208,7 @@ class AuthState {
       return;
     }
 
-    sessionStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.removeItem(JWT_TOKEN_KEY);
     this.notify();
   }
 }

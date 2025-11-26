@@ -17,6 +17,8 @@
  * @module api-client
  */
 
+import { JWT_TOKEN_KEY, OAUTH_LOGIN_URL } from '../constants';
+
 /**
  * User session data returned from auth status API.
  *
@@ -45,17 +47,7 @@ export interface AuthStatusResult {
   user?: UserData;
 }
 
-/**
- * sessionStorage key for JWT token.
- * CRITICAL: Must match key used in auth-provider.ts and oauth-flow.ts
- */
-const JWT_TOKEN_KEY = 'isb-jwt';
-
-/**
- * OAuth login endpoint for automatic re-authentication.
- * Story 5.8: 401 handling redirects here.
- */
-const OAUTH_LOGIN_URL = '/api/auth/login';
+// JWT_TOKEN_KEY and OAUTH_LOGIN_URL imported from '../constants'
 
 /**
  * Extended options for callISBAPI with authentication handling controls.
@@ -276,6 +268,7 @@ function getToken(): string | null {
 
 /**
  * Extracts headers from HeadersInit to a plain object.
+ * H12: Added input validation for header key/value pairs.
  *
  * @param headersInit - Headers from RequestInit (HeadersInit type)
  * @returns Plain object with header key-value pairs
@@ -289,8 +282,16 @@ function extractHeaders(headersInit?: HeadersInit): Record<string, string> {
   // Handle array of [key, value] pairs (must check before Headers due to duck typing)
   if (Array.isArray(headersInit)) {
     const result: Record<string, string> = {};
-    for (const [key, value] of headersInit) {
-      result[key] = value;
+    for (const entry of headersInit) {
+      // H12: Validate array entry is a valid [key, value] pair
+      if (
+        Array.isArray(entry) &&
+        entry.length >= 2 &&
+        typeof entry[0] === 'string' &&
+        typeof entry[1] === 'string'
+      ) {
+        result[entry[0].trim()] = entry[1];
+      }
     }
     return result;
   }
@@ -300,13 +301,27 @@ function extractHeaders(headersInit?: HeadersInit): Record<string, string> {
   if (typeof (headersInit as Headers).forEach === 'function') {
     const result: Record<string, string> = {};
     (headersInit as Headers).forEach((value, key) => {
-      result[key] = value;
+      // H12: Validate key and value are strings
+      if (typeof key === 'string' && typeof value === 'string') {
+        result[key] = value;
+      }
     });
     return result;
   }
 
-  // Handle plain object
-  return headersInit as Record<string, string>;
+  // Handle plain object with validation
+  if (typeof headersInit === 'object' && headersInit !== null) {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(headersInit)) {
+      // H12: Only include string key-value pairs
+      if (typeof key === 'string' && typeof value === 'string') {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
+  return {};
 }
 
 /**

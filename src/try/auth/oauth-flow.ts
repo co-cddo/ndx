@@ -10,24 +10,14 @@
  * - Prevents callback page from being stored as return URL (avoids redirect loops)
  * - Maps OAuth error codes to government-friendly error messages
  * - Defensive programming: handles sessionStorage unavailability gracefully
+ * - SECURITY: Validates return URLs to prevent open redirect attacks
  *
  * @module oauth-flow
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-023|ADR-023: OAuth Callback Page Pattern}
  */
 
-/**
- * sessionStorage key for storing return URL during OAuth flow.
- * @private
- * @constant
- */
-const RETURN_URL_KEY = 'auth-return-to';
-
-/**
- * Callback page path (must not be stored as return URL to avoid loops).
- * @private
- * @constant
- */
-const CALLBACK_PATH = '/callback';
+import { JWT_TOKEN_KEY, RETURN_URL_KEY, CALLBACK_PATH } from '../constants';
+import { sanitizeReturnUrl } from '../utils/url-validator';
 
 /**
  * OAuth error details structure.
@@ -105,7 +95,8 @@ export function getReturnURL(): string {
 
   try {
     const returnURL = sessionStorage.getItem(RETURN_URL_KEY);
-    return returnURL || '/';
+    // SECURITY: Validate URL to prevent open redirect attacks (CRITICAL-1 fix)
+    return sanitizeReturnUrl(returnURL, '/');
   } catch (error) {
     console.warn('[oauth-flow] Failed to retrieve return URL:', error);
     return '/';
@@ -195,13 +186,6 @@ export function parseOAuthError(): OAuthError | null {
 
   return { code: errorCode, message };
 }
-
-/**
- * sessionStorage key for JWT token storage.
- * @private
- * @constant
- */
-const JWT_TOKEN_KEY = 'isb-jwt';
 
 /**
  * Extracts JWT token from URL query parameter and stores in sessionStorage.
@@ -315,16 +299,12 @@ export function cleanupURLAfterExtraction(): void {
  * ```
  */
 export function handleOAuthCallback(): void {
-  console.log('[handleOAuthCallback] Starting OAuth callback handling');
-
   // Step 1: Extract token from URL
   const tokenExtracted = extractTokenFromURL();
-  console.log('[handleOAuthCallback] Token extracted:', tokenExtracted);
 
   if (!tokenExtracted) {
     // No token found (possibly OAuth error already handled by parseOAuthError)
     // Redirect to home page and clear return URL
-    console.log('[handleOAuthCallback] No token - redirecting to home');
     clearReturnURL();
     window.location.href = '/';
     return;
@@ -332,20 +312,17 @@ export function handleOAuthCallback(): void {
 
   // Step 2: Clean up URL (remove token from address bar)
   cleanupURLAfterExtraction();
-  console.log('[handleOAuthCallback] URL cleaned, current URL:', window.location.href);
 
   // Step 3: Get return URL (original page before OAuth redirect)
+  // SECURITY: URL is validated by sanitizeReturnUrl to prevent open redirects
   const returnURL = getReturnURL();
-  console.log('[handleOAuthCallback] Retrieved return URL:', returnURL);
 
   // Step 4: Clear return URL from sessionStorage
   clearReturnURL();
 
   // Step 5: Redirect to original page
   // Use setTimeout to ensure the redirect happens after current execution context completes
-  console.log('[handleOAuthCallback] Scheduling redirect to:', returnURL);
   setTimeout(() => {
-    console.log('[handleOAuthCallback] Executing redirect now...');
     window.location.href = returnURL;
   }, 0);
 }

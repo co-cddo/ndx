@@ -1,3 +1,9 @@
+// src/try/constants.ts
+var JWT_TOKEN_KEY = "isb-jwt";
+var RETURN_URL_KEY = "auth-return-to";
+var CALLBACK_PATH = "/callback";
+var OAUTH_LOGIN_URL = "/api/auth/login";
+
 // src/try/auth/auth-provider.ts
 var AuthState = class {
   constructor() {
@@ -6,14 +12,8 @@ var AuthState = class {
      * @private
      */
     this.listeners = [];
-    /**
-     * sessionStorage key for JWT token storage.
-     * CRITICAL: This key must match across all Epic 5+ stories.
-     * @private
-     * @constant
-     */
-    this.TOKEN_KEY = "isb-jwt";
   }
+  // TOKEN_KEY imported from '../constants' as JWT_TOKEN_KEY
   /**
    * Check if user is currently authenticated.
    *
@@ -37,7 +37,7 @@ var AuthState = class {
       console.warn("[AuthState] sessionStorage not available, auth features disabled");
       return false;
     }
-    const token = sessionStorage.getItem(this.TOKEN_KEY);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
     return token !== null && token !== "";
   }
   /**
@@ -47,11 +47,14 @@ var AuthState = class {
    * - Immediately with the current auth state (upon subscription)
    * - Whenever the auth state changes (via notify())
    *
+   * H7: Returns an unsubscribe function for cleanup to prevent memory leaks.
+   *
    * @param {AuthStateListener} listener - Callback function to invoke on auth state changes
+   * @returns {Unsubscribe} Function to call to unsubscribe and remove the listener
    *
    * @example
    * ```typescript
-   * authState.subscribe((isAuthenticated) => {
+   * const unsubscribe = authState.subscribe((isAuthenticated) => {
    *   const navElement = document.getElementById('auth-nav');
    *   if (isAuthenticated) {
    *     navElement.innerHTML = '<a href="#" data-action="signout">Sign out</a>';
@@ -59,11 +62,20 @@ var AuthState = class {
    *     navElement.innerHTML = '<a href="/api/auth/login">Sign in</a>';
    *   }
    * });
+   *
+   * // Later, when component unmounts or is no longer needed:
+   * unsubscribe();
    * ```
    */
   subscribe(listener) {
     this.listeners.push(listener);
     listener(this.isAuthenticated());
+    return () => {
+      const index = this.listeners.indexOf(listener);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
   }
   /**
    * Notify all subscribed listeners of authentication state change.
@@ -110,7 +122,7 @@ var AuthState = class {
       console.error("[AuthState] Cannot store token - sessionStorage not available");
       return;
     }
-    sessionStorage.setItem(this.TOKEN_KEY, token);
+    sessionStorage.setItem(JWT_TOKEN_KEY, token);
     this.notify();
   }
   /**
@@ -133,15 +145,47 @@ var AuthState = class {
       console.warn("[AuthState] sessionStorage not available, cannot clear token");
       return;
     }
-    sessionStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.removeItem(JWT_TOKEN_KEY);
     this.notify();
   }
 };
 var authState = new AuthState();
 
+// src/try/utils/url-validator.ts
+function isValidReturnUrl(url) {
+  if (!url) {
+    return false;
+  }
+  if (url.startsWith("/") && !url.startsWith("//")) {
+    if (/^\/[a-z]+:/i.test(url)) {
+      return false;
+    }
+    return true;
+  }
+  if (/^(javascript|data|vbscript|file):/i.test(url)) {
+    return false;
+  }
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.origin !== window.location.origin) {
+      return false;
+    }
+    if (parsed.username || parsed.password) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+function sanitizeReturnUrl(url, fallback = "/") {
+  if (!url) {
+    return fallback;
+  }
+  return isValidReturnUrl(url) ? url : fallback;
+}
+
 // src/try/auth/oauth-flow.ts
-var RETURN_URL_KEY = "auth-return-to";
-var CALLBACK_PATH = "/callback";
 function storeReturnURL() {
   if (window.location.pathname === CALLBACK_PATH || window.location.pathname === `${CALLBACK_PATH}.html`) {
     return;
@@ -164,7 +208,7 @@ function getReturnURL() {
   }
   try {
     const returnURL = sessionStorage.getItem(RETURN_URL_KEY);
-    return returnURL || "/";
+    return sanitizeReturnUrl(returnURL, "/");
   } catch (error) {
     console.warn("[oauth-flow] Failed to retrieve return URL:", error);
     return "/";
@@ -195,7 +239,6 @@ function parseOAuthError() {
   const message = errorMessages[errorCode] || "An error occurred during sign in. Please try again.";
   return { code: errorCode, message };
 }
-var JWT_TOKEN_KEY = "isb-jwt";
 function extractTokenFromURL() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
@@ -228,23 +271,16 @@ function cleanupURLAfterExtraction() {
   }
 }
 function handleOAuthCallback() {
-  console.log("[handleOAuthCallback] Starting OAuth callback handling");
   const tokenExtracted = extractTokenFromURL();
-  console.log("[handleOAuthCallback] Token extracted:", tokenExtracted);
   if (!tokenExtracted) {
-    console.log("[handleOAuthCallback] No token - redirecting to home");
     clearReturnURL();
     window.location.href = "/";
     return;
   }
   cleanupURLAfterExtraction();
-  console.log("[handleOAuthCallback] URL cleaned, current URL:", window.location.href);
   const returnURL = getReturnURL();
-  console.log("[handleOAuthCallback] Retrieved return URL:", returnURL);
   clearReturnURL();
-  console.log("[handleOAuthCallback] Scheduling redirect to:", returnURL);
   setTimeout(() => {
-    console.log("[handleOAuthCallback] Executing redirect now...");
     window.location.href = returnURL;
   }, 0);
 }
@@ -292,8 +328,6 @@ function handleSignOut(event) {
 }
 
 // src/try/api/api-client.ts
-var JWT_TOKEN_KEY2 = "isb-jwt";
-var OAUTH_LOGIN_URL = "/api/auth/login";
 async function callISBAPI(endpoint, options = {}) {
   const { skipAuthRedirect, ...fetchOptions } = options;
   const headers = {
@@ -320,7 +354,7 @@ function clearToken() {
     return;
   }
   try {
-    sessionStorage.removeItem(JWT_TOKEN_KEY2);
+    sessionStorage.removeItem(JWT_TOKEN_KEY);
   } catch {
   }
 }
@@ -358,7 +392,7 @@ function getToken() {
     return null;
   }
   try {
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY2);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
     if (token === null || token === "") {
       return null;
     }
@@ -373,19 +407,32 @@ function extractHeaders(headersInit) {
   }
   if (Array.isArray(headersInit)) {
     const result = {};
-    for (const [key, value] of headersInit) {
-      result[key] = value;
+    for (const entry of headersInit) {
+      if (Array.isArray(entry) && entry.length >= 2 && typeof entry[0] === "string" && typeof entry[1] === "string") {
+        result[entry[0].trim()] = entry[1];
+      }
     }
     return result;
   }
   if (typeof headersInit.forEach === "function") {
     const result = {};
     headersInit.forEach((value, key) => {
-      result[key] = value;
+      if (typeof key === "string" && typeof value === "string") {
+        result[key] = value;
+      }
     });
     return result;
   }
-  return headersInit;
+  if (typeof headersInit === "object" && headersInit !== null) {
+    const result = {};
+    for (const [key, value] of Object.entries(headersInit)) {
+      if (typeof key === "string" && typeof value === "string") {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+  return {};
 }
 
 // src/try/config.ts
@@ -411,12 +458,48 @@ var config = {
   oauthLoginUrl: getConfigValue("OAUTH_LOGIN_URL", "/api/auth/login")
 };
 
+// src/try/utils/error-utils.ts
+var CONTEXT_MESSAGES = {
+  sessions: {
+    401: "Please sign in to view your sessions.",
+    404: "Sessions not found."
+  },
+  configurations: {
+    401: "Please sign in to continue.",
+    404: "Configuration not found. Please contact support."
+  },
+  leases: {
+    401: "Please sign in to continue.",
+    404: "The requested resource was not found."
+  },
+  general: {}
+};
+var DEFAULT_MESSAGES = {
+  401: "Please sign in to continue.",
+  403: "You do not have permission to access this resource.",
+  404: "Resource not found.",
+  500: "The sandbox service is temporarily unavailable. Please try again later.",
+  502: "The sandbox service is temporarily unavailable. Please try again later.",
+  503: "The sandbox service is temporarily unavailable. Please try again later.",
+  504: "The sandbox service is temporarily unavailable. Please try again later."
+};
+function getHttpErrorMessage(status, context = "general") {
+  const contextMessage = CONTEXT_MESSAGES[context]?.[status];
+  if (contextMessage) {
+    return contextMessage;
+  }
+  const defaultMessage = DEFAULT_MESSAGES[status];
+  if (defaultMessage) {
+    return defaultMessage;
+  }
+  return "An unexpected error occurred. Please try again.";
+}
+
 // src/try/api/sessions-service.ts
 var LEASES_ENDPOINT = "/api/leases";
-var REQUEST_TIMEOUT = 1e4;
 async function fetchUserLeases() {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
   try {
     const authStatus = await checkAuthStatus();
     if (!authStatus.authenticated || !authStatus.user?.email) {
@@ -439,7 +522,7 @@ async function fetchUserLeases() {
       console.error("[sessions-service] API error:", response.status, response.statusText);
       return {
         success: false,
-        error: getErrorMessage(response.status)
+        error: getHttpErrorMessage(response.status, "sessions")
       };
     }
     const data = await response.json();
@@ -516,23 +599,6 @@ function transformLease(raw) {
     // SSO URL will be configured in config
     awsSsoPortalUrl: void 0
   };
-}
-function getErrorMessage(status) {
-  switch (status) {
-    case 401:
-      return "Please sign in to view your sessions.";
-    case 403:
-      return "You do not have permission to view sessions.";
-    case 404:
-      return "Sessions not found.";
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      return "The sandbox service is temporarily unavailable. Please try again later.";
-    default:
-      return "An unexpected error occurred. Please try again.";
-  }
 }
 function isLeaseActive(lease) {
   return lease.status === "Active";
@@ -779,12 +845,13 @@ var currentState = {
 };
 var container = null;
 var refreshTimer = null;
+var authUnsubscribe = null;
 function initTryPage() {
   container = document.getElementById(CONTAINER_ID);
   if (!container) {
     return;
   }
-  authState.subscribe((isAuthenticated) => {
+  authUnsubscribe = authState.subscribe((isAuthenticated) => {
     if (isAuthenticated) {
       loadAndRenderSessions();
     } else {
@@ -1030,10 +1097,9 @@ var DEFAULT_CONFIG = {
   leaseDuration: 24
 };
 var CONFIGURATIONS_ENDPOINT = "/api/configurations";
-var REQUEST_TIMEOUT2 = 1e4;
 async function fetchConfigurations() {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT2);
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
   try {
     const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
       method: "GET",
@@ -1046,7 +1112,7 @@ async function fetchConfigurations() {
       console.error("[configurations-service] API error:", response.status, response.statusText);
       return {
         success: false,
-        error: getErrorMessage2(response.status)
+        error: getHttpErrorMessage(response.status, "configuration")
       };
     }
     const rawData = await response.json();
@@ -1089,23 +1155,6 @@ async function fetchConfigurations() {
     };
   }
 }
-function getErrorMessage2(status) {
-  switch (status) {
-    case 401:
-      return "Please sign in to continue.";
-    case 403:
-      return "You do not have permission to access this resource.";
-    case 404:
-      return "Configuration not found. Please contact support.";
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      return "The sandbox service is temporarily unavailable. Please try again later.";
-    default:
-      return "An unexpected error occurred. Please try again.";
-  }
-}
 function getFallbackAup() {
   return FALLBACK_AUP;
 }
@@ -1135,6 +1184,8 @@ var AupModal = class {
       error: null
     };
     this.onAccept = null;
+    // CRITICAL-2 FIX: Store bound event handlers for proper cleanup
+    this.boundHandlers = {};
   }
   /**
    * Open the modal for a specific try product.
@@ -1203,6 +1254,7 @@ var AupModal = class {
     this.onAccept = null;
     this.focusTrap?.deactivate();
     this.focusTrap = null;
+    this.detachEventListeners();
     this.overlay?.remove();
     this.overlay = null;
     document.body.classList.remove(BODY_MODAL_OPEN_CLASS);
@@ -1346,12 +1398,13 @@ var AupModal = class {
   }
   /**
    * Attach event listeners to modal elements.
+   * CRITICAL-2 FIX: Store handlers for later removal in detachEventListeners().
    */
   attachEventListeners() {
     const checkbox = document.getElementById(IDS.CHECKBOX);
     const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
     const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
-    checkbox?.addEventListener("change", () => {
+    this.boundHandlers.checkboxChange = () => {
       this.state.aupAccepted = checkbox.checked;
       this.updateButtons();
       if (checkbox.checked) {
@@ -1359,22 +1412,44 @@ var AupModal = class {
       } else {
         announce("Acceptable Use Policy not accepted. Continue button is disabled.");
       }
-    });
-    continueBtn?.addEventListener("click", async () => {
+    };
+    checkbox?.addEventListener("change", this.boundHandlers.checkboxChange);
+    this.boundHandlers.continueClick = async () => {
       if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return;
       this.state.isLoading = true;
       this.updateButtons();
       announce("Requesting your sandbox...");
       try {
         await this.onAccept?.(this.state.tryId);
-      } catch (error) {
+      } catch {
         this.state.isLoading = false;
         this.updateButtons();
       }
-    });
-    cancelBtn?.addEventListener("click", () => {
+    };
+    continueBtn?.addEventListener("click", this.boundHandlers.continueClick);
+    this.boundHandlers.cancelClick = () => {
       this.close();
-    });
+    };
+    cancelBtn?.addEventListener("click", this.boundHandlers.cancelClick);
+  }
+  /**
+   * Detach event listeners from modal elements.
+   * CRITICAL-2 FIX: Prevents memory leaks when modal is closed.
+   */
+  detachEventListeners() {
+    const checkbox = document.getElementById(IDS.CHECKBOX);
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+    if (this.boundHandlers.checkboxChange && checkbox) {
+      checkbox.removeEventListener("change", this.boundHandlers.checkboxChange);
+    }
+    if (this.boundHandlers.continueClick && continueBtn) {
+      continueBtn.removeEventListener("click", this.boundHandlers.continueClick);
+    }
+    if (this.boundHandlers.cancelClick && cancelBtn) {
+      cancelBtn.removeEventListener("click", this.boundHandlers.cancelClick);
+    }
+    this.boundHandlers = {};
   }
   /**
    * Update button disabled states.
@@ -1427,7 +1502,6 @@ var API_ERRORS = {
   USER_NOT_FOUND: "User not found in Identity Center"
 };
 var LEASES_ENDPOINT2 = "/api/leases";
-var REQUEST_TIMEOUT3 = 1e4;
 function getApiErrorMessage(errorData) {
   if (!errorData || typeof errorData !== "object") return "";
   const data = errorData;
@@ -1438,7 +1512,7 @@ function matchesApiError(message, errorKey) {
 }
 async function createLease(leaseTemplateId) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT3);
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
   const payload = {
     leaseTemplateUuid: leaseTemplateId,
     comments: "User accepted the Acceptable Use Policy via NDX portal."
@@ -1569,7 +1643,6 @@ function initTryButton() {
   const tryButtons = document.querySelectorAll(
     "button[data-try-id], a[data-try-id]"
   );
-  console.log("[TryButton] Found", tryButtons.length, "try button(s)");
   tryButtons.forEach((button) => {
     button.addEventListener("click", handleTryButtonClick);
   });
@@ -1587,27 +1660,22 @@ function handleTryButtonClick(event) {
     window.location.href = "/api/auth/login";
     return;
   }
-  console.log("[TryButton] User authenticated, opening AUP modal with tryId:", tryId);
   openAupModal(tryId, handleLeaseAccept);
 }
 async function handleLeaseAccept(tryId) {
-  console.log("[TryButton] Submitting lease request for tryId:", tryId);
   const result = await createLease(tryId);
   if (result.success) {
-    console.log("[TryButton] Lease created successfully:", result.lease);
     closeAupModal(true);
     window.location.href = "/try";
     return;
   }
   switch (result.errorCode) {
     case "CONFLICT":
-      console.log("[TryButton] Max sessions reached");
       closeAupModal(true);
       alert(result.error);
       window.location.href = "/try";
       break;
     case "UNAUTHORIZED":
-      console.log("[TryButton] Unauthorized - redirecting to login");
       closeAupModal(true);
       window.location.href = "/api/auth/login";
       break;
@@ -1615,7 +1683,6 @@ async function handleLeaseAccept(tryId) {
     case "NETWORK_ERROR":
     case "SERVER_ERROR":
     default:
-      console.error("[TryButton] Lease request failed:", result.error);
       aupModal.showError(result.error || "An error occurred. Please try again.");
       break;
   }

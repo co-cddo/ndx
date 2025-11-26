@@ -12,6 +12,7 @@
 import { callISBAPI, checkAuthStatus } from './api-client';
 import { authState } from '../auth/auth-provider';
 import { config } from '../config';
+import { getHttpErrorMessage } from '../utils/error-utils';
 
 /**
  * Lease status values.
@@ -91,11 +92,6 @@ export interface LeasesResult {
 const LEASES_ENDPOINT = '/api/leases';
 
 /**
- * Request timeout in milliseconds.
- */
-const REQUEST_TIMEOUT = 10000;
-
-/**
  * Fetch user's leases from the Innovation Sandbox API.
  *
  * @returns Promise resolving to LeasesResult
@@ -110,7 +106,7 @@ const REQUEST_TIMEOUT = 10000;
  */
 export async function fetchUserLeases(): Promise<LeasesResult> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
 
   try {
     // First, get user email from auth status API
@@ -145,7 +141,7 @@ export async function fetchUserLeases(): Promise<LeasesResult> {
       console.error('[sessions-service] API error:', response.status, response.statusText);
       return {
         success: false,
-        error: getErrorMessage(response.status),
+        error: getHttpErrorMessage(response.status, 'sessions'),
       };
     }
 
@@ -247,30 +243,6 @@ function transformLease(raw: RawLease): Lease {
     // SSO URL will be configured in config
     awsSsoPortalUrl: undefined,
   };
-}
-
-/**
- * Get user-friendly error message for HTTP status codes.
- *
- * @param status - HTTP status code
- * @returns User-friendly error message
- */
-function getErrorMessage(status: number): string {
-  switch (status) {
-    case 401:
-      return 'Please sign in to view your sessions.';
-    case 403:
-      return 'You do not have permission to view sessions.';
-    case 404:
-      return 'Sessions not found.';
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      return 'The sandbox service is temporarily unavailable. Please try again later.';
-    default:
-      return 'An unexpected error occurred. Please try again.';
-  }
 }
 
 /**

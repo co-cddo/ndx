@@ -43,6 +43,8 @@ let currentState: TryPageState = {
 
 let container: HTMLElement | null = null
 let refreshTimer: number | null = null
+// CRITICAL-3 FIX: Store unsubscribe function for auth state cleanup
+let authUnsubscribe: (() => void) | null = null
 
 /**
  * Initialize the try page component.
@@ -70,7 +72,8 @@ export function initTryPage(): void {
 
   // Subscribe to auth state changes (ADR-024)
   // Callback is called immediately with current state
-  authState.subscribe((isAuthenticated) => {
+  // CRITICAL-3 FIX: Store unsubscribe function for cleanup
+  authUnsubscribe = authState.subscribe((isAuthenticated) => {
     if (isAuthenticated) {
       loadAndRenderSessions()
     } else {
@@ -261,4 +264,31 @@ function stopAutoRefresh(): void {
     clearInterval(refreshTimer)
     refreshTimer = null
   }
+}
+
+/**
+ * Clean up try page resources.
+ *
+ * CRITICAL-3 FIX: Properly cleanup subscriptions and timers to prevent memory leaks.
+ * Should be called when navigating away from the try page.
+ *
+ * @example
+ * ```typescript
+ * // In SPA navigation handler
+ * cleanupTryPage();
+ * ```
+ */
+export function cleanupTryPage(): void {
+  // Stop auto-refresh timer
+  stopAutoRefresh()
+
+  // Unsubscribe from auth state changes
+  if (authUnsubscribe) {
+    authUnsubscribe()
+    authUnsubscribe = null
+  }
+
+  // Clear state references
+  container = null
+  currentState = { loading: false, error: null, leases: [] }
 }

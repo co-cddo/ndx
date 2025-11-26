@@ -10,6 +10,7 @@
  */
 
 import { callISBAPI } from './api-client';
+import { config } from '../config';
 
 /**
  * Lease request payload for POST /api/leases.
@@ -70,11 +71,6 @@ const API_ERRORS = {
 const LEASES_ENDPOINT = '/api/leases';
 
 /**
- * Request timeout in milliseconds.
- */
-const REQUEST_TIMEOUT = 10000;
-
-/**
  * Extract error message from API response.
  * Innovation Sandbox uses JSend format: { status: "fail", data: { errors: [{ message }] } }
  */
@@ -114,7 +110,7 @@ function matchesApiError(message: string, errorKey: keyof typeof API_ERRORS): bo
  */
 export async function createLease(leaseTemplateId: string): Promise<LeaseCreationResult> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
 
   const payload: LeaseRequest = {
     leaseTemplateUuid: leaseTemplateId,

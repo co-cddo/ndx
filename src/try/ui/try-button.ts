@@ -34,8 +34,6 @@ export function initTryButton(): void {
     'button[data-try-id], a[data-try-id]'
   );
 
-  console.log('[TryButton] Found', tryButtons.length, 'try button(s)');
-
   tryButtons.forEach((button) => {
     button.addEventListener('click', handleTryButtonClick);
   });
@@ -68,7 +66,6 @@ function handleTryButtonClick(event: Event): void {
   }
 
   // Story 6.6: User is authenticated, open AUP modal
-  console.log('[TryButton] User authenticated, opening AUP modal with tryId:', tryId);
   openAupModal(tryId, handleLeaseAccept);
 }
 
@@ -81,13 +78,10 @@ function handleTryButtonClick(event: Event): void {
  * @param tryId - The product's try_id UUID
  */
 async function handleLeaseAccept(tryId: string): Promise<void> {
-  console.log('[TryButton] Submitting lease request for tryId:', tryId);
-
   const result = await createLease(tryId);
 
   if (result.success) {
     // Success: Close modal and navigate to /try page
-    console.log('[TryButton] Lease created successfully:', result.lease);
     closeAupModal(true);
     window.location.href = '/try';
     return;
@@ -97,7 +91,6 @@ async function handleLeaseAccept(tryId: string): Promise<void> {
   switch (result.errorCode) {
     case 'CONFLICT':
       // Max sessions reached - alert and redirect to /try
-      console.log('[TryButton] Max sessions reached');
       closeAupModal(true);
       alert(result.error);
       window.location.href = '/try';
@@ -105,7 +98,6 @@ async function handleLeaseAccept(tryId: string): Promise<void> {
 
     case 'UNAUTHORIZED':
       // Auth issue - callISBAPI should have redirected, but handle gracefully
-      console.log('[TryButton] Unauthorized - redirecting to login');
       closeAupModal(true);
       window.location.href = '/api/auth/login';
       break;
@@ -115,7 +107,6 @@ async function handleLeaseAccept(tryId: string): Promise<void> {
     case 'SERVER_ERROR':
     default:
       // Show error in modal, allow retry
-      console.error('[TryButton] Lease request failed:', result.error);
       aupModal.showError(result.error || 'An error occurred. Please try again.');
       break;
   }

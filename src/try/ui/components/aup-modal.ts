@@ -76,6 +76,13 @@ class AupModal {
   };
   private onAccept: AupAcceptCallback | null = null;
 
+  // CRITICAL-2 FIX: Store bound event handlers for proper cleanup
+  private boundHandlers: {
+    checkboxChange?: (e: Event) => void;
+    continueClick?: () => Promise<void>;
+    cancelClick?: () => void;
+  } = {};
+
   /**
    * Open the modal for a specific try product.
    *
@@ -163,6 +170,9 @@ class AupModal {
     // Deactivate focus trap
     this.focusTrap?.deactivate();
     this.focusTrap = null;
+
+    // CRITICAL-2 FIX: Remove event listeners before DOM removal
+    this.detachEventListeners();
 
     // Remove modal from DOM
     this.overlay?.remove();
@@ -320,14 +330,15 @@ class AupModal {
 
   /**
    * Attach event listeners to modal elements.
+   * CRITICAL-2 FIX: Store handlers for later removal in detachEventListeners().
    */
   private attachEventListeners(): void {
     const checkbox = document.getElementById(IDS.CHECKBOX) as HTMLInputElement;
     const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
     const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
 
-    // Checkbox change
-    checkbox?.addEventListener('change', () => {
+    // Checkbox change - store handler for cleanup
+    this.boundHandlers.checkboxChange = () => {
       this.state.aupAccepted = checkbox.checked;
       this.updateButtons();
 
@@ -336,10 +347,11 @@ class AupModal {
       } else {
         announce('Acceptable Use Policy not accepted. Continue button is disabled.');
       }
-    });
+    };
+    checkbox?.addEventListener('change', this.boundHandlers.checkboxChange);
 
-    // Continue button click
-    continueBtn?.addEventListener('click', async () => {
+    // Continue button click - store handler for cleanup
+    this.boundHandlers.continueClick = async () => {
       if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return;
 
       this.state.isLoading = true;
@@ -349,17 +361,42 @@ class AupModal {
       try {
         await this.onAccept?.(this.state.tryId);
         // Success - callback handles navigation
-      } catch (error) {
+      } catch {
         this.state.isLoading = false;
         this.updateButtons();
         // Error handling is done by the callback
       }
-    });
+    };
+    continueBtn?.addEventListener('click', this.boundHandlers.continueClick);
 
-    // Cancel button click
-    cancelBtn?.addEventListener('click', () => {
+    // Cancel button click - store handler for cleanup
+    this.boundHandlers.cancelClick = () => {
       this.close();
-    });
+    };
+    cancelBtn?.addEventListener('click', this.boundHandlers.cancelClick);
+  }
+
+  /**
+   * Detach event listeners from modal elements.
+   * CRITICAL-2 FIX: Prevents memory leaks when modal is closed.
+   */
+  private detachEventListeners(): void {
+    const checkbox = document.getElementById(IDS.CHECKBOX);
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+
+    if (this.boundHandlers.checkboxChange && checkbox) {
+      checkbox.removeEventListener('change', this.boundHandlers.checkboxChange);
+    }
+    if (this.boundHandlers.continueClick && continueBtn) {
+      continueBtn.removeEventListener('click', this.boundHandlers.continueClick);
+    }
+    if (this.boundHandlers.cancelClick && cancelBtn) {
+      cancelBtn.removeEventListener('click', this.boundHandlers.cancelClick);
+    }
+
+    // Clear handler references
+    this.boundHandlers = {};
   }
 
   /**

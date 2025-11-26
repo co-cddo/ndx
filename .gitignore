@@ -18,3 +18,4 @@ _site
 .claude
 playwright-report
 test-results
+coverage

@@ -17,6 +17,7 @@
  */
 
 import { JWT_TOKEN_KEY } from '../constants';
+import { isJWTExpired } from '../utils/jwt-utils';
 
 /**
  * Type definition for authentication state change listeners.
@@ -67,11 +68,13 @@ class AuthState {
   /**
    * Check if user is currently authenticated.
    *
-   * Authentication is determined by the presence of a JWT token in sessionStorage.
-   * This method does NOT validate the token's expiration or signature - that's
-   * handled server-side by the Innovation Sandbox API.
+   * Authentication is determined by:
+   * 1. Presence of a JWT token in sessionStorage
+   * 2. Token not being expired (checked client-side with 60s buffer)
    *
-   * @returns {boolean} True if JWT token exists in sessionStorage, false otherwise
+   * If token is expired, it is automatically cleared from sessionStorage.
+   *
+   * @returns {boolean} True if valid, non-expired JWT token exists, false otherwise
    *
    * @example
    * ```typescript
@@ -91,7 +94,18 @@ class AuthState {
     }
 
     const token = sessionStorage.getItem(JWT_TOKEN_KEY);
-    return token !== null && token !== '';
+    if (!token) {
+      return false;
+    }
+
+    // Check if token is expired (with 60s buffer for clock skew)
+    if (isJWTExpired(token, 60)) {
+      console.warn('[AuthState] JWT token expired, clearing from sessionStorage');
+      sessionStorage.removeItem(JWT_TOKEN_KEY);
+      return false;
+    }
+
+    return true;
   }
 
   /**

@@ -125,6 +125,85 @@ describe('url-validator', () => {
         expect(isValidReturnUrl(undefined as unknown as string)).toBe(false);
       });
     });
+
+    describe('additional dangerous protocols (security)', () => {
+      it('should reject blob: URLs', () => {
+        expect(isValidReturnUrl('blob:https://example.com/uuid')).toBe(false);
+        expect(isValidReturnUrl('BLOB:https://example.com/uuid')).toBe(false);
+      });
+
+      it('should reject about: URLs', () => {
+        expect(isValidReturnUrl('about:blank')).toBe(false);
+        expect(isValidReturnUrl('about:srcdoc')).toBe(false);
+        expect(isValidReturnUrl('ABOUT:blank')).toBe(false);
+      });
+
+      it('should reject mailto: URLs', () => {
+        expect(isValidReturnUrl('mailto:attacker@evil.com')).toBe(false);
+        expect(isValidReturnUrl('MAILTO:attacker@evil.com')).toBe(false);
+      });
+
+      it('should reject tel: URLs', () => {
+        expect(isValidReturnUrl('tel:+1234567890')).toBe(false);
+      });
+
+      it('should reject ftp: URLs', () => {
+        expect(isValidReturnUrl('ftp://evil.com/file')).toBe(false);
+      });
+    });
+
+    describe('Unicode and encoding attacks (security)', () => {
+      it('should reject Unicode homograph attacks', () => {
+        // Cyrillic characters that look like Latin
+        expect(isValidReturnUrl('https://gооgle.com')).toBe(false); // Using Cyrillic 'о'
+        expect(isValidReturnUrl('https://xn--ggle-0nda.com')).toBe(false); // Punycode
+      });
+
+      it('should reject URL-encoded dangerous characters', () => {
+        // %2f = /
+        expect(isValidReturnUrl('/%2f%2fevil.com')).toBe(false);
+        expect(isValidReturnUrl('/%252f%252fevil.com')).toBe(false); // Double encoded
+      });
+
+      it('should reject null bytes', () => {
+        expect(isValidReturnUrl('/path%00.html')).toBe(false);
+        expect(isValidReturnUrl('/path\x00.html')).toBe(false);
+      });
+
+      it('should reject CRLF injection attempts', () => {
+        expect(isValidReturnUrl('/path%0d%0aSet-Cookie:evil')).toBe(false);
+        expect(isValidReturnUrl('/path\r\nSet-Cookie:evil')).toBe(false);
+      });
+    });
+
+    describe('backslash bypass attempts (security)', () => {
+      it('should reject backslash-based redirects', () => {
+        expect(isValidReturnUrl('/\\evil.com')).toBe(false);
+        expect(isValidReturnUrl('\\evil.com')).toBe(false);
+        expect(isValidReturnUrl('/\\\\evil.com')).toBe(false);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should reject paths that look valid but contain encoded attacks', () => {
+        // Double-encoded forward slashes
+        expect(isValidReturnUrl('/%252f%252f')).toBe(false);
+      });
+
+      it('should handle very long URLs gracefully', () => {
+        const longPath = '/a'.repeat(10000);
+        // Should either accept or reject gracefully, not throw
+        expect(() => isValidReturnUrl(longPath)).not.toThrow();
+      });
+
+      it('should reject URLs with tab characters', () => {
+        expect(isValidReturnUrl('/path\tname')).toBe(false);
+      });
+
+      it('should reject URLs with form feed characters', () => {
+        expect(isValidReturnUrl('/path\fname')).toBe(false);
+      });
+    });
   });
 
   describe('sanitizeReturnUrl', () => {

@@ -4,6 +4,36 @@ var RETURN_URL_KEY = "auth-return-to";
 var CALLBACK_PATH = "/callback";
 var OAUTH_LOGIN_URL = "/api/auth/login";
 
+// src/try/utils/jwt-utils.ts
+function parseJWT(token) {
+  if (!token || typeof token !== "string") {
+    return null;
+  }
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return null;
+    }
+    const payload = parts[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(base64);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+function isJWTExpired(token, bufferSeconds = 60) {
+  const payload = parseJWT(token);
+  if (!payload) {
+    return true;
+  }
+  if (!payload.exp) {
+    return false;
+  }
+  const now = Math.floor(Date.now() / 1e3);
+  return payload.exp < now + bufferSeconds;
+}
+
 // src/try/auth/auth-provider.ts
 var AuthState = class {
   constructor() {
@@ -17,11 +47,13 @@ var AuthState = class {
   /**
    * Check if user is currently authenticated.
    *
-   * Authentication is determined by the presence of a JWT token in sessionStorage.
-   * This method does NOT validate the token's expiration or signature - that's
-   * handled server-side by the Innovation Sandbox API.
+   * Authentication is determined by:
+   * 1. Presence of a JWT token in sessionStorage
+   * 2. Token not being expired (checked client-side with 60s buffer)
    *
-   * @returns {boolean} True if JWT token exists in sessionStorage, false otherwise
+   * If token is expired, it is automatically cleared from sessionStorage.
+   *
+   * @returns {boolean} True if valid, non-expired JWT token exists, false otherwise
    *
    * @example
    * ```typescript
@@ -38,7 +70,15 @@ var AuthState = class {
       return false;
     }
     const token = sessionStorage.getItem(JWT_TOKEN_KEY);
-    return token !== null && token !== "";
+    if (!token) {
+      return false;
+    }
+    if (isJWTExpired(token, 60)) {
+      console.warn("[AuthState] JWT token expired, clearing from sessionStorage");
+      sessionStorage.removeItem(JWT_TOKEN_KEY);
+      return false;
+    }
+    return true;
   }
   /**
    * Subscribe to authentication state changes.
@@ -153,17 +193,36 @@ var authState = new AuthState();
 
 // src/try/utils/url-validator.ts
 function isValidReturnUrl(url) {
-  if (!url) {
+  if (!url || typeof url !== "string") {
     return false;
   }
-  if (url.startsWith("/") && !url.startsWith("//")) {
+  if (/^(javascript|data|vbscript|file|blob|about|mailto|tel|ftp):/i.test(url)) {
+    return false;
+  }
+  if (url.startsWith("//")) {
+    return false;
+  }
+  if (url.includes("\\")) {
+    return false;
+  }
+  if (/[\x00-\x1F\x7F]/.test(url)) {
+    return false;
+  }
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes("%2f") || lowerUrl.includes("%252f")) {
+    return false;
+  }
+  if (lowerUrl.includes("%00")) {
+    return false;
+  }
+  if (lowerUrl.includes("%0d") || lowerUrl.includes("%0a")) {
+    return false;
+  }
+  if (url.startsWith("/")) {
     if (/^\/[a-z]+:/i.test(url)) {
       return false;
     }
     return true;
-  }
-  if (/^(javascript|data|vbscript|file):/i.test(url)) {
-    return false;
   }
   try {
     const parsed = new URL(url, window.location.origin);
@@ -327,6 +386,20 @@ function handleSignOut(event) {
   window.location.href = "/";
 }
 
+// src/try/utils/request-dedup.ts
+var inFlightRequests = /* @__PURE__ */ new Map();
+async function deduplicatedRequest(key, requestFn) {
+  const existing = inFlightRequests.get(key);
+  if (existing) {
+    return existing;
+  }
+  const promise = requestFn().finally(() => {
+    inFlightRequests.delete(key);
+  });
+  inFlightRequests.set(key, promise);
+  return promise;
+}
+
 // src/try/api/api-client.ts
 async function callISBAPI(endpoint, options = {}) {
   const { skipAuthRedirect, ...fetchOptions } = options;
@@ -364,28 +437,41 @@ function redirectToOAuth() {
   }
   window.location.href = OAUTH_LOGIN_URL;
 }
-async function checkAuthStatus() {
-  try {
-    const response = await callISBAPI("/api/auth/login/status", { skipAuthRedirect: true });
-    if (response.ok) {
-      const data = await response.json();
-      if (data.authenticated && data.session?.user) {
-        return {
-          authenticated: true,
-          user: data.session.user
-        };
+async function checkAuthStatus(timeout = 5e3) {
+  return deduplicatedRequest("checkAuthStatus", async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await callISBAPI("/api/auth/login/status", {
+        skipAuthRedirect: true,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated && data.session?.user) {
+          return {
+            authenticated: true,
+            user: data.session.user
+          };
+        }
+        return { authenticated: false };
+      } else if (response.status === 401) {
+        return { authenticated: false };
+      } else {
+        console.error("[api-client] Auth status check failed:", response.status, response.statusText);
+        return { authenticated: false };
       }
-      return { authenticated: false };
-    } else if (response.status === 401) {
-      return { authenticated: false };
-    } else {
-      console.error("[api-client] Auth status check failed:", response.status, response.statusText);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === "AbortError") {
+        console.error("[api-client] Auth status check timed out after", timeout, "ms");
+        return { authenticated: false };
+      }
+      console.error("[api-client] Auth status check error:", error);
       return { authenticated: false };
     }
-  } catch (error) {
-    console.error("[api-client] Auth status check error:", error);
-    return { authenticated: false };
-  }
+  });
 }
 function getToken() {
   if (typeof sessionStorage === "undefined") {
@@ -462,10 +548,17 @@ var config = {
 var CONTEXT_MESSAGES = {
   sessions: {
     401: "Please sign in to view your sessions.",
+    403: "You do not have permission to view sessions.",
     404: "Sessions not found."
   },
   configurations: {
     401: "Please sign in to continue.",
+    403: "You do not have permission to access this resource.",
+    404: "Configuration not found. Please contact support."
+  },
+  configuration: {
+    401: "Please sign in to continue.",
+    403: "You do not have permission to access this resource.",
     404: "Configuration not found. Please contact support."
   },
   leases: {
@@ -498,71 +591,73 @@ function getHttpErrorMessage(status, context = "general") {
 // src/try/api/sessions-service.ts
 var LEASES_ENDPOINT = "/api/leases";
 async function fetchUserLeases() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
-  try {
-    const authStatus = await checkAuthStatus();
-    if (!authStatus.authenticated || !authStatus.user?.email) {
-      console.error("[sessions-service] User not authenticated or email not available");
-      authState.logout();
-      return {
-        success: false,
-        error: "Please sign in to view your sessions."
-      };
-    }
-    const userEmail = encodeURIComponent(authStatus.user.email);
-    const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`;
-    const response = await callISBAPI(endpoint, {
-      method: "GET",
-      signal: controller.signal
-      // Let 401 redirect happen naturally
-    });
-    clearTimeout(timeoutId);
-    if (!response.ok) {
-      console.error("[sessions-service] API error:", response.status, response.statusText);
-      return {
-        success: false,
-        error: getHttpErrorMessage(response.status, "sessions")
-      };
-    }
-    const data = await response.json();
-    let rawLeases = [];
-    if (data?.status === "success" && Array.isArray(data?.data?.result)) {
-      rawLeases = data.data.result;
-    } else if (Array.isArray(data)) {
-      rawLeases = data;
-    } else if (Array.isArray(data?.leases)) {
-      rawLeases = data.leases;
-    }
-    const leases = rawLeases.map(transformLease);
-    leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    return {
-      success: true,
-      leases
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        console.error("[sessions-service] Request timeout");
-        return {
-          success: false,
-          error: "Request timed out. Please check your connection and try again."
-        };
-      }
-      if (error.message.includes("Unauthorized")) {
+  return deduplicatedRequest("fetchUserLeases", async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+    try {
+      const authStatus = await checkAuthStatus();
+      if (!authStatus.authenticated || !authStatus.user?.email) {
+        console.error("[sessions-service] User not authenticated or email not available");
+        authState.logout();
         return {
           success: false,
           error: "Please sign in to view your sessions."
         };
       }
-      console.error("[sessions-service] Fetch error:", error.message);
+      const userEmail = encodeURIComponent(authStatus.user.email);
+      const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`;
+      const response = await callISBAPI(endpoint, {
+        method: "GET",
+        signal: controller.signal
+        // Let 401 redirect happen naturally
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        console.error("[sessions-service] API error:", response.status, response.statusText);
+        return {
+          success: false,
+          error: getHttpErrorMessage(response.status, "sessions")
+        };
+      }
+      const data = await response.json();
+      let rawLeases = [];
+      if (data?.status === "success" && Array.isArray(data?.data?.result)) {
+        rawLeases = data.data.result;
+      } else if (Array.isArray(data)) {
+        rawLeases = data;
+      } else if (Array.isArray(data?.leases)) {
+        rawLeases = data.leases;
+      }
+      const leases = rawLeases.map(transformLease);
+      leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return {
+        success: true,
+        leases
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          console.error("[sessions-service] Request timeout");
+          return {
+            success: false,
+            error: "Request timed out. Please check your connection and try again."
+          };
+        }
+        if (error.message.includes("Unauthorized")) {
+          return {
+            success: false,
+            error: "Please sign in to view your sessions."
+          };
+        }
+        console.error("[sessions-service] Fetch error:", error.message);
+      }
+      return {
+        success: false,
+        error: "Unable to load your sessions. Please try again."
+      };
     }
-    return {
-      success: false,
-      error: "Unable to load your sessions. Please try again."
-    };
-  }
+  });
 }
 function transformLease(raw) {
   let status = "Expired";
@@ -846,10 +941,11 @@ var currentState = {
 var container = null;
 var refreshTimer = null;
 var authUnsubscribe = null;
+var visibilityChangeHandler = null;
 function initTryPage() {
   container = document.getElementById(CONTAINER_ID);
   if (!container) {
-    return;
+    return void 0;
   }
   authUnsubscribe = authState.subscribe((isAuthenticated) => {
     if (isAuthenticated) {
@@ -858,12 +954,21 @@ function initTryPage() {
       renderEmptyState(container);
     }
   });
+  visibilityChangeHandler = () => {
+    if (document.hidden) {
+      stopAutoRefresh();
+    } else if (authState.isAuthenticated() && currentState.leases.length > 0) {
+      startAutoRefresh();
+    }
+  };
+  document.addEventListener("visibilitychange", visibilityChangeHandler);
   container.addEventListener("click", (event) => {
     const target = event.target;
     if (target.dataset.action === "retry-fetch") {
       loadAndRenderSessions();
     }
   });
+  return cleanupTryPage;
 }
 async function loadAndRenderSessions() {
   if (!container) return;
@@ -976,6 +1081,19 @@ function stopAutoRefresh() {
     clearInterval(refreshTimer);
     refreshTimer = null;
   }
+}
+function cleanupTryPage() {
+  stopAutoRefresh();
+  if (authUnsubscribe) {
+    authUnsubscribe();
+    authUnsubscribe = null;
+  }
+  if (visibilityChangeHandler) {
+    document.removeEventListener("visibilitychange", visibilityChangeHandler);
+    visibilityChangeHandler = null;
+  }
+  container = null;
+  currentState = { loading: false, error: null, leases: [] };
 }
 
 // src/try/ui/utils/focus-trap.ts
@@ -1097,63 +1215,81 @@ var DEFAULT_CONFIG = {
   leaseDuration: 24
 };
 var CONFIGURATIONS_ENDPOINT = "/api/configurations";
+var CACHE_TTL_MS = 3e4;
+var configurationCache = null;
+function isCacheValid() {
+  if (!configurationCache) {
+    return false;
+  }
+  const age = Date.now() - configurationCache.timestamp;
+  return age < CACHE_TTL_MS;
+}
 async function fetchConfigurations() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
-  try {
-    const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
-      method: "GET",
-      signal: controller.signal,
-      skipAuthRedirect: true
-      // Don't redirect on 401, we'll show error in modal
-    });
-    clearTimeout(timeoutId);
-    if (!response.ok) {
-      console.error("[configurations-service] API error:", response.status, response.statusText);
-      return {
-        success: false,
-        error: getHttpErrorMessage(response.status, "configuration")
-      };
-    }
-    const rawData = await response.json();
-    const aupContent = rawData.data?.termsOfService || rawData.data?.aup || rawData.termsOfService || rawData.aup;
-    const maxLeases = rawData.data?.leases?.maxLeasesPerUser ?? rawData.maxLeases ?? DEFAULT_CONFIG.maxLeases;
-    const leaseDuration = rawData.data?.leases?.maxDurationHours ?? rawData.leaseDuration ?? DEFAULT_CONFIG.leaseDuration;
-    if (!aupContent || typeof aupContent !== "string") {
-      console.warn("[configurations-service] Invalid AUP in response, using fallback");
-      return {
-        success: true,
-        data: {
-          ...DEFAULT_CONFIG,
-          aup: DEFAULT_CONFIG.aup
-        }
-      };
-    }
-    return {
-      success: true,
-      data: {
-        maxLeases,
-        leaseDuration,
-        aup: aupContent
-      }
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        console.error("[configurations-service] Request timeout");
+  if (isCacheValid() && configurationCache) {
+    return configurationCache.data;
+  }
+  return deduplicatedRequest("fetchConfigurations", async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+    try {
+      const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
+        method: "GET",
+        signal: controller.signal,
+        skipAuthRedirect: true
+        // Don't redirect on 401, we'll show error in modal
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        console.error("[configurations-service] API error:", response.status, response.statusText);
         return {
           success: false,
-          error: "Request timed out. Please check your connection and try again."
+          error: getHttpErrorMessage(response.status, "configuration")
         };
       }
-      console.error("[configurations-service] Fetch error:", error.message);
+      const rawData = await response.json();
+      const aupContent = rawData.data?.termsOfService || rawData.data?.aup || rawData.termsOfService || rawData.aup;
+      const maxLeases = rawData.data?.leases?.maxLeasesPerUser ?? rawData.maxLeases ?? DEFAULT_CONFIG.maxLeases;
+      const leaseDuration = rawData.data?.leases?.maxDurationHours ?? rawData.leaseDuration ?? DEFAULT_CONFIG.leaseDuration;
+      if (!aupContent || typeof aupContent !== "string") {
+        console.warn("[configurations-service] Invalid AUP in response, using fallback");
+        const fallbackResult = {
+          success: true,
+          data: {
+            ...DEFAULT_CONFIG,
+            aup: DEFAULT_CONFIG.aup
+          }
+        };
+        configurationCache = { data: fallbackResult, timestamp: Date.now() };
+        return fallbackResult;
+      }
+      const result = {
+        success: true,
+        data: {
+          maxLeases,
+          leaseDuration,
+          aup: aupContent
+        }
+      };
+      configurationCache = { data: result, timestamp: Date.now() };
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          console.error("[configurations-service] Request timeout");
+          return {
+            success: false,
+            error: "Request timed out. Please check your connection and try again."
+          };
+        }
+        console.error("[configurations-service] Fetch error:", error.message);
+      }
+      return {
+        success: false,
+        error: "Unable to load configuration. Please try again."
+      };
     }
-    return {
-      success: false,
-      error: "Unable to load configuration. Please try again."
-    };
-  }
+  });
 }
 function getFallbackAup() {
   return FALLBACK_AUP;
@@ -1274,6 +1410,8 @@ var AupModal = class {
   /**
    * Show loading state.
    *
+   * XSS-safe: Uses textContent for user-provided message instead of innerHTML interpolation.
+   *
    * @param message - Loading message to display
    */
   showLoading(message = "Loading...") {
@@ -1283,9 +1421,13 @@ var AupModal = class {
       body.innerHTML = `
         <div class="aup-modal__loading" aria-live="polite">
           <div class="aup-modal__spinner" aria-hidden="true"></div>
-          <span>${message}</span>
+          <span id="aup-loading-message"></span>
         </div>
       `;
+      const messageEl = body.querySelector("#aup-loading-message");
+      if (messageEl) {
+        messageEl.textContent = message;
+      }
     }
     this.updateButtons();
     announce(message);

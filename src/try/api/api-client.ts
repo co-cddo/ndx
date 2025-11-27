@@ -18,6 +18,8 @@
  */
 
 import { JWT_TOKEN_KEY, OAUTH_LOGIN_URL } from '../constants';
+import { deduplicatedRequest } from '../utils/request-dedup';
+import { config } from '../config';
 
 /**
  * User session data returned from auth status API.
@@ -209,36 +211,67 @@ interface AuthStatusResponse {
   };
 }
 
-export async function checkAuthStatus(): Promise<AuthStatusResult> {
-  try {
-    // Use skipAuthRedirect to prevent redirect on 401 - we handle it gracefully here
-    const response = await callISBAPI('/api/auth/login/status', { skipAuthRedirect: true });
+/**
+ * Checks authentication status with timeout protection.
+ *
+ * Uses request deduplication (ADR-028) to prevent concurrent duplicate calls
+ * when multiple components check auth status simultaneously.
+ *
+ * PERFORMANCE FIX: Includes timeout to prevent indefinite hanging on slow networks.
+ * Default timeout is 5 seconds (shorter than standard 10s request timeout since
+ * auth checks should be fast and blocking the UI is worse than failing fast).
+ *
+ * @param timeout - Timeout in milliseconds (default: 5000ms)
+ * @returns Promise resolving to AuthStatusResult
+ */
+export async function checkAuthStatus(timeout = 5000): Promise<AuthStatusResult> {
+  return deduplicatedRequest('checkAuthStatus', async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-    if (response.ok) {
-      const data: AuthStatusResponse = await response.json();
+    try {
+      // Use skipAuthRedirect to prevent redirect on 401 - we handle it gracefully here
+      const response = await callISBAPI('/api/auth/login/status', {
+        skipAuthRedirect: true,
+        signal: controller.signal,
+      });
 
-      // Handle actual API response structure: { authenticated, session: { user } }
-      if (data.authenticated && data.session?.user) {
-        return {
-          authenticated: true,
-          user: data.session.user,
-        };
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data: AuthStatusResponse = await response.json();
+
+        // Handle actual API response structure: { authenticated, session: { user } }
+        if (data.authenticated && data.session?.user) {
+          return {
+            authenticated: true,
+            user: data.session.user,
+          };
+        }
+
+        return { authenticated: false };
+      } else if (response.status === 401) {
+        // Token invalid or expired - this is expected, not an error
+        return { authenticated: false };
+      } else {
+        // Other HTTP errors (500, etc.)
+        console.error('[api-client] Auth status check failed:', response.status, response.statusText);
+        return { authenticated: false };
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      // Handle timeout specifically
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('[api-client] Auth status check timed out after', timeout, 'ms');
+        return { authenticated: false };
       }
 
-      return { authenticated: false };
-    } else if (response.status === 401) {
-      // Token invalid or expired - this is expected, not an error
-      return { authenticated: false };
-    } else {
-      // Other HTTP errors (500, etc.)
-      console.error('[api-client] Auth status check failed:', response.status, response.statusText);
+      // Network errors (offline, CORS, etc.)
+      console.error('[api-client] Auth status check error:', error);
       return { authenticated: false };
     }
-  } catch (error) {
-    // Network errors (offline, CORS, etc.)
-    console.error('[api-client] Auth status check error:', error);
-    return { authenticated: false };
-  }
+  });
 }
 
 /**

@@ -5,6 +5,23 @@
 
 import { authState } from './auth-provider';
 
+/**
+ * Helper to create a valid JWT for testing.
+ * Creates a token that expires in the future.
+ */
+function createTestJWT(expiresInSeconds = 3600): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payload = btoa(
+    JSON.stringify({
+      sub: 'test-user',
+      exp: Math.floor(Date.now() / 1000) + expiresInSeconds,
+      iat: Math.floor(Date.now() / 1000),
+    })
+  );
+  const signature = 'test-signature';
+  return `${header}.${payload}.${signature}`;
+}
+
 describe('AuthState', () => {
   beforeEach(() => {
     // Clear sessionStorage before each test
@@ -21,8 +38,8 @@ describe('AuthState', () => {
       expect(authState.isAuthenticated()).toBe(false);
     });
 
-    it('should return true when JWT token exists in sessionStorage', () => {
-      sessionStorage.setItem('isb-jwt', 'mock-token');
+    it('should return true when valid JWT token exists in sessionStorage', () => {
+      sessionStorage.setItem('isb-jwt', createTestJWT());
       expect(authState.isAuthenticated()).toBe(true);
     });
 
@@ -40,8 +57,8 @@ describe('AuthState', () => {
       expect(listener).toHaveBeenCalledWith(false);
     });
 
-    it('should call listener with true when token exists', () => {
-      sessionStorage.setItem('isb-jwt', 'mock-token');
+    it('should call listener with true when valid token exists', () => {
+      sessionStorage.setItem('isb-jwt', createTestJWT());
       const listener = jest.fn();
       authState.subscribe(listener);
       expect(listener).toHaveBeenCalledWith(true);
@@ -65,8 +82,8 @@ describe('AuthState', () => {
       // Clear initial call
       listener.mockClear();
 
-      // Add token
-      sessionStorage.setItem('isb-jwt', 'mock-token');
+      // Add valid token
+      sessionStorage.setItem('isb-jwt', createTestJWT());
       authState.notify();
 
       expect(listener).toHaveBeenCalledTimes(1);
@@ -92,8 +109,9 @@ describe('AuthState', () => {
 
   describe('login()', () => {
     it('should store token in sessionStorage', () => {
-      authState.login('test-jwt-token');
-      expect(sessionStorage.getItem('isb-jwt')).toBe('test-jwt-token');
+      const token = createTestJWT();
+      authState.login(token);
+      expect(sessionStorage.getItem('isb-jwt')).toBe(token);
     });
 
     it('should notify subscribers after login', () => {
@@ -101,7 +119,7 @@ describe('AuthState', () => {
       authState.subscribe(listener);
       listener.mockClear();
 
-      authState.login('test-jwt-token');
+      authState.login(createTestJWT());
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener).toHaveBeenCalledWith(true);
@@ -110,13 +128,13 @@ describe('AuthState', () => {
 
   describe('logout()', () => {
     it('should remove token from sessionStorage', () => {
-      sessionStorage.setItem('isb-jwt', 'test-token');
+      sessionStorage.setItem('isb-jwt', createTestJWT());
       authState.logout();
       expect(sessionStorage.getItem('isb-jwt')).toBeNull();
     });
 
     it('should notify subscribers after logout', () => {
-      sessionStorage.setItem('isb-jwt', 'test-token');
+      sessionStorage.setItem('isb-jwt', createTestJWT());
       const listener = jest.fn();
       authState.subscribe(listener);
       listener.mockClear();
@@ -137,8 +155,8 @@ describe('AuthState', () => {
       expect(listener).toHaveBeenCalledWith(false);
       listener.mockClear();
 
-      // User signs in
-      authState.login('jwt-token-from-oauth');
+      // User signs in with valid JWT
+      authState.login(createTestJWT());
       expect(listener).toHaveBeenCalledWith(true);
       expect(authState.isAuthenticated()).toBe(true);
     });
@@ -146,8 +164,8 @@ describe('AuthState', () => {
     it('should handle complete sign out flow', () => {
       const listener = jest.fn();
 
-      // Start authenticated
-      sessionStorage.setItem('isb-jwt', 'existing-token');
+      // Start authenticated with valid token
+      sessionStorage.setItem('isb-jwt', createTestJWT());
       authState.subscribe(listener);
       expect(listener).toHaveBeenCalledWith(true);
       listener.mockClear();
@@ -168,12 +186,55 @@ describe('AuthState', () => {
       navListener.mockClear();
       tryButtonListener.mockClear();
 
-      // Simulate OAuth login
-      authState.login('oauth-token');
+      // Simulate OAuth login with valid JWT
+      authState.login(createTestJWT());
 
       // Both components should be notified
       expect(navListener).toHaveBeenCalledWith(true);
       expect(tryButtonListener).toHaveBeenCalledWith(true);
+    });
+  });
+
+  describe('JWT expiration', () => {
+    it('should return false for expired token', () => {
+      // Create an already expired token (expired 100 seconds ago)
+      const expiredToken = createTestJWT(-100);
+      sessionStorage.setItem('isb-jwt', expiredToken);
+
+      expect(authState.isAuthenticated()).toBe(false);
+    });
+
+    it('should clear expired token from sessionStorage', () => {
+      const expiredToken = createTestJWT(-100);
+      sessionStorage.setItem('isb-jwt', expiredToken);
+
+      authState.isAuthenticated();
+
+      // Token should have been removed
+      expect(sessionStorage.getItem('isb-jwt')).toBeNull();
+    });
+
+    it('should return false for invalid token format', () => {
+      sessionStorage.setItem('isb-jwt', 'invalid-not-a-jwt');
+
+      expect(authState.isAuthenticated()).toBe(false);
+    });
+
+    it('should return true for token expiring in the future', () => {
+      // Token expires in 1 hour
+      const validToken = createTestJWT(3600);
+      sessionStorage.setItem('isb-jwt', validToken);
+
+      expect(authState.isAuthenticated()).toBe(true);
+    });
+
+    it('should consider buffer time when checking expiration', () => {
+      // Token expires in 30 seconds (less than 60s buffer)
+      const nearExpiredToken = createTestJWT(30);
+      sessionStorage.setItem('isb-jwt', nearExpiredToken);
+
+      // Should be considered expired due to 60s buffer
+      expect(authState.isAuthenticated()).toBe(false);
     });
   });
 });

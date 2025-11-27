@@ -45,6 +45,8 @@ let container: HTMLElement | null = null
 let refreshTimer: number | null = null
 // CRITICAL-3 FIX: Store unsubscribe function for auth state cleanup
 let authUnsubscribe: (() => void) | null = null
+// MEMORY LEAK FIX: Store visibility change handler for cleanup
+let visibilityChangeHandler: (() => void) | null = null
 
 /**
  * Initialize the try page component.
@@ -53,21 +55,27 @@ let authUnsubscribe: (() => void) | null = null
  * - Empty state (sign in prompt) when unauthenticated
  * - Sessions table when authenticated
  *
+ * MEMORY LEAK FIX: Returns cleanup function and adds visibility change listener
+ * to pause/resume auto-refresh when tab is hidden/visible.
+ *
+ * @returns Cleanup function to call when navigating away from the page
+ *
  * @example
  * ```typescript
  * // In main.ts
  * import { initTryPage } from './ui/try-page';
  *
  * document.addEventListener('DOMContentLoaded', () => {
- *   initTryPage();
+ *   const cleanup = initTryPage();
+ *   // Call cleanup() when navigating away
  * });
  * ```
  */
-export function initTryPage(): void {
+export function initTryPage(): (() => void) | undefined {
   container = document.getElementById(CONTAINER_ID)
   if (!container) {
     // Not on /try page, skip initialization
-    return
+    return undefined
   }
 
   // Subscribe to auth state changes (ADR-024)
@@ -81,6 +89,19 @@ export function initTryPage(): void {
     }
   })
 
+  // MEMORY LEAK FIX: Add visibility change listener to pause auto-refresh
+  // when tab is hidden (saves resources and prevents stale data on return)
+  visibilityChangeHandler = () => {
+    if (document.hidden) {
+      // Tab is hidden - pause auto-refresh
+      stopAutoRefresh()
+    } else if (authState.isAuthenticated() && currentState.leases.length > 0) {
+      // Tab is visible and user is authenticated with sessions - resume refresh
+      startAutoRefresh()
+    }
+  }
+  document.addEventListener("visibilitychange", visibilityChangeHandler)
+
   // Set up retry button handler
   container.addEventListener("click", (event) => {
     const target = event.target as HTMLElement
@@ -88,6 +109,9 @@ export function initTryPage(): void {
       loadAndRenderSessions()
     }
   })
+
+  // Return cleanup function for proper teardown
+  return cleanupTryPage
 }
 
 /**
@@ -270,6 +294,8 @@ function stopAutoRefresh(): void {
  * Clean up try page resources.
  *
  * CRITICAL-3 FIX: Properly cleanup subscriptions and timers to prevent memory leaks.
+ * MEMORY LEAK FIX: Also removes visibility change listener.
+ *
  * Should be called when navigating away from the try page.
  *
  * @example
@@ -286,6 +312,12 @@ export function cleanupTryPage(): void {
   if (authUnsubscribe) {
     authUnsubscribe()
     authUnsubscribe = null
+  }
+
+  // MEMORY LEAK FIX: Remove visibility change listener
+  if (visibilityChangeHandler) {
+    document.removeEventListener("visibilitychange", visibilityChangeHandler)
+    visibilityChangeHandler = null
   }
 
   // Clear state references

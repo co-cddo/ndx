@@ -6,7 +6,11 @@
  * @jest-environment jsdom
  */
 
-import { fetchConfigurations, getFallbackAup } from './configurations-service';
+import {
+  fetchConfigurations,
+  getFallbackAup,
+  clearConfigurationCache,
+} from './configurations-service';
 import { callISBAPI } from './api-client';
 
 // Mock the api-client module
@@ -19,6 +23,8 @@ const mockCallISBAPI = callISBAPI as jest.MockedFunction<typeof callISBAPI>;
 describe('Configurations Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Clear cache between tests to ensure isolation
+    clearConfigurationCache();
   });
 
   describe('fetchConfigurations', () => {
@@ -442,6 +448,126 @@ describe('Configurations Service', () => {
         expect(result.success).toBe(false);
         expect(result.error).toBe('Unable to load configuration. Please try again.');
       });
+    });
+  });
+
+  describe('Caching', () => {
+    it('should return cached result on subsequent calls', async () => {
+      mockCallISBAPI.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            status: 'success',
+            data: {
+              termsOfService: 'Cached AUP content',
+              leases: { maxLeasesPerUser: 5, maxDurationHours: 24 },
+            },
+          }),
+      } as Response);
+
+      // First call should hit API
+      const result1 = await fetchConfigurations();
+      expect(result1.success).toBe(true);
+      expect(result1.data?.aup).toBe('Cached AUP content');
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(1);
+
+      // Second call should return cached result
+      const result2 = await fetchConfigurations();
+      expect(result2.success).toBe(true);
+      expect(result2.data?.aup).toBe('Cached AUP content');
+      // API should not be called again
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(1);
+    });
+
+    it('should expire cache after TTL', async () => {
+      jest.useFakeTimers();
+
+      mockCallISBAPI.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            status: 'success',
+            data: {
+              termsOfService: 'Fresh AUP content',
+              leases: { maxLeasesPerUser: 5, maxDurationHours: 24 },
+            },
+          }),
+      } as Response);
+
+      // First call
+      await fetchConfigurations();
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(1);
+
+      // Advance time by 31 seconds (past 30s TTL)
+      jest.advanceTimersByTime(31_000);
+
+      // Second call should hit API again
+      await fetchConfigurations();
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(2);
+
+      jest.useRealTimers();
+    });
+
+    it('should clear cache when clearConfigurationCache is called', async () => {
+      mockCallISBAPI.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            status: 'success',
+            data: {
+              termsOfService: 'AUP content',
+              leases: { maxLeasesPerUser: 5, maxDurationHours: 24 },
+            },
+          }),
+      } as Response);
+
+      // First call
+      await fetchConfigurations();
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(1);
+
+      // Clear cache
+      clearConfigurationCache();
+
+      // Second call should hit API again
+      await fetchConfigurations();
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not cache failed responses', async () => {
+      // First call fails
+      mockCallISBAPI.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () => Promise.resolve({}),
+      } as Response);
+
+      const result1 = await fetchConfigurations();
+      expect(result1.success).toBe(false);
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(1);
+
+      // Setup successful response for second call
+      mockCallISBAPI.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            status: 'success',
+            data: {
+              termsOfService: 'Now it works',
+              leases: { maxLeasesPerUser: 5, maxDurationHours: 24 },
+            },
+          }),
+      } as Response);
+
+      // Second call should hit API again (failure not cached)
+      const result2 = await fetchConfigurations();
+      expect(result2.success).toBe(true);
+      expect(result2.data?.aup).toBe('Now it works');
+      expect(mockCallISBAPI).toHaveBeenCalledTimes(2);
     });
   });
 

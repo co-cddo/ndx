@@ -11,6 +11,15 @@
  * Validates that a URL is safe for redirect (same-origin or relative path).
  * Prevents open redirect attacks by rejecting external URLs.
  *
+ * 7-layer defense against redirect attacks:
+ * 1. Reject empty/null URLs
+ * 2. Reject dangerous protocols (javascript:, data:, blob:, about:, mailto:, etc.)
+ * 3. Reject protocol-relative URLs (//)
+ * 4. Reject backslash-based redirects
+ * 5. Reject null bytes and control characters
+ * 6. Reject encoded attack sequences
+ * 7. Validate same-origin for absolute URLs
+ *
  * @param url - URL to validate
  * @returns true if URL is safe for redirect
  *
@@ -25,12 +34,54 @@
  * ```
  */
 export function isValidReturnUrl(url: string): boolean {
-  if (!url) {
+  // Layer 1: Reject empty/null URLs
+  if (!url || typeof url !== 'string') {
     return false;
   }
 
-  // Allow relative paths starting with / but not // (protocol-relative)
-  if (url.startsWith('/') && !url.startsWith('//')) {
+  // Layer 2: Reject dangerous protocols (expanded list)
+  // Case-insensitive check for all dangerous protocol handlers
+  if (/^(javascript|data|vbscript|file|blob|about|mailto|tel|ftp):/i.test(url)) {
+    return false;
+  }
+
+  // Layer 3: Reject protocol-relative URLs
+  if (url.startsWith('//')) {
+    return false;
+  }
+
+  // Layer 4: Reject backslash-based redirects
+  // Backslashes can be interpreted as forward slashes in some browsers
+  if (url.includes('\\')) {
+    return false;
+  }
+
+  // Layer 5: Reject null bytes and control characters
+  // Null bytes can truncate strings in some systems
+  // Control characters (0x00-0x1F, 0x7F) can cause parsing issues
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1F\x7F]/.test(url)) {
+    return false;
+  }
+
+  // Layer 6: Reject encoded attack sequences
+  // Check for URL-encoded dangerous patterns
+  const lowerUrl = url.toLowerCase();
+  // Encoded forward slashes (%2f, %252f for double encoding)
+  if (lowerUrl.includes('%2f') || lowerUrl.includes('%252f')) {
+    return false;
+  }
+  // Encoded null bytes (%00)
+  if (lowerUrl.includes('%00')) {
+    return false;
+  }
+  // CRLF injection (%0d = CR, %0a = LF)
+  if (lowerUrl.includes('%0d') || lowerUrl.includes('%0a')) {
+    return false;
+  }
+
+  // Handle relative paths starting with /
+  if (url.startsWith('/')) {
     // Reject protocol handlers disguised as paths (e.g., /javascript:)
     if (/^\/[a-z]+:/i.test(url)) {
       return false;
@@ -38,12 +89,7 @@ export function isValidReturnUrl(url: string): boolean {
     return true;
   }
 
-  // Reject dangerous protocols
-  if (/^(javascript|data|vbscript|file):/i.test(url)) {
-    return false;
-  }
-
-  // Parse and validate absolute URLs for same-origin
+  // Layer 7: Parse and validate absolute URLs for same-origin
   try {
     const parsed = new URL(url, window.location.origin);
 

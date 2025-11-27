@@ -199,18 +199,26 @@ class AupModal {
   /**
    * Show loading state.
    *
+   * XSS-safe: Uses textContent for user-provided message instead of innerHTML interpolation.
+   *
    * @param message - Loading message to display
    */
   showLoading(message = 'Loading...'): void {
     this.state.isLoading = true;
     const body = this.overlay?.querySelector('.aup-modal__body');
     if (body) {
+      // XSS-safe: Create DOM structure without user content interpolation
       body.innerHTML = `
         <div class="aup-modal__loading" aria-live="polite">
           <div class="aup-modal__spinner" aria-hidden="true"></div>
-          <span>${message}</span>
+          <span id="aup-loading-message"></span>
         </div>
       `;
+      // XSS-safe: Use textContent for dynamic message to prevent script injection
+      const messageEl = body.querySelector('#aup-loading-message');
+      if (messageEl) {
+        messageEl.textContent = message;
+      }
     }
     this.updateButtons();
     announce(message);

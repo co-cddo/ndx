@@ -13,6 +13,7 @@ import { callISBAPI, checkAuthStatus } from './api-client';
 import { authState } from '../auth/auth-provider';
 import { config } from '../config';
 import { getHttpErrorMessage } from '../utils/error-utils';
+import { deduplicatedRequest } from '../utils/request-dedup';
 
 /**
  * Lease status values.
@@ -94,6 +95,9 @@ const LEASES_ENDPOINT = '/api/leases';
 /**
  * Fetch user's leases from the Innovation Sandbox API.
  *
+ * Uses request deduplication (ADR-028) to prevent concurrent duplicate calls
+ * when multiple components request leases simultaneously.
+ *
  * @returns Promise resolving to LeasesResult
  *
  * @example
@@ -105,99 +109,101 @@ const LEASES_ENDPOINT = '/api/leases';
  * }
  */
 export async function fetchUserLeases(): Promise<LeasesResult> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+  return deduplicatedRequest('fetchUserLeases', async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
 
-  try {
-    // First, get user email from auth status API
-    const authStatus = await checkAuthStatus();
-    if (!authStatus.authenticated || !authStatus.user?.email) {
-      console.error('[sessions-service] User not authenticated or email not available');
+    try {
+      // First, get user email from auth status API
+      const authStatus = await checkAuthStatus();
+      if (!authStatus.authenticated || !authStatus.user?.email) {
+        console.error('[sessions-service] User not authenticated or email not available');
 
-      // DEFECT FIX: Clear invalid token from sessionStorage and notify subscribers.
-      // This handles the case where token exists locally but is invalid server-side
-      // (e.g., API returns 200 with authenticated:false instead of 401).
-      // Without this, UI shows "signed in" state but API calls fail.
-      authState.logout();
+        // DEFECT FIX: Clear invalid token from sessionStorage and notify subscribers.
+        // This handles the case where token exists locally but is invalid server-side
+        // (e.g., API returns 200 with authenticated:false instead of 401).
+        // Without this, UI shows "signed in" state but API calls fail.
+        authState.logout();
 
-      return {
-        success: false,
-        error: 'Please sign in to view your sessions.',
-      };
-    }
-
-    const userEmail = encodeURIComponent(authStatus.user.email);
-    const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`;
-
-    const response = await callISBAPI(endpoint, {
-      method: 'GET',
-      signal: controller.signal,
-      // Let 401 redirect happen naturally
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error('[sessions-service] API error:', response.status, response.statusText);
-      return {
-        success: false,
-        error: getHttpErrorMessage(response.status, 'sessions'),
-      };
-    }
-
-    const data = await response.json();
-
-    // API response structure: { status: "success", data: { result: [...], nextPageIdentifier: null } }
-    let rawLeases: RawLease[] = [];
-
-    if (data?.status === 'success' && Array.isArray(data?.data?.result)) {
-      rawLeases = data.data.result;
-    } else if (Array.isArray(data)) {
-      // Fallback for direct array response
-      rawLeases = data;
-    } else if (Array.isArray(data?.leases)) {
-      // Legacy format fallback
-      rawLeases = data.leases;
-    }
-
-    // Transform raw API leases to normalized Lease format
-    const leases: Lease[] = rawLeases.map(transformLease);
-
-    // Sort by createdAt descending (newest first)
-    leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    return {
-      success: true,
-      leases,
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error('[sessions-service] Request timeout');
-        return {
-          success: false,
-          error: 'Request timed out. Please check your connection and try again.',
-        };
-      }
-
-      // 401 redirect error from callISBAPI
-      if (error.message.includes('Unauthorized')) {
         return {
           success: false,
           error: 'Please sign in to view your sessions.',
         };
       }
 
-      console.error('[sessions-service] Fetch error:', error.message);
-    }
+      const userEmail = encodeURIComponent(authStatus.user.email);
+      const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`;
 
-    return {
-      success: false,
-      error: 'Unable to load your sessions. Please try again.',
-    };
-  }
+      const response = await callISBAPI(endpoint, {
+        method: 'GET',
+        signal: controller.signal,
+        // Let 401 redirect happen naturally
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.error('[sessions-service] API error:', response.status, response.statusText);
+        return {
+          success: false,
+          error: getHttpErrorMessage(response.status, 'sessions'),
+        };
+      }
+
+      const data = await response.json();
+
+      // API response structure: { status: "success", data: { result: [...], nextPageIdentifier: null } }
+      let rawLeases: RawLease[] = [];
+
+      if (data?.status === 'success' && Array.isArray(data?.data?.result)) {
+        rawLeases = data.data.result;
+      } else if (Array.isArray(data)) {
+        // Fallback for direct array response
+        rawLeases = data;
+      } else if (Array.isArray(data?.leases)) {
+        // Legacy format fallback
+        rawLeases = data.leases;
+      }
+
+      // Transform raw API leases to normalized Lease format
+      const leases: Lease[] = rawLeases.map(transformLease);
+
+      // Sort by createdAt descending (newest first)
+      leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      return {
+        success: true,
+        leases,
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.error('[sessions-service] Request timeout');
+          return {
+            success: false,
+            error: 'Request timed out. Please check your connection and try again.',
+          };
+        }
+
+        // 401 redirect error from callISBAPI
+        if (error.message.includes('Unauthorized')) {
+          return {
+            success: false,
+            error: 'Please sign in to view your sessions.',
+          };
+        }
+
+        console.error('[sessions-service] Fetch error:', error.message);
+      }
+
+      return {
+        success: false,
+        error: 'Unable to load your sessions. Please try again.',
+      };
+    }
+  });
 }
 
 /**

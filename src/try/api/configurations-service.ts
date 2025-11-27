@@ -13,6 +13,7 @@
 import { callISBAPI } from './api-client';
 import { config } from '../config';
 import { getHttpErrorMessage } from '../utils/error-utils';
+import { deduplicatedRequest } from '../utils/request-dedup';
 
 /**
  * Configuration response from /api/configurations endpoint.
@@ -103,7 +104,53 @@ const DEFAULT_CONFIG: ConfigurationResponse = {
 const CONFIGURATIONS_ENDPOINT = '/api/configurations';
 
 /**
+ * Cache TTL in milliseconds (30 seconds).
+ * Configurations rarely change, so we can cache for a short period to reduce API calls.
+ */
+const CACHE_TTL_MS = 30_000;
+
+/**
+ * Cached configuration response with timestamp.
+ */
+interface CachedConfiguration {
+  data: ConfigurationsResult;
+  timestamp: number;
+}
+
+/**
+ * In-memory cache for configuration response.
+ * @internal
+ */
+let configurationCache: CachedConfiguration | null = null;
+
+/**
+ * Check if cached configuration is still valid.
+ * @internal
+ */
+function isCacheValid(): boolean {
+  if (!configurationCache) {
+    return false;
+  }
+  const age = Date.now() - configurationCache.timestamp;
+  return age < CACHE_TTL_MS;
+}
+
+/**
+ * Clear the configuration cache.
+ * Useful for testing or forcing a fresh fetch.
+ */
+export function clearConfigurationCache(): void {
+  configurationCache = null;
+}
+
+/**
  * Fetch configurations including AUP from the Innovation Sandbox API.
+ *
+ * Uses request deduplication (ADR-028) to prevent concurrent duplicate calls
+ * when the AUP modal loads configurations.
+ *
+ * Includes time-based caching (30s TTL) to reduce API calls for configurations
+ * that rarely change. Use clearConfigurationCache() to force a fresh fetch.
  *
  * @returns Promise resolving to ConfigurationsResult
  *
@@ -116,85 +163,98 @@ const CONFIGURATIONS_ENDPOINT = '/api/configurations';
  * }
  */
 export async function fetchConfigurations(): Promise<ConfigurationsResult> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+  // Return cached result if still valid
+  if (isCacheValid() && configurationCache) {
+    return configurationCache.data;
+  }
 
-  try {
-    const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
-      method: 'GET',
-      signal: controller.signal,
-      skipAuthRedirect: true, // Don't redirect on 401, we'll show error in modal
-    });
+  return deduplicatedRequest('fetchConfigurations', async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
 
-    clearTimeout(timeoutId);
+    try {
+      const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
+        method: 'GET',
+        signal: controller.signal,
+        skipAuthRedirect: true, // Don't redirect on 401, we'll show error in modal
+      });
 
-    if (!response.ok) {
-      console.error('[configurations-service] API error:', response.status, response.statusText);
-      return {
-        success: false,
-        error: getHttpErrorMessage(response.status, 'configuration'),
-      };
-    }
+      clearTimeout(timeoutId);
 
-    const rawData: RawConfigurationResponse = await response.json();
-
-    // Extract AUP from nested JSend data structure first, then fallback to flat fields
-    // API returns: { status: "success", data: { termsOfService: "...", leases: {...} } }
-    const aupContent =
-      rawData.data?.termsOfService ||
-      rawData.data?.aup ||
-      rawData.termsOfService ||
-      rawData.aup;
-
-    // Extract lease config from nested structure or flat fields
-    const maxLeases =
-      rawData.data?.leases?.maxLeasesPerUser ??
-      rawData.maxLeases ??
-      DEFAULT_CONFIG.maxLeases;
-    const leaseDuration =
-      rawData.data?.leases?.maxDurationHours ??
-      rawData.leaseDuration ??
-      DEFAULT_CONFIG.leaseDuration;
-
-    // Validate response has AUP content
-    if (!aupContent || typeof aupContent !== 'string') {
-      console.warn('[configurations-service] Invalid AUP in response, using fallback');
-      return {
-        success: true,
-        data: {
-          ...DEFAULT_CONFIG,
-          aup: DEFAULT_CONFIG.aup,
-        },
-      };
-    }
-
-    return {
-      success: true,
-      data: {
-        maxLeases,
-        leaseDuration,
-        aup: aupContent,
-      },
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error('[configurations-service] Request timeout');
+      if (!response.ok) {
+        console.error('[configurations-service] API error:', response.status, response.statusText);
         return {
           success: false,
-          error: 'Request timed out. Please check your connection and try again.',
+          error: getHttpErrorMessage(response.status, 'configuration'),
         };
       }
-      console.error('[configurations-service] Fetch error:', error.message);
-    }
 
-    return {
-      success: false,
-      error: 'Unable to load configuration. Please try again.',
-    };
-  }
+      const rawData: RawConfigurationResponse = await response.json();
+
+      // Extract AUP from nested JSend data structure first, then fallback to flat fields
+      // API returns: { status: "success", data: { termsOfService: "...", leases: {...} } }
+      const aupContent =
+        rawData.data?.termsOfService ||
+        rawData.data?.aup ||
+        rawData.termsOfService ||
+        rawData.aup;
+
+      // Extract lease config from nested structure or flat fields
+      const maxLeases =
+        rawData.data?.leases?.maxLeasesPerUser ??
+        rawData.maxLeases ??
+        DEFAULT_CONFIG.maxLeases;
+      const leaseDuration =
+        rawData.data?.leases?.maxDurationHours ??
+        rawData.leaseDuration ??
+        DEFAULT_CONFIG.leaseDuration;
+
+      // Validate response has AUP content
+      if (!aupContent || typeof aupContent !== 'string') {
+        console.warn('[configurations-service] Invalid AUP in response, using fallback');
+        const fallbackResult: ConfigurationsResult = {
+          success: true,
+          data: {
+            ...DEFAULT_CONFIG,
+            aup: DEFAULT_CONFIG.aup,
+          },
+        };
+        // Cache successful result (even with fallback AUP)
+        configurationCache = { data: fallbackResult, timestamp: Date.now() };
+        return fallbackResult;
+      }
+
+      const result: ConfigurationsResult = {
+        success: true,
+        data: {
+          maxLeases,
+          leaseDuration,
+          aup: aupContent,
+        },
+      };
+      // Cache successful result
+      configurationCache = { data: result, timestamp: Date.now() };
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          console.error('[configurations-service] Request timeout');
+          return {
+            success: false,
+            error: 'Request timed out. Please check your connection and try again.',
+          };
+        }
+        console.error('[configurations-service] Fetch error:', error.message);
+      }
+
+      return {
+        success: false,
+        error: 'Unable to load configuration. Please try again.',
+      };
+    }
+  });
 }
 
 /**

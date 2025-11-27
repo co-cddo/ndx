@@ -11,6 +11,9 @@ routing HTTP requests based on their path:
 
 The CloudFront Host header is preserved for OAuth callback URL validation.
 
+IMPORTANT: This addon also replicates production security headers (CSP, X-Frame-Options, etc.)
+on responses from the local server to ensure dev/prod parity and catch CSP violations early.
+
 Usage:
     mitmproxy --scripts scripts/mitmproxy-addon.py --listen-port 8081
 
@@ -40,6 +43,29 @@ logging.basicConfig(
 CLOUDFRONT_DOMAIN = "ndx.digital.cabinet-office.gov.uk"
 LOCAL_SERVER_HOST = "localhost"
 LOCAL_SERVER_PORT = 8080
+
+# Production security headers from CloudFront
+# These MUST match production to catch CSP violations during local development
+SECURITY_HEADERS = {
+    "content-security-policy": (
+        "upgrade-insecure-requests; "
+        "default-src 'none'; "
+        "object-src 'none'; "
+        "script-src 'self'; "
+        "style-src 'self'; "
+        "img-src 'self' data:; "
+        "font-src 'self' data:; "
+        "connect-src 'self'; "
+        "manifest-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'none';"
+    ),
+    "x-frame-options": "DENY",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer",
+    # Note: HSTS is omitted for local dev as we use HTTP to localhost
+    # "strict-transport-security": "max-age=46656000; includeSubDomains",
+}
 
 # UI routes that should be forwarded to local development server
 UI_ROUTES = [
@@ -105,11 +131,48 @@ def request(flow: http.HTTPFlow) -> None:
         # Restore CloudFront Host header (critical for OAuth validation)
         flow.request.headers["Host"] = original_host
 
+        # Mark this flow as locally routed so response() can add security headers
+        flow.metadata["locally_routed"] = True
+
         logging.info(f"UI Route: {request_path} → {LOCAL_SERVER_HOST}:{LOCAL_SERVER_PORT} (Host header preserved: {original_host})")
     else:
         # Non-UI, non-API routes pass through to CloudFront unchanged
         # Examples: OAuth callbacks (/callback), other static pages
         logging.info(f"Passthrough: {request_path} → CloudFront (unchanged)")
+
+
+def response(flow: http.HTTPFlow) -> None:
+    """
+    Inject production security headers on responses from locally-routed requests.
+
+    This ensures that local development mirrors production CSP behavior,
+    allowing developers to catch CSP violations before deploying to production.
+
+    Args:
+        flow: mitmproxy HTTPFlow object containing request/response data
+
+    Security Headers Added:
+        - Content-Security-Policy: Restricts resource loading to 'self'
+        - X-Frame-Options: DENY - Prevents clickjacking
+        - X-Content-Type-Options: nosniff - Prevents MIME sniffing
+        - Referrer-Policy: no-referrer - Prevents referrer leakage
+
+    Note:
+        HSTS header is omitted for local dev as we use HTTP to localhost.
+        In production, CloudFront adds HSTS via response headers policy.
+
+    Returns:
+        None (modifies flow.response in-place)
+    """
+    # Only add security headers to responses from locally-routed requests
+    if not flow.metadata.get("locally_routed"):
+        return
+
+    # Add production security headers to match CloudFront configuration
+    for header_name, header_value in SECURITY_HEADERS.items():
+        flow.response.headers[header_name] = header_value
+
+    logging.debug(f"Added security headers to response: {flow.request.path}")
 
 
 # mitmproxy addon registration

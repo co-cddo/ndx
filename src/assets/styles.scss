@@ -212,6 +212,253 @@ body.aup-modal-open {
   }
 }
 
+// ============================================================================
+// Mermaid Diagram Styles - Build-Time SVG Rendering
+// ============================================================================
+// These styles replace the inline <style> tag from Mermaid to comply with CSP.
+// The Mermaid plugin strips all inline styles, and these external styles provide
+// the visual appearance using the SVG's class structure.
+//
+// CSS Custom Properties enable easy theming without modifying the stylesheet.
+// Override these variables in a parent element to customize diagram appearance.
+// ============================================================================
+
+.mermaid-diagram {
+  // Theme variables for easy customization
+  // Override these to create custom themes
+  --mermaid-node-fill: #ececff;
+  --mermaid-node-stroke: #9370db;
+  --mermaid-node-stroke-width: 1px;
+  --mermaid-edge-stroke: #333;
+  --mermaid-edge-stroke-width: 2px;
+  --mermaid-label-color: #333;
+  --mermaid-cluster-fill: #ffffde;
+  --mermaid-cluster-stroke: #aaaa33;
+  --mermaid-edge-label-bg: rgba(232, 232, 232, 0.8);
+  --mermaid-font-family: system-ui, sans-serif;
+  --mermaid-font-size: 16px;
+
+  margin: 2em 0;
+  position: relative;
+
+  // Scope all SVG styles to direct child to prevent style leakage
+  // to other SVGs that might be on the page
+  > svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+
+    // ========================================
+    // Node styling (rectangles in flowcharts)
+    // ========================================
+    .node rect,
+    .node circle,
+    .node ellipse,
+    .node polygon,
+    .node path {
+      fill: var(--mermaid-node-fill);
+      stroke: var(--mermaid-node-stroke);
+      stroke-width: var(--mermaid-node-stroke-width);
+    }
+
+    // Node labels
+    .node .label,
+    .nodeLabel {
+      color: var(--mermaid-label-color);
+      fill: var(--mermaid-label-color);
+    }
+
+    // ========================================
+    // Edge styling (arrows/lines between nodes)
+    // ========================================
+    .edgePath path {
+      stroke: var(--mermaid-edge-stroke);
+      stroke-width: var(--mermaid-edge-stroke-width);
+    }
+
+    .edgePath .path {
+      stroke: var(--mermaid-edge-stroke);
+      fill: none;
+    }
+
+    // Arrow markers
+    .marker,
+    .arrowMarkerPath {
+      fill: var(--mermaid-edge-stroke);
+      stroke: var(--mermaid-edge-stroke);
+    }
+
+    // Edge labels
+    .edgeLabel {
+      background-color: var(--mermaid-edge-label-bg);
+      text-align: center;
+    }
+
+    .edgeLabel rect {
+      opacity: 0.5;
+      fill: var(--mermaid-node-fill);
+      stroke: var(--mermaid-node-stroke);
+    }
+
+    // ========================================
+    // Cluster styling (subgraphs)
+    // ========================================
+    .cluster rect {
+      fill: var(--mermaid-cluster-fill);
+      stroke: var(--mermaid-cluster-stroke);
+      stroke-width: var(--mermaid-node-stroke-width);
+    }
+
+    .cluster text {
+      fill: var(--mermaid-label-color);
+    }
+
+    // ========================================
+    // Labels and containers
+    // ========================================
+    .label-container {
+      fill: var(--mermaid-node-fill);
+      stroke: var(--mermaid-node-stroke);
+    }
+
+    // Flowchart specific links
+    .flowchart-link {
+      stroke: var(--mermaid-edge-stroke);
+      fill: none;
+    }
+
+    // ========================================
+    // Text styling - match GOV.UK font stack
+    // ========================================
+    text {
+      font-family: var(--mermaid-font-family);
+      font-size: var(--mermaid-font-size);
+    }
+
+    // Foreign object text (HTML inside SVG)
+    foreignObject {
+      text-align: center;
+      font-family: var(--mermaid-font-family);
+
+      div {
+        display: table-cell;
+        white-space: normal;
+        line-height: 1.5;
+        max-width: 200px;
+        text-align: center;
+      }
+
+      p {
+        margin: 0;
+        padding: 2px;
+        background-color: transparent;
+        color: var(--mermaid-label-color);
+        font-family: var(--mermaid-font-family);
+        font-size: var(--mermaid-font-size);
+      }
+    }
+
+    // Basic shapes fallback
+    .basic {
+      fill: var(--mermaid-node-fill);
+      stroke: var(--mermaid-node-stroke);
+    }
+  }
+
+  // ========================================
+  // Theme variants via data attribute
+  // ========================================
+  // Usage: <figure class="mermaid-diagram" data-mermaid-theme="dark">
+  &[data-mermaid-theme="dark"] {
+    --mermaid-node-fill: #1f2020;
+    --mermaid-node-stroke: #81b1db;
+    --mermaid-edge-stroke: #81b1db;
+    --mermaid-label-color: #ccc;
+    --mermaid-cluster-fill: #333;
+    --mermaid-cluster-stroke: #666;
+    --mermaid-edge-label-bg: rgba(0, 0, 0, 0.8);
+  }
+
+  &[data-mermaid-theme="forest"] {
+    --mermaid-node-fill: #cde498;
+    --mermaid-node-stroke: #13540c;
+    --mermaid-edge-stroke: #13540c;
+    --mermaid-label-color: #333;
+    --mermaid-cluster-fill: #e8f5e9;
+    --mermaid-cluster-stroke: #2e7d32;
+  }
+
+  &[data-mermaid-theme="neutral"] {
+    --mermaid-node-fill: #f4f4f4;
+    --mermaid-node-stroke: #666;
+    --mermaid-edge-stroke: #333;
+    --mermaid-label-color: #333;
+    --mermaid-cluster-fill: #fafafa;
+    --mermaid-cluster-stroke: #999;
+  }
+}
+
+// Hidden source code container (for accessibility/SEO)
+.mermaid-source-details {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Error state styling for failed diagram renders
+.mermaid-error {
+  padding: 1em;
+  background: #f3f2f1;
+  border-left: 4px solid #d4351c;
+  margin: 2em 0;
+
+  p {
+    color: #d4351c;
+    margin: 0 0 1em;
+
+    strong {
+      font-weight: bold;
+    }
+  }
+
+  details {
+    margin-bottom: 1em;
+
+    summary {
+      cursor: pointer;
+      color: #1d70b8;
+      text-decoration: underline;
+
+      &:hover {
+        color: #003078;
+      }
+    }
+
+    p {
+      color: #505a5f;
+      font-family: monospace;
+      font-size: 0.875rem;
+      margin: 0.5em 0 0;
+      padding: 0.5em;
+      background: #fff;
+    }
+  }
+
+  pre {
+    background: #fff;
+    padding: 1em;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    margin: 0;
+  }
+}
+
 // govuk-body
 .experimental_header {
   @extend .govuk-body;

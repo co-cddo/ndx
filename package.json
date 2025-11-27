@@ -44,6 +44,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^16.1.5",
+    "mermaid-isomorphic": "^3.0.4",
     "prettier": "^3.6.2",
     "prettier-plugin-sh": "^0.18.0",
     "ts-jest": "^29.2.5",
@@ -63,8 +64,5 @@
       "prettier-plugin-sh"
     ]
   },
-  "packageManager": "yarn@4.5.0",
-  "dependencies": {
-    "@kevingimbel/eleventy-plugin-mermaid": "^3.0.0"
-  }
+  "packageManager": "yarn@4.5.0"
 }

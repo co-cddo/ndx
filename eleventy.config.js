@@ -3,7 +3,7 @@ import { EleventyRenderPlugin } from "@11ty/eleventy"
 import fs from "fs"
 import util from "util"
 
-import pluginMermaid from "@kevingimbel/eleventy-plugin-mermaid"
+import mermaidTransformPlugin from "./lib/eleventy-mermaid-transform.js"
 
 function gitRev() {
   const rev = fs.readFileSync(".git/HEAD").toString().trim()
@@ -92,10 +92,6 @@ export default function (eleventyConfig) {
         { text: "Home", href: "/" },
         { text: "About", href: "/About/" },
         {
-          text: "Discover",
-          href: "/discover",
-        },
-        {
           text: "Learn",
           href: "/learn",
         },
@@ -108,6 +104,7 @@ export default function (eleventyConfig) {
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
         { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
+        { text: '<span id="auth-nav">Sign in</span>', href: "/api/auth/login" },
       ],
       // Auth navigation placeholder - rendered via slots.end in service navigation
       // This is populated by JavaScript (Story 5.1)
@@ -121,7 +118,9 @@ export default function (eleventyConfig) {
       },
     },
   })
-  eleventyConfig.addPlugin(pluginMermaid)
+  eleventyConfig.addPlugin(mermaidTransformPlugin, {
+    theme: "default",
+  })
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")

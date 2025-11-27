@@ -4,6 +4,7 @@ import fs from "fs"
 import util from "util"
 
 import mermaidTransformPlugin from "./lib/eleventy-mermaid-transform.js"
+import remoteImagesPlugin from "./lib/eleventy-remote-images.js"
 
 function gitRev() {
   const rev = fs.readFileSync(".git/HEAD").toString().trim()
@@ -120,6 +121,11 @@ export default function (eleventyConfig) {
   })
   eleventyConfig.addPlugin(mermaidTransformPlugin, {
     theme: "default",
+  })
+
+  // Fetch remote images at build time to avoid external dependencies
+  eleventyConfig.addPlugin(remoteImagesPlugin, {
+    domains: ["img.shields.io"],
   })
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {

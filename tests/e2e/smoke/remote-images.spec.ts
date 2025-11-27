@@ -75,20 +75,24 @@ test.describe("Remote Images Plugin", () => {
     expect(cspViolations).toHaveLength(0)
   })
 
-  test("multiple catalogue pages have local badges", async ({ page }) => {
-    const cataloguePages = [
+  test("multiple pages have local images (no external sources)", async ({ page }) => {
+    const pagesToTest = [
       "/catalogue/mindweave-labs/synaplyte/",
       "/catalogue/", // Main catalogue page
+      "/optimise/", // Optimise page has cdn.jsdelivr.net images
     ]
 
-    for (const pagePath of cataloguePages) {
+    for (const pagePath of pagesToTest) {
       await page.goto(`https://ndx.digital.cabinet-office.gov.uk${pagePath}`)
 
-      // Check for any images with external shields.io sources
+      // Check for any images with external shields.io or jsdelivr sources
       const externalBadges = page.locator('img[src*="shields.io"]')
       const externalCount = await externalBadges.count()
-
       expect(externalCount).toBe(0)
+
+      const externalJsdelivr = page.locator('img[src*="jsdelivr.net"]')
+      const jsdelivrCount = await externalJsdelivr.count()
+      expect(jsdelivrCount).toBe(0)
     }
   })
 })

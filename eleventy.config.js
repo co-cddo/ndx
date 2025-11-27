@@ -125,7 +125,7 @@ export default function (eleventyConfig) {
 
   // Fetch remote images at build time to avoid external dependencies
   eleventyConfig.addPlugin(remoteImagesPlugin, {
-    domains: ["img.shields.io"],
+    domains: ["img.shields.io", "cdn.jsdelivr.net"],
   })
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {

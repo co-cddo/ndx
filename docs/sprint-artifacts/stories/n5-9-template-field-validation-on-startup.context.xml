@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context for N5-9: Template Field Validation on Startup
+  Generated: 2025-11-28
+
+  This context document provides the DEV agent with all necessary information
+  to implement the template validation feature during Lambda cold start.
+-->
+<story-context story-id="n5-9-template-field-validation-on-startup">
+
+  <!-- ================================================================== -->
+  <!-- STORY OVERVIEW -->
+  <!-- ================================================================== -->
+
+  <story-summary>
+    <title>Template Field Validation on Startup</title>
+    <epic>N-5 User Email Notifications</epic>
+    <type>Pre-mortem (preventative control)</type>
+    <goal>
+      Validate GOV.UK Notify templates have expected personalisation fields
+      during Lambda cold start, before any emails are sent, to detect template
+      drift early and prevent emails with missing data.
+    </goal>
+    <user-story>
+      As the notification system,
+      I want to validate GOV.UK Notify templates have expected personalisation fields during Lambda cold start,
+      so that template drift is detected early before the first email is sent with missing data.
+    </user-story>
+  </story-summary>
+
+  <!-- ================================================================== -->
+  <!-- ACCEPTANCE CRITERIA SUMMARY -->
+  <!-- ================================================================== -->
+
+  <acceptance-criteria>
+    <must-have>
+      <ac id="9.1">Fetch template from GOV.UK Notify API using getTemplateById()</ac>
+      <ac id="9.2">Extract personalisation fields from template body using regex</ac>
+      <ac id="9.3">Compare extracted fields with requiredFields from NOTIFY_TEMPLATES config</ac>
+      <ac id="9.4">Log WARNING for any mismatch between template and config</ac>
+      <ac id="9.5">Fail Lambda init on critical mismatches (missing MUST fields)</ac>
+      <ac id="9.6">Render test payload and detect unfilled ((placeholder)) patterns</ac>
+      <ac id="9.7">Call getTemplateById() to ensure latest template version is used</ac>
+    </must-have>
+    <should-have>
+      <ac id="9.8">Emit CloudWatch metric TemplateVersionChanged when version differs</ac>
+      <ac id="9.9">Cache template validation result for Lambda container lifetime</ac>
+      <ac id="9.10">Validate templates in parallel for faster cold start</ac>
+      <ac id="9.11">Skip validation if SKIP_TEMPLATE_VALIDATION env var is set</ac>
+      <ac id="9.12">Log template ID, version, and field list on each validation</ac>
+      <ac id="9.13">Support validating subset of templates via env var</ac>
+      <ac id="9.14">Create runbook for handling template drift alerts</ac>
+      <ac id="9.15">Document template change process for GOV.UK Notify</ac>
+      <ac id="9.16">Add template validation to pre-deployment checklist</ac>
+    </should-have>
+  </acceptance-criteria>
+
+  <!-- ================================================================== -->
+  <!-- ARCHITECTURAL CONTEXT -->
+  <!-- ================================================================== -->
+
+  <architecture>
+    <pattern>
+      Cold Start Validation Flow:
+
+      Lambda Cold Start
+           │
+           ▼
+      1. Load Secrets (existing)
+           │
+           ▼
+      2. Init NotifyClient (existing)
+           │
+           ▼
+      3. Validate All Templates ← THIS STORY
+         - Fetch from GOV.UK Notify API
+         - Extract personalisation fields
+         - Compare with requiredFields config
+         - Log WARNING if mismatch
+         - Fail init if CRITICAL
+           │
+           ▼
+      Ready to Handle Events
+    </pattern>
+
+    <key-decisions>
+      <decision>
+        Validate on cold start (not per-request) to minimize latency impact
+        while catching drift early.
+      </decision>
+      <decision>
+        Use getTemplateById() API which returns template body with placeholders
+        in ((fieldName)) format, matching N5-8 detection pattern.
+      </decision>
+      <decision>
+        Critical vs non-critical classification: Missing MUST fields = critical
+        failure; missing SHOULD fields = warning only.
+      </decision>
+    </key-decisions>
+  </architecture>
+
+  <!-- ================================================================== -->
+  <!-- EXISTING CODE CONTEXT -->
+  <!-- ================================================================== -->
+
+  <existing-code>
+
+    <!-- Templates Configuration (templates.ts) -->
+    <file path="lib/lambda/notification/templates.ts" relevance="primary">
+      <description>
+        Template registry with requiredFields and optionalFields per event type.
+        This is the source of truth for expected fields.
+      </description>
+      <key-exports>
+        <export name="NOTIFY_TEMPLATES">
+          Record&lt;string, TemplateConfig&gt; mapping event types to template config.
+          Each config has: templateIdEnvVar, requiredFields[], optionalFields[], enrichmentQueries[]
+        </export>
+        <export name="TemplateConfig">
+          Interface with templateIdEnvVar, requiredFields, optionalFields, enrichmentQueries
+        </export>
+        <export name="getTemplateConfig">
+          Function to get config for an event type, throws PermanentError if not found
+        </export>
+        <export name="getTemplateId">
+          Gets template ID from environment variable (e.g., NOTIFY_TEMPLATE_LEASE_APPROVED)
+        </export>
+      </key-exports>
+      <code-snippet title="Template Config Example">
+LeaseApproved: {
+  templateIdEnvVar: 'NOTIFY_TEMPLATE_LEASE_APPROVED',
+  requiredFields: ['userName', 'accountId', 'ssoUrl', 'expiryDate'],
+  optionalFields: ['budgetLimit', 'portalLink', 'budgetActionLink', 'plainTextLink', 'linkInstructions'],
+  enrichmentQueries: ['lease', 'account'],
+},
+      </code-snippet>
+    </file>
+
+    <!-- NotifySender (notify-sender.ts) -->
+    <file path="lib/lambda/notification/notify-sender.ts" relevance="primary">
+      <description>
+        Singleton wrapper for GOV.UK Notify SDK. This is where validation
+        should be added as a new method.
+      </description>
+      <key-exports>
+        <export name="NotifySender">
+          Singleton class with getInstance(), send(), and circuit breaker logic.
+          New validateTemplate() method should be added here.
+        </export>
+        <export name="sanitizePersonalisation">
+          Sanitizes personalisation values using DOMPurify
+        </export>
+      </key-exports>
+      <code-snippet title="NotifySender Singleton Pattern">
+export class NotifySender {
+  private client: NotifyClient;
+  private static instance: NotifySender | null = null;
+
+  static async getInstance(): Promise&lt;NotifySender&gt; {
+    if (!NotifySender.instance) {
+      const secrets = await getSecrets();
+      NotifySender.instance = new NotifySender(secrets.notifyApiKey);
+    }
+    return NotifySender.instance;
+  }
+}
+      </code-snippet>
+      <integration-point>
+        Add validateTemplate(templateId: string, expectedFields: string[]): Promise&lt;ValidationResult&gt;
+        Add validateAllTemplates(): Promise&lt;void&gt; that iterates NOTIFY_TEMPLATES
+      </integration-point>
+    </file>
+
+    <!-- Handler (handler.ts) -->
+    <file path="lib/lambda/notification/handler.ts" relevance="secondary">
+      <description>
+        Lambda entry point. Cold start validation should be called here
+        before the handler processes any events.
+      </description>
+      <integration-point>
+        Add module-level initialization that calls validateAllTemplatesOnce()
+        before first event is processed.
+      </integration-point>
+    </file>
+
+    <!-- E2E Test Client (test/e2e/notify-test-client.ts) -->
+    <file path="test/e2e/notify-test-client.ts" relevance="reference">
+      <description>
+        Contains PLACEHOLDER_PATTERN regex and findUnfilledPlaceholders() from N5-8.
+        These should be reused for template validation.
+      </description>
+      <key-exports>
+        <export name="PLACEHOLDER_PATTERN">/\(\([^)]+\)\)/g - Matches ((fieldName))</export>
+        <export name="findUnfilledPlaceholders">Returns array of unfilled placeholders</export>
+        <export name="assertNoPlaceholders">Throws if placeholders found</export>
+      </key-exports>
+      <code-snippet title="Placeholder Detection">
+export const PLACEHOLDER_PATTERN = /\(\([^)]+\)\)/g;
+
+export function findUnfilledPlaceholders(body: string): string[] {
+  const matches = body.match(PLACEHOLDER_PATTERN);
+  return matches || [];
+}
+      </code-snippet>
+      <reuse-note>
+        Move PLACEHOLDER_PATTERN and extraction logic to a shared utility
+        that can be used by both E2E tests and cold start validation.
+      </reuse-note>
+    </file>
+
+    <!-- Secrets (secrets.ts) -->
+    <file path="lib/lambda/notification/secrets.ts" relevance="reference">
+      <description>
+        Handles Secrets Manager retrieval with caching.
+        Template validation will need the API key from here.
+      </description>
+      <pattern>
+        Follow same caching pattern for template validation results.
+      </pattern>
+    </file>
+
+    <!-- Errors (errors.ts) -->
+    <file path="lib/lambda/notification/errors.ts" relevance="reference">
+      <description>
+        Error classification for retry/DLQ behavior.
+        Template validation errors should use CriticalError for failures
+        that should prevent Lambda from accepting events.
+      </description>
+      <key-exports>
+        <export name="CriticalError">For auth failures and critical config issues</export>
+        <export name="PermanentError">For validation failures that won't succeed on retry</export>
+      </key-exports>
+    </file>
+
+  </existing-code>
+
+  <!-- ================================================================== -->
+  <!-- GOV.UK NOTIFY API REFERENCE -->
+  <!-- ================================================================== -->
+
+  <external-api name="GOV.UK Notify">
+    <method name="getTemplateById">
+      <description>
+        Retrieves a template by ID. Returns template body with ((placeholders))
+        that can be parsed to extract expected personalisation fields.
+      </description>
+      <sdk-call>
+        const response = await client.getTemplateById(templateId);
+      </sdk-call>
+      <response-shape>
+{
+  data: {
+    id: string,           // Template UUID
+    name: string,         // Template name
+    type: 'email',        // Template type
+    version: number,      // Template version (increments on edit)
+    body: string,         // Body with ((placeholder)) syntax
+    subject: string,      // Subject with ((placeholder)) syntax
+    created_at: string,
+    created_by: string,
+    personalisation: {    // Optional - structured field definitions
+      fieldName: {
+        required: boolean
+      }
+    }
+  }
+}
+      </response-shape>
+      <usage-note>
+        The body field contains ((placeholder)) patterns that we parse.
+        The personalisation object may also list fields, but body parsing
+        is more reliable as it shows what's actually used.
+      </usage-note>
+    </method>
+
+    <method name="previewTemplateById">
+      <description>
+        Renders a template with provided personalisation values.
+        Returns the rendered body, useful for detecting unfilled placeholders.
+      </description>
+      <sdk-call>
+        const response = await client.previewTemplateById(
+          templateId,
+          { personalisation: testValues }
+        );
+      </sdk-call>
+      <response-shape>
+{
+  data: {
+    id: string,
+    version: number,
+    type: 'email',
+    body: string,      // Rendered body with values substituted
+    subject: string,   // Rendered subject
+  }
+}
+      </response-shape>
+      <usage-note>
+        Use this to validate that all required fields are actually used
+        in the template. Any remaining ((field)) patterns indicate
+        the personalisation was incomplete.
+      </usage-note>
+    </method>
+  </external-api>
+
+  <!-- ================================================================== -->
+  <!-- IMPLEMENTATION PATTERNS -->
+  <!-- ================================================================== -->
+
+  <patterns>
+
+    <pattern name="Field Extraction from Template Body">
+      <description>
+        Extract personalisation field names from template body using regex.
+        Matches ((fieldName)) patterns and extracts field names.
+      </description>
+      <code-example>
+/**
+ * Extract personalisation field names from template body
+ * GOV.UK Notify uses ((fieldName)) syntax for placeholders
+ */
+export function extractTemplateFields(body: string): string[] {
+  const pattern = /\(\(([^)]+)\)\)/g;
+  const fields = new Set&lt;string&gt;();
+  let match;
+  while ((match = pattern.exec(body)) !== null) {
+    fields.add(match[1]); // Capture group 1 = field name
+  }
+  return Array.from(fields);
+}
+      </code-example>
+    </pattern>
+
+    <pattern name="Validation Result Type">
+      <code-example>
+export interface TemplateValidationResult {
+  templateId: string;
+  version: number;
+  isValid: boolean;
+  fieldsInTemplate: string[];
+  expectedFields: string[];
+  missingFromTemplate: string[];  // Expected but not in template
+  extraInTemplate: string[];      // In template but not expected
+  severity: 'ok' | 'warning' | 'critical';
+}
+      </code-example>
+    </pattern>
+
+    <pattern name="Cold Start Validation Hook">
+      <description>
+        Module-level initialization that runs once per Lambda container.
+        Uses a flag to ensure validation only runs once.
+      </description>
+      <code-example>
+// Module-level state
+let templatesValidated = false;
+let validationPromise: Promise&lt;void&gt; | null = null;
+
+/**
+ * Validate all templates once per cold start
+ * Returns cached promise for concurrent calls during init
+ */
+export async function validateAllTemplatesOnce(): Promise&lt;void&gt; {
+  if (templatesValidated) {
+    return; // Already validated this container
+  }
+
+  if (validationPromise) {
+    return validationPromise; // Validation in progress
+  }
+
+  validationPromise = performValidation();
+  await validationPromise;
+  templatesValidated = true;
+}
+      </code-example>
+    </pattern>
+
+    <pattern name="Parallel Template Validation">
+      <description>
+        Validate all templates in parallel for faster cold start.
+      </description>
+      <code-example>
+async function validateAllTemplates(): Promise&lt;TemplateValidationResult[]&gt; {
+  const templateEntries = Object.entries(NOTIFY_TEMPLATES);
+
+  const validationPromises = templateEntries.map(async ([eventType, config]) =&gt; {
+    const templateId = getTemplateIdSafe(config);
+    if (!templateId) {
+      return null; // Template not configured
+    }
+    return validateTemplate(templateId, config.requiredFields);
+  });
+
+  const results = await Promise.all(validationPromises);
+  return results.filter((r): r is TemplateValidationResult =&gt; r !== null);
+}
+      </code-example>
+    </pattern>
+
+    <pattern name="Critical vs Warning Classification">
+      <code-example>
+function classifyValidationResult(
+  result: TemplateValidationResult,
+  config: TemplateConfig
+): 'ok' | 'warning' | 'critical' {
+  // If required fields are missing from template, it's critical
+  const missingRequired = result.missingFromTemplate.filter(
+    field =&gt; config.requiredFields.includes(field)
+  );
+
+  if (missingRequired.length &gt; 0) {
+    return 'critical';
+  }
+
+  // If optional fields are missing, it's a warning
+  if (result.missingFromTemplate.length &gt; 0 || result.extraInTemplate.length &gt; 0) {
+    return 'warning';
+  }
+
+  return 'ok';
+}
+      </code-example>
+    </pattern>
+
+    <pattern name="Skip Validation Escape Hatch">
+      <code-example>
+// Allow skipping validation in emergencies
+const SKIP_VALIDATION = process.env.SKIP_TEMPLATE_VALIDATION === 'true';
+const TEMPLATES_TO_VALIDATE = process.env.TEMPLATES_TO_VALIDATE?.split(',') || null;
+
+if (SKIP_VALIDATION) {
+  logger.warn('Template validation SKIPPED - SKIP_TEMPLATE_VALIDATION is set', {
+    warning: 'This should only be used in emergencies'
+  });
+  return;
+}
+      </code-example>
+    </pattern>
+
+  </patterns>
+
+  <!-- ================================================================== -->
+  <!-- TESTING GUIDANCE -->
+  <!-- ================================================================== -->
+
+  <testing>
+    <unit-tests>
+      <test name="extractTemplateFields correctly parses placeholders">
+        Input: "Hello ((userName)), your account ((accountId)) is ready."
+        Expected: ['userName', 'accountId']
+      </test>
+      <test name="extractTemplateFields handles nested parentheses">
+        Input: "Price: (approx ((amount)))"
+        Expected: ['amount']
+      </test>
+      <test name="extractTemplateFields deduplicates repeated fields">
+        Input: "Dear ((userName)), thank you ((userName))."
+        Expected: ['userName'] (not ['userName', 'userName'])
+      </test>
+      <test name="validateTemplate detects missing required fields">
+        Template body: "Hello ((userName))"
+        Expected fields: ['userName', 'accountId']
+        Result: missingFromTemplate = ['accountId']
+      </test>
+      <test name="validateTemplate detects extra fields in template">
+        Template body: "Hello ((userName)) ((legacyField))"
+        Expected fields: ['userName']
+        Result: extraInTemplate = ['legacyField']
+      </test>
+      <test name="classifyValidationResult returns critical for missing required">
+        Missing: required field
+        Expected: 'critical'
+      </test>
+      <test name="classifyValidationResult returns warning for missing optional">
+        Missing: optional field only
+        Expected: 'warning'
+      </test>
+      <test name="validateAllTemplatesOnce only runs once per container">
+        Call twice, mock API should only be called once
+      </test>
+    </unit-tests>
+
+    <integration-tests>
+      <test name="Cold start validation with real Notify sandbox">
+        Use sandbox API key to validate actual templates match config
+      </test>
+    </integration-tests>
+
+    <mocking>
+      <mock name="NotifyClient.getTemplateById">
+        Return mock template with known placeholders for unit tests.
+      </mock>
+    </mocking>
+  </testing>
+
+  <!-- ================================================================== -->
+  <!-- ERROR HANDLING -->
+  <!-- ================================================================== -->
+
+  <error-handling>
+    <scenario name="Notify API unreachable during cold start">
+      <behavior>
+        Log ERROR, allow Lambda to start (degraded mode).
+        First actual send will fail if API is still down.
+      </behavior>
+      <rationale>
+        Don't block Lambda start for transient API issues.
+        The circuit breaker in NotifySender handles runtime failures.
+      </rationale>
+    </scenario>
+
+    <scenario name="Template not found (404)">
+      <behavior>
+        Log CRITICAL, throw CriticalError to fail Lambda init.
+        Template ID is misconfigured.
+      </behavior>
+    </scenario>
+
+    <scenario name="Missing required fields in template">
+      <behavior>
+        Log CRITICAL, throw CriticalError to fail Lambda init.
+        Template has drifted and will produce broken emails.
+      </behavior>
+    </scenario>
+
+    <scenario name="Missing optional fields in template">
+      <behavior>
+        Log WARNING, continue Lambda init.
+        Emails will be sent but may be missing optional content.
+      </behavior>
+    </scenario>
+
+    <scenario name="Extra fields in template not in config">
+      <behavior>
+        Log WARNING, continue Lambda init.
+        Template has new fields we're not providing (likely benign).
+      </behavior>
+    </scenario>
+  </error-handling>
+
+  <!-- ================================================================== -->
+  <!-- METRICS AND MONITORING -->
+  <!-- ================================================================== -->
+
+  <observability>
+    <metrics>
+      <metric name="TemplateValidationSuccess">
+        Count of successful template validations per cold start.
+        Dimension: templateId
+      </metric>
+      <metric name="TemplateValidationFailure">
+        Count of failed template validations (warnings or criticals).
+        Dimension: templateId, severity
+      </metric>
+      <metric name="TemplateVersionChanged">
+        Count of template version changes detected.
+        Dimension: templateId
+        Use: Track when templates are updated in GOV.UK Notify.
+      </metric>
+      <metric name="ColdStartValidationDuration">
+        Milliseconds spent on template validation during cold start.
+      </metric>
+    </metrics>
+
+    <logs>
+      <log level="INFO" message="Template validation started">
+        Fields: templateCount
+      </log>
+      <log level="INFO" message="Template validated successfully">
+        Fields: templateId, version, fieldCount
+      </log>
+      <log level="WARN" message="Template validation warning">
+        Fields: templateId, version, missingFields, extraFields
+      </log>
+      <log level="ERROR" message="Template validation critical failure">
+        Fields: templateId, version, missingRequiredFields
+      </log>
+      <log level="INFO" message="Template validation complete">
+        Fields: templatesValidated, warnings, criticals, durationMs
+      </log>
+    </logs>
+
+    <alarms>
+      <alarm name="TemplateValidationCritical">
+        Trigger: TemplateValidationFailure where severity=critical > 0
+        Action: Page on-call, templates are broken
+      </alarm>
+      <alarm name="TemplateVersionChanged">
+        Trigger: TemplateVersionChanged > 0
+        Action: Notify team, verify template change was intentional
+      </alarm>
+    </alarms>
+  </observability>
+
+  <!-- ================================================================== -->
+  <!-- FILE CHANGES SUMMARY -->
+  <!-- ================================================================== -->
+
+  <implementation-plan>
+    <new-files>
+      <file path="lib/lambda/notification/template-validation.ts">
+        New module containing:
+        - extractTemplateFields()
+        - validateTemplate()
+        - validateAllTemplates()
+        - validateAllTemplatesOnce()
+        - TemplateValidationResult interface
+      </file>
+      <file path="lib/lambda/notification/template-validation.test.ts">
+        Unit tests for template validation logic
+      </file>
+    </new-files>
+
+    <modified-files>
+      <file path="lib/lambda/notification/handler.ts">
+        Import and call validateAllTemplatesOnce() during module init
+      </file>
+      <file path="lib/lambda/notification/notify-sender.ts">
+        May add getTemplate() wrapper method for cleaner API
+      </file>
+    </modified-files>
+
+    <shared-utilities>
+      <note>
+        Consider moving PLACEHOLDER_PATTERN from test/e2e/notify-test-client.ts
+        to a shared location (e.g., lib/lambda/notification/placeholder-utils.ts)
+        so both E2E tests and cold start validation can use it.
+      </note>
+    </shared-utilities>
+  </implementation-plan>
+
+  <!-- ================================================================== -->
+  <!-- DEPENDENCIES AND LEARNINGS -->
+  <!-- ================================================================== -->
+
+  <dependencies>
+    <story id="n5-8" status="done">
+      GOV.UK Notify Sandbox E2E Test - provides PLACEHOLDER_PATTERN regex
+      and findUnfilledPlaceholders() utility to reuse.
+    </story>
+    <story id="n5-1" status="done">
+      GOV.UK Notify SDK Integration - provides NotifySender class to extend.
+    </story>
+    <story id="n5-4" status="done">
+      Lease Lifecycle Email Templates - provides NOTIFY_TEMPLATES config.
+    </story>
+  </dependencies>
+
+  <learnings-from-previous>
+    <learning from="n5-8">
+      Placeholder detection regex works: /\(\([^)]+\)\)/g
+      This pattern has been tested with multiple edge cases.
+    </learning>
+    <learning from="n5-1">
+      NotifySender singleton pattern with getInstance() works well.
+      Follow same pattern for caching validation results.
+    </learning>
+  </learnings-from-previous>
+
+</story-context>

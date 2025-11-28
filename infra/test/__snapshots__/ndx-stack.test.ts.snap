@@ -145,9 +145,13 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
     },
   },
   "Outputs": {
-    "AlternateDomainStatus": {
-      "Description": "Next step for alternate domain configuration",
-      "Value": "Pending: Create ACM cert for ndx.digital.cabinet-office.gov.uk in us-east-1, then add certificateArn to config",
+    "AlternateDomainName": {
+      "Description": "Alternate domain name configured on CloudFront",
+      "Value": "ndx.digital.cabinet-office.gov.uk",
+    },
+    "CertificateArn": {
+      "Description": "ACM Certificate ARN (us-east-1)",
+      "Value": "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
     },
     "CloudFrontDistributionId": {
       "Description": "CloudFront Distribution ID",
@@ -217,7 +221,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "c29e914dbbf334f5e5ef9651190be9572b45c3a4237393381b2afe918f0f7796.zip",
+          "S3Key": "b50c59c23341b3363fe5192edf87de8edadb60fb4ce9fc17de05e3300b4374aa.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",
@@ -428,6 +432,25 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
         ],
       },
       "Type": "AWS::IAM::Policy",
+    },
+    "ConfigureAlternateDomainName": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "ConfigureCacheBehavior",
+      ],
+      "Properties": {
+        "AlternateDomainName": "ndx.digital.cabinet-office.gov.uk",
+        "CertificateArn": "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
+        "DistributionId": "E3THG4UHYDHVWP",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
     },
     "ConfigureCacheBehavior": {
       "DeletionPolicy": "Delete",

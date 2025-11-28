@@ -1,0 +1,170 @@
+<story-context id="n6-1-slack-webhook-integration" v="1.0">
+  <metadata>
+    <epicId>N6</epicId>
+    <storyId>1</storyId>
+    <title>Slack Webhook Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n6-1-slack-webhook-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>operations team</asA>
+    <iWant>the notification system to POST alerts to Slack via incoming webhooks</iWant>
+    <soThat>critical ISB events are visible in real-time without checking consoles</soThat>
+    <tasks>
+      <task id="1" acs="1.1, 1.8">Create SlackSender class - POST to webhook, Secrets Manager, Content-Type header</task>
+      <task id="2" acs="1.2, 1.5">Implement retry logic with exponential backoff (100ms, 500ms, 1000ms)</task>
+      <task id="3" acs="1.3, 1.4">Error classification - RetriableError, CriticalError, PermanentError</task>
+      <task id="4" acs="1.6, 1.7">Success logging and metrics - latency, webhook URL never logged</task>
+      <task id="5" acs="EC-AC-1, EC-AC-3, EC-AC-5">Security validations - URL non-empty, no redirects, verify {"ok": true}</task>
+      <task id="6" acs="EC-AC-12, IC-AC-1, IC-AC-2">Secrets Manager integration - AWSCURRENT, CDK placeholder, staging/prod separation</task>
+      <task id="7" acs="AC-NEW-1, AC-NEW-2">Heartbeat and backup alerting - daily synthetic, CloudWatch alarm, SNS backup</task>
+      <task id="8" acs="SM-AC-8, SM-AC-9, TC-AC-2, TC-AC-3">Infrastructure configuration - X-Ray, tags, 512MB memory, reserved concurrency 10</task>
+      <task id="9" acs="UJ-AC-5, BC-AC-1, SM-AC-10, IC-AC-3">Documentation - secret cache behavior, cost estimate, concurrency limits, ISB notification</task>
+      <task id="10" acs="1.1-1.8">Unit tests with AC traceability</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <group name="Core Webhook Integration" priority="MUST">
+      <ac id="1.1">POST to webhook URL from Secrets Manager with Content-Type: application/json</ac>
+      <ac id="1.2">Exponential backoff retry: 100ms, 500ms, 1000ms on 429 (rate limited)</ac>
+      <ac id="1.3">RetriableError after 3 retries exhausted, EventBridge routes to DLQ</ac>
+      <ac id="1.4">CriticalError on 401 (revoked), ERROR log, immediate DLQ</ac>
+      <ac id="1.5">Network timeout retries with exponential backoff</ac>
+      <ac id="1.6">Success logged at INFO with latency, NotificationSuccess metric</ac>
+      <ac id="1.7">Webhook URL never logged in plain text</ac>
+      <ac id="1.8">Content-Type: application/json header</ac>
+    </group>
+    <group name="Reliability" priority="MUST">
+      <ac id="AC-NEW-1">Daily synthetic heartbeat to verify webhook health</ac>
+      <ac id="AC-NEW-2">Secondary alerting path (email/SNS) for webhook failures</ac>
+    </group>
+    <group name="Security and Validation" priority="MUST">
+      <ac id="EC-AC-1">Validate webhook URL is non-empty before send</ac>
+      <ac id="EC-AC-3">Disable HTTP redirects (redirect: 'error')</ac>
+      <ac id="EC-AC-5">Verify response {"ok": true} before marking success</ac>
+    </group>
+    <group name="Secrets Management" priority="MUST">
+      <ac id="EC-AC-12">Request AWSCURRENT version explicitly from Secrets Manager</ac>
+      <ac id="IC-AC-1">CDK creates Secrets Manager placeholder if not exists</ac>
+      <ac id="IC-AC-2">Staging uses separate Slack webhook (test channel)</ac>
+    </group>
+    <group name="Documentation" priority="SHOULD">
+      <ac id="UJ-AC-5">Document Lambda secret cache behavior (5 min TTL)</ac>
+      <ac id="BC-AC-1">Lambda cost estimate documented (&lt;$5/month)</ac>
+      <ac id="SM-AC-10">Document Lambda concurrency limits and scaling</ac>
+    </group>
+    <group name="Infrastructure" priority="SHOULD">
+      <ac id="SM-AC-8">Enable X-Ray tracing on Lambda</ac>
+      <ac id="SM-AC-9">Add cost allocation tags</ac>
+      <ac id="TC-AC-2">Lambda memory: 512MB</ac>
+      <ac id="TC-AC-3">Reserved concurrency: 10</ac>
+    </group>
+    <group name="Communication" priority="SHOULD">
+      <ac id="IC-AC-3">ISB team notified 1 sprint before N-6 deployment</ac>
+    </group>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="Lambda to Slack" snippet="SlackSender class with webhookUrl, POST with Block Kit, error classification (401/403 → CriticalError, 429/5xx → RetriableError)"/>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="Error Classification" snippet="RetriableError, PermanentError, CriticalError classes with isRetriable and severity properties"/>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="Secrets Handling" snippet="Secrets retrieved at runtime from Secrets Manager, cached per Lambda container, never logged"/>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-n6.md" title="Epic N-6 Tech Spec" section="Story 6.1" snippet="24 ACs covering webhook integration, retry logic, security validations, and infrastructure"/>
+    </docs>
+    <code>
+      <file path="infra/lib/lambda/notification/errors.ts" kind="module" symbol="NotificationError, RetriableError, PermanentError, CriticalError, SecurityError, classifyHttpError" lines="1-133" reason="Base error classes to extend for Slack-specific errors. CriticalError already supports 'slack' service type."/>
+      <file path="infra/lib/lambda/notification/secrets.ts" kind="module" symbol="getSecrets, NotificationSecrets" lines="1-181" reason="Existing Secrets Manager integration. NotificationSecrets interface already has slackWebhookUrl field. Must extend for separate Slack-only secret."/>
+      <file path="infra/lib/notification-stack.ts" kind="stack" symbol="NdxNotificationStack" lines="1-696" reason="CDK stack to update with Slack-specific Secrets Manager secret and Lambda configuration updates (512MB memory, X-Ray tracing)."/>
+      <file path="infra/lib/lambda/notification/handler.ts" kind="handler" symbol="handler" reason="Integration point - will call SlackSender for ops events"/>
+      <file path="infra/lib/lambda/notification/notify-sender.ts" kind="module" symbol="NotifySender" reason="Reference pattern for SlackSender implementation"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@aws-lambda-powertools/logger" version="2.29.0" reason="Structured logging, secret redaction"/>
+        <package name="@aws-lambda-powertools/metrics" version="2.29.0" reason="CloudWatch metrics for SlackMessageSent, SlackMessageFailed"/>
+        <package name="@aws-sdk/client-secrets-manager" version="3.699.0" reason="Retrieve Slack webhook URL"/>
+        <package name="zod" version="3.23.8" reason="Response validation if needed"/>
+      </node>
+      <cdk>
+        <package name="aws-cdk-lib" version="2.215.0"/>
+        <package name="constructs" version="10.0.0"/>
+      </cdk>
+    </dependencies>
+  </artifacts>
+
+  <interfaces>
+    <interface name="SlackSendParams" kind="TypeScript interface" path="infra/lib/lambda/notification/slack-sender.ts">
+      <signature><![CDATA[
+export interface SlackSendParams {
+  alertType: 'AccountQuarantined' | 'LeaseFrozen' | 'AccountCleanupFailed' | 'AccountDriftDetected';
+  accountId: string;
+  priority: 'critical' | 'normal';
+  details: Record<string, string | number | undefined>;
+  eventId: string;
+}
+      ]]></signature>
+    </interface>
+    <interface name="SlackSender.send" kind="class method" path="infra/lib/lambda/notification/slack-sender.ts">
+      <signature><![CDATA[
+async send(params: SlackSendParams): Promise<void>
+      ]]></signature>
+    </interface>
+    <interface name="Slack Incoming Webhook" kind="REST endpoint" path="external">
+      <signature><![CDATA[
+POST https://hooks.slack.com/services/{T}/{B}/{secret}
+Content-Type: application/json
+Body: { "blocks": [...] }
+Response: { "ok": true } on success
+      ]]></signature>
+    </interface>
+    <interface name="classifyHttpError" kind="function" path="infra/lib/lambda/notification/errors.ts">
+      <signature><![CDATA[
+export function classifyHttpError(
+  statusCode: number,
+  message: string,
+  service: 'notify' | 'slack'
+): NotificationError
+      ]]></signature>
+    </interface>
+  </interfaces>
+
+  <constraints>
+    <constraint source="architecture">Follow "One Brain, Two Mouths" pattern - single Lambda, SlackSender module</constraint>
+    <constraint source="architecture">Use existing error classification pattern from errors.ts</constraint>
+    <constraint source="architecture">Lambda Powertools for logging (auto-redacts secrets) and metrics</constraint>
+    <constraint source="security">Webhook URL never logged in plain text (AC-1.7)</constraint>
+    <constraint source="security">Disable HTTP redirects to prevent URL leaks (EC-AC-3)</constraint>
+    <constraint source="security">Verify response {"ok": true} before marking success (EC-AC-5)</constraint>
+    <constraint source="infrastructure">Lambda memory: 512MB (TC-AC-2)</constraint>
+    <constraint source="infrastructure">Reserved concurrency: 10 (TC-AC-3)</constraint>
+    <constraint source="naming">File: slack-sender.ts (kebab-case per architecture naming conventions)</constraint>
+    <constraint source="naming">Test file: slack-sender.test.ts</constraint>
+    <constraint source="retry">Exponential backoff: 100ms, 500ms, 1000ms (AC-1.2)</constraint>
+    <constraint source="retry">Max 3 retries before throwing RetriableError (AC-1.3)</constraint>
+  </constraints>
+
+  <tests>
+    <standards>Jest testing framework with TypeScript. Mock AWS SDK clients using aws-sdk-client-mock. Test naming: describe blocks for ACs, it blocks for scenarios. AC traceability in test descriptions.</standards>
+    <locations>
+      <location>infra/lib/lambda/notification/slack-sender.test.ts</location>
+      <location>infra/lib/notification-stack.test.ts (for CDK assertions)</location>
+    </locations>
+    <ideas>
+      <idea ac="1.1">Test POST to webhook with correct Content-Type header</idea>
+      <idea ac="1.2">Test retry with 100ms, 500ms, 1000ms delays on 429</idea>
+      <idea ac="1.3">Test RetriableError thrown after 3 failed retries</idea>
+      <idea ac="1.4">Test CriticalError on 401/403 status codes</idea>
+      <idea ac="1.5">Test network timeout triggers retry with backoff</idea>
+      <idea ac="1.6">Test success logging includes latency metric</idea>
+      <idea ac="1.7">Test webhook URL not present in any log output</idea>
+      <idea ac="EC-AC-1">Test PermanentError on empty webhook URL</idea>
+      <idea ac="EC-AC-3">Test redirect: 'error' in fetch options</idea>
+      <idea ac="EC-AC-5">Test PermanentError when response.ok !== true</idea>
+      <idea ac="EC-AC-12">Test GetSecretValueCommand has VersionStage: 'AWSCURRENT'</idea>
+    </ideas>
+  </tests>
+</story-context>

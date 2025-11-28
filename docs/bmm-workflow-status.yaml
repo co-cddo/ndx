@@ -43,11 +43,11 @@ workflow_status:
 
   # Phase 2: Solutioning
   phase_2_solutioning:
-    - create-architecture: "docs/infrastructure-architecture.md"
-    - create-epics-and-stories-final: "docs/epics.md"
+    - create-architecture: "docs/notification-architecture.md"  # Features 3 & 4 completed 2025-11-27
+    - create-epics-and-stories-final: "docs/epics-notifications.md"  # Features 3 & 4 completed 2025-11-27
     - test-design: "skipped"
     - validate-architecture: "skipped"
-    - implementation-readiness: "docs/implementation-readiness-report.md"
+    - implementation-readiness: "docs/implementation-readiness-report-2025-11-27.md"  # Features 3 & 4 complete 2025-11-27
 
   # Phase 3: Implementation
   phase_3_implementation:

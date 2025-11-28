@@ -7,6 +7,8 @@
 **Features Covered:**
 1. CloudFront Origin Routing (Cookie-based routing infrastructure) - **COMPLETED**
 2. Try Before You Buy (AWS Innovation Sandbox Integration) - **IN DEVELOPMENT**
+3. GOV.UK Notify Integration (Innovation Sandbox email notifications) - **PLANNED**
+4. Slack Integration (Operational alerts and notifications) - **PLANNED**
 
 ---
 
@@ -1074,6 +1076,858 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 
 ---
 
+# Feature 3: GOV.UK Notify Integration for Innovation Sandbox
+
+## Executive Summary - GOV.UK Notify Integration
+
+**New Capability:** Replace default AWS SES emails from Innovation Sandbox with GOV.UK Notify-powered notifications. This integration intercepts EventBridge events from the Innovation Sandbox and sends properly formatted, government-branded email notifications via the UK Government's official notification service.
+
+**Current State:** Innovation Sandbox sends email notifications via AWS SES with generic AWS branding. These emails lack government branding, may not meet GDS notification standards, and are inconsistent with NDX's GOV.UK Design System approach.
+
+**Challenge:** Government users receiving Innovation Sandbox notifications need clear, professionally formatted emails that match GOV.UK standards, with proper branding and content that aligns with the NDX platform experience.
+
+**Solution:** Deploy a CloudFormation stack that:
+1. Intercepts all Innovation Sandbox EventBridge events
+2. Transforms event payloads into GOV.UK Notify template parameters
+3. Sends notifications via GOV.UK Notify API using 18 distinct email templates
+4. Provides comprehensive error handling with SQS Dead Letter Queue and CloudWatch alarms
+
+### What Makes This Special
+
+This is **seamless notification integration** that replaces AWS-branded emails with proper GOV.UK-compliant notifications. Rather than exposing Innovation Sandbox's default SES emails to government users, this approach:
+
+- **Maintains GOV.UK branding** - All notifications match government service standards
+- **Provides event-specific templates** - 18 distinct templates for different event types (lease lifecycle, monitoring, account management, cost reporting)
+- **Ensures reliability** - SQS Dead Letter Queue captures failed notifications for retry
+- **Enables operational visibility** - CloudWatch alarms alert on notification failures
+- **Secures API credentials** - GOV.UK Notify API key stored in AWS Secrets Manager
+- **Supports future growth** - Extensible architecture for additional event types
+
+The differentiator is **hiding AWS Innovation Sandbox complexity** behind professional government notifications that feel native to the NDX platform.
+
+---
+
+## Project Classification - GOV.UK Notify Integration
+
+**Technical Type:** Infrastructure / Serverless Integration
+**Domain:** GovTech (UK Government Digital Service)
+**Complexity:** Medium
+
+This is a **serverless event processing pipeline** that intercepts EventBridge events and transforms them into GOV.UK Notify API calls. The change is self-contained: one Lambda function, one EventBridge rule, one SQS queue, and one Secrets Manager secret.
+
+**Why Infrastructure Project:**
+- Deploys AWS resources via CloudFormation
+- Lambda function processes events (Python runtime)
+- EventBridge rule filters Innovation Sandbox events
+- Secrets Manager stores GOV.UK Notify API key
+- SQS Dead Letter Queue for failed notifications
+
+**Domain Context:** As a UK government service, notifications must:
+- Meet GOV.UK notification service standards
+- Provide clear, actionable content to government users
+- Include appropriate government branding
+- Handle sensitive information appropriately (AWS account IDs, budget data)
+- Be auditable and traceable
+
+**Complexity Assessment: Medium**
+- **Not High:** Single Lambda function, well-understood EventBridge pattern, established GOV.UK Notify API
+- **Not Low:** 18 distinct event types, production government service, requires template design and error handling
+
+---
+
+## Success Criteria - GOV.UK Notify Integration
+
+**Primary Success Metric:** All Innovation Sandbox events trigger appropriately formatted GOV.UK Notify emails to affected users with zero notification failures.
+
+**Specific Success Indicators:**
+
+1. **Event Capture Works:** EventBridge rule intercepts all 18 Innovation Sandbox event types
+2. **Lambda Processes Events:** Lambda function successfully transforms event payload to Notify API parameters
+3. **Notifications Delivered:** GOV.UK Notify sends emails to recipients with correct template and personalization
+4. **Error Handling Functional:** Failed notifications land in SQS Dead Letter Queue for investigation
+5. **Monitoring Active:** CloudWatch alarms trigger on notification failures or Lambda errors
+6. **Secrets Secure:** GOV.UK Notify API key retrieved from Secrets Manager (not hardcoded)
+7. **Templates Complete:** All 18 event types have corresponding GOV.UK Notify templates configured
+
+**What Winning Looks Like:**
+- Users receive professional, GOV.UK-branded emails for all Innovation Sandbox events
+- Lease lifecycle events (requested, approved, denied, terminated) notify users promptly
+- Budget alerts warn users before overspending
+- Account management events keep users informed of cleanup and quarantine status
+- Cost reports delivered to appropriate group managers
+- Zero unhandled notification failures (all logged to DLQ for retry)
+- Operations team alerted to systematic notification issues via CloudWatch
+
+---
+
+## Product Scope - GOV.UK Notify Integration
+
+### MVP - Minimum Viable Product
+
+**Phase 1: Infrastructure Setup**
+1. **CloudFormation Stack:** Define stack with all required AWS resources
+2. **EventBridge Rule:** Create rule matching Innovation Sandbox event patterns
+3. **Lambda Function:** Python function for event transformation and Notify API calls
+4. **SQS Dead Letter Queue:** Queue for failed notification processing
+5. **Secrets Manager Secret:** Secure storage for GOV.UK Notify API key
+6. **IAM Role:** Lambda execution role with least-privilege permissions
+
+**Phase 2: Event Processing (Lease Lifecycle - 4 Events)**
+7. **LeaseRequested:** Notify user their sandbox request is pending approval
+8. **LeaseApproved:** Notify user their sandbox is ready with AWS Console access details
+9. **LeaseDenied:** Notify user their sandbox request was denied with reason
+10. **LeaseTerminated:** Notify user their sandbox session has ended
+
+**Phase 3: Event Processing (Lease Monitoring - 7 Events)**
+11. **LeaseBudgetThresholdAlert:** Warn user approaching budget limit (75%, 90%)
+12. **LeaseBudgetExceeded:** Notify user budget exceeded, sandbox frozen
+13. **LeaseDurationThresholdAlert:** Warn user sandbox expiring soon
+14. **LeaseFreezingThresholdAlert:** Notify user sandbox will freeze soon
+15. **LeaseExpired:** Notify user sandbox has expired
+16. **LeaseFrozen:** Notify user sandbox frozen (budget or policy)
+17. **LeaseUnfrozen:** Notify user sandbox unfrozen and accessible again
+
+**Phase 4: Event Processing (Account Management - 5 Events)**
+18. **CleanAccountRequest:** Notify admin account cleanup requested
+19. **AccountCleanupSucceeded:** Notify admin/user account cleanup complete
+20. **AccountCleanupFailed:** Alert admin account cleanup failed, manual intervention needed
+21. **AccountQuarantined:** Alert admin account quarantined due to policy violation
+22. **AccountDriftDetected:** Alert admin account drift detected from expected state
+
+**Phase 5: Event Processing (Cost Reporting - 2 Events)**
+23. **GroupCostReportGenerated:** Notify group manager cost report available
+24. **GroupCostReportGeneratedFailure:** Alert admin cost report generation failed
+
+**Phase 6: Error Handling & Monitoring**
+25. **DLQ Processing:** Failed notifications captured in SQS with message metadata
+26. **CloudWatch Alarms:** Alarms for Lambda errors, DLQ depth, API failures
+27. **Logging:** Structured logging for debugging and audit trail
+
+**Phase 7: GOV.UK Notify Templates**
+28. **Template Design:** Create 18 GOV.UK Notify templates matching event types
+29. **Template Personalization:** Define personalization fields (user email, account ID, budget, dates)
+30. **Template Testing:** Validate templates render correctly with sample data
+
+### Growth Features (Post-MVP)
+
+**Enhanced Notifications:**
+1. **SMS Notifications:** Optional SMS for critical events (budget exceeded, account quarantined)
+2. **Digest Emails:** Daily/weekly summary of sandbox activity
+3. **Rich Email Content:** Include charts/graphs for cost reports
+4. **Notification Preferences:** User preferences for which notifications to receive
+
+**Operational Improvements:**
+5. **DLQ Retry Automation:** Lambda to automatically retry failed notifications
+6. **Notification Dashboard:** CloudWatch dashboard showing notification metrics
+7. **A/B Template Testing:** Test different email templates for effectiveness
+8. **Rate Limiting:** Throttle notifications to prevent email overload
+
+**Integration Expansion:**
+9. **Slack Integration:** Send notifications to Slack channels for team visibility
+10. **Webhook Support:** Configurable webhooks for custom integrations
+11. **Multi-Language:** Template variants for Welsh language support
+
+### Vision (Future)
+
+**Advanced Notification Platform:**
+1. **Notification Hub:** Centralized notification management across all NDX services
+2. **AI-Powered Summaries:** Intelligent summarization of multiple events
+3. **Predictive Alerts:** ML-based prediction of budget overruns before they happen
+4. **Cross-Service Correlation:** Correlate notifications across Innovation Sandbox and other services
+
+---
+
+## Domain-Specific Requirements - GOV.UK Notify Integration (GovTech)
+
+**Government-Specific Requirements for Notification Integration:**
+
+1. **GOV.UK Notify Compliance:**
+   - Use GOV.UK Notify service (mandatory for UK government services)
+   - Templates follow GOV.UK content design patterns
+   - Email content meets plain English standards
+   - Sender address uses approved government domain
+
+2. **Data Protection & Privacy:**
+   - Only include necessary PII in notifications (email, name)
+   - AWS account IDs treated as sensitive (internal identifiers)
+   - Budget/cost data formatted appropriately
+   - No detailed technical data in user-facing emails
+
+3. **Accessibility:**
+   - Email templates accessible (GOV.UK Notify handles this)
+   - Plain text alternatives available
+   - Clear call-to-action in each notification
+   - Avoid complex formatting that breaks screen readers
+
+4. **Security:**
+   - GOV.UK Notify API key stored in Secrets Manager (not environment variables)
+   - Lambda role follows least-privilege principle
+   - No sensitive data logged (mask API keys, minimize PII in logs)
+   - EventBridge rule scoped to specific event source
+
+5. **Auditability:**
+   - All notification attempts logged with correlation IDs
+   - Failed notifications retained in DLQ for investigation
+   - CloudWatch logs retained per government retention policy
+   - Notification delivery status trackable via GOV.UK Notify dashboard
+
+6. **Service Continuity:**
+   - Notification failures don't impact Innovation Sandbox core functionality
+   - DLQ ensures no notifications permanently lost
+   - CloudWatch alarms enable rapid response to systematic issues
+
+---
+
+## Functional Requirements - GOV.UK Notify Integration
+
+**Purpose:** Define WHAT capabilities the GOV.UK Notify integration must provide. These are the complete inventory of features enabling government-branded notifications for Innovation Sandbox events.
+
+**Scope:** AWS infrastructure (EventBridge, Lambda, SQS, Secrets Manager), GOV.UK Notify API integration, 18 event type handlers.
+
+### EventBridge Integration
+
+**FR-NOTIFY-1:** System can deploy EventBridge rule matching Innovation Sandbox event source
+
+**FR-NOTIFY-2:** EventBridge rule can filter events by detail-type for all 18 supported event types
+
+**FR-NOTIFY-3:** EventBridge rule can target Lambda function for event processing
+
+**FR-NOTIFY-4:** System can receive event payload containing user email, event type, and event-specific data
+
+**FR-NOTIFY-5:** System preserves all event metadata for processing (timestamp, event ID, source)
+
+### Lambda Function Processing
+
+**FR-NOTIFY-6:** Lambda function can extract recipient email from event payload
+
+**FR-NOTIFY-7:** Lambda function can determine GOV.UK Notify template ID from event detail-type
+
+**FR-NOTIFY-8:** Lambda function can construct personalization object from event payload
+
+**FR-NOTIFY-9:** Lambda function can retrieve GOV.UK Notify API key from Secrets Manager
+
+**FR-NOTIFY-10:** Lambda function can call GOV.UK Notify API to send email notification
+
+**FR-NOTIFY-11:** Lambda function can handle API rate limiting with exponential backoff
+
+**FR-NOTIFY-12:** Lambda function logs structured JSON for debugging and audit
+
+**FR-NOTIFY-13:** Lambda function returns success/failure status for each notification attempt
+
+### Lease Lifecycle Events (4 Events)
+
+**FR-NOTIFY-14:** System sends "Lease Requested" notification when LeaseRequested event received
+- Personalizes: user name, template name, request timestamp
+
+**FR-NOTIFY-15:** System sends "Lease Approved" notification when LeaseApproved event received
+- Personalizes: user name, AWS account ID, SSO portal URL, expiration date, budget limit
+
+**FR-NOTIFY-16:** System sends "Lease Denied" notification when LeaseDenied event received
+- Personalizes: user name, template name, denial reason
+
+**FR-NOTIFY-17:** System sends "Lease Terminated" notification when LeaseTerminated event received
+- Personalizes: user name, AWS account ID, termination reason, final cost
+
+### Lease Monitoring Events (7 Events)
+
+**FR-NOTIFY-18:** System sends "Budget Threshold Alert" notification when LeaseBudgetThresholdAlert event received
+- Personalizes: user name, current spend, budget limit, threshold percentage
+
+**FR-NOTIFY-19:** System sends "Budget Exceeded" notification when LeaseBudgetExceeded event received
+- Personalizes: user name, final spend, budget limit, account status
+
+**FR-NOTIFY-20:** System sends "Duration Threshold Alert" notification when LeaseDurationThresholdAlert event received
+- Personalizes: user name, time remaining, expiration date
+
+**FR-NOTIFY-21:** System sends "Freezing Threshold Alert" notification when LeaseFreezingThresholdAlert event received
+- Personalizes: user name, reason (budget/time), freeze time
+
+**FR-NOTIFY-22:** System sends "Lease Expired" notification when LeaseExpired event received
+- Personalizes: user name, AWS account ID, expiration time, final cost
+
+**FR-NOTIFY-23:** System sends "Lease Frozen" notification when LeaseFrozen event received
+- Personalizes: user name, AWS account ID, freeze reason, resume instructions
+
+**FR-NOTIFY-24:** System sends "Lease Unfrozen" notification when LeaseUnfrozen event received
+- Personalizes: user name, AWS account ID, SSO portal URL, remaining time/budget
+
+### Account Management Events (5 Events)
+
+**FR-NOTIFY-25:** System sends "Cleanup Requested" notification when CleanAccountRequest event received
+- Personalizes: admin name, AWS account ID, cleanup scope
+
+**FR-NOTIFY-26:** System sends "Cleanup Succeeded" notification when AccountCleanupSucceeded event received
+- Personalizes: admin/user name, AWS account ID, resources cleaned
+
+**FR-NOTIFY-27:** System sends "Cleanup Failed" notification when AccountCleanupFailed event received
+- Personalizes: admin name, AWS account ID, failure reason, manual steps
+
+**FR-NOTIFY-28:** System sends "Account Quarantined" notification when AccountQuarantined event received
+- Personalizes: admin name, AWS account ID, quarantine reason, escalation contact
+
+**FR-NOTIFY-29:** System sends "Drift Detected" notification when AccountDriftDetected event received
+- Personalizes: admin name, AWS account ID, drift details, remediation guidance
+
+### Cost Reporting Events (2 Events)
+
+**FR-NOTIFY-30:** System sends "Cost Report Generated" notification when GroupCostReportGenerated event received
+- Personalizes: manager name, group name, report period, total cost, report URL
+
+**FR-NOTIFY-31:** System sends "Cost Report Failed" notification when GroupCostReportGeneratedFailure event received
+- Personalizes: admin name, group name, report period, failure reason
+
+### Error Handling
+
+**FR-NOTIFY-32:** System sends failed notifications to SQS Dead Letter Queue
+
+**FR-NOTIFY-33:** DLQ message includes original event payload, error message, attempt count
+
+**FR-NOTIFY-34:** System retries transient failures (network timeouts, rate limits) before sending to DLQ
+
+**FR-NOTIFY-35:** System logs all notification attempts (success and failure) with correlation ID
+
+**FR-NOTIFY-36:** System handles malformed event payloads gracefully (log error, don't crash)
+
+### Secrets Management
+
+**FR-NOTIFY-37:** System retrieves GOV.UK Notify API key from Secrets Manager at runtime
+
+**FR-NOTIFY-38:** System caches Secrets Manager response within Lambda execution context (reduce API calls)
+
+**FR-NOTIFY-39:** System handles Secrets Manager errors gracefully (log, fail notification to DLQ)
+
+### CloudWatch Monitoring
+
+**FR-NOTIFY-40:** System creates CloudWatch alarm for Lambda invocation errors
+
+**FR-NOTIFY-41:** System creates CloudWatch alarm for DLQ message depth (> 0 messages)
+
+**FR-NOTIFY-42:** System creates CloudWatch alarm for GOV.UK Notify API failures
+
+**FR-NOTIFY-43:** System publishes custom metrics for notification success/failure counts
+
+### GOV.UK Notify Templates
+
+**FR-NOTIFY-44:** System uses 18 distinct GOV.UK Notify templates (one per event type)
+
+**FR-NOTIFY-45:** Templates include standard header with NDX/GOV.UK branding
+
+**FR-NOTIFY-46:** Templates use personalisation fields matching event payload structure
+
+**FR-NOTIFY-47:** Templates include clear call-to-action where appropriate (e.g., "Launch AWS Console")
+
+**FR-NOTIFY-48:** Templates use plain English following GDS content design guidelines
+
+---
+
+## Non-Functional Requirements - GOV.UK Notify Integration
+
+### Performance
+
+**NFR-NOTIFY-PERF-1:** Lambda processes event and sends notification within 5 seconds
+
+**NFR-NOTIFY-PERF-2:** Secrets Manager API key cached for Lambda container lifetime (reduce latency)
+
+**NFR-NOTIFY-PERF-3:** System handles burst of up to 100 events per second without throttling
+
+**NFR-NOTIFY-PERF-4:** DLQ processing latency acceptable (not real-time critical)
+
+### Security
+
+**NFR-NOTIFY-SEC-1:** GOV.UK Notify API key stored in Secrets Manager (never in code or environment variables)
+
+**NFR-NOTIFY-SEC-2:** Lambda IAM role follows least-privilege (only permissions needed for function)
+
+**NFR-NOTIFY-SEC-3:** EventBridge rule scoped to specific event source (Innovation Sandbox only)
+
+**NFR-NOTIFY-SEC-4:** CloudWatch logs do not contain API keys or sensitive credentials
+
+**NFR-NOTIFY-SEC-5:** SQS DLQ encrypted at rest
+
+**NFR-NOTIFY-SEC-6:** Lambda function code scanned for vulnerabilities before deployment
+
+### Reliability
+
+**NFR-NOTIFY-REL-1:** Lambda function has 3 retry attempts before sending to DLQ
+
+**NFR-NOTIFY-REL-2:** DLQ retention period 14 days (sufficient for investigation and retry)
+
+**NFR-NOTIFY-REL-3:** Lambda timeout set appropriately (30 seconds) to allow for API retries
+
+**NFR-NOTIFY-REL-4:** System degrades gracefully if GOV.UK Notify API unavailable (queue to DLQ)
+
+**NFR-NOTIFY-REL-5:** Notification failures don't impact Innovation Sandbox core functionality
+
+### Maintainability
+
+**NFR-NOTIFY-MAINT-1:** CloudFormation template includes clear comments explaining each resource
+
+**NFR-NOTIFY-MAINT-2:** Lambda function code documented with docstrings explaining event handling
+
+**NFR-NOTIFY-MAINT-3:** Template ID mapping configurable (not hardcoded in function logic)
+
+**NFR-NOTIFY-MAINT-4:** Infrastructure changes deployable via single CloudFormation update
+
+**NFR-NOTIFY-MAINT-5:** GOV.UK Notify templates managed in Notify dashboard (not infrastructure)
+
+### Operational Excellence
+
+**NFR-NOTIFY-OPS-1:** CloudWatch dashboard showing notification metrics (success, failure, latency)
+
+**NFR-NOTIFY-OPS-2:** CloudWatch alarms notify operations team via SNS
+
+**NFR-NOTIFY-OPS-3:** Runbook documented for DLQ investigation and retry procedures
+
+**NFR-NOTIFY-OPS-4:** Deployment checklist includes GOV.UK Notify template verification
+
+**NFR-NOTIFY-OPS-5:** Rollback procedure documented for CloudFormation stack
+
+### Scalability
+
+**NFR-NOTIFY-SCALE-1:** Lambda concurrency limit set to prevent GOV.UK Notify rate limit violations
+
+**NFR-NOTIFY-SCALE-2:** Architecture supports adding new event types without code changes (config-driven)
+
+**NFR-NOTIFY-SCALE-3:** System handles 10x growth in Innovation Sandbox usage without modification
+
+### Compliance & Auditability
+
+**NFR-NOTIFY-COMP-1:** All notification attempts logged with correlation ID linking to original event
+
+**NFR-NOTIFY-COMP-2:** CloudWatch logs retained per government data retention policy (minimum 90 days)
+
+**NFR-NOTIFY-COMP-3:** GOV.UK Notify dashboard provides delivery confirmation for audit
+
+**NFR-NOTIFY-COMP-4:** Infrastructure changes tracked via CloudFormation stack history
+
+**NFR-NOTIFY-COMP-5:** DLQ messages include full event context for investigation
+
+### Testing
+
+**NFR-NOTIFY-TEST-1:** Unit tests cover all 18 event type handlers
+
+**NFR-NOTIFY-TEST-2:** Integration tests verify EventBridge to Lambda to Notify flow
+
+**NFR-NOTIFY-TEST-3:** Error handling tested with simulated API failures
+
+**NFR-NOTIFY-TEST-4:** Load testing verifies burst handling capability
+
+**NFR-NOTIFY-TEST-5:** GOV.UK Notify templates tested with sample personalization data
+
+---
+
+# Feature 4: Slack Integration for Operational Alerts
+
+## Executive Summary - Slack Integration
+
+**New Capability:** Send operational alerts and notifications to Slack channels for NDX administrators and operations teams. This integration provides real-time visibility into AWS billing events and Innovation Sandbox account lifecycle events directly in Slack where the team collaborates.
+
+**Current State:** Operations teams must monitor multiple AWS dashboards and email inboxes to stay informed about billing anomalies, spending patterns, and sandbox account status changes. Critical alerts may be missed or delayed.
+
+**Challenge:** Distributed monitoring across AWS Console, email, and other tools creates friction and delays in responding to operational events. Teams need consolidated, real-time alerts where they already work.
+
+**Solution:** Deploy a CloudFormation stack that:
+1. Intercepts AWS Billing events for daily spend summaries and anomaly detection
+2. Intercepts Innovation Sandbox EventBridge events for account lifecycle alerts
+3. Sends formatted notifications to configured Slack channels via Slack API
+4. Provides comprehensive error handling with SQS Dead Letter Queue
+
+### What Makes This Special
+
+This is **operational visibility integration** that brings critical alerts directly to the team's collaboration workspace. Rather than requiring constant dashboard monitoring or email checking, this approach:
+
+- **Consolidates alerts** - All operational notifications in one Slack channel
+- **Enables rapid response** - Real-time notifications for critical events (account quarantined, frozen)
+- **Provides spend visibility** - Daily organization-wide AWS spend summaries
+- **Detects anomalies early** - Proactive alerts for unusual billing patterns
+- **Reduces context switching** - Operations team stays in Slack, their primary collaboration tool
+- **Ensures reliability** - SQS Dead Letter Queue captures failed notifications
+
+The differentiator is **bringing operational awareness to the team** rather than requiring the team to go find the information.
+
+---
+
+## Project Classification - Slack Integration
+
+**Technical Type:** Infrastructure / Serverless Integration
+**Domain:** GovTech Operations (UK Government Digital Service)
+**Complexity:** Low-Medium
+
+This is a **serverless event processing pipeline** similar to the GOV.UK Notify integration, but targeting Slack channels instead of email. The implementation reuses the same EventBridge pattern with a dedicated Lambda function for Slack API calls.
+
+**Why Infrastructure Project:**
+- Deploys AWS resources via CloudFormation
+- Lambda function processes events (Python runtime)
+- EventBridge rules filter AWS Billing and Innovation Sandbox events
+- Secrets Manager stores Slack webhook URL or API token
+- SQS Dead Letter Queue for failed notifications
+
+**Domain Context:** As an operations tool for a UK government service:
+- Must not expose sensitive information in Slack messages
+- AWS account IDs can be included (internal operations use)
+- Budget/cost data formatted for clarity
+- No PII in alerts (operations-focused, not user-facing)
+
+**Complexity Assessment: Low-Medium**
+- **Not High:** Only 5 notification types, established Slack API pattern, similar to existing Notify integration
+- **Not Low:** Production government service, requires AWS Billing integration, error handling needed
+
+---
+
+## Success Criteria - Slack Integration
+
+**Primary Success Metric:** Operations team receives all configured alerts in Slack within 60 seconds of the triggering event with zero missed notifications.
+
+**Specific Success Indicators:**
+
+1. **Daily Spend Alert Works:** Every day at configured time, Slack receives org-wide AWS spend for past 24 hours
+2. **Anomaly Detection Works:** Unusual billing patterns trigger immediate Slack alert
+3. **Account Active Alert:** When Innovation Sandbox account becomes active with user, Slack notified
+4. **Quarantine Alert:** When account quarantined, Slack receives immediate alert with details
+5. **Frozen Alert:** When account frozen (budget/policy), Slack receives immediate alert
+6. **Error Handling Functional:** Failed notifications land in SQS Dead Letter Queue
+7. **Secrets Secure:** Slack credentials retrieved from Secrets Manager (not hardcoded)
+
+**What Winning Looks Like:**
+- Operations team sees all critical events in their #ndx-alerts Slack channel
+- Daily spend summaries help track budget burn rate across organization
+- Billing anomalies caught early before they become problems
+- Account lifecycle events (quarantine, freeze) get immediate attention
+- No manual monitoring of AWS dashboards required for these specific events
+- Team can configure which alerts go to which channels
+
+---
+
+## Product Scope - Slack Integration
+
+### MVP - Minimum Viable Product
+
+**Phase 1: Infrastructure Setup**
+1. **CloudFormation Stack:** Define stack with all required AWS resources
+2. **EventBridge Rules:** Create rules for AWS Billing events and Innovation Sandbox events
+3. **Lambda Function:** Python function for event transformation and Slack API calls
+4. **SQS Dead Letter Queue:** Queue for failed notification processing
+5. **Secrets Manager Secret:** Secure storage for Slack webhook URL or API token
+6. **IAM Role:** Lambda execution role with least-privilege permissions
+
+**Phase 2: AWS Billing Alerts (2 Alert Types)**
+7. **Daily Spend Summary:** Aggregate org-wide spend for past 24 hours, send to Slack
+   - Triggered by CloudWatch scheduled event (daily at configured time)
+   - Retrieves Cost Explorer data for previous 24-hour period
+   - Formats as Slack Block Kit message with spending breakdown
+8. **Billing Anomalies:** Detect unusual spending patterns, alert immediately
+   - Triggered by AWS Anomaly Detection service events
+   - Includes anomaly details, affected services, projected impact
+
+**Phase 3: Innovation Sandbox EventBridge Alerts (3 Alert Types)**
+9. **Account Made Active:** Notify when sandbox account assigned to user
+   - Triggered by Innovation Sandbox account activation event
+   - Includes user email, AWS account ID, template name
+10. **Account Quarantined:** Alert when account quarantined for policy violation
+    - Triggered by AccountQuarantined EventBridge event
+    - Includes AWS account ID, quarantine reason, escalation guidance
+11. **Account Frozen:** Alert when account frozen (budget or policy)
+    - Triggered by LeaseFrozen EventBridge event
+    - Includes AWS account ID, freeze reason, affected user
+
+**Phase 4: Error Handling & Monitoring**
+12. **DLQ Processing:** Failed notifications captured in SQS with message metadata
+13. **CloudWatch Alarms:** Alarms for Lambda errors, DLQ depth, API failures
+14. **Logging:** Structured logging for debugging and audit trail
+
+**Phase 5: Slack Message Formatting**
+15. **Block Kit Templates:** Create Slack Block Kit templates for each alert type
+16. **Color Coding:** Use attachment colors (green/yellow/red) for severity
+17. **Action Buttons:** Include relevant links (AWS Console, NDX admin pages)
+
+### Growth Features (Post-MVP)
+
+**Enhanced Alerts:**
+1. **Weekly/Monthly Summaries:** Digest reports for spending trends
+2. **Budget Forecasting Alerts:** Projected month-end spend warnings
+3. **Service-Specific Breakdown:** Per-service spending in daily summaries
+4. **Custom Thresholds:** Configurable spending thresholds for alerts
+
+**Channel Management:**
+5. **Multi-Channel Routing:** Route different alert types to different channels
+6. **Alert Severity Levels:** Critical vs warning vs info routing
+7. **@mention Support:** Tag specific users for critical alerts
+8. **Slack Thread Replies:** Group related alerts in threads
+
+**Integration Expansion:**
+9. **Slack Commands:** `/ndx-status` to query current spend or active leases
+10. **Interactive Buttons:** Approve/deny actions directly from Slack
+11. **Escalation Workflows:** Auto-escalate unacknowledged critical alerts
+
+### Vision (Future)
+
+**Advanced Operations Platform:**
+1. **AI-Powered Summaries:** ML-generated insights on spending patterns
+2. **Predictive Alerting:** Forecast issues before they occur
+3. **Cross-Service Correlation:** Link related events across services
+4. **ChatOps Integration:** Full operational control from Slack
+5. **On-Call Integration:** Route to PagerDuty/Opsgenie for critical events
+
+---
+
+## Domain-Specific Requirements - Slack Integration (GovTech)
+
+**Government-Specific Requirements for Slack Integration:**
+
+1. **Data Classification:**
+   - AWS account IDs acceptable in Slack (internal operations)
+   - No user PII in Slack messages (use anonymized identifiers if needed)
+   - Budget/cost data in aggregate only (not per-user breakdowns)
+   - No sensitive technical details (API keys, secrets, etc.)
+
+2. **Security:**
+   - Slack webhook URL stored in Secrets Manager (not environment variables)
+   - Lambda role follows least-privilege principle
+   - No sensitive data logged to CloudWatch
+   - EventBridge rules scoped to specific event sources
+
+3. **Auditability:**
+   - All notification attempts logged with correlation IDs
+   - Failed notifications retained in DLQ for investigation
+   - CloudWatch logs retained per government retention policy
+   - Slack message delivery not guaranteed (no receipt confirmation)
+
+4. **Operational Continuity:**
+   - Slack notification failures don't impact core NDX/ISB functionality
+   - DLQ ensures notifications not permanently lost
+   - Alarms enable rapid response to systematic issues
+   - Slack downtime handled gracefully (queue and retry)
+
+5. **Compliance:**
+   - Slack workspace must be government-approved
+   - Channel access controlled by Slack workspace admins
+   - No export of government data to unauthorized systems
+   - Messages may be subject to retention policies
+
+---
+
+## Functional Requirements - Slack Integration
+
+**Purpose:** Define WHAT capabilities the Slack integration must provide. These are the complete inventory of features enabling operational alerts via Slack.
+
+**Scope:** AWS infrastructure (EventBridge, Lambda, SQS, Secrets Manager, Cost Explorer), Slack API integration, 5 alert type handlers.
+
+### EventBridge Integration
+
+**FR-SLACK-1:** System can deploy EventBridge rule matching Innovation Sandbox event source
+
+**FR-SLACK-2:** EventBridge rule can filter events by detail-type for: AccountActivated, AccountQuarantined, LeaseFrozen
+
+**FR-SLACK-3:** System can deploy CloudWatch scheduled event for daily spend summary
+
+**FR-SLACK-4:** EventBridge rule can target Lambda function for event processing
+
+**FR-SLACK-5:** System preserves all event metadata for processing (timestamp, event ID, source)
+
+### AWS Billing Integration
+
+**FR-SLACK-6:** System can query AWS Cost Explorer API for cost data
+
+**FR-SLACK-7:** System can aggregate spend across all accounts in organization for 24-hour period
+
+**FR-SLACK-8:** System can format spend data by service category
+
+**FR-SLACK-9:** System can receive AWS Anomaly Detection events
+
+**FR-SLACK-10:** System can extract anomaly details (affected services, magnitude, projected impact)
+
+### Lambda Function Processing
+
+**FR-SLACK-11:** Lambda function can determine Slack message template from event type
+
+**FR-SLACK-12:** Lambda function can construct Slack Block Kit message from event payload
+
+**FR-SLACK-13:** Lambda function can retrieve Slack credentials from Secrets Manager
+
+**FR-SLACK-14:** Lambda function can call Slack webhook URL to post message
+
+**FR-SLACK-15:** Lambda function can handle Slack API rate limiting with exponential backoff
+
+**FR-SLACK-16:** Lambda function logs structured JSON for debugging and audit
+
+**FR-SLACK-17:** Lambda function returns success/failure status for each notification attempt
+
+### Daily Spend Alert
+
+**FR-SLACK-18:** System sends daily spend summary at configured time (default: 09:00 UTC)
+
+**FR-SLACK-19:** Summary includes total org spend for past 24 hours
+
+**FR-SLACK-20:** Summary includes spend breakdown by top 5 services
+
+**FR-SLACK-21:** Summary includes comparison to previous day (% change)
+
+**FR-SLACK-22:** Message formatted with Slack Block Kit for readability
+
+### Billing Anomaly Alert
+
+**FR-SLACK-23:** System sends immediate alert when AWS Anomaly Detection triggers
+
+**FR-SLACK-24:** Alert includes affected service(s)
+
+**FR-SLACK-25:** Alert includes anomaly magnitude (% deviation from expected)
+
+**FR-SLACK-26:** Alert includes projected impact if anomaly continues
+
+**FR-SLACK-27:** Alert uses red color attachment for visibility
+
+### Account Activated Alert
+
+**FR-SLACK-28:** System sends alert when Innovation Sandbox account becomes active with user
+
+**FR-SLACK-29:** Alert includes AWS account ID
+
+**FR-SLACK-30:** Alert includes user email (or anonymized identifier)
+
+**FR-SLACK-31:** Alert includes lease template name and duration
+
+**FR-SLACK-32:** Alert uses green color attachment (informational)
+
+### Account Quarantined Alert
+
+**FR-SLACK-33:** System sends immediate alert when account quarantined
+
+**FR-SLACK-34:** Alert includes AWS account ID
+
+**FR-SLACK-35:** Alert includes quarantine reason
+
+**FR-SLACK-36:** Alert includes escalation guidance (who to contact, what to do)
+
+**FR-SLACK-37:** Alert uses red color attachment for urgency
+
+### Account Frozen Alert
+
+**FR-SLACK-38:** System sends immediate alert when account frozen
+
+**FR-SLACK-39:** Alert includes AWS account ID
+
+**FR-SLACK-40:** Alert includes freeze reason (budget exceeded, policy violation, expired)
+
+**FR-SLACK-41:** Alert includes affected user (email or identifier)
+
+**FR-SLACK-42:** Alert uses yellow color attachment for warning
+
+### Error Handling
+
+**FR-SLACK-43:** System sends failed notifications to SQS Dead Letter Queue
+
+**FR-SLACK-44:** DLQ message includes original event payload, error message, attempt count
+
+**FR-SLACK-45:** System retries transient failures (network timeouts, rate limits) before sending to DLQ
+
+**FR-SLACK-46:** System logs all notification attempts (success and failure) with correlation ID
+
+**FR-SLACK-47:** System handles malformed event payloads gracefully (log error, don't crash)
+
+### Secrets Management
+
+**FR-SLACK-48:** System retrieves Slack webhook URL from Secrets Manager at runtime
+
+**FR-SLACK-49:** System caches Secrets Manager response within Lambda execution context
+
+**FR-SLACK-50:** System handles Secrets Manager errors gracefully (log, fail notification to DLQ)
+
+### CloudWatch Monitoring
+
+**FR-SLACK-51:** System creates CloudWatch alarm for Lambda invocation errors
+
+**FR-SLACK-52:** System creates CloudWatch alarm for DLQ message depth (> 0 messages)
+
+**FR-SLACK-53:** System creates CloudWatch alarm for Slack API failures
+
+**FR-SLACK-54:** System publishes custom metrics for notification success/failure counts
+
+---
+
+## Non-Functional Requirements - Slack Integration
+
+### Performance
+
+**NFR-SLACK-PERF-1:** Lambda processes event and sends Slack notification within 5 seconds
+
+**NFR-SLACK-PERF-2:** Daily spend summary retrieves and formats data within 30 seconds
+
+**NFR-SLACK-PERF-3:** Secrets Manager response cached for Lambda container lifetime
+
+**NFR-SLACK-PERF-4:** System handles burst of up to 50 events per second without throttling
+
+### Security
+
+**NFR-SLACK-SEC-1:** Slack webhook URL stored in Secrets Manager (never in code or environment variables)
+
+**NFR-SLACK-SEC-2:** Lambda IAM role follows least-privilege (only permissions needed)
+
+**NFR-SLACK-SEC-3:** EventBridge rules scoped to specific event sources only
+
+**NFR-SLACK-SEC-4:** CloudWatch logs do not contain webhook URLs or sensitive credentials
+
+**NFR-SLACK-SEC-5:** SQS DLQ encrypted at rest
+
+**NFR-SLACK-SEC-6:** Cost Explorer access limited to read-only operations
+
+### Reliability
+
+**NFR-SLACK-REL-1:** Lambda function has 3 retry attempts before sending to DLQ
+
+**NFR-SLACK-REL-2:** DLQ retention period 14 days (sufficient for investigation and retry)
+
+**NFR-SLACK-REL-3:** Lambda timeout set appropriately (60 seconds for Cost Explorer queries)
+
+**NFR-SLACK-REL-4:** System degrades gracefully if Slack API unavailable (queue to DLQ)
+
+**NFR-SLACK-REL-5:** Notification failures don't impact Innovation Sandbox core functionality
+
+**NFR-SLACK-REL-6:** Daily spend summary scheduled with CloudWatch retry on failure
+
+### Maintainability
+
+**NFR-SLACK-MAINT-1:** CloudFormation template includes clear comments explaining each resource
+
+**NFR-SLACK-MAINT-2:** Lambda function code documented with docstrings
+
+**NFR-SLACK-MAINT-3:** Slack Block Kit templates externalized for easy modification
+
+**NFR-SLACK-MAINT-4:** Infrastructure changes deployable via single CloudFormation update
+
+**NFR-SLACK-MAINT-5:** Alert types configurable without code changes
+
+### Operational Excellence
+
+**NFR-SLACK-OPS-1:** CloudWatch dashboard showing notification metrics
+
+**NFR-SLACK-OPS-2:** CloudWatch alarms notify team via separate channel (not the Slack channel receiving alerts)
+
+**NFR-SLACK-OPS-3:** Runbook documented for DLQ investigation and retry procedures
+
+**NFR-SLACK-OPS-4:** Deployment checklist includes Slack channel verification
+
+**NFR-SLACK-OPS-5:** Rollback procedure documented for CloudFormation stack
+
+### Scalability
+
+**NFR-SLACK-SCALE-1:** Lambda concurrency limit set to prevent Slack rate limit violations
+
+**NFR-SLACK-SCALE-2:** Architecture supports adding new alert types without code changes
+
+**NFR-SLACK-SCALE-3:** System handles 10x growth in event volume without modification
+
+### Compliance & Auditability
+
+**NFR-SLACK-COMP-1:** All notification attempts logged with correlation ID
+
+**NFR-SLACK-COMP-2:** CloudWatch logs retained per government data retention policy (minimum 90 days)
+
+**NFR-SLACK-COMP-3:** Infrastructure changes tracked via CloudFormation stack history
+
+**NFR-SLACK-COMP-4:** DLQ messages include full event context for investigation
+
+---
+
 # Combined PRD Summary
 
 **Total Requirements Captured:**
@@ -1106,10 +1960,56 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
   - Testing Requirements (7 NFRs)
   - Design System Compliance (5 NFRs)
 
+**Feature 3: GOV.UK Notify Integration (PLANNED)**
+- **48 Functional Requirements** across 9 capability areas:
+  - EventBridge Integration (5 FRs)
+  - Lambda Function Processing (8 FRs)
+  - Lease Lifecycle Events (4 FRs)
+  - Lease Monitoring Events (7 FRs)
+  - Account Management Events (5 FRs)
+  - Cost Reporting Events (2 FRs)
+  - Error Handling (5 FRs)
+  - Secrets Management (3 FRs)
+  - CloudWatch Monitoring (4 FRs)
+  - GOV.UK Notify Templates (5 FRs)
+
+- **27 Non-Functional Requirements** across 8 quality dimensions:
+  - Performance (4 NFRs)
+  - Security (6 NFRs)
+  - Reliability (5 NFRs)
+  - Maintainability (5 NFRs)
+  - Operational Excellence (5 NFRs)
+  - Scalability (3 NFRs)
+  - Compliance & Auditability (5 NFRs)
+  - Testing (5 NFRs)
+
+**Feature 4: Slack Integration (PLANNED)**
+- **54 Functional Requirements** across 10 capability areas:
+  - EventBridge Integration (5 FRs)
+  - AWS Billing Integration (5 FRs)
+  - Lambda Function Processing (7 FRs)
+  - Daily Spend Alert (5 FRs)
+  - Billing Anomaly Alert (5 FRs)
+  - Account Activated Alert (5 FRs)
+  - Account Quarantined Alert (5 FRs)
+  - Account Frozen Alert (5 FRs)
+  - Error Handling (5 FRs)
+  - Secrets Management (3 FRs)
+  - CloudWatch Monitoring (4 FRs)
+
+- **25 Non-Functional Requirements** across 7 quality dimensions:
+  - Performance (4 NFRs)
+  - Security (6 NFRs)
+  - Reliability (6 NFRs)
+  - Maintainability (5 NFRs)
+  - Operational Excellence (5 NFRs)
+  - Scalability (3 NFRs)
+  - Compliance & Auditability (4 NFRs)
+
 **Combined Totals:**
-- **123 Functional Requirements**
-- **82 Non-Functional Requirements**
-- **205 Total Requirements**
+- **225 Functional Requirements**
+- **134 Non-Functional Requirements**
+- **359 Total Requirements**
 
 ---
 
@@ -1157,9 +2057,57 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 
 ---
 
+## Key Deliverables - GOV.UK Notify Integration (PLANNED)
+
+1. CloudFormation stack deploying all required AWS resources
+2. EventBridge rule intercepting all 18 Innovation Sandbox event types
+3. Python Lambda function transforming events to GOV.UK Notify API calls
+4. SQS Dead Letter Queue for failed notification handling
+5. Secrets Manager secret storing GOV.UK Notify API key
+6. IAM role with least-privilege permissions
+7. CloudWatch alarms for Lambda errors and DLQ depth
+8. 18 GOV.UK Notify email templates (one per event type)
+9. Structured logging for debugging and audit trail
+10. Deployment runbook and rollback procedures
+
+**Success Validation:**
+- All 18 Innovation Sandbox event types trigger corresponding notifications
+- Users receive GOV.UK-branded emails instead of AWS SES defaults
+- Failed notifications captured in DLQ for investigation and retry
+- CloudWatch alarms alert operations team to systematic issues
+- GOV.UK Notify dashboard shows delivery confirmation
+- Zero notification failures in normal operation
+
+---
+
+## Key Deliverables - Slack Integration (PLANNED)
+
+1. CloudFormation stack deploying all required AWS resources
+2. EventBridge rules for AWS Billing and Innovation Sandbox events
+3. CloudWatch scheduled event for daily spend summary
+4. Python Lambda function for event transformation and Slack API calls
+5. SQS Dead Letter Queue for failed notification handling
+6. Secrets Manager secret storing Slack webhook URL
+7. IAM role with least-privilege permissions
+8. CloudWatch alarms for Lambda errors and DLQ depth
+9. 5 Slack Block Kit message templates (daily spend, anomaly, activated, quarantined, frozen)
+10. Structured logging for debugging and audit trail
+11. Deployment runbook and rollback procedures
+
+**Success Validation:**
+- Daily spend summaries posted to Slack at configured time (09:00 UTC default)
+- Billing anomalies trigger immediate Slack alerts with affected services
+- Account activation, quarantine, and freeze events trigger Slack notifications
+- Operations team receives all alerts in #ndx-alerts channel
+- Failed notifications captured in DLQ for investigation
+- CloudWatch alarms alert on systematic issues
+- No missed notifications in normal operation
+
+---
+
 ## Product Value Summary
 
-This PRD captures requirements for **two critical NDX capabilities** that together enable safe platform evolution and accelerated service evaluation for UK government users:
+This PRD captures requirements for **four critical NDX capabilities** that together enable safe platform evolution, accelerated service evaluation, professional government communications, and operational visibility for UK government users:
 
 ### CloudFront Origin Routing (COMPLETED)
 **Safe, low-risk UI evolution** via surgical infrastructure enhancement. The cookie-based routing enables the strangler pattern for UI modernization without risking production stability for the £2B government procurement platform.
@@ -1167,14 +2115,22 @@ This PRD captures requirements for **two critical NDX capabilities** that togeth
 ### Try Before You Buy (IN DEVELOPMENT)
 **Self-service sandbox provisioning** that removes procurement friction from cloud service evaluation. Government users can test AWS services hands-on before committing to procurement, accelerating digital transformation while maintaining strict GovTech compliance (WCAG 2.2, GOV.UK Design System, budget controls, auditability).
 
-The infrastructure-as-code approach via CDK and client-side TypeScript ensures **reproducibility, auditability, and transparency** - critical requirements for public sector platforms. This methodical approach demonstrates government service engineering best practices: make surgical changes, validate thoroughly, and build capabilities that serve government users effectively.
+### GOV.UK Notify Integration (PLANNED)
+**Government-branded notifications** replacing default AWS SES emails with professional GOV.UK Notify-powered communications. Users receive clear, GDS-compliant notifications for all Innovation Sandbox events - from lease approvals to budget alerts - ensuring the NDX experience remains consistent and professional throughout the user journey.
+
+### Slack Integration (PLANNED)
+**Real-time operational visibility** bringing critical alerts directly to the team's collaboration workspace. Operations teams receive daily AWS spend summaries, billing anomaly alerts, and Innovation Sandbox account lifecycle notifications in Slack - reducing context switching and enabling rapid response to operational events.
+
+The infrastructure-as-code approach via CDK, CloudFormation, and client-side TypeScript ensures **reproducibility, auditability, and transparency** - critical requirements for public sector platforms. This methodical approach demonstrates government service engineering best practices: make surgical changes, validate thoroughly, and build capabilities that serve government users effectively.
 
 **Business Impact:**
 - **CloudFront Routing:** Enables confident UI evolution with real-user testing before full rollout
 - **Try Before You Buy:** Reduces procurement cycle time from weeks to seconds, enabling informed decision-making for cloud service adoption
+- **GOV.UK Notify Integration:** Delivers professional, branded communications that reinforce trust and clarity for government users evaluating cloud services
+- **Slack Integration:** Provides operational visibility with daily spend tracking, anomaly detection, and critical event alerting for proactive issue resolution
 
 ---
 
-_This PRD captures requirements for NDX CloudFront cookie-based origin routing and Try Before You Buy (AWS Innovation Sandbox integration) - enabling safe UI evolution and accelerated service evaluation for a critical UK government procurement platform._
+_This PRD captures requirements for NDX CloudFront cookie-based origin routing, Try Before You Buy (AWS Innovation Sandbox integration), GOV.UK Notify integration, and Slack integration - enabling safe UI evolution, accelerated service evaluation, professional government communications, and operational visibility for a critical UK government procurement platform._
 
 _Created through collaborative discovery between cns and AI facilitator._

@@ -1,0 +1,337 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>n5</epicId>
+    <storyId>n5-1</storyId>
+    <title>GOV.UK Notify SDK Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n5-1-govuk-notify-sdk-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>notification system developer</asA>
+    <iWant>to integrate the official GOV.UK Notify SDK with proper error handling, credential management, and security controls</iWant>
+    <soThat>the system can reliably send government-branded emails with proper audit trails and protection against common vulnerabilities</soThat>
+    <tasks>
+      <task id="1" status="pending">
+        <title>Install and configure GOV.UK Notify SDK</title>
+        <acs>AC-1.1, AC-1.2, AC-1.12, AC-1.55</acs>
+        <subtasks>
+          <subtask>Add notifications-node-client ^8.2.0 to package.json</subtask>
+          <subtask>Implement Secrets Manager client with caching</subtask>
+          <subtask>Configure /ndx/notifications/credentials secret path</subtask>
+        </subtasks>
+      </task>
+      <task id="2" status="pending">
+        <title>Implement NotifySender class</title>
+        <acs>AC-1.3, AC-1.4, AC-1.6, AC-1.52</acs>
+        <subtasks>
+          <subtask>Create singleton pattern with lazy initialization</subtask>
+          <subtask>Implement sendEmail() method with template ID, email, personalisation</subtask>
+          <subtask>Add reference field with event.id for audit trail</subtask>
+          <subtask>Configure HTTP connection pooling</subtask>
+        </subtasks>
+      </task>
+      <task id="3" status="pending">
+        <title>Implement error classification</title>
+        <acs>AC-1.7, AC-1.8, AC-1.9, AC-1.10, AC-1.11</acs>
+        <subtasks>
+          <subtask>Create PermanentError class for 400 errors</subtask>
+          <subtask>Create CriticalError class for 401/403 errors</subtask>
+          <subtask>Create RetriableError class for 429/5xx errors</subtask>
+          <subtask>Implement error detection in classifyError() method</subtask>
+          <subtask>Default unknown errors to RetriableError</subtask>
+        </subtasks>
+      </task>
+      <task id="4" status="pending">
+        <title>Implement input sanitisation</title>
+        <acs>AC-1.5, AC-1.17, AC-1.18, AC-1.19, AC-1.20</acs>
+        <subtasks>
+          <subtask>Install and integrate isomorphic-dompurify for HTML sanitisation</subtask>
+          <subtask>Implement URL encoding for URL-bound values</subtask>
+          <subtask>Add UUID validation pattern (reject query strings)</subtask>
+          <subtask>Create sanitizePersonalisation() function</subtask>
+        </subtasks>
+      </task>
+      <task id="5" status="pending">
+        <title>Implement email verification</title>
+        <acs>AC-1.13, AC-1.14, AC-1.21, AC-1.22, AC-1.23</acs>
+        <subtasks>
+          <subtask>Add RecipientVerification metric with email hashes</subtask>
+          <subtask>Implement defensive assertion: event.userEmail === params.email</subtask>
+          <subtask>Add security comments about never logging secrets</subtask>
+          <subtask>Implement token metadata logging (length + hash only)</subtask>
+        </subtasks>
+      </task>
+      <task id="6" status="pending">
+        <title>Implement circuit breaker</title>
+        <acs>AC-1.31, AC-1.32, AC-1.35, AC-1.50</acs>
+        <subtasks>
+          <subtask>Track consecutive 5xx errors</subtask>
+          <subtask>Trigger circuit breaker after 20 consecutive failures</subtask>
+          <subtask>Implement 5-min pause with SNS escalation</subtask>
+          <subtask>Add jitter to retry backoff</subtask>
+        </subtasks>
+      </task>
+      <task id="7" status="pending">
+        <title>Write unit tests</title>
+        <acs>AC-1.3-1.11, AC-1.13-1.23</acs>
+        <subtasks>
+          <subtask>Test singleton pattern</subtask>
+          <subtask>Test error classification for all status codes</subtask>
+          <subtask>Test HTML sanitisation with DOMPurify</subtask>
+          <subtask>Test URL encoding</subtask>
+          <subtask>Test UUID validation</subtask>
+          <subtask>Test email verification assertion</subtask>
+        </subtasks>
+      </task>
+      <task id="8" status="pending">
+        <title>Write integration tests</title>
+        <acs>AC-1.2, AC-1.12, AC-1.56, AC-1.57, AC-1.58</acs>
+        <subtasks>
+          <subtask>Test Secrets Manager integration</subtask>
+          <subtask>Test N-4 event schema contract</subtask>
+          <subtask>Test Notify API endpoints contract</subtask>
+        </subtasks>
+      </task>
+      <task id="9" status="pending">
+        <title>Write documentation</title>
+        <acs>AC-1.28, AC-1.29, AC-1.34, AC-1.44, AC-1.46, AC-1.51, AC-1.54, AC-1.59, AC-1.60</acs>
+        <subtasks>
+          <subtask>Document GOV.UK Notify SLA and certifications</subtask>
+          <subtask>Create ops runbook for Notify support escalation</subtask>
+          <subtask>Document rate limits</subtask>
+          <subtask>Create API key rotation runbook</subtask>
+          <subtask>Create pre-deployment checklist</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <category name="Core SDK Integration (MUST)">
+      <ac id="AC-1.1">notifications-node-client is installed as production dependency</ac>
+      <ac id="AC-1.2">NotifySender class retrieves API key from Secrets Manager at /ndx/notifications/credentials</ac>
+      <ac id="AC-1.4">sendEmail() method wraps SDK with template ID, email, and personalisation</ac>
+      <ac id="AC-1.6">Notify reference field contains event.id for audit trail</ac>
+      <ac id="AC-1.49">Lambda timeout configured: 30 seconds</ac>
+      <ac id="AC-1.55">Secrets Manager caching: API key cached in Lambda memory</ac>
+    </category>
+    <category name="Error Classification (MUST)">
+      <ac id="AC-1.7">400 errors throw PermanentError (no retry)</ac>
+      <ac id="AC-1.8">401/403 errors throw CriticalError (immediate alarm)</ac>
+      <ac id="AC-1.9">429 errors throw RetriableError with 1000ms retryAfter</ac>
+      <ac id="AC-1.10">5xx errors throw RetriableError (infrastructure issue)</ac>
+    </category>
+    <category name="Input Sanitisation (MUST)">
+      <ac id="AC-1.5">All personalisation values are sanitised (HTML escape)</ac>
+      <ac id="AC-1.17">Use DOMPurify library to sanitise HTML in personalisation</ac>
+      <ac id="AC-1.18">URL encode all personalisation values destined for URLs</ac>
+      <ac id="AC-1.19">Validate leaseId.uuid format BEFORE enrichment (UUID pattern only)</ac>
+      <ac id="AC-1.20">Use parameterised URLs: ssoUrl + encodeURIComponent(leaseId.uuid)</ac>
+    </category>
+    <category name="Email Verification (MUST)">
+      <ac id="AC-1.13">RecipientVerification metric logs hash(event.userEmail) vs hash(params.email)</ac>
+      <ac id="AC-1.14">ASSERT event.userEmail === params.email before every send</ac>
+      <ac id="AC-1.21">MUST NOT log API key, secrets, or webhook URLs</ac>
+      <ac id="AC-1.36">Email includes unsubscribe link (GOV.UK Notify best practice)</ac>
+      <ac id="AC-1.37">Email includes privacy notice</ac>
+    </category>
+    <category name="Contract Testing (MUST)">
+      <ac id="AC-1.56">Contract test: N-4 event schema to N-5 validation</ac>
+      <ac id="AC-1.57">Contract test: Notify API endpoints match SDK expectations</ac>
+      <ac id="AC-1.58">Integration test: Secrets Manager access verified</ac>
+      <ac id="AC-1.59">Pre-deployment checklist documented</ac>
+    </category>
+    <category name="Singleton and Caching (SHOULD)">
+      <ac id="AC-1.3">NotifySender singleton pattern prevents multiple client instantiations</ac>
+      <ac id="AC-1.11">Unknown errors default to RetriableError</ac>
+      <ac id="AC-1.12">API key is cached in Lambda memory</ac>
+      <ac id="AC-1.52">Connection pooling: Reuse HTTP connections across invocations</ac>
+    </category>
+    <category name="Circuit Breaker (SHOULD)">
+      <ac id="AC-1.31">Circuit breaker stops sends after 20 consecutive Notify API 5xx errors</ac>
+      <ac id="AC-1.32">On circuit breaker trigger, pause sends for 5 min + escalate via SNS</ac>
+      <ac id="AC-1.35">Implement jitter in retry backoff</ac>
+    </category>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/notification-architecture.md</path>
+        <title>NDX Notification Architecture</title>
+        <section>NotifySender class design</section>
+        <snippet>NotifySender is the "email mouth" that wraps GOV.UK Notify SDK with singleton pattern, error classification, and input sanitisation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-n5.md</path>
+        <title>Epic N-5 Technical Specification</title>
+        <section>Story n5-1: GOV.UK Notify SDK Integration</section>
+        <snippet>Detailed ACs for SDK integration, error handling, security controls, and testing requirements.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics-notifications.md</path>
+        <title>Epics - Notifications</title>
+        <section>Epic N-5 overview</section>
+        <snippet>User notification stories including n5-1 through n5-11 covering GOV.UK Notify integration.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Feature 3: GOV.UK Notify Integration</section>
+        <snippet>Requirements for user-facing email notifications via GOV.UK Notify platform.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/lib/notification-stack.ts</path>
+        <kind>CDK Stack</kind>
+        <symbol>NdxNotificationStack</symbol>
+        <lines>1-579</lines>
+        <reason>Parent stack where NotifySender Lambda is deployed; contains Secrets Manager IAM permissions and environment variables</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/lambda/notification/handler.ts</path>
+        <kind>Lambda Handler</kind>
+        <symbol>handler</symbol>
+        <lines>1-254</lines>
+        <reason>Entry point that will call NotifySender; contains source validation and logging infrastructure</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/lambda/notification/errors.ts</path>
+        <kind>Error Classes</kind>
+        <symbol>NotificationError, RetriableError, PermanentError, CriticalError, SecurityError</symbol>
+        <lines>1-131</lines>
+        <reason>Error classification already implemented for AC-1.7-1.10; extend for NotifySender</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/lambda/notification/types.ts</path>
+        <kind>Type Definitions</kind>
+        <symbol>EventBridgeEvent, NotificationEventType, NotificationChannel</symbol>
+        <lines>1-75</lines>
+        <reason>Shared types for events and notifications; will add NotifySender types here</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/lambda/notification/secrets.ts</path>
+        <kind>Secrets Manager Client</kind>
+        <symbol>getSecrets, NotificationSecrets</symbol>
+        <lines>1-181</lines>
+        <reason>Already implements Secrets Manager caching pattern; NotifySender will use getSecrets() for API key</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/config.ts</path>
+        <kind>Configuration</kind>
+        <symbol>getISBConfig, ISB_EVENT_TYPES</symbol>
+        <reason>Contains ISB configuration including event types and DynamoDB table references</reason>
+      </artifact>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>Dependencies</kind>
+        <reason>Add notifications-node-client and isomorphic-dompurify dependencies</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <existing>
+        <dep name="@aws-lambda-powertools/logger" version="2.29.0">Structured logging</dep>
+        <dep name="@aws-lambda-powertools/metrics" version="2.29.0">CloudWatch custom metrics</dep>
+        <dep name="@aws-sdk/client-secrets-manager" version="3.699.0">Secrets retrieval</dep>
+        <dep name="aws-cdk-lib" version="2.215.0">CDK infrastructure</dep>
+      </existing>
+      <toAdd>
+        <dep name="notifications-node-client" version="^8.2.0">Official GOV.UK Notify SDK</dep>
+        <dep name="isomorphic-dompurify" version="^2.0.0">HTML sanitisation (works in Node.js)</dep>
+      </toAdd>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="security">API keys must never be logged (AC-1.21)</constraint>
+    <constraint type="security">All personalisation values must be sanitised with DOMPurify (AC-1.17)</constraint>
+    <constraint type="security">Email verification is mandatory - cannot be bypassed (AC-1.14)</constraint>
+    <constraint type="security">Secrets retrieved from Secrets Manager at runtime, not env vars</constraint>
+    <constraint type="architecture">NotifySender must use singleton pattern (AC-1.3)</constraint>
+    <constraint type="architecture">Follow "one brain, two mouths" pattern from architecture doc</constraint>
+    <constraint type="architecture">Extend existing error classes in errors.ts, don't duplicate</constraint>
+    <constraint type="performance">Lambda timeout: 30 seconds (AC-1.49)</constraint>
+    <constraint type="performance">API key cached in Lambda memory for container lifetime (AC-1.55)</constraint>
+    <constraint type="testing">Contract tests required for N-4 to N-5 interface (AC-1.56)</constraint>
+    <constraint type="testing">Integration test required for Secrets Manager (AC-1.58)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>NotifySender.send</name>
+      <kind>Method Signature</kind>
+      <signature>async send(params: NotifyParams): Promise&lt;NotifyResponse&gt;</signature>
+      <path>infra/lib/lambda/notification/notify-sender.ts</path>
+    </interface>
+    <interface>
+      <name>NotifySender.getInstance</name>
+      <kind>Static Method</kind>
+      <signature>static async getInstance(): Promise&lt;NotifySender&gt;</signature>
+      <path>infra/lib/lambda/notification/notify-sender.ts</path>
+    </interface>
+    <interface>
+      <name>NotifyParams</name>
+      <kind>Interface</kind>
+      <signature>{ templateId: string; email: string; personalisation: Record&lt;string, string | number&gt;; reference?: string; }</signature>
+      <path>infra/lib/lambda/notification/types.ts</path>
+    </interface>
+    <interface>
+      <name>NotifyResponse</name>
+      <kind>Interface</kind>
+      <signature>{ id: string; content: { body: string; subject: string }; template: { id: string; version: number }; }</signature>
+      <path>infra/lib/lambda/notification/types.ts</path>
+    </interface>
+    <interface>
+      <name>getSecrets</name>
+      <kind>Function</kind>
+      <signature>async getSecrets(): Promise&lt;NotificationSecrets&gt;</signature>
+      <path>infra/lib/lambda/notification/secrets.ts</path>
+    </interface>
+    <interface>
+      <name>sanitizePersonalisation</name>
+      <kind>Function</kind>
+      <signature>function sanitizePersonalisation(values: Record&lt;string, string&gt;): Record&lt;string, string&gt;</signature>
+      <path>infra/lib/lambda/notification/notify-sender.ts</path>
+    </interface>
+    <interface>
+      <name>classifyHttpError</name>
+      <kind>Function</kind>
+      <signature>function classifyHttpError(statusCode: number, message: string, service: 'notify' | 'slack'): NotificationError</signature>
+      <path>infra/lib/lambda/notification/errors.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Unit tests use Jest with TypeScript. Mock external dependencies (GOV.UK Notify SDK, Secrets Manager).
+      Integration tests use real AWS services in test account with sandbox API keys.
+      All security ACs require explicit test coverage with input validation edge cases.
+      Test file naming: {module}.test.ts co-located with source files.
+      Use beforeEach/afterEach for test isolation. Clear secrets cache between tests.
+    </standards>
+    <locations>
+      <location>infra/lib/lambda/notification/notify-sender.test.ts</location>
+      <location>infra/test/integration/notify-sender.integration.test.ts</location>
+      <location>infra/lib/lambda/notification/handler.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-1.3">Test singleton returns same instance on multiple getInstance() calls</idea>
+      <idea ac="AC-1.5">Test HTML characters are escaped in sanitizePersonalisation()</idea>
+      <idea ac="AC-1.7">Test 400 response throws PermanentError</idea>
+      <idea ac="AC-1.8">Test 401/403 response throws CriticalError</idea>
+      <idea ac="AC-1.9">Test 429 response throws RetriableError with retryAfterMs=1000</idea>
+      <idea ac="AC-1.10">Test 500+ responses throw RetriableError</idea>
+      <idea ac="AC-1.14">Test assertion fails when event.userEmail !== params.email</idea>
+      <idea ac="AC-1.17">Test DOMPurify removes XSS payloads like &lt;script&gt; tags</idea>
+      <idea ac="AC-1.18">Test URL encoding of special characters in personalisation</idea>
+      <idea ac="AC-1.19">Test UUID validation rejects malformed UUIDs with query strings</idea>
+      <idea ac="AC-1.31">Test circuit breaker opens after 20 consecutive 5xx errors</idea>
+      <idea ac="AC-1.55">Test API key is cached and not re-fetched per invocation</idea>
+      <idea ac="AC-1.56">Contract test: Handler calls NotifySender with correct params</idea>
+    </ideas>
+  </tests>
+</story-context>

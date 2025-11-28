@@ -1,0 +1,201 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>N5</epicId>
+    <storyId>4</storyId>
+    <title>Lease Lifecycle Email Templates</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n5-4-lease-lifecycle-email-templates.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>lease user</asA>
+    <iWant>to receive clear, informative emails for lease lifecycle events</iWant>
+    <soThat>I am promptly notified of request, approval, denial, and termination status with actionable links</soThat>
+    <tasks>
+      <task id="1" acs="4.1,4.8,4.9">Create template registry module - TemplateConfig interface, getTemplateConfig(), env var loading, PermanentError for missing fields, optional defaults</task>
+      <task id="2" acs="4.2">Implement LeaseRequested template - requiredFields: userName, templateName, requestTime; optionalFields: comments</task>
+      <task id="3" acs="4.3,4.4,4.14">Implement LeaseApproved template - requiredFields: userName, accountId, ssoUrl, expiryDate; portal deep link, budget action link</task>
+      <task id="4" acs="4.5">Implement LeaseDenied template - requiredFields: userName, templateName, reason, deniedBy</task>
+      <task id="5" acs="4.6,4.7">Implement LeaseTerminated template - requiredFields: userName, accountId, reason, finalCost; human-readable reason mapping</task>
+      <task id="6" acs="4.10,4.11,4.12,4.15,4.25">Implement CTA link generation - HMAC-SHA256 signed tokens, 15-min expiry, audience claim, UTM parameters</task>
+      <task id="7" acs="4.18,4.19">Implement link fallback and instructions - plain-text footer link, copy/paste instructions</task>
+      <task id="8" acs="4.21,4.22,4.24">Add deliverability metrics - CloudWatch alarms for complaint/bounce/unsubscribe rates</task>
+      <task id="9" acs="4.1-4.12,4.14,4.15,4.18,4.19,4.25">Write unit tests for all template functionality</task>
+      <task id="10" acs="4.13,4.16,4.17,4.20" deferred="n5-8">Integration tests - email client compatibility, O365 Safe Links, load test</task>
+      <task id="11" acs="4.23,4.26">Documentation - deliverability monitoring runbook, accessibility review</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <category name="Core Template Configuration (MUST)">
+      <ac id="4.1">Template IDs loaded from environment variables (NOTIFY_TEMPLATE_*)</ac>
+      <ac id="4.2">LeaseRequested email includes: userName, templateName, requestTime, comments</ac>
+      <ac id="4.3">LeaseApproved email includes: userName, accountId, ssoUrl, expiryDate</ac>
+      <ac id="4.5">LeaseDenied email includes: userName, templateName, reason, deniedBy</ac>
+      <ac id="4.6">LeaseTerminated email includes: userName, accountId, reason, finalCost</ac>
+      <ac id="4.8">Missing required personalisation throws PermanentError</ac>
+    </category>
+    <category name="Enhanced Personalisation (SHOULD)">
+      <ac id="4.4">LeaseApproved email includes portal deep link for immediate access</ac>
+      <ac id="4.7">LeaseTerminated reason is human-readable (not raw type)</ac>
+      <ac id="4.9">Optional personalisation fields default to empty string</ac>
+    </category>
+    <category name="Portal CTA Links (SHOULD)">
+      <ac id="4.10">All lease lifecycle emails include authenticated "View in Portal" CTA link</ac>
+      <ac id="4.11">CTA link is session-less, short-lived token (15-min expiry, HMAC-SHA256 signed)</ac>
+      <ac id="4.12">Token includes audience claim (leaseKey) to prevent cross-lease access</ac>
+      <ac id="4.14">LeaseApproved email includes "Increase Budget" quick action link</ac>
+      <ac id="4.15">Budget alert quick action link redirects to budget form with leaseId pre-filled</ac>
+      <ac id="4.18">Fallback: Email footer includes plain-text link if HTML link fails to render</ac>
+      <ac id="4.19">Email includes instructions: "If link doesn't work, copy and paste URL in browser"</ac>
+      <ac id="4.25">CTA link includes UTM parameters (source=email, campaign=lease-approval) for analytics</ac>
+    </category>
+    <category name="Email Client Compatibility (SHOULD)" deferred="n5-8">
+      <ac id="4.13">Portal link works in all email clients (Gmail, Outlook, Apple Mail)</ac>
+      <ac id="4.16">CTA link tested in Gmail, Outlook (web + desktop), Apple Mail</ac>
+      <ac id="4.17">CTA link survives Office 365 Safe Links URL rewriting</ac>
+    </category>
+    <category name="Deliverability Metrics (SHOULD)">
+      <ac id="4.21">Complaint rate tracked: Alert if > 0.1%</ac>
+      <ac id="4.22">Bounce rate tracked: Alert if > 1%</ac>
+      <ac id="4.23">Deliverability monitoring: Check Notify dashboard weekly (document in runbook)</ac>
+      <ac id="4.24">Unsubscribe metric tracked: Alert if opt-out rate spikes (target less than 5% monthly)</ac>
+    </category>
+    <category name="Load Testing and Accessibility (SHOULD)" deferred="n5-8">
+      <ac id="4.20">Load test: Send 1000 emails, measure CTA click-through rate</ac>
+      <ac id="4.26">Email design reviewed for accessibility (contrast ratio, alt text for images)</ac>
+    </category>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="Template Registry" snippet="Templates are selected based on event type. NotifySender wraps GOV.UK Notify SDK with error handling and security controls."/>
+      <doc path="docs/epics-notifications.md" title="Epic Breakdown" section="Story 5.4" snippet="Goal: Configure and send emails for lease lifecycle events (request, approval, denial, termination)."/>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-n5.md" title="Tech Spec Epic N5" section="Story n5-4" snippet="Template IDs loaded from env vars. LeaseRequested, LeaseApproved, LeaseDenied, LeaseTerminated templates with personalisation fields."/>
+    </docs>
+    <code>
+      <file path="infra/lib/lambda/notification/errors.ts" kind="module" symbol="PermanentError, RetriableError, SecurityError, CriticalError" lines="1-133" reason="Error classes to throw for missing required fields"/>
+      <file path="infra/lib/lambda/notification/types.ts" kind="types" symbol="NotificationEventType, EventBridgeEvent" lines="1-75" reason="Event types this story processes"/>
+      <file path="infra/lib/lambda/notification/validation.ts" kind="module" symbol="LeaseKeySchema, ValidatedEvent" lines="1-100" reason="Validated event types containing leaseKey for portal links"/>
+      <file path="infra/lib/lambda/notification/notify-sender.ts" kind="service" symbol="NotifySender, NotifyParams" lines="1-100" reason="Interface for sending emails - templates module provides personalisation to this"/>
+      <file path="infra/lib/lambda/notification/ownership.ts" kind="module" symbol="hashForLog" lines="1-350" reason="PII redaction utility for logging"/>
+      <file path="infra/lib/lambda/notification/handler.ts" kind="entry" symbol="handler" lines="1-200" reason="Entry point that will call template functions"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="notifications-node-client" version="8.2.1" reason="GOV.UK Notify SDK for email sending"/>
+        <package name="@aws-lambda-powertools/logger" version="2.29.0" reason="Structured logging"/>
+        <package name="@aws-lambda-powertools/metrics" version="2.29.0" reason="CloudWatch metrics emission"/>
+        <package name="zod" version="3.23.8" reason="Schema validation"/>
+        <package name="isomorphic-dompurify" version="2.22.0" reason="Input sanitisation"/>
+      </node>
+      <devDependencies>
+        <package name="jest" version="29.7.0" reason="Unit testing framework"/>
+        <package name="ts-jest" version="29.2.5" reason="TypeScript Jest support"/>
+        <package name="aws-sdk-client-mock" version="4.1.0" reason="AWS SDK mocking"/>
+      </devDependencies>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Follow existing module pattern from notify-sender.ts - class-based with dependency injection</constraint>
+    <constraint type="security">Never log raw email addresses - use hashForLog() from ownership.ts for PII redaction</constraint>
+    <constraint type="security">HMAC-SHA256 signed tokens with 15-minute expiry for portal links</constraint>
+    <constraint type="testing">All ACs require explicit test coverage with AC ID traceability in test names</constraint>
+    <constraint type="error">Missing required personalisation fields must throw PermanentError (no retry)</constraint>
+    <constraint type="env">Template IDs loaded from environment variables (NOTIFY_TEMPLATE_*)</constraint>
+    <constraint type="url">All portal links must include UTM parameters for analytics tracking</constraint>
+    <constraint type="url">Portal links must be URL-encoded to prevent injection</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="TemplateConfig" kind="TypeScript interface">
+      <signature>
+interface TemplateConfig {
+  templateIdEnvVar: string;
+  requiredFields: string[];
+  optionalFields?: string[];
+  enrichmentQueries: EnrichmentQuery[];
+}
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="NOTIFY_TEMPLATES" kind="Registry constant">
+      <signature>
+export const NOTIFY_TEMPLATES: Record&lt;string, TemplateConfig&gt; = {
+  LeaseRequested: { ... },
+  LeaseApproved: { ... },
+  LeaseDenied: { ... },
+  LeaseTerminated: { ... },
+};
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="NotifyParams" kind="TypeScript interface">
+      <signature>
+interface NotifyParams {
+  templateId: string;
+  email: string;
+  personalisation: Record&lt;string, string | number&gt;;
+  eventId: string;
+  eventUserEmail: string;
+}
+      </signature>
+      <path>infra/lib/lambda/notification/notify-sender.ts</path>
+    </interface>
+    <interface name="generatePortalLink" kind="function">
+      <signature>
+function generatePortalLink(
+  leaseKey: LeaseKey,
+  action: 'view' | 'increase-budget',
+  secret: string
+): string
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="buildPersonalisation" kind="function">
+      <signature>
+function buildPersonalisation(
+  eventType: NotificationEventType,
+  event: ValidatedEvent,
+  config: TemplateConfig
+): Record&lt;string, string | number&gt;
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Jest with ts-jest for TypeScript. ESM mock patterns using jest.Mock without type parameters.
+AC ID traceability: test names must include AC ID (e.g., "AC-4.1: loads template ID from env var").
+Unit tests in same directory as source files (templates.test.ts).
+Mock environment variables using process.env in beforeEach/afterEach.
+Use hashForLog() for any logged email addresses in test assertions.
+    </standards>
+    <locations>
+      <location>infra/lib/lambda/notification/templates.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="4.1">Test that getTemplateConfig() returns correct templateId from process.env.NOTIFY_TEMPLATE_LEASE_REQUESTED</idea>
+      <idea ac="4.2">Test LeaseRequested personalisation includes userName, templateName, requestTime</idea>
+      <idea ac="4.3">Test LeaseApproved personalisation includes userName, accountId, ssoUrl, expiryDate</idea>
+      <idea ac="4.5">Test LeaseDenied personalisation includes userName, templateName, reason, deniedBy</idea>
+      <idea ac="4.6">Test LeaseTerminated personalisation includes userName, accountId, reason, finalCost</idea>
+      <idea ac="4.7">Test LeaseTerminated maps BUDGET_EXCEEDED to human-readable message</idea>
+      <idea ac="4.8">Test missing required field throws PermanentError with field name in message</idea>
+      <idea ac="4.9">Test optional field defaults to empty string when not provided</idea>
+      <idea ac="4.10">Test all lease lifecycle templates include portalLink in personalisation</idea>
+      <idea ac="4.11">Test generatePortalLink creates token with 15-min expiry timestamp</idea>
+      <idea ac="4.11">Test generatePortalLink uses HMAC-SHA256 with provided secret</idea>
+      <idea ac="4.12">Test token payload includes audience claim matching leaseKey</idea>
+      <idea ac="4.14">Test LeaseApproved includes budgetActionLink with pre-filled leaseId</idea>
+      <idea ac="4.15">Test budget action link URL encodes leaseId parameter</idea>
+      <idea ac="4.18">Test personalisation includes plainTextLink fallback field</idea>
+      <idea ac="4.19">Test personalisation includes linkInstructions field with copy/paste text</idea>
+      <idea ac="4.25">Test portal link includes utm_source=email and utm_campaign parameters</idea>
+    </ideas>
+  </tests>
+</story-context>

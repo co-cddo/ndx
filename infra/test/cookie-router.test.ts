@@ -47,7 +47,7 @@ function createMockHandler() {
   return function handler(event: CloudFrontEvent): CloudFrontResponse {
     const request = { ...event.request };
     const cookies = request.cookies || {};
-    let uri = request.uri;
+    const uri = request.uri;
 
     // Handle directory-style URLs for S3 compatibility
     if (uri.endsWith('/')) {

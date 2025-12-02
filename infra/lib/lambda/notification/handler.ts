@@ -39,6 +39,9 @@ import {
   isLeaseLifecycleEvent,
   isMonitoringAlertEvent,
 } from './templates';
+import { fetchLeaseRecord } from './enrichment';
+import { flattenObject, addKeysParameter } from './flatten';
+import { validateLeaseStatus, logFieldPresence } from './lease-status';
 
 // =========================================================================
 // Cold Start Template Validation (AC-9.7)
@@ -296,8 +299,121 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
       const templateConfig = getTemplateConfig(eventType);
       const templateId = getTemplateId(templateConfig);
 
-      // Build personalisation from event data
+      // N7-4: Fetch and flatten lease record for enrichment
+      // N7-5: Track enrichment timing for performance monitoring
+      const detail = event.detail as Record<string, unknown>;
+      const userEmail = detail.userEmail || (detail.leaseId as Record<string, string>)?.userEmail;
+      const uuid = detail.uuid || (detail.leaseId as Record<string, string>)?.uuid;
+
+      let enrichedData: Record<string, string> = {};
+      let enrichmentStatus: 'success' | 'failed' | 'skipped' = 'skipped';
+      const enrichmentStartTime = Date.now();
+
+      if (userEmail && uuid) {
+        try {
+          const leaseRecord = await fetchLeaseRecord(userEmail, uuid, eventId);
+          const enrichmentDurationMs = Date.now() - enrichmentStartTime;
+
+          if (leaseRecord) {
+            // N7-6: Validate lease status (logs warning for unknown statuses)
+            const leaseStatus = leaseRecord.status;
+            validateLeaseStatus(leaseStatus, eventId);
+
+            // N7-4 AC-2-5: Flatten lease record and include key fields
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { flattened } = flattenObject(leaseRecord as unknown as Record<string, unknown>, { eventId });
+            enrichedData = flattened;
+
+            // N7-6: Log field presence analysis for monitoring schema evolution
+            logFieldPresence(enrichedData, leaseStatus, eventId);
+
+            // N7-4: Set _enriched flag
+            enrichedData['_enriched'] = 'true';
+            enrichmentStatus = 'success';
+
+            // N7-5: Log enrichment success with duration
+            logger.info('Lease record enriched for notification', {
+              eventId,
+              enrichmentStatus,
+              enrichmentDurationMs,
+              leaseStatus,
+              enrichedFieldCount: Object.keys(enrichedData).length,
+              hasMaxSpend: 'maxSpend' in enrichedData,
+              hasLeaseDurationInHours: 'leaseDurationInHours' in enrichedData,
+            });
+
+            // N7-5: Emit EnrichmentSuccess metric
+            metrics.addMetric('EnrichmentSuccess', MetricUnit.Count, 1);
+            metrics.addMetric('EnrichmentDurationMs', MetricUnit.Milliseconds, enrichmentDurationMs);
+          } else {
+            // N7-5: Graceful degradation - continue without enrichment
+            enrichedData['_enriched'] = 'false';
+            enrichmentStatus = 'failed';
+
+            logger.warn('Lease record not found for enrichment - continuing with event data only', {
+              eventId,
+              enrichmentStatus,
+              enrichmentDurationMs,
+              userEmailHash: userEmail ? '[REDACTED]' : 'missing',
+              uuid: uuid || 'missing',
+            });
+
+            // N7-5: EnrichmentFailure metric with NotFound dimension (LeaseNotFound already emitted in fetchLeaseRecord)
+            metrics.addMetric('EnrichmentFailure', MetricUnit.Count, 1);
+            metrics.addDimension('ErrorType', 'NotFound');
+          }
+        } catch (error) {
+          // N7-5: Handle enrichment errors with graceful degradation
+          const enrichmentDurationMs = Date.now() - enrichmentStartTime;
+          enrichedData['_enriched'] = 'false';
+          enrichmentStatus = 'failed';
+
+          // N7-5: Classify error type for metric dimension
+          let errorType = 'Other';
+          if (error instanceof Error) {
+            if (error.name === 'ProvisionedThroughputExceededException' || error.message.includes('throttle')) {
+              errorType = 'Throttled';
+            } else if (error.message.includes('timeout') || error.name === 'TimeoutError') {
+              errorType = 'Timeout';
+            }
+          }
+
+          logger.warn('Enrichment failed - continuing with event data only', {
+            eventId,
+            enrichmentStatus,
+            enrichmentDurationMs,
+            errorType,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          });
+
+          // N7-5: EnrichmentFailure metric with error type dimension
+          metrics.addMetric('EnrichmentFailure', MetricUnit.Count, 1);
+          metrics.addDimension('ErrorType', errorType);
+          metrics.addMetric('EnrichmentDurationMs', MetricUnit.Milliseconds, enrichmentDurationMs);
+        }
+      } else {
+        enrichedData['_enriched'] = 'false';
+        logger.debug('No lease key in event - skipping enrichment', {
+          eventId,
+          enrichmentStatus,
+        });
+      }
+
+      // Build personalisation from event data (enrichedData passed for reference)
       const personalisation = buildPersonalisation(validatedEvent);
+
+      // N7-4 AC-1: Merge with enriched data (enriched takes precedence)
+      // Convert personalisation values to strings for consistency
+      const stringifiedPersonalisation: Record<string, string> = {};
+      for (const [key, value] of Object.entries(personalisation)) {
+        stringifiedPersonalisation[key] = String(value);
+      }
+
+      // N7-4 AC-5: Add keys parameter listing all available fields
+      const enrichedPersonalisation = addKeysParameter({
+        ...stringifiedPersonalisation,
+        ...enrichedData,
+      }, eventId);
 
       // Extract user email from event detail
       const recipientEmail = extractUserEmail(event.detail);
@@ -311,7 +427,7 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
       const response = await sender.send({
         templateId,
         email: recipientEmail,
-        personalisation,
+        personalisation: enrichedPersonalisation,
         eventId,
         eventUserEmail: recipientEmail,
       });
@@ -321,9 +437,13 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
         notifyId: response.id,
         templateId,
         eventType: sanitizedEventType,
+        enriched: enrichedData['_enriched'] === 'true',
       });
 
       metrics.addMetric('EmailSent', MetricUnit.Count, 1);
+      if (enrichedData['_enriched'] === 'true') {
+        metrics.addMetric('EnrichedEmailSent', MetricUnit.Count, 1);
+      }
     }
 
     logger.info('Event processed successfully', {

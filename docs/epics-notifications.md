@@ -4,7 +4,7 @@
 **Date:** 2025-11-27
 **Project Level:** MVP
 **Target Scale:** 10,000 events/month (scaling to 100K+)
-**Features:** 3 (GOV.UK Notify Integration) & 4 (Slack Integration)
+**Features:** 3 (GOV.UK Notify Integration), 4 (Slack Integration) & 5 (DynamoDB Lease Enrichment)
 
 ---
 
@@ -12,7 +12,7 @@
 
 This document provides the complete epic and story breakdown for the NDX Notification System, decomposing the requirements from the [PRD](./prd.md) and [Architecture](./notification-architecture.md) into implementable stories.
 
-**Living Document Notice:** This is the implementation plan for Features 3 & 4, aligned with the "one brain, two mouths" architecture pattern - a single Lambda processing EventBridge events and routing to GOV.UK Notify (user emails) or Slack (ops alerts).
+**Living Document Notice:** This is the implementation plan for Features 3, 4 & 5, aligned with the "one brain, two mouths" architecture pattern - a single Lambda processing EventBridge events and routing to GOV.UK Notify (user emails) or Slack (ops alerts), with DynamoDB lease enrichment for context-rich notifications.
 
 ### Epic Summary
 
@@ -21,8 +21,9 @@ This document provides the complete epic and story breakdown for the NDX Notific
 | 4 | Notification Infrastructure Foundation | Platform ready to process events securely | 6 | 32 |
 | 5 | User Email Notifications | Users receive professional branded emails | 7 | 39 |
 | 6 | Operations Slack Alerts | Ops team gets real-time visibility | 6 | 31 |
+| 7 | DynamoDB Lease Enrichment | Context-rich notifications with full lease data | 6 | 50 |
 
-**Total:** 3 Epics, 19 Stories, 102 FRs
+**Total:** 4 Epics, 25 Stories, 152 FRs
 
 ---
 
@@ -55,6 +56,17 @@ This document provides the complete epic and story breakdown for the NDX Notific
 - **FR-SLACK-48 to 50:** Secrets Management
 - **FR-SLACK-51 to 54:** CloudWatch Monitoring
 
+### Feature 5: DynamoDB Lease Enrichment (50 FRs)
+
+- **FR-ENRICH-1 to 6:** DynamoDB Integration
+- **FR-ENRICH-7 to 11:** Payload Flattening - Objects
+- **FR-ENRICH-12 to 18:** Payload Flattening - Arrays
+- **FR-ENRICH-19 to 24:** Value Stringification
+- **FR-ENRICH-25 to 28:** Keys Parameter
+- **FR-ENRICH-29 to 35:** Integration with Existing Notifications
+- **FR-ENRICH-36 to 42:** Error Handling
+- **FR-ENRICH-43 to 50:** Lease Status Handling
+
 ---
 
 ## FR Coverage Map
@@ -64,6 +76,7 @@ This document provides the complete epic and story breakdown for the NDX Notific
 | Epic 4 (Foundation) | FR-NOTIFY-1-5, FR-NOTIFY-32-43, FR-SLACK-1-5, FR-SLACK-43-54 | Infrastructure, Error Handling, Monitoring |
 | Epic 5 (User Emails) | FR-NOTIFY-6-31, FR-NOTIFY-44-48 | All user notification events |
 | Epic 6 (Ops Alerts) | FR-SLACK-6-42 | All Slack alert types |
+| Epic 7 (Enrichment) | FR-ENRICH-1-50 | DynamoDB query, flattening, keys parameter, error handling |
 
 ---
 
@@ -738,6 +751,321 @@ So that I can investigate unexpected OU placement.
 | FR-SLACK-52 | DLQ depth alarm | 4 | 4.6 |
 | FR-SLACK-53 | Slack API failure alarm | 4 | 4.6 |
 | FR-SLACK-54 | Custom metrics | 4 | 4.6 |
+| FR-ENRICH-1 | Extract userEmail and uuid from event | 7 | 7.1 |
+| FR-ENRICH-2 | Query DynamoDB LeaseTable | 7 | 7.1 |
+| FR-ENRICH-3 | Retrieve complete lease record | 7 | 7.1 |
+| FR-ENRICH-4 | Handle lease not found | 7 | 7.5 |
+| FR-ENRICH-5 | Handle DynamoDB errors | 7 | 7.5 |
+| FR-ENRICH-6 | Cache DynamoDB client | 7 | 7.1 |
+| FR-ENRICH-7 | Flatten nested objects (underscore separator) | 7 | 7.2 |
+| FR-ENRICH-8 | Handle multiple nesting levels | 7 | 7.2 |
+| FR-ENRICH-9 | Flatten meta.createdTime | 7 | 7.2 |
+| FR-ENRICH-10 | Flatten meta.lastEditTime | 7 | 7.2 |
+| FR-ENRICH-11 | Flatten meta.schemaVersion | 7 | 7.2 |
+| FR-ENRICH-12 | Flatten arrays of objects | 7 | 7.2 |
+| FR-ENRICH-13 | Flatten budgetThresholds.dollarsSpent | 7 | 7.2 |
+| FR-ENRICH-14 | Flatten budgetThresholds.action | 7 | 7.2 |
+| FR-ENRICH-15 | Flatten durationThresholds.hoursRemaining | 7 | 7.2 |
+| FR-ENRICH-16 | Flatten durationThresholds.action | 7 | 7.2 |
+| FR-ENRICH-17 | Flatten arrays of primitives | 7 | 7.2 |
+| FR-ENRICH-18 | Handle empty arrays | 7 | 7.2 |
+| FR-ENRICH-19 | Convert values to strings | 7 | 7.3 |
+| FR-ENRICH-20 | Stringify numbers | 7 | 7.3 |
+| FR-ENRICH-21 | Stringify booleans | 7 | 7.3 |
+| FR-ENRICH-22 | Preserve string values | 7 | 7.3 |
+| FR-ENRICH-23 | Skip null values | 7 | 7.3 |
+| FR-ENRICH-24 | Skip undefined values | 7 | 7.3 |
+| FR-ENRICH-25 | Generate keys field | 7 | 7.3 |
+| FR-ENRICH-26 | Sort keys alphabetically | 7 | 7.3 |
+| FR-ENRICH-27 | Exclude keys field from keys list | 7 | 7.3 |
+| FR-ENRICH-28 | Include keys in all payloads | 7 | 7.3, 7.4 |
+| FR-ENRICH-29 | Merge enriched with event data | 7 | 7.4 |
+| FR-ENRICH-30 | Enriched data takes precedence | 7 | 7.4 |
+| FR-ENRICH-31 | Send enriched to GOV.UK Notify | 7 | 7.4 |
+| FR-ENRICH-32 | Send enriched to Slack | 7 | 7.4 |
+| FR-ENRICH-33 | Include leaseDurationInHours | 7 | 7.4 |
+| FR-ENRICH-34 | Include maxSpend | 7 | 7.4 |
+| FR-ENRICH-35 | Include totalCostAccrued | 7 | 7.4 |
+| FR-ENRICH-36 | Log warning for lease not found | 7 | 7.5 |
+| FR-ENRICH-37 | Emit LeaseNotFound metric | 7 | 7.5 |
+| FR-ENRICH-38 | Log error for DynamoDB failure | 7 | 7.5 |
+| FR-ENRICH-39 | Emit DynamoDBError metric | 7 | 7.5 |
+| FR-ENRICH-40 | Graceful degradation | 7 | 7.5 |
+| FR-ENRICH-41 | _enriched: false flag | 7 | 7.5 |
+| FR-ENRICH-42 | _enriched: true flag | 7 | 7.5 |
+| FR-ENRICH-43 | Enrich PendingApproval leases | 7 | 7.6 |
+| FR-ENRICH-44 | Enrich ApprovalDenied leases | 7 | 7.6 |
+| FR-ENRICH-45 | Enrich Active leases | 7 | 7.6 |
+| FR-ENRICH-46 | Enrich Frozen leases | 7 | 7.6 |
+| FR-ENRICH-47 | Enrich Expired leases | 7 | 7.6 |
+| FR-ENRICH-48 | Enrich BudgetExceeded leases | 7 | 7.6 |
+| FR-ENRICH-49 | Enrich ManuallyTerminated leases | 7 | 7.6 |
+| FR-ENRICH-50 | Enrich AccountQuarantined leases | 7 | 7.6 |
+
+---
+
+## Epic 7: DynamoDB Lease Enrichment
+
+**Goal:** Enrich notification payloads with complete lease data from the Innovation Sandbox LeaseTable in DynamoDB. When EventBridge events trigger notifications, the system fetches the full lease record, flattens nested structures, and includes all fields in payloads sent to both GOV.UK Notify and Slack.
+
+**User Value:** Operations team and users receive context-rich notifications with complete lease details (duration, budget thresholds, timestamps, approval info) rather than minimal event data. The `keys` parameter enables easy debugging of available fields.
+
+**FRs Covered:** FR-ENRICH-1 to FR-ENRICH-50 (50 FRs)
+
+### Story 7.1: DynamoDB Integration Setup
+
+As the **notification system**,
+I want to query the LeaseTable in DynamoDB to retrieve complete lease records,
+So that I can enrich notifications with full lease context.
+
+**Acceptance Criteria:**
+
+**Given** an EventBridge event containing `userEmail` and `uuid` fields
+**When** the notification Lambda processes it
+**Then** it queries DynamoDB LeaseTable using composite key (userEmail PK, uuid SK)
+
+**And** the Lambda IAM role has `dynamodb:GetItem` permission for LeaseTable
+
+**And** the LeaseTable ARN is stored in environment variable (not hardcoded)
+
+**And** DynamoDB client is reused across Lambda invocations for connection pooling
+
+**And** DynamoDB query latency is logged as CloudWatch metric (`EnrichmentQueryLatencyMs`)
+
+**And** integration test validates query latency < 200ms (p99)
+
+**And** if `userEmail` or `uuid` missing from event, enrichment is skipped with warning log
+
+**And** if `userEmail` or `uuid` are wrong type (not string), enrichment is skipped with warning log
+
+**And** `ProvisionedThroughputExceededException` triggers 1 retry with 500ms backoff (other errors fail immediately)
+
+**And** schema fingerprint (sorted field names hash) is logged for drift detection
+
+**Prerequisites:** Epic 5 complete (notification system operational)
+
+**Technical Notes:**
+- File: `lambda/notification/enrichment.ts` (extend existing)
+- Use `@aws-sdk/client-dynamodb` with DocumentClient
+- Table name from `process.env.LEASE_TABLE_NAME`
+- Query: `GetItem({ TableName, Key: { userEmail, uuid } })`
+- Same AWS account as notification Lambda (no cross-account IAM)
+- Test: Mock DynamoDB, verify query parameters correct
+
+---
+
+### Story 7.2: Payload Flattening Utility
+
+As the **notification system**,
+I want to flatten nested objects and arrays into flat key-value pairs,
+So that the enriched data is compatible with GOV.UK Notify and Slack APIs.
+
+**Acceptance Criteria:**
+
+**Given** a DynamoDB lease record with nested structures
+**When** the flattening utility processes it
+**Then** nested objects use underscore separator: `{meta: {createdTime: "2025-01-15"}}` → `{meta_createdTime: "2025-01-15"}`
+
+**And** arrays of objects use index notation: `{budgetThresholds: [{dollarsSpent: 50}]}` → `{budgetThresholds_0_dollarsSpent: "50"}`
+
+**And** arrays of primitives use index notation: `{tags: ["a", "b"]}` → `{tags_0: "a", tags_1: "b"}`
+
+**And** multiple nesting levels handled: `{a: {b: {c: "v"}}}` → `{a_b_c: "v"}`
+
+**And** empty arrays produce no output fields
+
+**And** the flattening function is pure, testable in isolation
+
+**And** flattening has max depth limit of 5 levels (deeper values logged and skipped)
+
+**And** arrays with > 10 items are truncated with `fieldName_count` showing total
+
+**And** flattened payload size is validated < 50KB (safety margin for Slack/Notify limits)
+
+**And** if payload exceeds 50KB, truncation strategy applies: remove enriched fields progressively (largest first) until under limit
+
+**Prerequisites:** Story 7.1
+
+**Technical Notes:**
+- File: `lambda/notification/flatten.ts` (new module)
+- Recursive algorithm handling objects and arrays
+- Separator constant: `const SEPARATOR = '_'`
+- Max depth constant: `const MAX_DEPTH = 5`
+- Max array items: `const MAX_ARRAY_ITEMS = 10`
+- Export: `flattenObject(obj: Record<string, unknown>): Record<string, string>`
+- Test: Unit tests for all field types, nesting levels, edge cases, truncation
+
+---
+
+### Story 7.3: Value Stringification and Keys Parameter
+
+As the **notification system**,
+I want to convert all values to strings and generate a keys parameter,
+So that the payload is Notify/Slack compatible and debuggable.
+
+**Acceptance Criteria:**
+
+**Given** a flattened payload with various value types
+**When** stringification is applied
+**Then** numbers become strings: `{maxSpend: 50}` → `{maxSpend: "50"}`
+
+**And** booleans become strings: `{active: true}` → `{active: "true"}`
+
+**And** strings remain unchanged
+
+**And** null values are excluded from output
+
+**And** undefined values are excluded from output
+
+**And** Date objects are converted to ISO 8601 strings via `.toISOString()`
+
+**And** a `keys` field is added containing comma-separated list of all field names
+
+**And** keys are sorted alphabetically for consistent ordering
+
+**And** the `keys` field does not include itself in the list
+
+**And** keys parameter is truncated to 5000 characters if exceeded (with "..." suffix)
+
+**And** keys count is logged for monitoring payload growth over time
+
+**Prerequisites:** Story 7.2
+
+**Technical Notes:**
+- Extend `flatten.ts` with stringification
+- Keys generation: `Object.keys(flattened).sort().join(',')`
+- Max keys length: `const MAX_KEYS_LENGTH = 5000`
+- Export: `stringifyValues(obj: Record<string, unknown>): Record<string, string>`
+- Export: `generateKeys(obj: Record<string, string>): string`
+- Test: Cover all value types, null/undefined handling, keys ordering, truncation
+
+---
+
+### Story 7.4: Notification Integration
+
+As the **notification system**,
+I want to merge enriched lease data with event data and send to Notify/Slack,
+So that recipients receive comprehensive, context-rich notifications.
+
+**Acceptance Criteria:**
+
+**Given** enriched lease data and original EventBridge event data
+**When** merging for notification
+**Then** enriched lease data takes precedence over event data for duplicate fields
+
+**And** the merged payload includes `leaseDurationInHours` field
+
+**And** the merged payload includes `maxSpend` field
+
+**And** the merged payload includes `totalCostAccrued` field (when present in lease)
+
+**And** the merged payload includes `keys` parameter listing all fields
+
+**And** GOV.UK Notify receives enriched payload as personalisation object
+
+**And** Slack Block Kit templates can reference enriched fields
+
+**Prerequisites:** Story 7.3
+
+**Technical Notes:**
+- File: `lambda/notification/handler.ts` (modify)
+- Merge: `{ ...eventData, ...enrichedLeaseData }` (lease wins conflicts)
+- Update NotifySender to pass enriched personalisation
+- Update SlackSender templates to reference new fields
+- Test: Verify both Notify and Slack receive enriched fields
+- **Note:** GOV.UK Notify template updates (to display enriched fields like `leaseDurationInHours`) are separate work in Notify dashboard - not part of this story
+
+---
+
+### Story 7.5: Error Handling and Metrics
+
+As an **operations engineer**,
+I want enrichment failures to be logged and metricked without blocking notifications,
+So that I can monitor enrichment health while ensuring notification reliability.
+
+**Acceptance Criteria:**
+
+**Given** a lease not found in DynamoDB
+**When** enrichment fails
+**Then** a warning is logged with `userEmail` and `uuid` for debugging
+
+**And** CloudWatch metric `LeaseNotFound` is emitted
+
+**And** notification proceeds with event data only (graceful degradation)
+
+**Given** a DynamoDB query error occurs
+**When** enrichment fails
+**Then** an error is logged (without credentials)
+
+**And** CloudWatch metric `DynamoDBError` is emitted
+
+**And** notification proceeds with event data only
+
+**And** enrichment has 2-second timeout (proceed without if exceeded)
+
+**And** `_enriched: true` or `_enriched: false` flag indicates enrichment status
+
+**And** DynamoDB throttling is logged at WARN level (not ERROR) to reduce noise
+
+**And** metric dimensions distinguish error type: `NotFound`, `Throttled`, `Timeout`, `Other`
+
+**Prerequisites:** Story 7.4
+
+**Technical Notes:**
+- Use Lambda Powertools Metrics for custom metrics
+- Namespace: `NdxNotifications`
+- Metrics: `EnrichmentSuccess`, `EnrichmentFailure`, `LeaseNotFound`, `DynamoDBError`
+- Metric dimension: `ErrorType` for failure categorization
+- Log field: `enrichmentStatus: "success" | "failed" | "skipped"`
+- Log field: `enrichmentDurationMs` for performance monitoring
+- Log level: ERROR for permanent failures, WARN for transient (throttle/timeout)
+- **Timeout Budget:** Lambda 30s total = Enrichment 2s + Notify API 10s + Slack API 10s + margin 8s
+- Test: Simulate DynamoDB errors, verify graceful degradation, log levels
+
+---
+
+### Story 7.6: Lease Status Handling
+
+As the **notification system**,
+I want to correctly enrich all 8 lease statuses with their specific fields,
+So that notifications include status-appropriate context.
+
+**Acceptance Criteria:**
+
+**Given** a PendingApproval lease
+**When** enriched
+**Then** base fields included (userEmail, uuid, status, leaseDurationInHours, maxSpend, meta_*, budgetThresholds_*, durationThresholds_*)
+
+**Given** an Active or Frozen lease
+**When** enriched
+**Then** base fields + monitored fields included (awsAccountId, approvedBy, startDate, expirationDate, lastCheckedDate, totalCostAccrued)
+
+**Given** an Expired, BudgetExceeded, ManuallyTerminated, or AccountQuarantined lease
+**When** enriched
+**Then** base fields + monitored fields + expired fields included (endDate, ttl)
+
+**Given** an ApprovalDenied lease
+**When** enriched
+**Then** base fields + ttl included
+
+**And** all 8 statuses have unit test coverage
+
+**And** unknown lease statuses are logged as warning but processed with available fields (forward-compatible)
+
+**And** new/unexpected fields from LeaseTable are flattened and included (schema evolution safe)
+
+**And** CloudWatch metric `UnexpectedLeaseStatus` emitted when unknown status encountered
+
+**Prerequisites:** Story 7.5
+
+**Technical Notes:**
+- Lease status discriminated union from ISB schema
+- Statuses: PendingApproval, ApprovalDenied, Active, Frozen, Expired, BudgetExceeded, ManuallyTerminated, AccountQuarantined, Ejected
+- Each status has different field set - flattening must handle gracefully
+- Forward-compatible: don't fail on unknown status or new fields
+- Test: Unit tests with sample lease records for each status
+- Test: Unit test for unknown status handling
+- Test: Integration test with real LeaseTable data
 
 ---
 
@@ -755,18 +1083,20 @@ These will be addressed in Growth phase after MVP proves value.
 
 ## Summary
 
-**3 Epics, 19 Stories covering 102 Functional Requirements**
+**4 Epics, 25 Stories covering 152 Functional Requirements**
 
 | Epic | Stories | Status | Dependencies |
 |------|---------|--------|--------------|
 | Epic 4: Notification Infrastructure Foundation | 6 | Ready | None |
 | Epic 5: User Email Notifications | 7 | Ready | Epic 4 |
 | Epic 6: Operations Slack Alerts | 6 | Ready | Epic 5 (shared infra) |
+| Epic 7: DynamoDB Lease Enrichment | 6 | Ready | Epic 5 (extends Notify/Slack) |
 
 **Implementation Order:**
 1. Epic 4 → Foundation (must be first)
 2. Epic 5 → User emails (primary user value)
 3. Epic 6 → Ops alerts (builds on same infrastructure)
+4. Epic 7 → Enrichment (enhances all notifications with lease data)
 
 **Technical Stack:**
 - AWS CDK v2 (TypeScript)
@@ -774,12 +1104,14 @@ These will be addressed in Growth phase after MVP proves value.
 - Lambda Powertools (Logger, Idempotency, Metrics)
 - GOV.UK Notify SDK (notifications-node-client)
 - Slack Incoming Webhooks
+- AWS SDK DynamoDB Client (for Epic 7)
 
-**Estimated Cost:** ~$4.30/month (per Architecture analysis)
+**Estimated Cost:** ~$4.30/month (per Architecture analysis) + DynamoDB read costs (~$0.25/million reads)
 
 ---
 
 _For implementation: Use the `create-story` workflow to generate individual story implementation plans from this epic breakdown._
 
 _Generated by BMAD Epic Decomposition Workflow v1.0_
-_Date: 2025-11-27_
+_Last Updated: 2025-12-01_
+_Original Date: 2025-11-27_

@@ -270,20 +270,42 @@ development_status:
   n6-7-daily-dlq-summary-slack-digest: done # Code review complete 2025-11-28: APPROVED - 17 tests, scheduled Lambda + CloudWatch Events
   n6-8-runbook-links-in-slack-alerts: done # Implemented: All 4 alert templates include runbook action links
   epic-n6-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic N-7: DynamoDB Lease Enrichment (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: Enrich notifications with full lease data from DynamoDB
+  # FRs Covered: FR-ENRICH-1-50 (50 FRs)
+  # User Value: Context-rich notifications with complete lease details
+  # Dependencies: Epic N-5 (notification system operational)
+  # Tech Spec: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/tech-spec-epic-n7.md
+  # Elicitation: 2025-12-02 - 15 ACs from 5 methods (Pre-mortem, Five Whys, Devil's Advocate, Journey Mapping, Risk Matrix)
+  # COMPLETED: 2025-12-02 - 6/6 stories, 964 tests passing
+  epic-n7-dynamodb-lease-enrichment: done
+  n7-1-dynamodb-integration-setup: done # FR-ENRICH-1-6 - DynamoDB client, fetchLeaseRecord(), schema fingerprint
+  n7-2-payload-flattening-utility: done # FR-ENRICH-7-18 - flattenObject() with depth/array limits, 75 tests
+  n7-3-value-stringification-and-keys-parameter: done # FR-ENRICH-19-28 - stringifyValue(), generateKeys(), addKeysParameter()
+  n7-4-notification-integration: done # FR-ENRICH-29-35 - handler.ts integration, enriched personalisation merge
+  n7-5-error-handling-and-metrics: done # FR-ENRICH-36-42 - EnrichmentSuccess/Failure metrics, ErrorType dimensions
+  n7-6-lease-status-handling: done # FR-ENRICH-43-50 - All 9 statuses tested, UnexpectedLeaseStatus metric, 78 tests
+  epic-n7-retrospective: done # 2025-12-02 - All 6 stories complete, 964 tests passing
+
 # ==============================================================
 # SUMMARY
 # ==============================================================
 # Feature 1 (CloudFront Routing): Epics 1-3 COMPLETE
 # Feature 2 (Try Before You Buy): Epics 4-8 COMPLETE
-# Features 3 & 4 (Notifications):
+# Features 3, 4 & 5 (Notifications + Enrichment):
 #   - Epic N-4 (Foundation): DONE (7/9 stories, 2 deferred - external deps)
-#   - Epic N-5 (User emails): DONE (7/10 stories, 3 deferred - GOV.UK Notify sandbox tests)
-#   - Epic N-6 (Ops alerts): DONE (8/8 stories complete) - 712 tests passing
+#   - Epic N-5 (User emails): DONE (9/9 stories complete)
+#   - Epic N-6 (Ops alerts): DONE (8/8 stories complete)
+#   - Epic N-7 (DynamoDB Lease Enrichment): DONE (6/6 stories complete) - 964 tests passing
 #
-# Implementation Complete for Notifications:
+# Implementation Progress:
 # 1. Epic N-4 (Foundation) - 7/9 stories DONE, 2 deferred pending ISB coordination
-# 2. Epic N-5 (User emails) - 7/10 stories DONE, 3 deferred (sandbox E2E, template validation, preferences)
+# 2. Epic N-5 (User emails) - 9/9 stories DONE
 # 3. Epic N-6 (Ops alerts) - 8/8 stories DONE
+# 4. Epic N-7 (Enrichment) - 6/6 stories DONE - All lease statuses supported
 #
 # PRE-MORTEM FINDINGS (2025-11-27):
 # Round 1:

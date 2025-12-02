@@ -17,7 +17,8 @@
  * @see docs/sprint-artifacts/tech-spec-epic-n5.md#Story-n5-6
  */
 
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, GetItemCommand, ProvisionedThroughputExceededException } from '@aws-sdk/client-dynamodb';
+import { createHash } from 'crypto';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
@@ -44,6 +45,10 @@ const DATA_STALENESS_THRESHOLD_MS = 5 * 60 * 1000;
 /** AC-6.13: Budget discrepancy threshold (10%) */
 const BUDGET_DISCREPANCY_THRESHOLD = 0.10;
 
+/** N7-1 AC-9: Throttle retry configuration */
+const THROTTLE_RETRY_DELAY_MS = 500;
+const THROTTLE_MAX_RETRIES = 1;
+
 // =============================================================================
 // Logger and Metrics
 // =============================================================================
@@ -53,6 +58,37 @@ const metrics = new Metrics({
   namespace: 'ndx/notifications',
   serviceName: 'ndx-notifications',
 });
+
+// =============================================================================
+// Module-level DynamoDB Client (N7-1 AC-4: Connection Pooling)
+// =============================================================================
+
+/**
+ * N7-1 AC-4: Module-level DynamoDB client singleton for connection pooling.
+ * Reused across Lambda invocations for efficient connection management.
+ * Created lazily on first use.
+ */
+let dynamoClientSingleton: DynamoDBClient | null = null;
+
+/**
+ * Get or create the module-level DynamoDB client
+ * N7-1 AC-4: Connection pooling via module-level singleton
+ */
+export function getDynamoDBClient(): DynamoDBClient {
+  if (!dynamoClientSingleton) {
+    dynamoClientSingleton = new DynamoDBClient({
+      region: process.env.AWS_REGION || 'us-west-2',
+    });
+  }
+  return dynamoClientSingleton;
+}
+
+/**
+ * Reset DynamoDB client singleton (for testing only)
+ */
+export function resetDynamoDBClient(): void {
+  dynamoClientSingleton = null;
+}
 
 // =============================================================================
 // Types
@@ -358,15 +394,239 @@ function handleDynamoDBError(error: unknown, tableName: string, eventId: string)
     if (error.name === 'ProvisionedThroughputExceededException') {
       circuitBreaker.recordFailure();
       metrics.addMetric('DynamoDBThrottle', MetricUnit.Count, 1);
+      logger.warn('DynamoDB throttled', { eventId, tableName });
       throw new RetriableError(`DynamoDB throttled on ${tableName}`, { cause: error });
     }
     if (error.name === 'ResourceNotFoundException') {
+      logger.error('DynamoDB table not found', { eventId, tableName });
       throw new PermanentError(`${tableName} not found`);
     }
+    logger.warn('DynamoDB error', { eventId, tableName, errorName: error.name });
   }
   throw new RetriableError(`DynamoDB error on ${tableName}`, {
     cause: error instanceof Error ? error : undefined,
   });
+}
+
+// =============================================================================
+// N7-1: Schema Fingerprint for Drift Detection
+// =============================================================================
+
+/**
+ * N7-1 AC-10: Generate schema fingerprint from lease record field names.
+ * Used for detecting schema drift over time via CloudWatch log analysis.
+ *
+ * @param record - The lease record from DynamoDB
+ * @returns A short SHA-256 hash of sorted field names
+ */
+export function generateSchemaFingerprint(record: Record<string, unknown>): string {
+  const sortedKeys = Object.keys(record).sort();
+  const keyList = sortedKeys.join(',');
+  return createHash('sha256').update(keyList).digest('hex').substring(0, 16);
+}
+
+// =============================================================================
+// N7-1: Enhanced Lease Record Fetching
+// =============================================================================
+
+/**
+ * N7-1 AC-7, AC-8: Validate input types for lease key fields.
+ * Returns null if validation fails (skips enrichment rather than failing).
+ */
+export function validateLeaseKeyInputs(
+  userEmail: unknown,
+  uuid: unknown,
+  eventId: string
+): { userEmail: string; uuid: string } | null {
+  // AC-7: Check for missing fields
+  if (userEmail === undefined || userEmail === null) {
+    logger.warn('Missing userEmail in event - skipping lease enrichment', { eventId });
+    metrics.addMetric('EnrichmentInputMissing', MetricUnit.Count, 1);
+    return null;
+  }
+
+  if (uuid === undefined || uuid === null) {
+    logger.warn('Missing uuid in event - skipping lease enrichment', { eventId });
+    metrics.addMetric('EnrichmentInputMissing', MetricUnit.Count, 1);
+    return null;
+  }
+
+  // AC-8: Check for wrong types (must be strings)
+  if (typeof userEmail !== 'string') {
+    logger.warn('Wrong type for userEmail (expected string) - skipping lease enrichment', {
+      eventId,
+      actualType: typeof userEmail,
+    });
+    metrics.addMetric('EnrichmentInputWrongType', MetricUnit.Count, 1);
+    return null;
+  }
+
+  if (typeof uuid !== 'string') {
+    logger.warn('Wrong type for uuid (expected string) - skipping lease enrichment', {
+      eventId,
+      actualType: typeof uuid,
+    });
+    metrics.addMetric('EnrichmentInputWrongType', MetricUnit.Count, 1);
+    return null;
+  }
+
+  // Additional validation: check for empty strings
+  if (userEmail.trim() === '' || uuid.trim() === '') {
+    logger.warn('Empty userEmail or uuid - skipping lease enrichment', { eventId });
+    metrics.addMetric('EnrichmentInputEmpty', MetricUnit.Count, 1);
+    return null;
+  }
+
+  return { userEmail, uuid };
+}
+
+/**
+ * N7-1 AC-9: Sleep utility for throttle retry backoff
+ */
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * N7-1: Enhanced lease record fetching with:
+ * - AC-1: Composite key query (userEmail PK, uuid SK)
+ * - AC-5: EnrichmentQueryLatencyMs metric
+ * - AC-7, AC-8: Input validation with type checking
+ * - AC-9: 500ms backoff retry for ProvisionedThroughputExceededException
+ * - AC-10: Schema fingerprint logging for drift detection
+ *
+ * @param userEmail - Partition key (PK) for LeaseTable
+ * @param uuid - Sort key (SK) for LeaseTable
+ * @param eventId - Event ID for logging correlation
+ * @returns LeaseRecord or null if not found/validation fails
+ */
+export async function fetchLeaseRecord(
+  userEmail: unknown,
+  uuid: unknown,
+  eventId: string
+): Promise<LeaseRecord | null> {
+  // AC-7, AC-8: Validate inputs
+  const validatedInputs = validateLeaseKeyInputs(userEmail, uuid, eventId);
+  if (!validatedInputs) {
+    return null;
+  }
+
+  const { userEmail: validEmail, uuid: validUuid } = validatedInputs;
+  const tableName = process.env.LEASE_TABLE_NAME;
+
+  if (!tableName) {
+    logger.warn('LEASE_TABLE_NAME not configured', { eventId });
+    metrics.addMetric('EnrichmentConfigMissing', MetricUnit.Count, 1);
+    return null;
+  }
+
+  const dynamoClient = getDynamoDBClient();
+  const startTime = Date.now();
+  let retryCount = 0;
+
+  // AC-9: Retry loop with 500ms backoff for throttling
+  while (retryCount <= THROTTLE_MAX_RETRIES) {
+    try {
+      logger.debug('Fetching lease record for enrichment', {
+        eventId,
+        userEmailHash: hashForLog(validEmail),
+        uuid: validUuid,
+        attempt: retryCount + 1,
+      });
+
+      // AC-1: Composite key query with GetItem
+      // AC-6.11: ConsistentRead: true for correctness
+      const command = new GetItemCommand({
+        TableName: tableName,
+        Key: {
+          userEmail: { S: validEmail },
+          uuid: { S: validUuid },
+        },
+        ConsistentRead: true,
+      });
+
+      const result = await dynamoClient.send(command);
+
+      // AC-5: Record query latency metric
+      const latencyMs = Date.now() - startTime;
+      metrics.addMetric('EnrichmentQueryLatencyMs', MetricUnit.Milliseconds, latencyMs);
+
+      if (!result.Item) {
+        logger.debug('No lease record found for enrichment', {
+          eventId,
+          uuid: validUuid,
+          latencyMs,
+        });
+        metrics.addMetric('LeaseNotFound', MetricUnit.Count, 1);
+        return null;
+      }
+
+      const leaseRecord = unmarshall(result.Item) as LeaseRecord;
+
+      // AC-10: Generate and log schema fingerprint for drift detection
+      const fingerprint = generateSchemaFingerprint(result.Item);
+      const fieldCount = Object.keys(result.Item).length;
+      logger.info('Lease record schema fingerprint', {
+        eventId,
+        fingerprint,
+        keyCount: fieldCount,
+      });
+      metrics.addMetric('EnrichmentSchemaFields', MetricUnit.Count, fieldCount);
+
+      // Record success for circuit breaker
+      circuitBreaker.recordSuccess();
+
+      logger.debug('Lease record fetched successfully', {
+        eventId,
+        latencyMs,
+        hasStatus: !!leaseRecord.status,
+        hasMaxSpend: leaseRecord.maxSpend !== undefined,
+      });
+
+      return leaseRecord;
+    } catch (error) {
+      // AC-9: Handle throttle with 500ms backoff retry
+      if (error instanceof ProvisionedThroughputExceededException) {
+        retryCount++;
+        if (retryCount <= THROTTLE_MAX_RETRIES) {
+          logger.warn('DynamoDB throttled - retrying with backoff', {
+            eventId,
+            attempt: retryCount,
+            delayMs: THROTTLE_RETRY_DELAY_MS,
+          });
+          metrics.addMetric('EnrichmentThrottleRetry', MetricUnit.Count, 1);
+          await sleep(THROTTLE_RETRY_DELAY_MS);
+          continue;
+        }
+
+        // Max retries exceeded
+        logger.warn('DynamoDB throttle retry exhausted - proceeding without enrichment', {
+          eventId,
+          attempts: retryCount,
+        });
+        circuitBreaker.recordFailure();
+        metrics.addMetric('EnrichmentThrottleExhausted', MetricUnit.Count, 1);
+        return null;
+      }
+
+      // AC-9: Other errors fail immediately (no retry)
+      const latencyMs = Date.now() - startTime;
+      logger.error('DynamoDB query failed', {
+        eventId,
+        error: error instanceof Error ? error.message : String(error),
+        latencyMs,
+      });
+      metrics.addMetric('EnrichmentQueryLatencyMs', MetricUnit.Milliseconds, latencyMs);
+      metrics.addMetric('DynamoDBError', MetricUnit.Count, 1);
+      metrics.addDimension('ErrorType', error instanceof Error ? error.name : 'Unknown');
+
+      // For non-throttle errors, let the caller handle via circuit breaker
+      handleDynamoDBError(error, 'LeaseTable', eventId);
+    }
+  }
+
+  // Should not reach here, but return null for safety
+  return null;
 }
 
 // =============================================================================

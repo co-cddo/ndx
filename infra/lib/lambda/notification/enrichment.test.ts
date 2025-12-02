@@ -23,6 +23,12 @@ import {
   checkDataStaleness,
   CircuitBreaker,
   resetCircuitBreaker,
+  // N7-1 exports
+  generateSchemaFingerprint,
+  validateLeaseKeyInputs,
+  fetchLeaseRecord,
+  getDynamoDBClient,
+  resetDynamoDBClient,
 } from './enrichment';
 import type { ValidatedEvent } from './validation';
 import type { TemplateConfig } from './templates';
@@ -962,5 +968,300 @@ describe('Edge Cases', () => {
     const result = await enrichIfNeeded(event, templateConfig, dynamoClient);
 
     expect(result.enrichedAt).toBeDefined();
+  });
+});
+
+// =========================================================================
+// N7-1: Schema Fingerprint Generation (AC-10)
+// =========================================================================
+
+describe('N7-1 AC-10: Schema fingerprint generation', () => {
+  it('should generate consistent fingerprint for same fields', () => {
+    const record1 = { userEmail: 'a', uuid: 'b', status: 'c' };
+    const record2 = { userEmail: 'x', uuid: 'y', status: 'z' };
+
+    const fingerprint1 = generateSchemaFingerprint(record1);
+    const fingerprint2 = generateSchemaFingerprint(record2);
+
+    // Same field names should produce same fingerprint regardless of values
+    expect(fingerprint1).toBe(fingerprint2);
+  });
+
+  it('should generate different fingerprint for different fields', () => {
+    const record1 = { userEmail: 'a', uuid: 'b' };
+    const record2 = { userEmail: 'a', uuid: 'b', status: 'c' };
+
+    const fingerprint1 = generateSchemaFingerprint(record1);
+    const fingerprint2 = generateSchemaFingerprint(record2);
+
+    expect(fingerprint1).not.toBe(fingerprint2);
+  });
+
+  it('should generate 16-character hex fingerprint', () => {
+    const record = { field1: 'a', field2: 'b', field3: 'c' };
+
+    const fingerprint = generateSchemaFingerprint(record);
+
+    expect(fingerprint).toHaveLength(16);
+    expect(fingerprint).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it('should produce deterministic results (sorted keys)', () => {
+    // Create records with keys in different order
+    const record1 = { z: 1, a: 2, m: 3 };
+    const record2 = { a: 2, m: 3, z: 1 };
+
+    const fingerprint1 = generateSchemaFingerprint(record1);
+    const fingerprint2 = generateSchemaFingerprint(record2);
+
+    // Should be same because keys are sorted before hashing
+    expect(fingerprint1).toBe(fingerprint2);
+  });
+});
+
+// =========================================================================
+// N7-1: Input Validation (AC-7, AC-8)
+// =========================================================================
+
+describe('N7-1 AC-7: Missing userEmail/uuid validation', () => {
+  it('should return null when userEmail is undefined', () => {
+    const result = validateLeaseKeyInputs(undefined, 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when userEmail is null', () => {
+    const result = validateLeaseKeyInputs(null, 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when uuid is undefined', () => {
+    const result = validateLeaseKeyInputs('user@example.gov.uk', undefined, 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when uuid is null', () => {
+    const result = validateLeaseKeyInputs('user@example.gov.uk', null, 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when both are missing', () => {
+    const result = validateLeaseKeyInputs(undefined, undefined, 'evt-test');
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('N7-1 AC-8: Wrong type validation', () => {
+  it('should return null when userEmail is a number', () => {
+    const result = validateLeaseKeyInputs(12345, 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when userEmail is an object', () => {
+    const result = validateLeaseKeyInputs({ email: 'test' }, 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when uuid is a number', () => {
+    const result = validateLeaseKeyInputs('user@example.gov.uk', 12345, 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when uuid is an array', () => {
+    const result = validateLeaseKeyInputs('user@example.gov.uk', ['uuid'], 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when userEmail is empty string', () => {
+    const result = validateLeaseKeyInputs('', 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null when uuid is whitespace only', () => {
+    const result = validateLeaseKeyInputs('user@example.gov.uk', '   ', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should return validated inputs when both are valid strings', () => {
+    const result = validateLeaseKeyInputs('user@example.gov.uk', 'uuid-123', 'evt-test');
+
+    expect(result).toEqual({
+      userEmail: 'user@example.gov.uk',
+      uuid: 'uuid-123',
+    });
+  });
+});
+
+// =========================================================================
+// N7-1: DynamoDB Client Singleton (AC-4)
+// =========================================================================
+
+describe('N7-1 AC-4: Module-level DynamoDB client singleton', () => {
+  beforeEach(() => {
+    resetDynamoDBClient();
+  });
+
+  it('should return same client instance on multiple calls', () => {
+    const client1 = getDynamoDBClient();
+    const client2 = getDynamoDBClient();
+
+    expect(client1).toBe(client2);
+  });
+
+  it('should create new client after reset', () => {
+    const client1 = getDynamoDBClient();
+    resetDynamoDBClient();
+    const client2 = getDynamoDBClient();
+
+    expect(client1).not.toBe(client2);
+  });
+});
+
+// =========================================================================
+// N7-1: fetchLeaseRecord with Throttle Retry (AC-9)
+// =========================================================================
+
+describe('N7-1 AC-9: Throttle retry with 500ms backoff', () => {
+  beforeEach(() => {
+    resetCircuitBreaker();
+    resetDynamoDBClient();
+    process.env.LEASE_TABLE_NAME = 'test-lease-table';
+  });
+
+  afterEach(() => {
+    delete process.env.LEASE_TABLE_NAME;
+  });
+
+  it('should retry once on ProvisionedThroughputExceededException', async () => {
+    const startTime = Date.now();
+    let callCount = 0;
+
+    dynamoMock.on(GetItemCommand).callsFake(() => {
+      callCount++;
+      if (callCount === 1) {
+        // First call throws throttle
+        throw new ProvisionedThroughputExceededException({
+          message: 'Throttled',
+          $metadata: {},
+        });
+      }
+      // Second call succeeds
+      return Promise.resolve({
+        Item: createLeaseRecord('user@example.gov.uk', 'lease-123'),
+      });
+    });
+
+    const result = await fetchLeaseRecord('user@example.gov.uk', 'lease-123', 'evt-test');
+    const elapsed = Date.now() - startTime;
+
+    expect(result).not.toBeNull();
+    expect(result?.userEmail).toBe('user@example.gov.uk');
+    expect(callCount).toBe(2);
+    // Should have waited ~500ms for backoff
+    expect(elapsed).toBeGreaterThanOrEqual(450);
+  }, 10000);
+
+  it('should return null after max retries exhausted', async () => {
+    dynamoMock.on(GetItemCommand).rejects(
+      new ProvisionedThroughputExceededException({
+        message: 'Throttled',
+        $metadata: {},
+      })
+    );
+
+    const result = await fetchLeaseRecord('user@example.gov.uk', 'lease-123', 'evt-test');
+
+    expect(result).toBeNull();
+  }, 10000);
+
+  it('should not retry on non-throttle errors', async () => {
+    let callCount = 0;
+
+    dynamoMock.on(GetItemCommand).callsFake(() => {
+      callCount++;
+      throw new Error('Some other error');
+    });
+
+    // This will throw due to handleDynamoDBError
+    try {
+      await fetchLeaseRecord('user@example.gov.uk', 'lease-123', 'evt-test');
+    } catch {
+      // Expected to throw
+    }
+
+    // Should only have called once (no retry for non-throttle errors)
+    expect(callCount).toBe(1);
+  });
+});
+
+// =========================================================================
+// N7-1: fetchLeaseRecord with Input Validation
+// =========================================================================
+
+describe('N7-1: fetchLeaseRecord input validation', () => {
+  beforeEach(() => {
+    resetCircuitBreaker();
+    resetDynamoDBClient();
+    process.env.LEASE_TABLE_NAME = 'test-lease-table';
+  });
+
+  afterEach(() => {
+    delete process.env.LEASE_TABLE_NAME;
+  });
+
+  it('should return null when userEmail is missing (AC-7)', async () => {
+    const result = await fetchLeaseRecord(undefined, 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+    // Should not have made any DynamoDB calls
+    expect(dynamoMock.commandCalls(GetItemCommand).length).toBe(0);
+  });
+
+  it('should return null when uuid has wrong type (AC-8)', async () => {
+    const result = await fetchLeaseRecord('user@example.gov.uk', 12345, 'evt-test');
+
+    expect(result).toBeNull();
+    expect(dynamoMock.commandCalls(GetItemCommand).length).toBe(0);
+  });
+
+  it('should return null when LEASE_TABLE_NAME not configured', async () => {
+    delete process.env.LEASE_TABLE_NAME;
+
+    const result = await fetchLeaseRecord('user@example.gov.uk', 'uuid-123', 'evt-test');
+
+    expect(result).toBeNull();
+  });
+
+  it('should successfully fetch lease record with valid inputs', async () => {
+    dynamoMock.on(GetItemCommand).resolves({
+      Item: createLeaseRecord('user@example.gov.uk', 'uuid-123', 'Active', 150),
+    });
+
+    const result = await fetchLeaseRecord('user@example.gov.uk', 'uuid-123', 'evt-test');
+
+    expect(result).not.toBeNull();
+    expect(result?.userEmail).toBe('user@example.gov.uk');
+    expect(result?.uuid).toBe('uuid-123');
+    expect(result?.maxSpend).toBe(150);
+  });
+
+  it('should return null when lease record not found', async () => {
+    dynamoMock.on(GetItemCommand).resolves({
+      Item: undefined,
+    });
+
+    const result = await fetchLeaseRecord('user@example.gov.uk', 'nonexistent', 'evt-test');
+
+    expect(result).toBeNull();
   });
 });

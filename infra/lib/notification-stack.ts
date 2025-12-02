@@ -15,7 +15,6 @@ import {
   getISBConfig,
   getISBEventBusArn,
   ISB_EVENT_TYPES,
-  ISB_EVENT_SOURCE,
   NOTIFY_TEMPLATE_IDS,
 } from './config';
 
@@ -97,6 +96,11 @@ export class NdxNotificationStack extends cdk.Stack {
     // Read environment context for multi-environment support
     const env = (this.node.tryGetContext('env') as string | undefined) || 'prod';
 
+    // Get ISB configuration for the current environment (moved earlier for use in Lambda env)
+    const isbConfig = getISBConfig(env);
+    const isbEventBusArn = getISBEventBusArn(isbConfig);
+    const { dynamoDbTables } = isbConfig;
+
     // =========================================================================
     // Dead Letter Queue (n4-4)
     // =========================================================================
@@ -163,6 +167,11 @@ export class NdxNotificationStack extends cdk.Stack {
           NOTIFY_TEMPLATE_BUDGET_EXCEEDED: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
           NOTIFY_TEMPLATE_LEASE_EXPIRED: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
           NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
+          // DynamoDB table names for enrichment (n7-1)
+          // AC-3: Table names from config, not hardcoded
+          LEASE_TABLE_NAME: dynamoDbTables.leaseTable,
+          SANDBOX_ACCOUNT_TABLE_NAME: dynamoDbTables.sandboxAccountTable,
+          LEASE_TEMPLATE_TABLE_NAME: dynamoDbTables.leaseTemplateTable,
         },
       }
     );
@@ -194,17 +203,12 @@ export class NdxNotificationStack extends cdk.Stack {
     // Security: Account-level filtering prevents cross-account event injection.
     // @see docs/notification-architecture.md#ISB-Integration
 
-    // Get ISB configuration for the current environment
-    const isbConfig = getISBConfig(env);
-    const isbEventBusArn = getISBEventBusArn(isbConfig);
-
     // =========================================================================
     // DynamoDB Read Permissions (n5-6 prerequisite)
     // =========================================================================
     // Grant Lambda permission to read from ISB DynamoDB tables for data enrichment.
     // Used to look up user email, lease details, and sandbox account information.
     // @see docs/sprint-artifacts/tech-spec-epic-n5.md#n5-6
-    const { dynamoDbTables } = isbConfig;
     const tableArns = [
       `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.leaseTable}`,
       `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.leaseTemplateTable}`,

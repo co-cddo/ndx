@@ -94,19 +94,19 @@ export const NOTIFY_TEMPLATES: Record<string, TemplateConfig> = {
   LeaseRequested: {
     templateIdEnvVar: 'NOTIFY_TEMPLATE_LEASE_REQUESTED',
     requiredFields: ['userName', 'templateName', 'requestTime'],
-    optionalFields: ['comments'],
+    optionalFields: ['comments', 'leaseTemplateId'],
     enrichmentQueries: ['leaseTemplate'],
   },
   LeaseApproved: {
     templateIdEnvVar: 'NOTIFY_TEMPLATE_LEASE_APPROVED',
-    requiredFields: ['userName', 'accountId', 'ssoUrl', 'expiryDate'],
-    optionalFields: ['budgetLimit', 'portalLink', 'budgetActionLink', 'plainTextLink', 'linkInstructions'],
+    requiredFields: ['userName', 'accountId', 'expiryDate'],
+    optionalFields: ['budgetLimit', 'ssoUrl', 'templateName', 'leaseTemplateName', 'leaseTemplateId', 'leaseTemplateUUID', 'portalLink', 'budgetActionLink', 'plainTextLink', 'linkInstructions'],
     enrichmentQueries: ['lease', 'account'],
   },
   LeaseDenied: {
     templateIdEnvVar: 'NOTIFY_TEMPLATE_LEASE_DENIED',
     requiredFields: ['userName', 'templateName', 'reason', 'deniedBy'],
-    optionalFields: ['portalLink', 'plainTextLink', 'linkInstructions'],
+    optionalFields: ['portalLink', 'plainTextLink', 'linkInstructions', 'leaseTemplateId'],
     enrichmentQueries: ['leaseTemplate'],
   },
   LeaseTerminated: {
@@ -135,8 +135,8 @@ export const NOTIFY_TEMPLATES: Record<string, TemplateConfig> = {
    */
   LeaseDurationThresholdAlert: {
     templateIdEnvVar: 'NOTIFY_TEMPLATE_DURATION_THRESHOLD',
-    requiredFields: ['userName', 'hoursRemaining', 'expiryDate', 'timezone'],
-    optionalFields: ['portalLink', 'plainTextLink', 'linkInstructions'],
+    requiredFields: ['userName', 'hoursRemaining', 'expiryDate'],
+    optionalFields: ['timezone', 'portalLink', 'plainTextLink', 'linkInstructions'],
     enrichmentQueries: ['lease', 'userPreferences'],
   },
 
@@ -227,31 +227,24 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
- * AC-5.9: Format date in UK format (DD MMM YYYY, HH:MM)
+ * AC-5.9: Format date in UK format (DD/MM/YYYY, HH:MM:SS)
  * AC-5.3: Defaults to Europe/London if timezone not specified
  *
- * @example formatUKDate('2024-03-15T14:30:00Z', 'Europe/London') => "15 Mar 2024, 14:30"
+ * @example formatUKDate('2024-03-15T14:30:00Z', 'Europe/London') => "15/03/2024, 14:30:00"
  */
 export function formatUKDate(date: Date | string, timezone: string = DEFAULT_TIMEZONE): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
 
-  // Format date part: DD MMM YYYY
-  const datePart = new Intl.DateTimeFormat('en-GB', {
+  return dateObj.toLocaleString('en-GB', {
     day: '2-digit',
-    month: 'short',
+    month: '2-digit',
     year: 'numeric',
-    timeZone: timezone,
-  }).format(dateObj);
-
-  // Format time part: HH:MM
-  const timePart = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hour12: false,
     timeZone: timezone,
-  }).format(dateObj);
-
-  return `${datePart}, ${timePart}`;
+  });
 }
 
 /**
@@ -664,6 +657,7 @@ export function buildLeaseRequestedPersonalisation(
   return {
     userName,
     templateName: detail.templateName || detail.leaseTemplateName || 'Standard Sandbox',
+    leaseTemplateId: detail.leaseTemplateId || '',
     requestTime,
     comments: '', // Optional, can be enriched later
   };
@@ -713,18 +707,28 @@ export function buildLeaseApprovedPersonalisation(
   const userEmail = detail.userEmail || detail.principalEmail || leaseKey.userEmail;
   const userName = userEmail.split('@')[0];
 
-  // ISB sends expiry as either expirationDate or expiresAt
-  const expiryDate = detail.expirationDate || detail.expiresAt || 'Not specified';
+  // ISB sends expiry as either expirationDate or expiresAt - format for UK display
+  const rawExpiryDate = detail.expirationDate || detail.expiresAt;
+  const expiryDate = rawExpiryDate ? formatUKDate(rawExpiryDate) : 'Not specified';
 
   // ISB sends budget as either maxSpend or budget
   const budgetLimit = detail.maxSpend ?? detail.budget ?? 0;
+
+  // Extract lease template info (new required fields)
+  const leaseTemplateName = detail.leaseTemplateName || detail.templateName || 'Sandbox';
+  const leaseTemplateUUID = detail.leaseTemplateId || detail.templateId || leaseKey.uuid;
 
   const personalisation: Record<string, string | number> = {
     userName,
     accountId: detail.accountId || 'Pending',
     ssoUrl: detail.ssoUrl || '',
     expiryDate,
-    budgetLimit,
+    budgetLimit: formatCurrency(budgetLimit),
+    templateName: leaseTemplateName,
+    leaseTemplateName,
+    leaseTemplateId: leaseTemplateUUID,
+    leaseTemplateUUID,
+    budgetDisclaimer: getBudgetDisclaimer(new Date().toISOString()),
   };
 
   // AC-4.4, AC-4.10: Add portal links if configured
@@ -771,6 +775,7 @@ export function buildLeaseDeniedPersonalisation(
   const personalisation: Record<string, string | number> = {
     userName,
     templateName: detail.templateName || '',
+    leaseTemplateId: detail.leaseTemplateId || '',
     reason: detail.reason || 'Request was not approved',
     deniedBy: detail.deniedBy || 'Administrator',
   };

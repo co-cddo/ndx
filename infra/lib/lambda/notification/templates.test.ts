@@ -567,7 +567,8 @@ describe('Personalisation Builders', () => {
       expect(result.userName).toBe('test.user');
       expect(result.accountId).toBe('123456789012');
       expect(result.ssoUrl).toBe('https://sso.example.gov.uk');
-      expect(result.expiryDate).toBe('2025-01-08T00:00:00Z');
+      // expiryDate is now formatted in UK locale (DD/MM/YYYY, HH:MM:SS)
+      expect(result.expiryDate).toBe('08/01/2025, 00:00:00');
     });
 
     test('AC-4.4: LeaseApproved includes portal deep link', () => {
@@ -1053,13 +1054,13 @@ describe('Formatting Utilities', () => {
     test('AC-5.9: Formats date in UK format (DD MMM YYYY, HH:MM)', () => {
       // Using a fixed UTC date to ensure consistent test results
       const result = formatUKDate('2024-03-15T14:30:00Z', 'UTC');
-      expect(result).toBe('15 Mar 2024, 14:30');
+      expect(result).toBe('15/03/2024, 14:30:00');
     });
 
     test('AC-5.9: Handles Date object input', () => {
       const date = new Date('2024-12-25T09:00:00Z');
       const result = formatUKDate(date, 'UTC');
-      expect(result).toBe('25 Dec 2024, 09:00');
+      expect(result).toBe('25/12/2024, 09:00:00');
     });
 
     test('AC-5.3: Defaults to Europe/London timezone', () => {
@@ -1073,8 +1074,8 @@ describe('Formatting Utilities', () => {
       const winterDate = formatUKDate('2024-01-15T12:00:00Z');
 
       // Both should be formatted, just with different local times
-      expect(summerDate).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
-      expect(winterDate).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(summerDate).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
+      expect(winterDate).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
 
     test('AC-5.9: Respects provided timezone', () => {
@@ -1114,7 +1115,7 @@ describe('Formatting Utilities', () => {
 
     test('AC-5.12: Includes formatted timestamp', () => {
       const result = getBudgetDisclaimer('2024-03-15T14:30:00Z');
-      expect(result).toMatch(/Budget data as of \d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result).toMatch(/Budget data as of \d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
   });
 });
@@ -1355,7 +1356,7 @@ describe('Monitoring Alert Personalisation Builders', () => {
 
       expect(result.userName).toBe('test.user');
       expect(result.hoursRemaining).toBe(25); // Rounded
-      expect(result.expiryDate).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result.expiryDate).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
       expect(result.timezone).toBeDefined();
     });
 
@@ -1376,7 +1377,7 @@ describe('Monitoring Alert Personalisation Builders', () => {
 
     test('AC-5.9: Formats expiryDate in UK format', () => {
       const result = buildDurationThresholdPersonalisation(mockDurationThresholdEvent);
-      expect(result.expiryDate).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result.expiryDate).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
   });
 
@@ -1399,12 +1400,12 @@ describe('Monitoring Alert Personalisation Builders', () => {
 
       expect(result.userName).toBe('test.user');
       expect(result.reason).toBe('Budget threshold exceeded');
-      expect(result.freezeTime).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result.freezeTime).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
 
     test('AC-5.9: Formats freezeTime in UK format', () => {
       const result = buildFreezingThresholdPersonalisation(mockFreezingThresholdEvent);
-      expect(result.freezeTime).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result.freezeTime).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
   });
 
@@ -1460,12 +1461,12 @@ describe('Monitoring Alert Personalisation Builders', () => {
 
       expect(result.userName).toBe('test.user');
       expect(result.accountId).toBe('123456789012');
-      expect(result.expiryTime).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result.expiryTime).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
 
     test('AC-5.9: Formats expiryTime in UK format', () => {
       const result = buildLeaseExpiredPersonalisation(mockLeaseExpiredEvent);
-      expect(result.expiryTime).toMatch(/\d{2} \w{3} \d{4}, \d{2}:\d{2}/);
+      expect(result.expiryTime).toMatch(/\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}/);
     });
   });
 

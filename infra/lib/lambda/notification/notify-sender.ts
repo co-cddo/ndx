@@ -467,15 +467,34 @@ export class NotifySender {
 
   /**
    * Extract error message from Notify SDK error
+   * GOV.UK Notify returns detailed error info in response.data.errors
    */
   private extractErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-      return error.message;
-    }
     if (typeof error === 'object' && error !== null) {
       const e = error as Record<string, unknown>;
+
+      // Try to get detailed error from Notify API response
+      if (typeof e.response === 'object' && e.response !== null) {
+        const resp = e.response as Record<string, unknown>;
+        if (typeof resp.data === 'object' && resp.data !== null) {
+          const data = resp.data as Record<string, unknown>;
+          // Notify returns errors array with error details
+          if (Array.isArray(data.errors) && data.errors.length > 0) {
+            const errors = data.errors.map((err: Record<string, unknown>) =>
+              `${err.error || 'unknown'}: ${err.message || 'no message'}`
+            ).join('; ');
+            return errors;
+          }
+          if (typeof data.message === 'string') return data.message;
+          if (typeof data.error === 'string') return data.error;
+        }
+      }
+
       if (typeof e.message === 'string') return e.message;
       if (typeof e.error === 'string') return e.error;
+    }
+    if (error instanceof Error) {
+      return error.message;
     }
     return 'Unknown error';
   }

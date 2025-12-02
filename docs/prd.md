@@ -1928,6 +1928,430 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 
 ---
 
+# Feature 5: DynamoDB Lease Enrichment for Notifications
+
+## Executive Summary - DynamoDB Lease Enrichment
+
+**New Capability:** Enrich notification payloads with complete lease data from the Innovation Sandbox LeaseTable in DynamoDB. When EventBridge events trigger notifications, the system fetches the full lease record and includes all fields in the notification payload sent to both GOV.UK Notify and Slack.
+
+**Current State:** EventBridge events from Innovation Sandbox contain only essential event data - a subset of the full lease record. Notifications miss valuable context like `leaseDurationInHours`, `budgetThresholds`, `meta.createdTime`, and other operational details.
+
+**Challenge:** Both GOV.UK Notify templates and Slack Block Kit messages need access to comprehensive lease data for debugging, operations, and user context. However, GOV.UK Notify and Slack APIs don't support nested objects or arrays - all values must be flat key-value pairs.
+
+**Solution:** Extend the notification Lambda to:
+1. Extract `leaseId` (or `userEmail` + `uuid`) from EventBridge events
+2. Query DynamoDB LeaseTable for the complete lease record
+3. Flatten nested objects and arrays into flat key-value format
+4. Include a `keys` parameter listing all flattened field names for debugging
+5. Send enriched, flattened payload to GOV.UK Notify and Slack
+
+### What Makes This Special
+
+This is **context-rich notification enrichment** that transforms basic event notifications into comprehensive, actionable alerts. Rather than receiving minimal event data, recipients get:
+
+- **Complete lease context** - All lease fields including duration, budget limits, thresholds, timestamps
+- **Debugging capability** - The `keys` parameter lists all available fields for troubleshooting
+- **Flat structure compatibility** - Nested objects and arrays transformed for Notify/Slack APIs
+- **Operational visibility** - Fields like `totalCostAccrued`, `lastCheckedDate`, `approvedBy` aid ops response
+- **Graceful degradation** - If DynamoDB unavailable, notifications proceed with event data only
+
+The differentiator is **maximizing notification value** by providing complete context without requiring changes to downstream notification templates.
+
+---
+
+## Project Classification - DynamoDB Lease Enrichment
+
+**Technical Type:** Infrastructure / Lambda Enhancement
+**Domain:** GovTech (UK Government Digital Service)
+**Complexity:** Low-Medium
+
+This is an **enhancement to the existing notification Lambda** that adds DynamoDB query capability and payload transformation logic. The change is contained: one Lambda modification, one IAM permission addition, no new AWS resources.
+
+**Why Infrastructure Enhancement:**
+- Modifies existing notification Lambda function
+- Adds DynamoDB read permissions to Lambda IAM role
+- Implements data transformation logic (flattening)
+- No new CloudFormation resources required
+
+**Domain Context:** As an enhancement to UK government notifications:
+- Enriched data aids operational response to account events
+- Flattened structure ensures GOV.UK Notify template compatibility
+- Debug `keys` parameter aids support team troubleshooting
+- No additional PII exposure (LeaseTable data already in scope)
+
+**Complexity Assessment: Low-Medium**
+- **Not High:** Single Lambda enhancement, standard DynamoDB query pattern, pure data transformation
+- **Not Low:** Must handle 8 lease states correctly, flatten complex nested structures, graceful degradation required
+
+---
+
+## Success Criteria - DynamoDB Lease Enrichment
+
+**Primary Success Metric:** All lease-related notifications include full LeaseTable data with field `leaseDurationInHours` visible in both Slack messages and GOV.UK Notify personalisation.
+
+**Specific Success Indicators:**
+
+1. **DynamoDB Query Works:** Lambda successfully queries LeaseTable using `userEmail` and `uuid` from event
+2. **Flattening Works:** Nested structures correctly flattened (e.g., `meta.createdTime` → `meta_createdTime`)
+3. **Array Flattening Works:** Arrays correctly indexed (e.g., `budgetThresholds[0].dollarsSpent` → `budgetThresholds_0_dollarsSpent`)
+4. **Keys Parameter Present:** Every notification includes `keys` field with comma-separated list of all field names
+5. **GOV.UK Notify Receives Fields:** Template personalisation includes enriched fields like `leaseDurationInHours`
+6. **Slack Receives Fields:** Block Kit messages can reference enriched fields like `leaseDurationInHours`
+7. **Graceful Degradation:** If lease not found or DynamoDB error, notification proceeds with event data only
+
+**What Winning Looks Like:**
+- Operations team sees `leaseDurationInHours: 24` in Slack alerts
+- GOV.UK Notify emails include lease duration, budget limits, and approval info
+- Debug `keys` field shows exactly which fields are available: `"keys": "userEmail,uuid,status,leaseDurationInHours,maxSpend,..."`
+- Nested fields like `meta.createdTime` appear as `meta_createdTime` in flat format
+- Array items like `budgetThresholds[0]` appear as `budgetThresholds_0_dollarsSpent`, `budgetThresholds_0_action`
+- No notification failures due to enrichment errors
+
+---
+
+## Product Scope - DynamoDB Lease Enrichment
+
+### MVP - Minimum Viable Product
+
+**Phase 1: DynamoDB Integration**
+1. **IAM Permissions:** Add `dynamodb:GetItem` permission to notification Lambda role for LeaseTable
+2. **Cross-Account Access:** If LeaseTable in different account, configure cross-account IAM role assumption
+3. **LeaseTable Reference:** Store LeaseTable name/ARN in environment variable or Secrets Manager
+
+**Phase 2: Lease Query Logic**
+4. **Extract Lease Key:** Parse `userEmail` and `uuid` (or `leaseId`) from EventBridge event detail
+5. **Query DynamoDB:** Execute GetItem with composite key (`userEmail` PK, `uuid` SK)
+6. **Handle Not Found:** If lease doesn't exist, log warning and continue with event data only
+7. **Handle Errors:** If DynamoDB error, log error, metric, and continue with event data only
+
+**Phase 3: Payload Flattening**
+8. **Flatten Nested Objects:** Transform `{meta: {createdTime: "2025-01-01"}}` → `{meta_createdTime: "2025-01-01"}`
+9. **Flatten Arrays of Objects:** Transform `{budgetThresholds: [{dollarsSpent: 50, action: "ALERT"}]}` → `{budgetThresholds_0_dollarsSpent: "50", budgetThresholds_0_action: "ALERT"}`
+10. **Flatten Arrays of Primitives:** Transform `{tags: ["a", "b"]}` → `{tags_0: "a", tags_1: "b"}`
+11. **Handle Null/Undefined:** Skip null and undefined values in flattened output
+12. **Stringify Values:** Convert all values to strings for Notify/Slack compatibility
+
+**Phase 4: Keys Parameter**
+13. **Generate Keys List:** Create comma-separated string of all flattened field names
+14. **Include in Payload:** Add `keys` field to every notification payload
+15. **Alphabetical Order:** Sort keys alphabetically for consistent debugging
+
+**Phase 5: Integration**
+16. **Merge with Event Data:** Combine enriched lease data with original event data (lease data takes precedence)
+17. **Send to GOV.UK Notify:** Pass enriched, flattened payload as personalisation object
+18. **Send to Slack:** Reference enriched fields in Block Kit message templates
+
+### LeaseTable Schema Reference
+
+**All Leases (Base Schema):**
+- `userEmail` (string, email) - Partition key
+- `uuid` (string, UUID) - Sort key
+- `status` (string) - PendingApproval | ApprovalDenied | Active | Frozen | Expired | BudgetExceeded | ManuallyTerminated | AccountQuarantined | Ejected
+- `originalLeaseTemplateUuid` (string)
+- `originalLeaseTemplateName` (string)
+- `leaseDurationInHours` (number)
+- `comments` (string, optional)
+- `maxSpend` (number, optional)
+- `budgetThresholds` (array) - `[{dollarsSpent: number, action: "ALERT"|"FREEZE_ACCOUNT"}]`
+- `durationThresholds` (array) - `[{hoursRemaining: number, action: "ALERT"|"FREEZE_ACCOUNT"}]`
+- `meta` (object) - `{createdTime: datetime, lastEditTime: datetime, schemaVersion: number}`
+
+**Monitored Leases (Active/Frozen - additional fields):**
+- `awsAccountId` (string, 12 digits)
+- `approvedBy` (string) - email or "AUTO_APPROVED"
+- `startDate` (ISO 8601 datetime)
+- `expirationDate` (ISO 8601 datetime, optional)
+- `lastCheckedDate` (ISO 8601 datetime)
+- `totalCostAccrued` (number)
+
+**Expired Leases (additional fields):**
+- `endDate` (ISO 8601 datetime)
+- `ttl` (number, Unix timestamp)
+
+### Example Flattened Output
+
+**Input (DynamoDB Lease Record):**
+```json
+{
+  "userEmail": "user@example.gov.uk",
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "status": "Active",
+  "leaseDurationInHours": 24,
+  "maxSpend": 50,
+  "budgetThresholds": [
+    {"dollarsSpent": 25, "action": "ALERT"},
+    {"dollarsSpent": 45, "action": "FREEZE_ACCOUNT"}
+  ],
+  "durationThresholds": [
+    {"hoursRemaining": 4, "action": "ALERT"}
+  ],
+  "meta": {
+    "createdTime": "2025-01-15T10:00:00Z",
+    "lastEditTime": "2025-01-15T12:30:00Z",
+    "schemaVersion": 1
+  },
+  "awsAccountId": "123456789012",
+  "approvedBy": "admin@example.gov.uk",
+  "startDate": "2025-01-15T12:30:00Z",
+  "expirationDate": "2025-01-16T12:30:00Z",
+  "totalCostAccrued": 12.50
+}
+```
+
+**Output (Flattened for Notify/Slack):**
+```json
+{
+  "userEmail": "user@example.gov.uk",
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "status": "Active",
+  "leaseDurationInHours": "24",
+  "maxSpend": "50",
+  "budgetThresholds_0_dollarsSpent": "25",
+  "budgetThresholds_0_action": "ALERT",
+  "budgetThresholds_1_dollarsSpent": "45",
+  "budgetThresholds_1_action": "FREEZE_ACCOUNT",
+  "durationThresholds_0_hoursRemaining": "4",
+  "durationThresholds_0_action": "ALERT",
+  "meta_createdTime": "2025-01-15T10:00:00Z",
+  "meta_lastEditTime": "2025-01-15T12:30:00Z",
+  "meta_schemaVersion": "1",
+  "awsAccountId": "123456789012",
+  "approvedBy": "admin@example.gov.uk",
+  "startDate": "2025-01-15T12:30:00Z",
+  "expirationDate": "2025-01-16T12:30:00Z",
+  "totalCostAccrued": "12.50",
+  "keys": "approvedBy,awsAccountId,budgetThresholds_0_action,budgetThresholds_0_dollarsSpent,budgetThresholds_1_action,budgetThresholds_1_dollarsSpent,durationThresholds_0_action,durationThresholds_0_hoursRemaining,expirationDate,leaseDurationInHours,maxSpend,meta_createdTime,meta_lastEditTime,meta_schemaVersion,startDate,status,totalCostAccrued,userEmail,uuid"
+}
+```
+
+### Growth Features (Post-MVP)
+
+**Enhanced Enrichment:**
+1. **Template Data Enrichment:** Also fetch LeaseTemplate record for template-specific fields
+2. **Account Data Enrichment:** Fetch SandboxAccount record for account-specific details
+3. **User Data Enrichment:** Fetch user profile data if available
+4. **Historical Data:** Include previous lease status for state change context
+
+**Performance Optimizations:**
+5. **Batch Queries:** If multiple leases in event, batch DynamoDB queries
+6. **Caching:** Cache lease data within Lambda container for repeated queries
+7. **Parallel Queries:** Query lease and template data in parallel
+
+**Debugging Enhancements:**
+8. **Enrichment Metadata:** Add `_enriched: true`, `_enrichmentTime: "50ms"` fields
+9. **Source Tracking:** Add `_source: "dynamodb"` vs `_source: "event"` per field
+10. **Schema Version:** Include `_leaseSchemaVersion` for compatibility tracking
+
+### Vision (Future)
+
+**Advanced Data Platform:**
+1. **Real-Time Enrichment Cache:** DynamoDB Streams populate enrichment cache
+2. **Cross-Service Enrichment:** Enrich with data from other NDX services
+3. **ML-Powered Context:** Add predicted risk scores, anomaly flags
+4. **Audit Trail Enrichment:** Include related events from last 24 hours
+
+---
+
+## Functional Requirements - DynamoDB Lease Enrichment
+
+**Purpose:** Define WHAT capabilities the DynamoDB enrichment must provide. These requirements apply to both GOV.UK Notify and Slack notification paths.
+
+**Scope:** Lambda function enhancement, DynamoDB query, payload transformation, error handling.
+
+### DynamoDB Integration
+
+**FR-ENRICH-1:** System can extract `userEmail` and `uuid` from EventBridge event detail for lease lookup
+
+**FR-ENRICH-2:** System can query DynamoDB LeaseTable using composite key (`userEmail` partition key, `uuid` sort key)
+
+**FR-ENRICH-3:** System retrieves complete lease record including all fields for the lease's current status
+
+**FR-ENRICH-4:** System handles lease not found gracefully (log warning, proceed with event data only)
+
+**FR-ENRICH-5:** System handles DynamoDB errors gracefully (log error, emit metric, proceed with event data only)
+
+**FR-ENRICH-6:** System caches DynamoDB client within Lambda container for connection reuse
+
+### Payload Flattening - Objects
+
+**FR-ENRICH-7:** System transforms nested objects using underscore separator: `{parent: {child: value}}` → `{parent_child: value}`
+
+**FR-ENRICH-8:** System handles multiple levels of nesting: `{a: {b: {c: value}}}` → `{a_b_c: value}`
+
+**FR-ENRICH-9:** System handles the `meta` object: `meta.createdTime` → `meta_createdTime`
+
+**FR-ENRICH-10:** System handles the `meta` object: `meta.lastEditTime` → `meta_lastEditTime`
+
+**FR-ENRICH-11:** System handles the `meta` object: `meta.schemaVersion` → `meta_schemaVersion`
+
+### Payload Flattening - Arrays
+
+**FR-ENRICH-12:** System transforms arrays of objects using index notation: `{arr: [{a: 1}, {a: 2}]}` → `{arr_0_a: "1", arr_1_a: "2"}`
+
+**FR-ENRICH-13:** System handles `budgetThresholds` array: `budgetThresholds[0].dollarsSpent` → `budgetThresholds_0_dollarsSpent`
+
+**FR-ENRICH-14:** System handles `budgetThresholds` array: `budgetThresholds[0].action` → `budgetThresholds_0_action`
+
+**FR-ENRICH-15:** System handles `durationThresholds` array: `durationThresholds[0].hoursRemaining` → `durationThresholds_0_hoursRemaining`
+
+**FR-ENRICH-16:** System handles `durationThresholds` array: `durationThresholds[0].action` → `durationThresholds_0_action`
+
+**FR-ENRICH-17:** System transforms arrays of primitives: `{tags: ["a", "b"]}` → `{tags_0: "a", tags_1: "b"}`
+
+**FR-ENRICH-18:** System handles empty arrays gracefully (no output fields generated)
+
+### Value Stringification
+
+**FR-ENRICH-19:** System converts all values to strings for GOV.UK Notify/Slack compatibility
+
+**FR-ENRICH-20:** System converts numbers to strings: `{maxSpend: 50}` → `{maxSpend: "50"}`
+
+**FR-ENRICH-21:** System converts booleans to strings: `{active: true}` → `{active: "true"}`
+
+**FR-ENRICH-22:** System preserves string values unchanged
+
+**FR-ENRICH-23:** System skips null values (not included in flattened output)
+
+**FR-ENRICH-24:** System skips undefined values (not included in flattened output)
+
+### Keys Parameter
+
+**FR-ENRICH-25:** System generates `keys` field containing comma-separated list of all flattened field names
+
+**FR-ENRICH-26:** Keys are sorted alphabetically for consistent ordering
+
+**FR-ENRICH-27:** Keys list does not include the `keys` field itself (avoids self-reference)
+
+**FR-ENRICH-28:** Keys parameter is present in every notification payload (GOV.UK Notify and Slack)
+
+### Integration with Existing Notifications
+
+**FR-ENRICH-29:** System merges enriched lease data with original EventBridge event data
+
+**FR-ENRICH-30:** Enriched lease data takes precedence over event data for duplicate fields
+
+**FR-ENRICH-31:** System passes enriched, flattened payload to GOV.UK Notify as personalisation object
+
+**FR-ENRICH-32:** System references enriched fields in Slack Block Kit message templates
+
+**FR-ENRICH-33:** System includes `leaseDurationInHours` in both GOV.UK Notify and Slack payloads
+
+**FR-ENRICH-34:** System includes `maxSpend` in both GOV.UK Notify and Slack payloads
+
+**FR-ENRICH-35:** System includes `totalCostAccrued` in both GOV.UK Notify and Slack payloads (when present)
+
+### Error Handling
+
+**FR-ENRICH-36:** System logs warning when lease not found in DynamoDB (includes `userEmail`, `uuid` for debugging)
+
+**FR-ENRICH-37:** System emits CloudWatch metric `LeaseNotFound` when lease lookup fails
+
+**FR-ENRICH-38:** System logs error when DynamoDB query fails (includes error type, not credentials)
+
+**FR-ENRICH-39:** System emits CloudWatch metric `DynamoDBError` when query fails
+
+**FR-ENRICH-40:** System proceeds with notification using event data only when enrichment fails
+
+**FR-ENRICH-41:** System includes `_enriched: false` flag when enrichment was not successful
+
+**FR-ENRICH-42:** System includes `_enriched: true` flag when enrichment was successful
+
+### Lease Status Handling
+
+**FR-ENRICH-43:** System correctly enriches PendingApproval leases (base fields only)
+
+**FR-ENRICH-44:** System correctly enriches ApprovalDenied leases (base fields + ttl)
+
+**FR-ENRICH-45:** System correctly enriches Active leases (base fields + monitored fields)
+
+**FR-ENRICH-46:** System correctly enriches Frozen leases (base fields + monitored fields)
+
+**FR-ENRICH-47:** System correctly enriches Expired leases (base fields + monitored fields + expired fields)
+
+**FR-ENRICH-48:** System correctly enriches BudgetExceeded leases (base fields + monitored fields + expired fields)
+
+**FR-ENRICH-49:** System correctly enriches ManuallyTerminated leases (base fields + monitored fields + expired fields)
+
+**FR-ENRICH-50:** System correctly enriches AccountQuarantined leases (base fields + monitored fields + expired fields)
+
+---
+
+## Non-Functional Requirements - DynamoDB Lease Enrichment
+
+### Performance
+
+**NFR-ENRICH-PERF-1:** DynamoDB GetItem query completes within 100ms (99th percentile)
+
+**NFR-ENRICH-PERF-2:** Payload flattening completes within 10ms for typical lease records
+
+**NFR-ENRICH-PERF-3:** Total enrichment overhead (query + flatten) adds < 200ms to notification latency
+
+**NFR-ENRICH-PERF-4:** DynamoDB client reused across Lambda invocations (connection pooling)
+
+**NFR-ENRICH-PERF-5:** Enrichment failure does not block notification delivery (timeout fallback)
+
+### Security
+
+**NFR-ENRICH-SEC-1:** Lambda IAM role has minimum required permissions: `dynamodb:GetItem` on LeaseTable only
+
+**NFR-ENRICH-SEC-2:** Cross-account access (if required) uses IAM role assumption, not hardcoded credentials
+
+**NFR-ENRICH-SEC-3:** LeaseTable ARN stored in environment variable, not hardcoded in Lambda code
+
+**NFR-ENRICH-SEC-4:** CloudWatch logs do not contain full lease records (only field names, counts)
+
+**NFR-ENRICH-SEC-5:** Error logs do not expose DynamoDB connection strings or credentials
+
+### Reliability
+
+**NFR-ENRICH-REL-1:** Enrichment failures do not cause notification failures (graceful degradation)
+
+**NFR-ENRICH-REL-2:** DynamoDB provisioned capacity or on-demand mode handles notification burst load
+
+**NFR-ENRICH-REL-3:** Lambda retries transient DynamoDB errors once before giving up
+
+**NFR-ENRICH-REL-4:** Enrichment timeout set to 2 seconds (proceed without enrichment if exceeded)
+
+**NFR-ENRICH-REL-5:** System handles DynamoDB throttling gracefully (emit metric, proceed without enrichment)
+
+### Maintainability
+
+**NFR-ENRICH-MAINT-1:** Flattening logic is a separate, testable function (unit testable in isolation)
+
+**NFR-ENRICH-MAINT-2:** LeaseTable schema changes handled gracefully (unknown fields passed through)
+
+**NFR-ENRICH-MAINT-3:** Flattening separator (`_`) configurable for future changes
+
+**NFR-ENRICH-MAINT-4:** Code documented with examples of flattening transformations
+
+**NFR-ENRICH-MAINT-5:** Unit tests cover all lease statuses and field types
+
+### Observability
+
+**NFR-ENRICH-OBS-1:** CloudWatch metrics for enrichment success/failure counts
+
+**NFR-ENRICH-OBS-2:** CloudWatch metrics for DynamoDB query latency (p50, p99)
+
+**NFR-ENRICH-OBS-3:** Structured log field `enrichmentStatus: "success"|"failed"|"skipped"`
+
+**NFR-ENRICH-OBS-4:** Structured log field `enrichmentDurationMs` for performance monitoring
+
+**NFR-ENRICH-OBS-5:** CloudWatch alarm for enrichment failure rate > 5%
+
+### Testing
+
+**NFR-ENRICH-TEST-1:** Unit tests cover flattening of all field types (string, number, boolean, object, array)
+
+**NFR-ENRICH-TEST-2:** Unit tests cover all 8 lease statuses with their specific fields
+
+**NFR-ENRICH-TEST-3:** Unit tests cover error scenarios (lease not found, DynamoDB error, timeout)
+
+**NFR-ENRICH-TEST-4:** Integration tests verify DynamoDB query with real LeaseTable
+
+**NFR-ENRICH-TEST-5:** Integration tests verify enriched payload reaches GOV.UK Notify and Slack
+
+---
+
 # Combined PRD Summary
 
 **Total Requirements Captured:**
@@ -2006,10 +2430,29 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
   - Scalability (3 NFRs)
   - Compliance & Auditability (4 NFRs)
 
+**Feature 5: DynamoDB Lease Enrichment (PLANNED)**
+- **50 Functional Requirements** across 6 capability areas:
+  - DynamoDB Integration (6 FRs)
+  - Payload Flattening - Objects (5 FRs)
+  - Payload Flattening - Arrays (7 FRs)
+  - Value Stringification (6 FRs)
+  - Keys Parameter (4 FRs)
+  - Integration with Existing Notifications (7 FRs)
+  - Error Handling (7 FRs)
+  - Lease Status Handling (8 FRs)
+
+- **25 Non-Functional Requirements** across 6 quality dimensions:
+  - Performance (5 NFRs)
+  - Security (5 NFRs)
+  - Reliability (5 NFRs)
+  - Maintainability (5 NFRs)
+  - Observability (5 NFRs)
+  - Testing (5 NFRs)
+
 **Combined Totals:**
-- **225 Functional Requirements**
-- **134 Non-Functional Requirements**
-- **359 Total Requirements**
+- **275 Functional Requirements**
+- **159 Non-Functional Requirements**
+- **434 Total Requirements**
 
 ---
 
@@ -2105,9 +2548,33 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 
 ---
 
+## Key Deliverables - DynamoDB Lease Enrichment (PLANNED)
+
+1. Lambda function enhancement with DynamoDB query capability
+2. IAM role update with `dynamodb:GetItem` permission for LeaseTable
+3. Payload flattening utility function (nested objects → underscore-separated keys)
+4. Array flattening logic (indexed keys: `array_0_field`, `array_1_field`)
+5. Value stringification for GOV.UK Notify/Slack compatibility
+6. `keys` parameter generation with alphabetically sorted field list
+7. Graceful degradation when lease not found or DynamoDB errors
+8. CloudWatch metrics for enrichment success/failure/latency
+9. Unit tests covering all 8 lease statuses and field types
+10. Integration tests verifying enriched payloads reach Notify/Slack
+
+**Success Validation:**
+- Slack messages include `leaseDurationInHours` field with lease duration value
+- GOV.UK Notify personalisation includes `leaseDurationInHours`, `maxSpend`, `budgetThresholds_0_dollarsSpent`
+- Nested fields appear flattened: `meta.createdTime` → `meta_createdTime`
+- Array fields appear indexed: `budgetThresholds[0].action` → `budgetThresholds_0_action`
+- Every notification includes `keys` parameter listing all available fields
+- Enrichment failures logged but don't block notification delivery
+- `_enriched: true/false` flag indicates enrichment status
+
+---
+
 ## Product Value Summary
 
-This PRD captures requirements for **four critical NDX capabilities** that together enable safe platform evolution, accelerated service evaluation, professional government communications, and operational visibility for UK government users:
+This PRD captures requirements for **five critical NDX capabilities** that together enable safe platform evolution, accelerated service evaluation, professional government communications, operational visibility, and context-rich notifications for UK government users:
 
 ### CloudFront Origin Routing (COMPLETED)
 **Safe, low-risk UI evolution** via surgical infrastructure enhancement. The cookie-based routing enables the strangler pattern for UI modernization without risking production stability for the £2B government procurement platform.
@@ -2121,6 +2588,9 @@ This PRD captures requirements for **four critical NDX capabilities** that toget
 ### Slack Integration (PLANNED)
 **Real-time operational visibility** bringing critical alerts directly to the team's collaboration workspace. Operations teams receive daily AWS spend summaries, billing anomaly alerts, and Innovation Sandbox account lifecycle notifications in Slack - reducing context switching and enabling rapid response to operational events.
 
+### DynamoDB Lease Enrichment (PLANNED)
+**Context-rich notification payloads** that transform basic event alerts into comprehensive, actionable messages. By enriching notifications with complete LeaseTable data, operations and users receive full lease context including duration, budget thresholds, timestamps, and approval info - with a debugging `keys` parameter listing all available fields. Nested structures are flattened for GOV.UK Notify/Slack compatibility.
+
 The infrastructure-as-code approach via CDK, CloudFormation, and client-side TypeScript ensures **reproducibility, auditability, and transparency** - critical requirements for public sector platforms. This methodical approach demonstrates government service engineering best practices: make surgical changes, validate thoroughly, and build capabilities that serve government users effectively.
 
 **Business Impact:**
@@ -2128,6 +2598,7 @@ The infrastructure-as-code approach via CDK, CloudFormation, and client-side Typ
 - **Try Before You Buy:** Reduces procurement cycle time from weeks to seconds, enabling informed decision-making for cloud service adoption
 - **GOV.UK Notify Integration:** Delivers professional, branded communications that reinforce trust and clarity for government users evaluating cloud services
 - **Slack Integration:** Provides operational visibility with daily spend tracking, anomaly detection, and critical event alerting for proactive issue resolution
+- **DynamoDB Lease Enrichment:** Maximizes notification value with complete lease context, enabling faster debugging and more informed operational response
 
 ---
 

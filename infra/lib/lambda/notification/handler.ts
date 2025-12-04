@@ -38,10 +38,60 @@ import {
   buildPersonalisation,
   isLeaseLifecycleEvent,
   isMonitoringAlertEvent,
+  formatCurrency,
+  formatUKDate,
 } from './templates';
 import { fetchLeaseRecord } from './enrichment';
 import { flattenObject, addKeysParameter } from './flatten';
 import { validateLeaseStatus, logFieldPresence } from './lease-status';
+
+// =========================================================================
+// Field Mapping (DynamoDB → GOV.UK Notify Templates)
+// =========================================================================
+
+/**
+ * Map DynamoDB field names to GOV.UK Notify template field names.
+ *
+ * DynamoDB uses different field names than the templates expect:
+ * - awsAccountId → accountId
+ * - maxSpend → budgetLimit (formatted as $X.XX - AWS costs are in USD)
+ * - expirationDate → expiryDate (formatted as DD/MM/YYYY, HH:MM:SS in Europe/London)
+ *
+ * This ensures enriched data from DynamoDB can override fallback values
+ * in the email personalisation.
+ */
+
+/**
+ * Apply field name mappings from DynamoDB to template field names.
+ * Creates aliases for fields that have different names in templates.
+ * Also applies formatting for currency and date fields.
+ *
+ * @param enrichedData - Flattened data from DynamoDB
+ * @returns Data with additional alias fields for template compatibility
+ */
+export function mapEnrichedFieldsToTemplateNames(
+  enrichedData: Record<string, string>
+): Record<string, string> {
+  const mapped = { ...enrichedData };
+
+  // Map awsAccountId → accountId (no formatting needed)
+  if (mapped.awsAccountId !== undefined && mapped.accountId === undefined) {
+    mapped.accountId = mapped.awsAccountId;
+  }
+
+  // Map maxSpend → budgetLimit with currency formatting ($X.XX - AWS costs are in USD)
+  if (mapped.maxSpend !== undefined && mapped.budgetLimit === undefined) {
+    const amount = parseFloat(mapped.maxSpend);
+    mapped.budgetLimit = isNaN(amount) ? mapped.maxSpend : formatCurrency(amount);
+  }
+
+  // Map expirationDate → expiryDate with UK date formatting (DD/MM/YYYY, HH:MM:SS in Europe/London)
+  if (mapped.expirationDate !== undefined && mapped.expiryDate === undefined) {
+    mapped.expiryDate = formatUKDate(mapped.expirationDate);
+  }
+
+  return mapped;
+}
 
 // =========================================================================
 // Cold Start Template Validation (AC-9.7)
@@ -302,8 +352,33 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
       // N7-4: Fetch and flatten lease record for enrichment
       // N7-5: Track enrichment timing for performance monitoring
       const detail = event.detail as Record<string, unknown>;
-      const userEmail = detail.userEmail || (detail.leaseId as Record<string, string>)?.userEmail;
-      const uuid = detail.uuid || (detail.leaseId as Record<string, string>)?.uuid;
+      const leaseId = detail.leaseId;
+
+      // ISB sends leaseId as string (UUID) or object { userEmail, uuid }
+      let userEmail: string | undefined;
+      let uuid: string | undefined;
+
+      if (typeof leaseId === 'string') {
+        // Current ISB format: leaseId is the UUID string
+        uuid = leaseId;
+        userEmail = (detail.userEmail || detail.principalEmail) as string | undefined;
+      } else if (leaseId && typeof leaseId === 'object') {
+        // Legacy format: leaseId is object { userEmail, uuid }
+        const leaseIdObj = leaseId as { userEmail?: string; uuid?: string };
+        uuid = leaseIdObj.uuid;
+        userEmail = leaseIdObj.userEmail || (detail.userEmail as string | undefined);
+      } else {
+        // Fallback: try top-level fields
+        userEmail = detail.userEmail as string | undefined;
+        uuid = detail.uuid as string | undefined;
+      }
+
+      logger.debug('Extracting lease key for enrichment', {
+        eventId,
+        leaseIdType: typeof leaseId,
+        hasUserEmail: !!userEmail,
+        hasUuid: !!uuid,
+      });
 
       let enrichedData: Record<string, string> = {};
       let enrichmentStatus: 'success' | 'failed' | 'skipped' = 'skipped';
@@ -409,10 +484,13 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
         stringifiedPersonalisation[key] = String(value);
       }
 
+      // Map DynamoDB field names to template field names (e.g., awsAccountId → accountId)
+      const mappedEnrichedData = mapEnrichedFieldsToTemplateNames(enrichedData);
+
       // N7-4 AC-5: Add keys parameter listing all available fields
       const enrichedPersonalisation = addKeysParameter({
         ...stringifiedPersonalisation,
-        ...enrichedData,
+        ...mappedEnrichedData,
       }, eventId);
 
       // Extract user email from event detail

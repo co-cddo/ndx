@@ -211,16 +211,17 @@ export const MONITORING_ALERT_EVENTS: NotificationEventType[] = [
 export const DEFAULT_TIMEZONE = 'Europe/London';
 
 /**
- * AC-5.8: Format currency amount with GBP symbol
- * Returns £X.XX with thousands separator
+ * AC-5.8: Format currency amount with USD symbol
+ * Returns $X.XX with thousands separator
+ * Note: AWS costs are in USD
  *
- * @example formatCurrency(1234.56) => "£1,234.56"
- * @example formatCurrency(0.99) => "£0.99"
+ * @example formatCurrency(1234.56) => "$1,234.56"
+ * @example formatCurrency(0.99) => "$0.99"
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'GBP',
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);

@@ -277,4 +277,6 @@ describe('NDX Notification Handler', () => {
       expect(error.severity).toBe('high');
     });
   });
+
+  // Note: Field Name Mapping tests are in field-mapping.test.ts
 });

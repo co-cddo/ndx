@@ -1030,27 +1030,28 @@ describe('Monitoring Alert Template Registry', () => {
 
 describe('Formatting Utilities', () => {
   describe('formatCurrency', () => {
-    test('AC-5.8: Formats currency with GBP symbol (£)', () => {
-      expect(formatCurrency(123.45)).toBe('£123.45');
+    // Note: formatCurrency uses USD ($) as AWS costs are in USD
+    test('AC-5.8: Formats currency with USD symbol ($)', () => {
+      expect(formatCurrency(123.45)).toBe('$123.45');
     });
 
     test('AC-5.8: Formats with two decimal places', () => {
-      expect(formatCurrency(0.99)).toBe('£0.99');
-      expect(formatCurrency(100)).toBe('£100.00');
+      expect(formatCurrency(0.99)).toBe('$0.99');
+      expect(formatCurrency(100)).toBe('$100.00');
     });
 
     test('AC-5.8: Includes thousands separator', () => {
-      expect(formatCurrency(1234.56)).toBe('£1,234.56');
-      expect(formatCurrency(1000000)).toBe('£1,000,000.00');
+      expect(formatCurrency(1234.56)).toBe('$1,234.56');
+      expect(formatCurrency(1000000)).toBe('$1,000,000.00');
     });
 
     test('AC-5.8: Handles zero correctly', () => {
-      expect(formatCurrency(0)).toBe('£0.00');
+      expect(formatCurrency(0)).toBe('$0.00');
     });
 
     test('AC-5.8: Rounds to two decimal places', () => {
-      expect(formatCurrency(123.456)).toBe('£123.46');
-      expect(formatCurrency(99.999)).toBe('£100.00');
+      expect(formatCurrency(123.456)).toBe('$123.46');
+      expect(formatCurrency(99.999)).toBe('$100.00');
     });
   });
 

@@ -162,7 +162,8 @@ jobs:
     name: CDK Deploy
     runs-on: ubuntu-latest
     needs: [infra-unit-tests] # E2E tests temporarily disabled
-    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }} # Change to 'main' after testing
+    # Temporarily disabled - NdxGitHubActions stack needs manual deployment first to create OIDC roles
+    if: false # ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }} # Change to 'main' after testing
     permissions:
       id-token: write
       contents: read

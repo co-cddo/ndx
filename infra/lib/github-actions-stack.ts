@@ -56,15 +56,20 @@ export class GitHubActionsStack extends cdk.Stack {
       githubProviderArn,
     )
 
-    // Trust policy condition for repository and branch
-    // Format: repo:<owner>/<repo>:ref:refs/heads/<branch>
-    const repoCondition = `repo:${github.owner}/${github.repo}:ref:refs/heads/${github.branch}`
+    // Trust policy conditions for repository
+    // Two formats supported:
+    // 1. Branch-based: repo:<owner>/<repo>:ref:refs/heads/<branch>
+    // 2. Environment-based: repo:<owner>/<repo>:environment:<env_name>
+    const branchCondition = `repo:${github.owner}/${github.repo}:ref:refs/heads/${github.branch}`
+    const productionEnvCondition = `repo:${github.owner}/${github.repo}:environment:production`
+    const infrastructureEnvCondition = `repo:${github.owner}/${github.repo}:environment:infrastructure`
 
     // =========================================================================
     // Role 1: Content Deploy Role (minimal permissions)
     // =========================================================================
     // Used for: S3 sync, CloudFront invalidation
     // Trigger: Push to branch when NON-infra files change
+    // Environment: production
 
     const contentRole = new iam.Role(this, "ContentDeployRole", {
       roleName: "GitHubActions-NDX-ContentDeploy",
@@ -77,7 +82,7 @@ export class GitHubActionsStack extends cdk.Stack {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           },
           StringLike: {
-            "token.actions.githubusercontent.com:sub": repoCondition,
+            "token.actions.githubusercontent.com:sub": [branchCondition, productionEnvCondition],
           },
         },
         "sts:AssumeRoleWithWebIdentity",
@@ -112,6 +117,7 @@ export class GitHubActionsStack extends cdk.Stack {
     // =========================================================================
     // Used for: cdk deploy, cdk diff
     // Trigger: Push to branch when infra/** files change
+    // Environment: infrastructure
 
     const infraRole = new iam.Role(this, "InfraDeployRole", {
       roleName: "GitHubActions-NDX-InfraDeploy",
@@ -124,7 +130,7 @@ export class GitHubActionsStack extends cdk.Stack {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           },
           StringLike: {
-            "token.actions.githubusercontent.com:sub": repoCondition,
+            "token.actions.githubusercontent.com:sub": [branchCondition, infrastructureEnvCondition],
           },
         },
         "sts:AssumeRoleWithWebIdentity",

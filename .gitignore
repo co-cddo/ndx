@@ -16,7 +16,10 @@ _site
 
 # remote images
 .cache/
+# Generated CSS (from sass)
 *.css
+# But not handwritten CSS in try module
+!src/try/ui/styles/*.css
 .yarn
 .scratchpad.md
 .claude

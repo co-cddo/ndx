@@ -8,6 +8,7 @@
 // Also handles URI rewriting for S3 compatibility:
 // - Trailing slash URIs get /index.html appended
 // - URIs without file extension get /index.html appended
+import cf from 'cloudfront';
 
 function handler(event) {
   var request = event.request
@@ -31,14 +32,9 @@ function handler(event) {
   }
 
   // Default: route to ndx-static-prod with OAC authentication
-  request.origin = {
-    s3: {
-      domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
-      region: "us-west-2",
-      authMethod: "origin-access-control",
-      originAccessControlId: "E3P8MA1G9Y5BYE",
-    },
-  }
+  cf.updateRequestOrigin({
+    domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+  });
 
   return request
 }

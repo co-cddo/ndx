@@ -25,26 +25,23 @@ interface CloudFrontEvent {
   request: CloudFrontRequest
 }
 
-interface CloudFrontS3Origin {
+interface UpdateOriginOptions {
   domainName: string
-  region: string
-  authMethod: string
-  originAccessControlId: string
 }
 
-interface CloudFrontOrigin {
-  s3: CloudFrontS3Origin
-}
+// Mock for cf.updateRequestOrigin - tracks calls
+let updateRequestOriginCalls: UpdateOriginOptions[] = []
 
-interface CloudFrontResponse extends CloudFrontRequest {
-  origin?: CloudFrontOrigin
+const mockCf = {
+  updateRequestOrigin: (options: UpdateOriginOptions) => {
+    updateRequestOriginCalls.push(options)
+  },
 }
 
 // Mock the CloudFront function handler with proper types
-// The actual CloudFront function uses the cloudfront module, but for testing
-// we need a simplified version that returns the expected structure
+// Simulates the actual CloudFront function behavior using cf.updateRequestOrigin
 function createMockHandler() {
-  return function handler(event: CloudFrontEvent): CloudFrontResponse {
+  return function handler(event: CloudFrontEvent): CloudFrontRequest {
     const request = { ...event.request }
     const cookies = request.cookies || {}
     const uri = request.uri
@@ -66,23 +63,22 @@ function createMockHandler() {
     }
 
     // Default: route to ndx-static-prod with OAC authentication
-    return {
-      ...request,
-      origin: {
-        s3: {
-          domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
-          region: "us-west-2",
-          authMethod: "origin-access-control",
-          originAccessControlId: "E3P8MA1G9Y5BYE",
-        },
-      },
-    }
+    mockCf.updateRequestOrigin({
+      domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+    })
+
+    return request
   }
 }
 
 const handler = createMockHandler()
 
 describe("CloudFront Cookie Router", () => {
+  beforeEach(() => {
+    // Reset mock calls before each test
+    updateRequestOriginCalls = []
+  })
+
   describe("Default routing to ndx-static-prod", () => {
     test("routes to ndx-static-prod by default (no cookies)", () => {
       const event: CloudFrontEvent = {
@@ -92,13 +88,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
-      expect(result.origin?.s3.region).toBe("us-west-2")
-      expect(result.origin?.s3.authMethod).toBe("origin-access-control")
-      expect(result.origin?.s3.originAccessControlId).toBe("E3P8MA1G9Y5BYE")
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
 
     test("routes to ndx-static-prod when NDX=true", () => {
@@ -111,10 +104,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
 
     test("routes to ndx-static-prod when NDX=false", () => {
@@ -127,10 +120,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
 
     test("routes to ndx-static-prod with multiple cookies", () => {
@@ -144,10 +137,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
   })
 
@@ -162,9 +155,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeUndefined()
+      // No origin update should be called for legacy
+      expect(updateRequestOriginCalls).toHaveLength(0)
     })
 
     test("uses legacy origin with NDX=legacy among multiple cookies", () => {
@@ -179,15 +173,17 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeUndefined()
+      expect(updateRequestOriginCalls).toHaveLength(0)
     })
 
     test('routes to new origin when NDX has non-"legacy" values', () => {
       const testValues = ["LEGACY", "Legacy", "old", "false", "true", ""]
 
       testValues.forEach((value) => {
+        updateRequestOriginCalls = [] // Reset for each iteration
+
         const event: CloudFrontEvent = {
           request: {
             uri: "/index.html",
@@ -197,9 +193,10 @@ describe("CloudFront Cookie Router", () => {
           },
         }
 
-        const result = handler(event)
-        expect(result.origin).toBeDefined()
-        expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+        handler(event)
+
+        expect(updateRequestOriginCalls).toHaveLength(1)
+        expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
       })
     })
   })
@@ -322,7 +319,7 @@ describe("CloudFront Cookie Router", () => {
       const result = handler(event)
 
       expect(result.uri).toBe("/About/index.html")
-      expect(result.origin).toBeUndefined()
+      expect(updateRequestOriginCalls).toHaveLength(0)
     })
 
     test("applies /index.html rewriting with legacy cookie", () => {
@@ -338,7 +335,7 @@ describe("CloudFront Cookie Router", () => {
       const result = handler(event)
 
       expect(result.uri).toBe("/try/index.html")
-      expect(result.origin).toBeUndefined()
+      expect(updateRequestOriginCalls).toHaveLength(0)
     })
   })
 
@@ -354,9 +351,9 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeUndefined()
+      expect(updateRequestOriginCalls).toHaveLength(0)
     })
 
     test("handles missing cookie header - routes to new origin", () => {
@@ -367,10 +364,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
 
     test("handles empty cookies object - routes to new origin", () => {
@@ -381,10 +378,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
 
     test("exact string matching for legacy cookie value", () => {
@@ -397,10 +394,11 @@ describe("CloudFront Cookie Router", () => {
           },
         },
       }
-      const result1 = handler(event1)
-      expect(result1.origin).toBeUndefined()
+      handler(event1)
+      expect(updateRequestOriginCalls).toHaveLength(0)
 
       // Case-sensitive - 'LEGACY' routes to new origin
+      updateRequestOriginCalls = []
       const event2: CloudFrontEvent = {
         request: {
           uri: "/index.html",
@@ -409,10 +407,11 @@ describe("CloudFront Cookie Router", () => {
           },
         },
       }
-      const result2 = handler(event2)
-      expect(result2.origin).toBeDefined()
+      handler(event2)
+      expect(updateRequestOriginCalls).toHaveLength(1)
 
       // Any other value routes to new origin
+      updateRequestOriginCalls = []
       const event3: CloudFrontEvent = {
         request: {
           uri: "/index.html",
@@ -421,8 +420,8 @@ describe("CloudFront Cookie Router", () => {
           },
         },
       }
-      const result3 = handler(event3)
-      expect(result3.origin).toBeDefined()
+      handler(event3)
+      expect(updateRequestOriginCalls).toHaveLength(1)
     })
   })
 
@@ -467,9 +466,9 @@ describe("CloudFront Cookie Router", () => {
       expect(result.headers).toBeDefined()
       expect(result.uri).toBe("/page.html")
       expect(result.method).toBe("GET")
-      // And new origin should be set
-      expect(result.origin).toBeDefined()
-      expect(result.origin?.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+      // Origin update should have been called
+      expect(updateRequestOriginCalls).toHaveLength(1)
+      expect(updateRequestOriginCalls[0].domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
     })
 
     test("does not modify origin when routing to legacy", () => {
@@ -482,10 +481,10 @@ describe("CloudFront Cookie Router", () => {
         },
       }
 
-      const result = handler(event)
+      handler(event)
 
       // Request should be returned without origin modification
-      expect(result.origin).toBeUndefined()
+      expect(updateRequestOriginCalls).toHaveLength(0)
     })
   })
 })

@@ -6,11 +6,19 @@ import {
   deduplicatedRequest,
   clearInFlightRequests,
   isRequestInProgress,
+  stopCleanupTimer,
 } from './request-dedup';
 
 describe('request-dedup', () => {
   beforeEach(() => {
     clearInFlightRequests();
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    clearInFlightRequests();
+    stopCleanupTimer();
+    jest.restoreAllMocks();
   });
 
   describe('deduplicatedRequest', () => {
@@ -163,6 +171,34 @@ describe('request-dedup', () => {
       // Resolve original promise to avoid hanging test
       resolvePromise!('done');
       await promise;
+    });
+  });
+
+  describe('memory management', () => {
+    it('should warn and clear oldest entries when max tracked requests reached', async () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      // Create 100 pending requests to hit the limit
+      const resolvers: Array<(value: string) => void> = [];
+      for (let i = 0; i < 100; i++) {
+        deduplicatedRequest(`key-${i}`, () => new Promise(resolve => {
+          resolvers.push(resolve);
+        }));
+      }
+
+      // The 101st request should trigger cleanup
+      const extraPromise = deduplicatedRequest('extra-key', () => Promise.resolve('extra'));
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[request-dedup] Max tracked requests reached, clearing oldest entries'
+      );
+
+      // New request should still work
+      const result = await extraPromise;
+      expect(result).toBe('extra');
+
+      // Clean up pending promises
+      resolvers.forEach(resolve => resolve('done'));
     });
   });
 });

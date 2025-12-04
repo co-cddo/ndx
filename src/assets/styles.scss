@@ -187,11 +187,52 @@ $_font-family: system-ui, sans-serif;
     border-radius: 50%;
     animation: aup-spin 1s linear infinite;
   }
+
+  // Story 9.2: Session terms container
+  &__session-terms {
+    min-height: 48px; // Prevent layout shift during loading
+  }
+
+  // Story 9.2: Loading skeleton for session terms
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__skeleton-line {
+    height: 20px;
+    width: 60%;
+    background: linear-gradient(90deg, #e0e0e0 0%, #f0f0f0 50%, #e0e0e0 100%);
+    background-size: 200% 100%;
+    animation: aup-skeleton-pulse 1.5s ease-in-out infinite;
+    border-radius: 4px;
+
+    &:last-child {
+      width: 50%;
+    }
+  }
+
+  // Story 9.2: Error styling for unknown values
+  &__value--error {
+    color: #d4351c;
+    font-weight: 700;
+  }
 }
 
 @keyframes aup-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+// Story 9.2: Skeleton pulse animation
+@keyframes aup-skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 

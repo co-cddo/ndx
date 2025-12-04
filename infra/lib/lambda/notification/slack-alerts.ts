@@ -99,6 +99,7 @@ interface AccountDriftDetectedDetail {
  */
 interface LeaseRequestedDetail {
   leaseId: string | { userEmail: string; uuid: string };
+  principalEmail?: string;
   accountId?: string;
   requestedAt?: string;
   requestTime?: string;
@@ -106,6 +107,10 @@ interface LeaseRequestedDetail {
   budgetLimit?: number;
   duration?: number;
   leaseDurationInHours?: number;
+  leaseTemplateName?: string;
+  templateName?: string;
+  leaseTemplateId?: string;
+  templateId?: string;
 }
 
 /**
@@ -114,12 +119,17 @@ interface LeaseRequestedDetail {
  */
 interface LeaseApprovedDetail {
   leaseId: string | { userEmail: string; uuid: string };
+  principalEmail?: string;
   accountId?: string;
   approvedAt?: string;
   budget?: number;
   maxSpend?: number;
   expiresAt?: string;
   expirationDate?: string;
+  leaseTemplateName?: string;
+  templateName?: string;
+  leaseTemplateId?: string;
+  templateId?: string;
 }
 
 /**
@@ -128,8 +138,13 @@ interface LeaseApprovedDetail {
  */
 interface LeaseDeniedDetail {
   leaseId: string | { userEmail: string; uuid: string };
+  principalEmail?: string;
   deniedAt?: string;
   reason?: string;
+  leaseTemplateName?: string;
+  templateName?: string;
+  leaseTemplateId?: string;
+  templateId?: string;
 }
 
 /**
@@ -138,9 +153,14 @@ interface LeaseDeniedDetail {
  */
 interface LeaseTerminatedDetail {
   leaseId: string | { userEmail: string; uuid: string };
+  principalEmail?: string;
   accountId?: string;
   terminatedAt?: string;
   reason?: string | { type: string };
+  leaseTemplateName?: string;
+  templateName?: string;
+  leaseTemplateId?: string;
+  templateId?: string;
 }
 
 /**
@@ -161,12 +181,21 @@ type SlackAlertDetail =
 // =============================================================================
 
 /**
- * Format AccountQuarantined event for Slack (n6-3)
+ * Format AccountQuarantined event for Slack notification.
  *
- * AC-3.1: Header with "Account Quarantine Alert"
- * AC-3.2: Reason included in section
- * AC-3.3: AWS Account ID as bold field
- * AC-3.4: Timestamp in context block
+ * Creates a critical priority Slack alert when an AWS account is quarantined
+ * due to security concerns. Includes escalation guidance and runbook links.
+ *
+ * Story: N6.3 - Account Quarantine Alert
+ *
+ * @param event - Validated EventBridge event containing quarantine details
+ * @returns SlackSendParams configured for quarantine alert
+ *
+ * @example
+ * // Event detail structure expected:
+ * // { accountId: '123456789012', reason: 'Policy violation', quarantinedAt: '2024-01-15T10:30:00Z' }
+ *
+ * @see {@link SLACK_TEMPLATES.AccountQuarantined} for template configuration
  */
 function formatQuarantineAlert(
   event: ValidatedEvent<AccountQuarantinedDetail>
@@ -186,18 +215,31 @@ function formatQuarantineAlert(
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: 'N/A',
+    templateId: 'N/A',
   };
 }
 
 /**
- * Format LeaseFrozen event for Slack (n6-4)
+ * Format LeaseFrozen event for Slack notification.
  *
- * AC-4.1: Header with "Account Frozen Alert"
- * AC-4.2: Reason type in plain English
- * AC-4.3: Account ID and user email for visibility
- * AC-4.4: Budget details for BudgetExceeded
- * AC-4.5: Duration details for Expired
- * AC-4.6: Comment for ManuallyFrozen
+ * Creates a normal priority Slack alert when a lease is frozen due to
+ * budget exceeded, expiration, or manual admin action. Includes user email
+ * for ops visibility and reason-specific details.
+ *
+ * Story: N6.4 - Account Frozen Alert
+ *
+ * @param event - Validated EventBridge event containing freeze details
+ * @returns SlackSendParams configured for frozen alert with reason-specific fields
+ *
+ * @example
+ * // Event detail structure expected:
+ * // { leaseId: { userEmail: 'user@gov.uk', uuid: 'lease-123' },
+ * //   accountId: '123456789012',
+ * //   reason: { type: 'BudgetExceeded', currentSpend: 450, budget: 500 },
+ * //   frozenAt: '2024-01-15T10:30:00Z' }
+ *
+ * @see {@link formatFreezeReason} for reason-specific detail formatting
  */
 function formatFrozenAlert(
   event: ValidatedEvent<LeaseFrozenDetail>
@@ -221,6 +263,8 @@ function formatFrozenAlert(
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: 'N/A',
+    templateId: 'N/A',
   };
 }
 
@@ -257,13 +301,24 @@ function formatFreezeReason(reason: LeaseFrozenDetail['reason']): Record<string,
 }
 
 /**
- * Format AccountCleanupFailed event for Slack (n6-5)
+ * Format AccountCleanupFailed event for Slack notification.
  *
- * AC-5.1: Header with "Account Cleanup Failure Alert"
- * AC-5.2: Account ID in section
- * AC-5.3: Step Functions execution link
- * AC-5.4: Error message if available
- * AC-5.5: Start time of cleanup attempt
+ * Creates a critical priority Slack alert when account cleanup automation fails.
+ * Includes a direct link to the Step Functions execution for debugging.
+ * Requires immediate ops intervention to manually clean up resources.
+ *
+ * Story: N6.5 - Account Cleanup Failure Alert
+ *
+ * @param event - Validated EventBridge event containing cleanup failure details
+ * @returns SlackSendParams configured for cleanup failure alert
+ *
+ * @example
+ * // Event detail structure expected:
+ * // { accountId: '123456789012',
+ * //   cleanupExecutionContext: { executionArn: 'arn:aws:states:...', startTime: '2024-01-15T10:30:00Z' },
+ * //   errorMessage: 'Resource deletion failed' }
+ *
+ * @see {@link buildStepFunctionsLink} for execution URL generation
  */
 function formatCleanupFailedAlert(
   event: ValidatedEvent<AccountCleanupFailedDetail>
@@ -301,17 +356,26 @@ function formatCleanupFailedAlert(
     },
     eventId: event.eventId,
     actionLinks,
+    template: 'N/A',
+    templateId: 'N/A',
   };
 }
 
 /**
- * Format AccountDriftDetected event for Slack (n6-6)
+ * Format AccountDriftDetected event for Slack notification.
  *
- * AC-6.1: Header with "Account Drift Detection Alert"
- * AC-6.2: Account ID in section
- * AC-6.3: Critical priority (red)
- * AC-6.4: Expected vs Actual OU
- * AC-6.5: Remediation guidance
+ * Creates a critical priority Slack alert when an AWS account is detected
+ * in an unexpected Organizational Unit. Includes expected vs actual OU
+ * for quick diagnosis and remediation.
+ *
+ * Story: N6.6 - Account Drift Detection Alert
+ *
+ * @param event - Validated EventBridge event containing drift details
+ * @returns SlackSendParams configured for drift detection alert
+ *
+ * @example
+ * // Event detail structure expected:
+ * // { accountId: '123456789012', expectedOU: 'ou-sandbox', actualOU: 'ou-production' }
  */
 function formatDriftAlert(
   event: ValidatedEvent<AccountDriftDetectedDetail>
@@ -332,6 +396,8 @@ function formatDriftAlert(
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: 'N/A',
+    templateId: 'N/A',
   };
 }
 
@@ -360,7 +426,19 @@ function extractUserEmail(leaseId: string | { userEmail?: string; uuid?: string 
 }
 
 /**
- * Format LeaseRequested event for Slack
+ * Format LeaseRequested event for Slack notification.
+ *
+ * Creates a normal priority Slack alert when a user submits a new sandbox request.
+ * Includes user email, template name, budget, and duration for ops visibility.
+ *
+ * @param event - Validated EventBridge event containing lease request details
+ * @returns SlackSendParams configured for lease requested alert
+ *
+ * @example
+ * // Event detail structure expected:
+ * // { leaseId: { userEmail: 'user@gov.uk', uuid: 'lease-123' },
+ * //   accountId: 'Pending', budget: 500, duration: 720,
+ * //   leaseTemplateName: 'Standard Sandbox', leaseTemplateId: 'template-uuid' }
  */
 function formatLeaseRequestedAlert(
   event: ValidatedEvent<LeaseRequestedDetail>
@@ -371,13 +449,16 @@ function formatLeaseRequestedAlert(
   const duration = detail.duration || detail.leaseDurationInHours;
   const requestedAt = detail.requestedAt || detail.requestTime;
   const userEmail = extractUserEmail(detail.leaseId);
+  const templateName = detail.leaseTemplateName || detail.templateName;
+  const templateId = detail.leaseTemplateId || detail.templateId;
 
   return {
     alertType: 'LeaseRequested',
     accountId: detail.accountId || 'Pending',
     priority: template.priority,
     details: {
-      User: userEmail || 'Unknown',
+      User: userEmail || detail.principalEmail || 'Unknown',
+      Template: templateName || 'Standard Sandbox',
       'Lease ID': extractLeaseId(detail.leaseId),
       'Requested At': requestedAt ? formatTimestamp(requestedAt) : 'Unknown',
       Budget: budget ? `$${budget}` : 'Not specified',
@@ -385,11 +466,19 @@ function formatLeaseRequestedAlert(
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: templateName,
+    templateId: templateId,
   };
 }
 
 /**
- * Format LeaseApproved event for Slack
+ * Format LeaseApproved event for Slack notification.
+ *
+ * Creates a normal priority Slack alert when a sandbox request is approved.
+ * Includes user email, account ID, budget, and expiration date.
+ *
+ * @param event - Validated EventBridge event containing lease approval details
+ * @returns SlackSendParams configured for lease approved alert
  */
 function formatLeaseApprovedAlert(
   event: ValidatedEvent<LeaseApprovedDetail>
@@ -399,13 +488,16 @@ function formatLeaseApprovedAlert(
   const budget = detail.budget || detail.maxSpend;
   const expires = detail.expiresAt || detail.expirationDate;
   const userEmail = extractUserEmail(detail.leaseId);
+  const templateName = detail.leaseTemplateName || detail.templateName;
+  const templateId = detail.leaseTemplateId || detail.templateId;
 
   return {
     alertType: 'LeaseApproved',
     accountId: detail.accountId || 'Unknown',
     priority: template.priority,
     details: {
-      User: userEmail || 'Unknown',
+      User: userEmail || detail.principalEmail || 'Unknown',
+      Template: templateName || 'Standard Sandbox',
       'Lease ID': extractLeaseId(detail.leaseId),
       'Approved At': detail.approvedAt ? formatTimestamp(detail.approvedAt) : 'Unknown',
       Budget: budget ? `$${budget}` : 'Not specified',
@@ -413,11 +505,19 @@ function formatLeaseApprovedAlert(
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: templateName,
+    templateId: templateId,
   };
 }
 
 /**
- * Format LeaseDenied event for Slack
+ * Format LeaseDenied event for Slack notification.
+ *
+ * Creates a normal priority Slack alert when a sandbox request is denied.
+ * Includes user email and denial reason for ops awareness.
+ *
+ * @param event - Validated EventBridge event containing lease denial details
+ * @returns SlackSendParams configured for lease denied alert
  */
 function formatLeaseDeniedAlert(
   event: ValidatedEvent<LeaseDeniedDetail>
@@ -425,24 +525,34 @@ function formatLeaseDeniedAlert(
   const template = SLACK_TEMPLATES.LeaseDenied;
   const detail = event.detail;
   const userEmail = extractUserEmail(detail.leaseId);
+  const templateName = detail.leaseTemplateName || detail.templateName;
+  const templateId = detail.leaseTemplateId || detail.templateId;
 
   return {
     alertType: 'LeaseDenied',
     accountId: 'N/A',
     priority: template.priority,
     details: {
-      User: userEmail || 'Unknown',
+      User: userEmail || detail.principalEmail || 'Unknown',
       'Lease ID': extractLeaseId(detail.leaseId),
       'Denied At': detail.deniedAt ? formatTimestamp(detail.deniedAt) : 'Unknown',
       Reason: detail.reason || 'Not provided',
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: templateName,
+    templateId: templateId,
   };
 }
 
 /**
- * Format LeaseTerminated event for Slack
+ * Format LeaseTerminated event for Slack notification.
+ *
+ * Creates a normal priority Slack alert when a sandbox lease is terminated.
+ * Includes user email, account ID, and termination reason.
+ *
+ * @param event - Validated EventBridge event containing lease termination details
+ * @returns SlackSendParams configured for lease terminated alert
  */
 function formatLeaseTerminatedAlert(
   event: ValidatedEvent<LeaseTerminatedDetail>
@@ -451,19 +561,23 @@ function formatLeaseTerminatedAlert(
   const detail = event.detail;
   const reason = typeof detail.reason === 'object' ? detail.reason.type : (detail.reason || 'User or admin initiated');
   const userEmail = extractUserEmail(detail.leaseId);
+  const templateName = detail.leaseTemplateName || detail.templateName;
+  const templateId = detail.leaseTemplateId || detail.templateId;
 
   return {
     alertType: 'LeaseTerminated',
     accountId: detail.accountId || 'Unknown',
     priority: template.priority,
     details: {
-      User: userEmail || 'Unknown',
+      User: userEmail || detail.principalEmail || 'Unknown',
       'Lease ID': extractLeaseId(detail.leaseId),
       'Terminated At': detail.terminatedAt ? formatTimestamp(detail.terminatedAt) : 'Unknown',
       Reason: reason,
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
+    template: templateName,
+    templateId: templateId,
   };
 }
 

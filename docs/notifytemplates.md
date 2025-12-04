@@ -16,9 +16,10 @@ Thank you for submitting your request for a [((templateName))](https://ndx.digit
 
 We've received your request and it's now in our queue for review. You'll receive another email once an administrator has reviewed your request - this usually happens within one working day.
 
-**Request details:**
-- Template: [((templateName))](https://ndx.digital.cabinet-office.gov.uk/try/((leaseTemplateId)))
-- Submitted: ((requestTime))
+# Request details
+
+* template: [((templateName))](https://ndx.digital.cabinet-office.gov.uk/try/((leaseTemplateId)))
+* submitted: ((requestTime))
 
 While you wait, you might find it helpful to review our documentation on getting started with NDX:Try sessions.
 
@@ -40,22 +41,25 @@ Hi ((userName)),
 
 Excellent news - your [((templateName))](https://ndx.digital.cabinet-office.gov.uk/try/((leaseTemplateId))) NDX:Try session request has been approved and your environment is ready to use!
 
-**Your session details:**
-- AWS Account ID: ((accountId))
-- Budget limit: ((budgetLimit))
-- Expires: ((expiryDate))
+# Your session details
 
-**How to access your session:**
-1. Visit the AWS SSO portal: ((ssoUrl))
-2. Sign in with your government credentials
-3. Select your NDX:Try account from the list
+* AWS account ID: ((accountId))
+* budget limit: ((budgetLimit))
+* expires: ((expiryDate))
+
+# How to access your session
+
+1. Visit the AWS SSO portal: ((ssoUrl)).
+2. Sign in with your government credentials.
+3. Select your NDX:Try account from the list.
 
 ((portalLink))
 
-**Important things to know:**
-- Your session will automatically expire on the date shown above
-- We'll send you reminders as you approach your budget limit or expiry date
-- All resources will be cleaned up when your session ends, so remember to save any work you need to keep
+# Important things to know
+
+* your session will automatically expire on the date shown above
+* we'll send you reminders as you approach your budget limit or expiry date
+* all resources will be cleaned up when your session ends, so remember to save any work you need to keep
 
 Need more budget for your project? You can request an increase here:
 ((budgetActionLink))
@@ -84,14 +88,15 @@ Hi ((userName)),
 
 Thank you for your interest in the NDX:Try AWS Session. Unfortunately, we weren't able to approve your request for a [((templateName))](https://ndx.digital.cabinet-office.gov.uk/try/((leaseTemplateId))) NDX:Try session at this time.
 
-**Reason:** ((reason))
+Reason: ((reason))
 
-**Reviewed by:** ((deniedBy))
+Reviewed by: ((deniedBy))
 
-**What you can do next:**
-- If you believe this decision was made in error, please reply to this email with more details about your use case
-- You can submit a new request at any time if your circumstances change
-- Contact your line manager to discuss your NDX:Try session requirements
+# What you can do next
+
+* if you believe this decision was made in error, please reply to this email with more details about your use case
+* you can submit a new request at any time if your circumstances change
+* contact your line manager to discuss your NDX:Try session requirements
 
 We know this isn't the news you were hoping for, and we're sorry we couldn't accommodate your request on this occasion.
 
@@ -117,19 +122,22 @@ Hi ((userName)),
 
 Your NDX:Try AWS Session has now ended and your session has been terminated.
 
-**Summary:**
-- Account ID: ((accountId))
-- Reason: ((reason))
-- Final cost: ((finalCost))
+# Summary
+
+* account ID: ((accountId))
+* reason: ((reason))
+* final cost: ((finalCost))
 
 All resources in your AWS account have been cleaned up as part of our standard process.
 
-**Need another NDX:Try session?**
+# Need another NDX:Try session?
+
 If you'd like to continue your work, you can request a new session at any time through the NDX:Try AWS Session portal. Your new request will go through the standard approval process.
 
 ((portalLink))
 
-**Feedback welcome:**
+# Feedback welcome
+
 We'd love to hear about your experience using the NDX:Try AWS Session. What worked well? What could we improve? Please share your thoughts with us at ndx@dsit.gov.uk or on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack.
 
 Thank you for using the NDX:Try AWS Session!
@@ -154,18 +162,21 @@ Hi ((userName)),
 
 This is a friendly heads-up that your NDX:Try AWS Session is approaching its budget limit.
 
-**Current status:**
-- Spent so far: ((currentSpend))
-- Budget limit: ((budgetLimit))
-- Percentage used: ((percentUsed))
+# Current status
 
-**What this means:**
+* spent so far: ((currentSpend))
+* budget limit: ((budgetLimit))
+* percentage used: ((percentUsed))
+
+# What this means
+
 Your session will continue to work normally, but if spending reaches 100% of your budget, your session will be terminated and all data will be lost.
 
-**What you can do:**
-1. **Save your work now** - Download any code, data, or configurations you need to keep
-2. **Review your resources** - Check if there are any unused resources you can delete to reduce spend
-3. **Request more budget** - If you need additional funds for your project, you can request an increase
+# What you can do
+
+1. Save your work now - download any code, data, or configurations you need to keep.
+2. Review your resources - check if there are any unused resources you can delete to reduce spend.
+3. Request more budget - if you need additional funds for your project, you can request an increase.
 
 ((portalLink))
 
@@ -190,20 +201,24 @@ Hi ((userName)),
 
 This is a friendly reminder that your NDX:Try AWS Session is expiring soon.
 
-**Time remaining:** ((hoursRemaining)) hours
-**Expires at:** ((expiryDate)) (((timezone)))
+Time remaining: ((hoursRemaining)) hours
 
-**What happens when your session expires:**
-- Your session will be terminated and you'll lose access immediately
-- All resources in your account will be permanently deleted
-- Any data not saved elsewhere will be lost forever
+Expires at: ((expiryDate)) (((timezone)))
 
-**Before your session expires, please:**
-1. **Save your work** - Download any code, data, or configurations you need to keep
-2. **Document your findings** - Make notes about what you learned or built
-3. **Clean up sensitive data** - Remove any test data or credentials
+# What happens when your session expires
 
-**Need more time?**
+* your session will be terminated and you'll lose access immediately
+* all resources in your account will be permanently deleted
+* any data not saved elsewhere will be lost forever
+
+# Before your session expires
+
+1. Save your work - download any code, data, or configurations you need to keep.
+2. Document your findings - make notes about what you learned or built.
+3. Clean up sensitive data - remove any test data or credentials.
+
+# Need more time?
+
 If you need to extend your NDX:Try session, please submit a new request through the portal. Requests are typically reviewed within one working day.
 
 ((portalLink))
@@ -226,16 +241,19 @@ Hi ((userName)),
 
 This is an urgent notification that your NDX:Try AWS Session is about to be terminated.
 
-**Reason:** ((reason))
-**Termination time:** ((freezeTime))
+Reason: ((reason))
 
-**What does this mean?**
+Termination time: ((freezeTime))
+
+# What does this mean?
+
 When your session is terminated, you will permanently lose access to AWS resources and all data will be deleted. This cannot be undone.
 
-**What you should do right now:**
-1. **Save any critical work immediately** - Download or commit any unsaved changes
-2. **Export any data you need** - All data will be permanently lost
-3. **Contact us if you need help** - We're here to assist
+# What you should do right now
+
+1. Save any critical work immediately - download or commit any unsaved changes.
+2. Export any data you need - all data will be permanently lost.
+3. Contact us if you need help - we're here to assist.
 
 ((portalLink))
 
@@ -257,20 +275,24 @@ Hi ((userName)),
 
 Your NDX:Try AWS Session has been terminated because your spending exceeded the budget limit.
 
-**Details:**
-- Final spend: ((finalSpend))
-- Budget limit: ((budgetLimit))
+# Details
 
-**What does this mean?**
+* final spend: ((finalSpend))
+* budget limit: ((budgetLimit))
+
+# What does this mean?
+
 Your session has been permanently terminated and all resources have been deleted. Any data not saved elsewhere has been lost.
 
-**What happens next:**
-1. **Request a new NDX:Try session** - You can request a new session at any time through the portal
-2. **Plan your budget** - Consider requesting a higher budget limit for your next session
+# What happens next
+
+1. Request a new NDX:Try session - you can request a new session at any time through the portal.
+2. Plan your budget - consider requesting a higher budget limit for your next session.
 
 ((portalLink))
 
-**Need help?**
+# Need help?
+
 If you have questions about your spending or need assistance, please email us at ndx@dsit.gov.uk or reach out on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack - we're happy to help.
 
 Kind regards,
@@ -292,19 +314,23 @@ Hi ((userName)),
 
 Your NDX:Try AWS Session has now expired.
 
-**Details:**
-- Account ID: ((accountId))
-- Expired at: ((expiryTime))
+# Details
 
-**What happens now:**
+* account ID: ((accountId))
+* expired at: ((expiryTime))
+
+# What happens now
+
 Your session environment will be cleaned up and all resources will be removed. This is part of our standard process to keep the platform running efficiently.
 
-**Ready for another NDX:Try session?**
+# Ready for another NDX:Try session?
+
 If you'd like to continue experimenting, you can request a new session at any time. Simply visit the portal and submit a new request - it's the same process as before.
 
 ((portalLink))
 
-**We'd love your feedback:**
+# We'd love your feedback
+
 How was your NDX:Try AWS Session experience? Your feedback helps us improve the service for everyone. Please share your thoughts at ndx@dsit.gov.uk or on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack.
 
 Thank you for using the NDX:Try AWS Session. We hope it was useful for your work!
@@ -325,22 +351,27 @@ Hi ((userName)),
 
 Your NDX:Try AWS Session has been terminated.
 
-**Details:**
-- Account ID: ((accountId))
-- Reason: ((reason))
+# Details
 
-**What does this mean?**
+* account ID: ((accountId))
+* reason: ((reason))
+
+# What does this mean?
+
 Your session has been permanently terminated and all resources have been deleted. Any data not saved elsewhere has been lost.
 
-**What you can do next:**
+# What you can do next
+
 ((resumeInstructions))
 
-**Ready for a new NDX:Try session?**
+# Ready for a new NDX:Try session?
+
 You can request a new session at any time through the portal. Your new request will go through the standard approval process.
 
 ((portalLink))
 
-**Questions or concerns?**
+# Questions or concerns?
+
 If you're unsure why your session was terminated, or if you need help, please contact us at ndx@dsit.gov.uk or on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack - we're here to help.
 
 Kind regards,
@@ -381,30 +412,55 @@ aws secretsmanager update-secret \
 
 ## 3. Webhook Payload Format
 
-The Lambda sends this payload to your workflow:
+The Lambda sends a flat payload to your workflow with all fields at the top level:
 
+**Lease lifecycle events** (include template info):
 ```json
 {
-  "eventType": "AccountQuarantined",
-  "eventId": "abc-123-def",
-  "userEmail": "user@gov.uk",
-  "accountId": "123456789012",
-  "reason": "Policy violation detected",
-  "timestamp": "2025-12-02T14:30:00Z",
-  "allParams": "{ \"full\": \"event detail JSON\" }"
+  "alertType": "LeaseRequested",
+  "username": "NDX Notifications",
+  "accountid": "123456789012",
+  "priority": "NORMAL",
+  "template": "user research 0.0.1",
+  "template_id": "a3beced2-be4e-41a0-b6e2-735a73fffed7",
+  "user": "user@example.gov.uk",
+  "lease_id": "lease-123",
+  "requested_at": "2024-01-15 10:30:00 UTC",
+  "budget": "$500",
+  "duration": "720 hours"
 }
 ```
 
-## 4. Ops Alert Event Types
+**Account-level events** (template fields are 'N/A'):
+```json
+{
+  "alertType": "AccountQuarantined",
+  "username": "NDX Notifications",
+  "accountid": "123456789012",
+  "priority": "CRITICAL",
+  "template": "N/A",
+  "template_id": "N/A",
+  "reason": "Policy violation detected",
+  "quarantined_at": "2024-01-15 13:00:00 UTC",
+  "severity": "Critical",
+  "guidance": "Contact @ndx-ops for immediate assistance"
+}
+```
 
-These events trigger Slack notifications:
+## 4. Slack Alert Event Types
 
-| Event Type | Description |
-|------------|-------------|
-| `AccountQuarantined` | Account isolated due to security concern |
-| `AccountCleanupFailed` | Cleanup process failed, needs manual intervention |
-| `AccountDriftDetected` | Configuration drift detected |
-| `AccountFrozen` | Account frozen (budget/duration exceeded) |
+All 8 event types trigger Slack notifications:
+
+| Event Type | Description | template/template_id |
+|------------|-------------|---------------------|
+| `LeaseRequested` | New lease request submitted | From event |
+| `LeaseApproved` | Lease approved | From event |
+| `LeaseDenied` | Lease denied | From event |
+| `LeaseTerminated` | Lease terminated | From event |
+| `LeaseFrozen` | Account frozen (budget/duration exceeded) | N/A |
+| `AccountQuarantined` | Account isolated due to security concern | N/A |
+| `AccountCleanupFailed` | Cleanup process failed, needs manual intervention | N/A |
+| `AccountDriftDetected` | Configuration drift detected | N/A |
 
 ---
 

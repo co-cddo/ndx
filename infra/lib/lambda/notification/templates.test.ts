@@ -171,17 +171,17 @@ describe('Required Fields', () => {
   });
 
   describe('LeaseApproved', () => {
-    test('AC-4.3: LeaseApproved requires userName, accountId, ssoUrl, expiryDate', () => {
+    test('AC-4.3: LeaseApproved requires userName, accountId, expiryDate', () => {
       const config = NOTIFY_TEMPLATES.LeaseApproved;
       expect(config.requiredFields).toContain('userName');
       expect(config.requiredFields).toContain('accountId');
-      expect(config.requiredFields).toContain('ssoUrl');
       expect(config.requiredFields).toContain('expiryDate');
     });
 
-    test('AC-4.3: LeaseApproved has budgetLimit as optional field', () => {
+    test('AC-4.3: LeaseApproved has budgetLimit and ssoUrl as optional fields', () => {
       const config = NOTIFY_TEMPLATES.LeaseApproved;
       expect(config.optionalFields).toContain('budgetLimit');
+      expect(config.optionalFields).toContain('ssoUrl');
     });
   });
 
@@ -938,12 +938,16 @@ describe('Monitoring Alert Template Registry', () => {
       );
     });
 
-    test('AC-5.2: Template requires userName, hoursRemaining, expiryDate, timezone', () => {
+    test('AC-5.2: Template requires userName, hoursRemaining, expiryDate', () => {
       const config = NOTIFY_TEMPLATES.LeaseDurationThresholdAlert;
       expect(config.requiredFields).toContain('userName');
       expect(config.requiredFields).toContain('hoursRemaining');
       expect(config.requiredFields).toContain('expiryDate');
-      expect(config.requiredFields).toContain('timezone');
+    });
+
+    test('AC-5.2: Template has timezone as optional field', () => {
+      const config = NOTIFY_TEMPLATES.LeaseDurationThresholdAlert;
+      expect(config.optionalFields).toContain('timezone');
     });
   });
 

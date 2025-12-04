@@ -1,0 +1,164 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9</epicId>
+    <storyId>3</storyId>
+    <title>Gate Continue Button on All Data Loaded</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-02</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/9-3-gate-continue-button-on-all-data-loaded.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user interacting with the AUP modal</asA>
+    <iWant>the Continue button to remain disabled until all required data has loaded successfully</iWant>
+    <soThat>I cannot proceed without seeing the complete session terms and AUP content</soThat>
+    <tasks>
+      <task id="1" acs="3,6">Add aupLoaded state property
+        <subtask id="1.1">Add `aupLoaded: boolean` to AupModalState interface</subtask>
+        <subtask id="1.2">Initialize `aupLoaded: false` in state defaults</subtask>
+        <subtask id="1.3">Set `aupLoaded = true` on successful AUP fetch (not fallback)</subtask>
+        <subtask id="1.4">Reset `aupLoaded = false` on modal close</subtask>
+      </task>
+      <task id="2" acs="6">Add isFullyLoaded computed property
+        <subtask id="2.1">Add getter `get isFullyLoaded(): boolean` returning `aupLoaded &amp;&amp; leaseTemplateLoaded`</subtask>
+        <subtask id="2.2">Update getState() to include computed `isFullyLoaded` value</subtask>
+      </task>
+      <task id="3" acs="1,2,3,4,5,6,7">Update updateButtons() for all-or-nothing logic
+        <subtask id="3.1">Gate on `!this.isFullyLoaded` in shouldDisable calculation</subtask>
+        <subtask id="3.2">Show "Loading..." button text when `!this.isFullyLoaded`</subtask>
+        <subtask id="3.3">Maintain existing `!this.state.aupAccepted` check</subtask>
+        <subtask id="3.4">Maintain existing `this.state.isLoading` check for submission</subtask>
+        <subtask id="3.5">Ensure button re-disables on checkbox uncheck</subtask>
+      </task>
+      <task id="4" acs="8">Add ARIA announcements for button state
+        <subtask id="4.1">Announce when button becomes enabled ("Continue button is now enabled")</subtask>
+        <subtask id="4.2">Use existing `announce()` utility</subtask>
+      </task>
+      <task id="5" acs="9,10">Handle race conditions
+        <subtask id="5.1">Call `updateButtons()` after each state change</subtask>
+        <subtask id="5.2">Verify checkbox state preserved during loading</subtask>
+        <subtask id="5.3">Button enables immediately when last condition met</subtask>
+      </task>
+      <task id="6" acs="1-10">Write unit tests
+        <subtask id="6.1">Test button disabled during AUP loading</subtask>
+        <subtask id="6.2">Test button disabled during lease template loading</subtask>
+        <subtask id="6.3">Test button disabled when AUP fallback shown</subtask>
+        <subtask id="6.4">Test button disabled when lease template failed</subtask>
+        <subtask id="6.5">Test button disabled when checkbox unchecked</subtask>
+        <subtask id="6.6">Test button enabled only when all conditions met</subtask>
+        <subtask id="6.7">Test button re-disables on checkbox uncheck</subtask>
+        <subtask id="6.8">Test ARIA announcement on button enable</subtask>
+        <subtask id="6.9">Test race: checkbox before load complete</subtask>
+        <subtask id="6.10">Test race: load completes after checkbox</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1">Button disabled when AUP loading</criterion>
+    <criterion id="AC-2">Button disabled when lease template loading</criterion>
+    <criterion id="AC-3">Button disabled when AUP failed (fallback shown)</criterion>
+    <criterion id="AC-4">Button disabled when lease template failed</criterion>
+    <criterion id="AC-5">Button disabled when checkbox unchecked</criterion>
+    <criterion id="AC-6">Button enabled only when all three conditions met (isFullyLoaded &amp;&amp; aupAccepted)</criterion>
+    <criterion id="AC-7">Button re-disables if user unchecks checkbox</criterion>
+    <criterion id="AC-8">Screen reader announces button state changes</criterion>
+    <criterion id="AC-9">Race condition: checkbox checked while loading - button stays disabled</criterion>
+    <criterion id="AC-10">Race condition: template loads while checkbox checked - button enables</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-9.md" title="Epic 9 Tech Spec" section="Story 9.3, Button State Logic">
+        Tech spec defines isFullyLoaded computed property and updateButtons() all-or-nothing logic
+      </doc>
+      <doc path="docs/try-before-you-buy-architecture.md" title="Try Architecture" section="ADR-026">
+        Accessible Modal Pattern - WCAG 2.2 AA compliance, ARIA announcements for state changes
+      </doc>
+      <doc path="docs/sprint-artifacts/9-2-display-dynamic-lease-details-in-modal.md" title="Story 9.2" section="Dev Agent Record">
+        Previous story: state properties, updateButtons() location, ARIA patterns, test patterns
+      </doc>
+    </docs>
+    <code>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="592-611" reason="updateButtons() method to modify for isFullyLoaded gating">
+        <symbol>updateButtons</symbol>
+        <symbol>AupModalState</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="165-193" reason="loadAupContent() method - need to set aupLoaded=true on success">
+        <symbol>loadAupContent</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="101-112" reason="State initialization - add aupLoaded property">
+        <symbol>state</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="317-352" reason="close() method - reset aupLoaded on close">
+        <symbol>close</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.test.ts" kind="test" lines="579-835" reason="Story 9.2 tests - follow patterns for new tests">
+        <symbol>describe Lease template loading</symbol>
+      </file>
+      <file path="src/try/ui/utils/aria-live.ts" kind="utility" reason="announce() function for ARIA announcements">
+        <symbol>announce</symbol>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="typescript" version="^5.x" />
+        <package name="jest" version="^29.x" />
+        <package name="jsdom" version="test environment" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="ADR-026">WCAG 2.2 AA compliance - all state changes must be announced to screen readers</constraint>
+    <constraint source="tech-spec">All-or-nothing logic: button enabled ONLY when aupLoaded AND leaseTemplateLoaded AND aupAccepted</constraint>
+    <constraint source="tech-spec">Use textContent for dynamic text, never innerHTML</constraint>
+    <constraint source="Story 9.2">Build on existing state properties - do not recreate leaseTemplateLoading/leaseTemplateLoaded</constraint>
+    <constraint source="patterns">Use existing announce() utility from aria-live.ts</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="AupModalState" kind="TypeScript interface" path="src/try/ui/components/aup-modal.ts:43-57">
+      interface AupModalState {
+        isOpen: boolean;
+        tryId: string | null;
+        aupAccepted: boolean;
+        isLoading: boolean;
+        error: string | null;
+        leaseTemplateLoading: boolean;
+        leaseTemplateLoaded: boolean;
+        leaseTemplateData: LeaseTemplateData | null;
+        leaseTemplateError: string | null;
+        aupLoaded: boolean; // NEW - Story 9.3
+      }
+    </interface>
+    <interface name="isFullyLoaded" kind="computed getter" path="src/try/ui/components/aup-modal.ts">
+      get isFullyLoaded(): boolean {
+        return this.state.aupLoaded &amp;&amp; this.state.leaseTemplateLoaded;
+      }
+    </interface>
+    <interface name="announce" kind="function" path="src/try/ui/utils/aria-live.ts">
+      function announce(message: string, priority?: 'polite' | 'assertive'): void
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with jsdom environment for DOM testing. Test ARIA announcements with jest.spyOn on announce(). Test race conditions with controlled promise resolution (mockResolvedValue, await Promise.resolve()). Follow patterns established in Story 9.2 tests.</standards>
+    <locations>
+      <location>src/try/ui/components/aup-modal.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test button disabled when isLoading=true during AUP fetch</idea>
+      <idea ac="2">Test button disabled when leaseTemplateLoading=true</idea>
+      <idea ac="3">Test button disabled when aupLoaded=false (fallback AUP shown)</idea>
+      <idea ac="4">Test button disabled when leaseTemplateError is set</idea>
+      <idea ac="5">Test button disabled when aupAccepted=false</idea>
+      <idea ac="6">Test button enabled when isFullyLoaded=true AND aupAccepted=true</idea>
+      <idea ac="7">Test button re-disables when checkbox unchecked after being enabled</idea>
+      <idea ac="8">Test announce() called with "Continue button is now enabled"</idea>
+      <idea ac="9">Test checkbox.checked before template loads - button stays disabled</idea>
+      <idea ac="10">Test template loads after checkbox.checked - button enables immediately</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -387,16 +387,45 @@ function handleSignOut(event) {
 }
 
 // src/try/utils/request-dedup.ts
+var MAX_REQUEST_AGE_MS = 5 * 60 * 1e3;
+var MAX_TRACKED_REQUESTS = 100;
+var CLEANUP_INTERVAL_MS = 60 * 1e3;
 var inFlightRequests = /* @__PURE__ */ new Map();
+var cleanupTimer = null;
+function startCleanupTimer() {
+  if (cleanupTimer !== null) return;
+  cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of inFlightRequests.entries()) {
+      if (now - entry.timestamp > MAX_REQUEST_AGE_MS) {
+        inFlightRequests.delete(key);
+      }
+    }
+  }, CLEANUP_INTERVAL_MS);
+  if (typeof cleanupTimer === "object" && "unref" in cleanupTimer) {
+    cleanupTimer.unref();
+  }
+}
 async function deduplicatedRequest(key, requestFn) {
+  startCleanupTimer();
   const existing = inFlightRequests.get(key);
   if (existing) {
-    return existing;
+    return existing.promise;
   }
-  const promise = requestFn().finally(() => {
-    inFlightRequests.delete(key);
-  });
-  inFlightRequests.set(key, promise);
+  if (inFlightRequests.size >= MAX_TRACKED_REQUESTS) {
+    console.warn("[request-dedup] Max tracked requests reached, clearing oldest entries");
+    const entries = Array.from(inFlightRequests.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = entries.slice(0, Math.floor(entries.length / 2));
+    toRemove.forEach(([k]) => inFlightRequests.delete(k));
+  }
+  const promise = (async () => {
+    try {
+      return await requestFn();
+    } finally {
+      inFlightRequests.delete(key);
+    }
+  })();
+  inFlightRequests.set(key, { promise, timestamp: Date.now() });
   return promise;
 }
 
@@ -1295,6 +1324,128 @@ function getFallbackAup() {
   return FALLBACK_AUP;
 }
 
+// src/try/api/lease-templates-service.ts
+var DEFAULTS = {
+  leaseDurationInHours: 24,
+  maxSpend: 50
+};
+var TIMEOUTS = {
+  /** Critical operations: 5 seconds (user is actively waiting) */
+  critical: 5e3,
+  /** Standard operations: 10 seconds */
+  standard: 1e4,
+  /** Background operations: 30 seconds */
+  background: 3e4
+};
+var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidUUID(value) {
+  if (typeof value !== "string" || value.length === 0) {
+    return false;
+  }
+  if (/[\x00-\x1F\x7F]/.test(value)) {
+    return false;
+  }
+  return UUID_REGEX.test(value);
+}
+function buildEndpoint(tryId) {
+  return `/api/leaseTemplates/${tryId}`;
+}
+async function fetchLeaseTemplate(tryId) {
+  if (!tryId || !isValidUUID(tryId)) {
+    console.warn("[lease-templates-service] Invalid UUID format:", tryId);
+    return {
+      success: false,
+      error: "Invalid template identifier.",
+      errorCode: "INVALID_UUID"
+    };
+  }
+  return deduplicatedRequest(`fetchLeaseTemplate:${tryId}`, async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.critical);
+    const startTime = Date.now();
+    const endpoint = buildEndpoint(tryId);
+    try {
+      console.log("[lease-templates-service] Fetching template:", tryId);
+      const response = await callISBAPI(endpoint, {
+        method: "GET",
+        signal: controller.signal,
+        skipAuthRedirect: true
+        // Handle 401 gracefully, don't redirect
+      });
+      clearTimeout(timeoutId);
+      const elapsed = Date.now() - startTime;
+      console.log(`[lease-templates-service] Fetch completed in ${elapsed}ms`);
+      if (response.status === 404) {
+        console.error("[lease-templates-service] Template not found:", tryId);
+        return {
+          success: false,
+          error: "This sandbox template was not found.",
+          errorCode: "NOT_FOUND"
+        };
+      }
+      if (response.status === 401) {
+        console.error("[lease-templates-service] Unauthorized:", tryId);
+        return {
+          success: false,
+          error: "Please sign in to continue.",
+          errorCode: "UNAUTHORIZED"
+        };
+      }
+      if (!response.ok) {
+        console.error("[lease-templates-service] API error:", response.status, response.statusText);
+        return {
+          success: false,
+          error: getHttpErrorMessage(response.status, "general"),
+          errorCode: "SERVER_ERROR"
+        };
+      }
+      const rawData = await response.json();
+      const data = rawData.data;
+      if (!data) {
+        console.warn("[lease-templates-service] Response missing data field, template:", tryId);
+      }
+      const leaseDurationInHours = data?.leaseDurationInHours ?? DEFAULTS.leaseDurationInHours;
+      const maxSpend = data?.maxSpend ?? DEFAULTS.maxSpend;
+      const name = data?.name;
+      if (data && data.leaseDurationInHours === void 0) {
+        console.warn(
+          "[lease-templates-service] Missing leaseDurationInHours, using default:",
+          DEFAULTS.leaseDurationInHours
+        );
+      }
+      if (data && data.maxSpend === void 0) {
+        console.warn("[lease-templates-service] Missing maxSpend, using default:", DEFAULTS.maxSpend);
+      }
+      return {
+        success: true,
+        data: {
+          leaseDurationInHours,
+          maxSpend,
+          name
+        }
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          console.error("[lease-templates-service] Request timeout for template:", tryId);
+          return {
+            success: false,
+            error: "Request timed out. Please check your connection and try again.",
+            errorCode: "TIMEOUT"
+          };
+        }
+        console.error("[lease-templates-service] Fetch error:", error.message);
+      }
+      return {
+        success: false,
+        error: "Unable to load template details. Please try again.",
+        errorCode: "NETWORK_ERROR"
+      };
+    }
+  });
+}
+
 // src/try/ui/components/aup-modal.ts
 var IDS = {
   MODAL: "aup-modal",
@@ -1304,7 +1455,13 @@ var IDS = {
   CHECKBOX: "aup-accept-checkbox",
   CONTINUE_BTN: "aup-continue-btn",
   CANCEL_BTN: "aup-cancel-btn",
-  ERROR: "aup-error"
+  ERROR: "aup-error",
+  /** Story 9.2: Session terms container for loading skeleton */
+  SESSION_TERMS: "aup-session-terms",
+  /** Story 9.2: Duration display element */
+  DURATION: "aup-duration",
+  /** Story 9.2: Budget display element */
+  BUDGET: "aup-budget"
 };
 var BODY_MODAL_OPEN_CLASS = "aup-modal-open";
 var ERROR_HIDDEN_CLASS = "aup-modal__error--hidden";
@@ -1317,11 +1474,28 @@ var AupModal = class {
       tryId: null,
       aupAccepted: false,
       isLoading: false,
-      error: null
+      error: null,
+      // Story 9.2: Lease template state
+      leaseTemplateLoading: false,
+      leaseTemplateLoaded: false,
+      leaseTemplateData: null,
+      leaseTemplateError: null,
+      // Story 9.3: AUP loaded state (not just fallback)
+      aupLoaded: false
     };
     this.onAccept = null;
     // CRITICAL-2 FIX: Store bound event handlers for proper cleanup
     this.boundHandlers = {};
+    // AbortController for cancelling in-flight requests when modal closes
+    this.abortController = null;
+  }
+  /**
+   * Story 9.3: Computed property for all-or-nothing button gating.
+   * Returns true only when both AUP and lease template loaded successfully.
+   * Note: leaseTemplateData !== null ensures we got actual data, not just completed loading.
+   */
+  get isFullyLoaded() {
+    return this.state.aupLoaded && this.state.leaseTemplateLoaded && this.state.leaseTemplateData !== null;
   }
   /**
    * Open the modal for a specific try product.
@@ -1334,16 +1508,25 @@ var AupModal = class {
       console.warn("[AupModal] Modal already open");
       return;
     }
+    this.abortController = new AbortController();
     this.state.tryId = tryId;
     this.state.isOpen = true;
     this.state.aupAccepted = false;
     this.state.error = null;
+    this.state.leaseTemplateLoading = true;
+    this.state.leaseTemplateLoaded = false;
+    this.state.leaseTemplateData = null;
+    this.state.leaseTemplateError = null;
+    this.state.aupLoaded = false;
     this.onAccept = onAccept;
     this.render();
     this.setupFocusTrap();
+    this.updateButtons();
     document.body.classList.add(BODY_MODAL_OPEN_CLASS);
     announce("Request AWS Sandbox Access dialog opened");
+    announce("Loading session terms...");
     this.loadAupContent();
+    this.loadLeaseTemplate(tryId);
   }
   /**
    * Load AUP content from the configurations API.
@@ -1356,37 +1539,172 @@ var AupModal = class {
     announce("Loading Acceptable Use Policy");
     try {
       const result = await fetchConfigurations();
+      if (this.abortController?.signal.aborted) {
+        console.debug("[AupModal] AUP request completed after modal closed, ignoring");
+        return;
+      }
       if (result.success && result.data?.aup) {
         aupContent.textContent = result.data.aup;
+        this.state.aupLoaded = true;
         announce("Acceptable Use Policy loaded");
       } else {
         console.warn("[AupModal] Failed to fetch AUP:", result.error);
         aupContent.textContent = getFallbackAup();
+        this.state.aupLoaded = false;
         if (result.error) {
           this.showError(result.error + " Using default policy.");
         }
       }
     } catch (error) {
+      if (this.abortController?.signal.aborted) {
+        console.debug("[AupModal] AUP request aborted");
+        return;
+      }
       console.error("[AupModal] Error loading AUP:", error);
       aupContent.textContent = getFallbackAup();
+      this.state.aupLoaded = false;
       this.showError("Unable to load policy. Using default policy.");
+    }
+    this.updateButtons();
+  }
+  /**
+   * Load lease template from the API.
+   * Story 9.2: Fetch lease template to display actual duration and budget.
+   *
+   * @param tryId - The product's try_id UUID
+   */
+  async loadLeaseTemplate(tryId) {
+    try {
+      const result = await fetchLeaseTemplate(tryId);
+      if (this.abortController?.signal.aborted) {
+        console.debug("[AupModal] Lease template request completed after modal closed, ignoring");
+        return;
+      }
+      this.state.leaseTemplateLoading = false;
+      this.state.leaseTemplateLoaded = true;
+      if (result.success && result.data) {
+        this.state.leaseTemplateData = {
+          leaseDurationInHours: result.data.leaseDurationInHours,
+          maxSpend: result.data.maxSpend
+        };
+        this.state.leaseTemplateError = null;
+        announce(
+          `Session terms loaded: ${result.data.leaseDurationInHours} hour session with $${result.data.maxSpend} budget`
+        );
+      } else {
+        this.state.leaseTemplateData = null;
+        this.state.leaseTemplateError = result.error || "Failed to load session terms";
+        console.warn("[AupModal] Failed to fetch lease template:", {
+          tryId,
+          errorCode: result.errorCode || "UNKNOWN",
+          message: result.error
+        });
+        if (result.errorCode === "NOT_FOUND") {
+          this.showError("This sandbox is currently unavailable");
+          announce("This sandbox is currently unavailable", "assertive");
+        } else {
+          this.showError("Unable to load session details");
+          announce("Unable to load session details", "assertive");
+        }
+      }
+      this.updateSessionTermsDisplay();
+      this.updateCheckboxState();
+      this.updateButtons();
+    } catch (error) {
+      if (this.abortController?.signal.aborted) {
+        console.debug("[AupModal] Lease template request aborted");
+        return;
+      }
+      console.warn("[AupModal] Failed to fetch lease template:", {
+        tryId,
+        errorCode: "NETWORK_ERROR",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+      this.state.leaseTemplateLoading = false;
+      this.state.leaseTemplateLoaded = true;
+      this.state.leaseTemplateData = null;
+      this.state.leaseTemplateError = "Unable to load session terms";
+      this.showError("Unable to load session details");
+      announce("Unable to load session details", "assertive");
+      this.updateSessionTermsDisplay();
+      this.updateCheckboxState();
+      this.updateButtons();
+    }
+  }
+  /**
+   * Update the session terms display with dynamic or error values.
+   * Story 9.2: Display actual duration and budget from API.
+   *
+   * DOM operations are batched using requestAnimationFrame to minimize
+   * layout thrashing from sequential reads/writes.
+   */
+  updateSessionTermsDisplay() {
+    const durationEl = document.getElementById(IDS.DURATION);
+    const budgetEl = document.getElementById(IDS.BUDGET);
+    const termsContainer = document.getElementById(IDS.SESSION_TERMS);
+    if (!termsContainer) return;
+    requestAnimationFrame(() => {
+      const skeleton = termsContainer.querySelector(".aup-modal__skeleton");
+      if (skeleton) {
+        skeleton.remove();
+      }
+      if (this.state.leaseTemplateData) {
+        if (durationEl) {
+          durationEl.textContent = `${this.state.leaseTemplateData.leaseDurationInHours} hours`;
+          durationEl.classList.remove("aup-modal__value--error");
+        }
+        if (budgetEl) {
+          budgetEl.textContent = `$${this.state.leaseTemplateData.maxSpend} USD`;
+          budgetEl.classList.remove("aup-modal__value--error");
+        }
+      } else {
+        if (durationEl) {
+          durationEl.textContent = "Unknown";
+          durationEl.classList.add("aup-modal__value--error");
+        }
+        if (budgetEl) {
+          budgetEl.textContent = "Unknown";
+          budgetEl.classList.add("aup-modal__value--error");
+        }
+      }
+      const valueEls = termsContainer.querySelectorAll(".aup-modal__info-text");
+      valueEls.forEach((el) => {
+        el.style.display = "";
+      });
+    });
+  }
+  /**
+   * Update checkbox disabled state based on loading state.
+   * Story 9.2: Disable checkbox with tooltip during loading.
+   */
+  updateCheckboxState() {
+    const checkbox = document.getElementById(IDS.CHECKBOX);
+    if (!checkbox) return;
+    if (this.state.leaseTemplateLoading) {
+      checkbox.disabled = true;
+      checkbox.title = "Loading...";
+    } else {
+      checkbox.disabled = false;
+      checkbox.title = "";
     }
   }
   /**
    * Close the modal.
-   *
-   * @param confirmed - If true, skip confirmation when checkbox is checked
    */
-  close(confirmed = false) {
+  close() {
     if (!this.state.isOpen) return;
-    if (this.state.aupAccepted && !confirmed && !this.state.isLoading) {
-      const shouldClose = window.confirm("Are you sure you want to cancel? Your acceptance will be lost.");
-      if (!shouldClose) return;
-    }
+    this.abortController?.abort();
+    this.abortController = null;
     this.state.isOpen = false;
     this.state.tryId = null;
     this.state.aupAccepted = false;
+    this.state.isLoading = false;
     this.state.error = null;
+    this.state.leaseTemplateLoading = false;
+    this.state.leaseTemplateLoaded = false;
+    this.state.leaseTemplateData = null;
+    this.state.leaseTemplateError = null;
+    this.state.aupLoaded = false;
     this.onAccept = null;
     this.focusTrap?.deactivate();
     this.focusTrap = null;
@@ -1399,7 +1717,10 @@ var AupModal = class {
   /**
    * Set the AUP content to display.
    *
-   * @param content - AUP text or HTML content
+   * SECURITY: Uses textContent (not innerHTML) to prevent XSS attacks.
+   * Any HTML in the content will be escaped and rendered as plain text.
+   *
+   * @param content - AUP text content (HTML will be escaped)
    */
   setAupContent(content) {
     const aupContent = document.getElementById(IDS.AUP_CONTENT);
@@ -1460,13 +1781,23 @@ var AupModal = class {
   }
   /**
    * Get current modal state.
+   * Story 9.3: Includes computed isFullyLoaded property.
    */
   getState() {
-    return { ...this.state };
+    return {
+      ...this.state,
+      // Story 9.3: Include computed isFullyLoaded property
+      isFullyLoaded: this.isFullyLoaded
+    };
   }
   /**
    * Render the modal HTML.
    * Styles are defined in styles.scss to comply with CSP (no inline styles).
+   *
+   * SECURITY: innerHTML is used here for static template structure only.
+   * All dynamic content (AUP text, error messages, session values) is set
+   * via textContent which is XSS-safe. Never interpolate user input into
+   * the innerHTML template string.
    */
   render() {
     this.overlay = document.createElement("div");
@@ -1486,12 +1817,21 @@ var AupModal = class {
         </div>
         <div class="aup-modal__body">
           <div id="${IDS.DESCRIPTION}" class="aup-modal__info">
-            <p class="govuk-body aup-modal__info-text">
-              <strong>Session duration:</strong> 24 hours
-            </p>
-            <p class="govuk-body aup-modal__info-text">
-              <strong>Budget limit:</strong> $50 USD
-            </p>
+            <!-- Story 9.2: Session terms container with loading skeleton -->
+            <div id="${IDS.SESSION_TERMS}" class="aup-modal__session-terms">
+              <!-- Loading skeleton shown initially -->
+              <div class="aup-modal__skeleton" aria-hidden="true">
+                <div class="aup-modal__skeleton-line"></div>
+                <div class="aup-modal__skeleton-line"></div>
+              </div>
+              <!-- Actual values (initially hidden during loading) -->
+              <p class="govuk-body aup-modal__info-text" style="display: none;">
+                <strong>Session duration:</strong> <span id="${IDS.DURATION}">Loading...</span>
+              </p>
+              <p class="govuk-body aup-modal__info-text" style="display: none;">
+                <strong>Budget limit:</strong> <span id="${IDS.BUDGET}">Loading...</span>
+              </p>
+            </div>
           </div>
 
           <div id="${IDS.ERROR}" class="aup-modal__error aup-modal__error--hidden govuk-body" role="alert"></div>
@@ -1503,11 +1843,14 @@ var AupModal = class {
 
           <div class="aup-modal__checkbox-group govuk-checkboxes">
             <div class="govuk-checkboxes__item">
+              <!-- Story 9.2: Checkbox disabled during loading -->
               <input
                 type="checkbox"
                 id="${IDS.CHECKBOX}"
                 class="govuk-checkboxes__input"
                 aria-describedby="${IDS.DESCRIPTION}"
+                disabled
+                title="Loading..."
               />
               <label for="${IDS.CHECKBOX}" class="govuk-label govuk-checkboxes__label">
                 I have read and accept the Acceptable Use Policy
@@ -1550,9 +1893,9 @@ var AupModal = class {
       this.state.aupAccepted = checkbox.checked;
       this.updateButtons();
       if (checkbox.checked) {
-        announce("Acceptable Use Policy accepted. Continue button is now enabled.");
+        announce("Acceptable Use Policy accepted");
       } else {
-        announce("Acceptable Use Policy not accepted. Continue button is disabled.");
+        announce("Acceptable Use Policy not accepted");
       }
     };
     checkbox?.addEventListener("change", this.boundHandlers.checkboxChange);
@@ -1595,18 +1938,26 @@ var AupModal = class {
   }
   /**
    * Update button disabled states.
+   * Story 9.3: Gates button on isFullyLoaded, shows "Loading..." during load,
+   * and announces when button becomes enabled.
    */
   updateButtons() {
     const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
     const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
     if (continueBtn) {
-      const shouldDisable = !this.state.aupAccepted || this.state.isLoading;
+      const wasDisabled = continueBtn.disabled;
+      const shouldDisable = !this.isFullyLoaded || !this.state.aupAccepted || this.state.isLoading;
       continueBtn.disabled = shouldDisable;
       continueBtn.setAttribute("aria-disabled", String(shouldDisable));
       if (this.state.isLoading) {
         continueBtn.textContent = "Requesting...";
+      } else if (!this.isFullyLoaded) {
+        continueBtn.textContent = "Loading...";
       } else {
         continueBtn.textContent = "Continue";
+      }
+      if (wasDisabled && !shouldDisable) {
+        announce("Continue button is now enabled");
       }
     }
     if (cancelBtn) {
@@ -1631,8 +1982,8 @@ var aupModal = new AupModal();
 function openAupModal(tryId, onAccept) {
   aupModal.open(tryId, onAccept);
 }
-function closeAupModal(confirmed = false) {
-  aupModal.close(confirmed);
+function closeAupModal() {
+  aupModal.close();
 }
 
 // src/try/api/leases-service.ts

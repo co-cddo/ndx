@@ -27,7 +27,16 @@ import type { ActionLink } from './block-kit-builder';
 
 /**
  * Slack alert types that map to EventBridge event types
- * Includes both ops alerts and lease lifecycle events
+ * Includes both ops alerts and lease lifecycle events.
+ *
+ * ## Accepted Risk: Type Union Complexity
+ *
+ * This union type has 8 members which may impact IDE performance on
+ * very slow machines. This is accepted because:
+ * 1. The union is bounded by actual event types (not arbitrary)
+ * 2. TypeScript handles this union size efficiently
+ * 3. Discriminated union provides excellent type safety
+ * 4. Adding new event types is explicit and reviewed
  */
 export type SlackAlertType =
   // Ops alerts (critical)

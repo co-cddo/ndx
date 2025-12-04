@@ -290,22 +290,42 @@ development_status:
   n7-6-lease-status-handling: done # FR-ENRICH-43-50 - All 9 statuses tested, UnexpectedLeaseStatus metric, 78 tests
   epic-n7-retrospective: done # 2025-12-02 - All 6 stories complete, 964 tests passing
 
+  # ----------------------------------------------------------
+  # Epic 9: AUP Modal Dynamic Lease Details (BACKLOG)
+  # ----------------------------------------------------------
+  # Goal: AUP modal displays actual lease template duration and budget
+  # FRs Covered: FR-TRY-52, FR-TRY-53, FR-TRY-54, FR-TRY-57 (enhancement)
+  # User Value: Users see accurate session terms before accepting AUP
+  # Dependencies: None (references existing ISB API)
+  # Epic File: docs/epics/epic-9-aup-modal-dynamic-lease-details.md
+  # Prerequisites: Verify GET /api/leaseTemplates/{id} endpoint exists
+  # Elicitation: 2025-12-02 - Pre-mortem, Journey Mapping, Devil's Advocate, Decision Matrix, Empathy Map
+  epic-9-aup-modal-dynamic-lease-details: done  # All 4 stories complete 2025-12-02 - 77 tests passing
+  9-1-create-lease-template-service: done # Code review complete 2025-12-02: APPROVED - 28 tests, all 10 ACs satisfied
+  9-2-display-dynamic-lease-details-in-modal: done # Code review complete 2025-12-02: APPROVED - 10/10 ACs, 18 tests
+  9-3-gate-continue-button-on-all-data-loaded: done # Code review complete 2025-12-02: APPROVED - 10/10 ACs, 66 tests
+  9-4-clear-error-states-for-failed-loads: done # Code review complete 2025-12-02: APPROVED - 5/5 ACs, 77 tests
+  epic-9-retrospective: done # 2025-12-02 - Retrospective complete, 0 blockers, 77 tests
+
 # ==============================================================
 # SUMMARY
 # ==============================================================
 # Feature 1 (CloudFront Routing): Epics 1-3 COMPLETE
-# Feature 2 (Try Before You Buy): Epics 4-8 COMPLETE
+# Feature 2 (Try Before You Buy): Epics 4-8 COMPLETE, Epic 9 BACKLOG
 # Features 3, 4 & 5 (Notifications + Enrichment):
 #   - Epic N-4 (Foundation): DONE (7/9 stories, 2 deferred - external deps)
 #   - Epic N-5 (User emails): DONE (9/9 stories complete)
 #   - Epic N-6 (Ops alerts): DONE (8/8 stories complete)
 #   - Epic N-7 (DynamoDB Lease Enrichment): DONE (6/6 stories complete) - 964 tests passing
+# Feature 2 Enhancement:
+#   - Epic 9 (AUP Modal Dynamic Lease Details): BACKLOG (4 stories)
 #
 # Implementation Progress:
 # 1. Epic N-4 (Foundation) - 7/9 stories DONE, 2 deferred pending ISB coordination
 # 2. Epic N-5 (User emails) - 9/9 stories DONE
 # 3. Epic N-6 (Ops alerts) - 8/8 stories DONE
 # 4. Epic N-7 (Enrichment) - 6/6 stories DONE - All lease statuses supported
+# 5. Epic 9 (AUP Modal) - BACKLOG - Requires prerequisite verification
 #
 # PRE-MORTEM FINDINGS (2025-11-27):
 # Round 1:

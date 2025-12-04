@@ -258,7 +258,7 @@ describe('Try Button Handler', () => {
       it('should close modal on success', async () => {
         await acceptCallback(TEST_TRY_ID);
 
-        expect(mockCloseAupModal).toHaveBeenCalledWith(true);
+        expect(mockCloseAupModal).toHaveBeenCalled();
       });
 
       it('should redirect to /try on success', async () => {
@@ -281,7 +281,7 @@ describe('Try Button Handler', () => {
       it('should close modal', async () => {
         await acceptCallback(TEST_TRY_ID);
 
-        expect(mockCloseAupModal).toHaveBeenCalledWith(true);
+        expect(mockCloseAupModal).toHaveBeenCalled();
       });
 
       it('should show alert with error message', async () => {
@@ -309,7 +309,7 @@ describe('Try Button Handler', () => {
       it('should close modal', async () => {
         await acceptCallback(TEST_TRY_ID);
 
-        expect(mockCloseAupModal).toHaveBeenCalledWith(true);
+        expect(mockCloseAupModal).toHaveBeenCalled();
       });
 
       it('should redirect to login', async () => {

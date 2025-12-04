@@ -107,6 +107,12 @@ describe('SlackSender', () => {
     } as unknown as Response);
   });
 
+  afterEach(() => {
+    // Restore all mocks to prevent test pollution and ensure console spies are cleaned up
+    jest.restoreAllMocks();
+    SlackSender.resetInstance();
+  });
+
   describe('redactWebhookUrl (AC-1.7)', () => {
     test('should redact webhook URL showing only protocol and domain', () => {
       const url = 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX';
@@ -158,9 +164,11 @@ describe('SlackSender', () => {
       expect(body).toHaveProperty('alertType', 'AccountQuarantined');
       expect(body).toHaveProperty('username', 'NDX Notifications');
       expect(body).toHaveProperty('accountid', 'aws-123456789012');
-      expect(body).toHaveProperty('details');
-      expect(body.details).toContain('Priority: CRITICAL');
-      expect(body.details).toContain('reason: security-violation');
+      expect(body).toHaveProperty('template', 'N/A');
+      expect(body).toHaveProperty('template_id', 'N/A');
+      // Details are now flattened to top level with snake_case keys
+      expect(body).toHaveProperty('reason', 'security-violation');
+      expect(body).toHaveProperty('timestamp', '2025-11-27T10:00:00Z');
     });
   });
 

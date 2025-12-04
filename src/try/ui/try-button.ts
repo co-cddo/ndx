@@ -82,7 +82,7 @@ async function handleLeaseAccept(tryId: string): Promise<void> {
 
   if (result.success) {
     // Success: Close modal and navigate to /try page
-    closeAupModal(true);
+    closeAupModal();
     window.location.href = '/try';
     return;
   }
@@ -91,14 +91,14 @@ async function handleLeaseAccept(tryId: string): Promise<void> {
   switch (result.errorCode) {
     case 'CONFLICT':
       // Max sessions reached - alert and redirect to /try
-      closeAupModal(true);
+      closeAupModal();
       alert(result.error);
       window.location.href = '/try';
       break;
 
     case 'UNAUTHORIZED':
       // Auth issue - callISBAPI should have redirected, but handle gracefully
-      closeAupModal(true);
+      closeAupModal();
       window.location.href = '/api/auth/login';
       break;
 

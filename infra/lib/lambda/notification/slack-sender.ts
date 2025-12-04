@@ -54,17 +54,25 @@ export interface SlackSendParams {
   eventId: string;
   /** Optional action links for buttons (recommended for critical alerts) */
   actionLinks?: ActionLink[];
+  /** Template name (e.g., 'Standard Sandbox') */
+  template?: string;
+  /** Template ID/UUID */
+  templateId?: string;
 }
 
 /**
  * Internal payload structure sent to Slack Workflow webhook
  * Uses workflow variable format (not Block Kit)
+ * All fields are at top level for easier Slack Workflow variable access
  */
 interface SlackWorkflowPayload {
   alertType: string;
   username: string;
   accountid: string;
-  details: string;
+  priority: string;
+  template: string;
+  template_id: string;
+  [key: string]: string | undefined;
 }
 
 /**
@@ -111,7 +119,15 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Redact webhook URL for logging (AC-1.7)
- * Shows only protocol and domain, hides path/token
+ * Shows only protocol and domain, hides path/token.
+ *
+ * ## Accepted Risk: Partial URL Exposure
+ *
+ * The protocol and hostname are still visible. This is accepted because:
+ * 1. "hooks.slack.com" doesn't reveal any sensitive information
+ * 2. The token portion (path) is fully redacted
+ * 3. Having hostname in logs aids debugging connectivity issues
+ * 4. CloudWatch logs have IAM-protected access
  */
 export function redactWebhookUrl(url: string): string {
   if (!url) return 'empty';
@@ -121,6 +137,43 @@ export function redactWebhookUrl(url: string): string {
   } catch {
     return '[INVALID_URL]';
   }
+}
+
+/**
+ * Maximum length for sanitized Slack payload fields.
+ * Prevents excessively long values from causing payload issues.
+ */
+const MAX_FIELD_LENGTH = 200;
+
+/**
+ * Sanitize a string field for Slack payload.
+ *
+ * Security: Prevents payload injection by:
+ * - Removing control characters (except newlines/tabs)
+ * - Truncating to max length with ellipsis
+ * - Handling non-string inputs gracefully
+ *
+ * @param value - The field value to sanitize
+ * @returns Sanitized string safe for Slack payload
+ */
+export function sanitizeSlackField(value: unknown): string {
+  // Handle non-string inputs
+  if (value === null || value === undefined) {
+    return 'N/A';
+  }
+
+  const str = String(value);
+
+  // Remove control characters except newlines and tabs
+  // eslint-disable-next-line no-control-regex
+  const cleaned = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Truncate if too long
+  if (cleaned.length > MAX_FIELD_LENGTH) {
+    return cleaned.substring(0, MAX_FIELD_LENGTH - 3) + '...';
+  }
+
+  return cleaned;
 }
 
 /**
@@ -136,24 +189,30 @@ export function redactWebhookUrl(url: string): string {
  * @returns Workflow formatted payload
  */
 function buildPayload(params: SlackSendParams): SlackWorkflowPayload {
-  const { alertType, accountId, priority, details } = params;
+  const { alertType, accountId, priority, details, template, templateId } = params;
 
-  // Format details as a readable string
-  const detailLines: string[] = [];
-  detailLines.push(`Priority: ${priority.toUpperCase()}`);
-
-  for (const [key, value] of Object.entries(details)) {
-    if (value !== undefined) {
-      detailLines.push(`${key}: ${value}`);
-    }
-  }
-
-  return {
+  // Build payload with all fields at top level for Slack Workflow variables
+  // Security: Sanitize template fields to prevent payload injection
+  const payload: SlackWorkflowPayload = {
     alertType,
     username: 'NDX Notifications',
     accountid: accountId,
-    details: detailLines.join('\n'),
+    priority: priority.toUpperCase(),
+    template: sanitizeSlackField(template),
+    template_id: sanitizeSlackField(templateId),
   };
+
+  // Flatten all detail fields to top level with snake_case keys
+  // Security: Sanitize all dynamic values to prevent payload injection
+  for (const [key, value] of Object.entries(details)) {
+    if (value !== undefined) {
+      // Convert key to snake_case for Slack workflow compatibility
+      const snakeKey = key.toLowerCase().replace(/\s+/g, '_');
+      payload[snakeKey] = sanitizeSlackField(value);
+    }
+  }
+
+  return payload;
 }
 
 // =========================================================================
@@ -162,6 +221,19 @@ function buildPayload(params: SlackSendParams): SlackWorkflowPayload {
 
 /**
  * Singleton wrapper for Slack webhook integration
+ *
+ * ## Why Singleton Pattern?
+ *
+ * The singleton pattern is appropriate here for Lambda because:
+ * 1. **Webhook URL caching** - Secrets Manager calls are expensive; caching across
+ *    invocations within the same container reduces latency and cost
+ * 2. **Lambda execution model** - Each container is single-threaded, so no
+ *    concurrency issues with shared state
+ * 3. **Cold start optimization** - Cached webhook URL persists across warm invocations
+ * 4. **AWS best practices** - AWS recommends reusing connections and cached config
+ *    across invocations (see Lambda Power Tuning documentation)
+ *
+ * The resetInstance() method is provided for testing to ensure clean state.
  *
  * Implements:
  * - Singleton pattern for webhook URL caching

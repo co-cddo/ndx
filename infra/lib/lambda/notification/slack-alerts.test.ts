@@ -189,6 +189,11 @@ describe('Slack Alerts Processor', () => {
     );
   });
 
+  afterEach(() => {
+    // Restore all mocks to prevent test pollution between runs
+    jest.restoreAllMocks();
+  });
+
   // ===========================================================================
   // Template Configuration Tests
   // ===========================================================================
@@ -363,6 +368,18 @@ describe('Slack Alerts Processor', () => {
         })
       );
     });
+
+    it('should include template and templateId as N/A for account events', async () => {
+      const event = createAccountQuarantinedEvent();
+      await processSlackAlert(event);
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'N/A',
+          templateId: 'N/A',
+        })
+      );
+    });
   });
 
   // ===========================================================================
@@ -445,6 +462,18 @@ describe('Slack Alerts Processor', () => {
       expect(mockSendFn).toHaveBeenCalledWith(
         expect.objectContaining({
           priority: 'normal',
+        })
+      );
+    });
+
+    it('should include template and templateId as N/A', async () => {
+      const event = createLeaseFrozenEvent('BudgetExceeded');
+      await processSlackAlert(event);
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'N/A',
+          templateId: 'N/A',
         })
       );
     });
@@ -607,6 +636,166 @@ describe('Slack Alerts Processor', () => {
               label: expect.stringContaining('Runbook'),
             }),
           ]),
+        })
+      );
+    });
+  });
+
+  // ===========================================================================
+  // Lease Lifecycle Alert Template Fields Tests
+  // ===========================================================================
+
+  describe('Lease Lifecycle Alert Template Fields', () => {
+    function createLeaseRequestedEventWithTemplate(): ValidatedEvent<{
+      leaseId: { userEmail: string; uuid: string };
+      principalEmail?: string;
+      accountId?: string;
+      requestedAt?: string;
+      budget?: number;
+      duration?: number;
+      leaseTemplateName?: string;
+      leaseTemplateId?: string;
+    }> {
+      return {
+        eventType: 'LeaseRequested',
+        eventId: 'evt-lease-req-123',
+        source: 'innovation-sandbox',
+        timestamp: '2025-12-03T10:00:00Z',
+        detail: {
+          leaseId: { userEmail: 'user@example.gov.uk', uuid: 'lease-123' },
+          principalEmail: 'user@example.gov.uk',
+          accountId: '123456789012',
+          requestedAt: '2025-12-03T10:00:00Z',
+          budget: 500,
+          duration: 720,
+          leaseTemplateName: 'user research 0.0.1',
+          leaseTemplateId: 'a3beced2-be4e-41a0-b6e2-735a73fffed7',
+        },
+      };
+    }
+
+    function createLeaseApprovedEventWithTemplate(): ValidatedEvent<{
+      leaseId: { userEmail: string; uuid: string };
+      principalEmail?: string;
+      accountId?: string;
+      approvedAt?: string;
+      budget?: number;
+      expiresAt?: string;
+      leaseTemplateName?: string;
+      leaseTemplateId?: string;
+    }> {
+      return {
+        eventType: 'LeaseApproved',
+        eventId: 'evt-lease-app-123',
+        source: 'innovation-sandbox',
+        timestamp: '2025-12-03T10:00:00Z',
+        detail: {
+          leaseId: { userEmail: 'user@example.gov.uk', uuid: 'lease-123' },
+          principalEmail: 'user@example.gov.uk',
+          accountId: '123456789012',
+          approvedAt: '2025-12-03T10:00:00Z',
+          budget: 500,
+          expiresAt: '2025-12-04T10:00:00Z',
+          leaseTemplateName: 'data science 2.0',
+          leaseTemplateId: 'b4cfded3-cf5f-52b1-c7f3-846b84gggg8',
+        },
+      };
+    }
+
+    function createLeaseDeniedEventWithTemplate(): ValidatedEvent<{
+      leaseId: { userEmail: string; uuid: string };
+      principalEmail?: string;
+      deniedAt?: string;
+      reason?: string;
+      leaseTemplateName?: string;
+      leaseTemplateId?: string;
+    }> {
+      return {
+        eventType: 'LeaseDenied',
+        eventId: 'evt-lease-den-123',
+        source: 'innovation-sandbox',
+        timestamp: '2025-12-03T10:00:00Z',
+        detail: {
+          leaseId: { userEmail: 'user@example.gov.uk', uuid: 'lease-123' },
+          principalEmail: 'user@example.gov.uk',
+          deniedAt: '2025-12-03T10:00:00Z',
+          reason: 'Budget exceeds limit',
+          leaseTemplateName: 'ml training 1.5',
+          leaseTemplateId: 'c5defe4-dg6g-63c2-d8g4-957c95hhhh9',
+        },
+      };
+    }
+
+    function createLeaseTerminatedEventWithTemplate(): ValidatedEvent<{
+      leaseId: { userEmail: string; uuid: string };
+      principalEmail?: string;
+      accountId?: string;
+      terminatedAt?: string;
+      reason?: string;
+      leaseTemplateName?: string;
+      leaseTemplateId?: string;
+    }> {
+      return {
+        eventType: 'LeaseTerminated',
+        eventId: 'evt-lease-term-123',
+        source: 'innovation-sandbox',
+        timestamp: '2025-12-03T10:00:00Z',
+        detail: {
+          leaseId: { userEmail: 'user@example.gov.uk', uuid: 'lease-123' },
+          principalEmail: 'user@example.gov.uk',
+          accountId: '123456789012',
+          terminatedAt: '2025-12-03T10:00:00Z',
+          reason: 'User requested',
+          leaseTemplateName: 'standard sandbox',
+          leaseTemplateId: 'd6efgf5-eh7h-74d3-e9h5-068d06iiii0',
+        },
+      };
+    }
+
+    it('LeaseRequested should include template and templateId from event', async () => {
+      const event = createLeaseRequestedEventWithTemplate();
+      await processSlackAlert(event);
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'user research 0.0.1',
+          templateId: 'a3beced2-be4e-41a0-b6e2-735a73fffed7',
+        })
+      );
+    });
+
+    it('LeaseApproved should include template and templateId from event', async () => {
+      const event = createLeaseApprovedEventWithTemplate();
+      await processSlackAlert(event);
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'data science 2.0',
+          templateId: 'b4cfded3-cf5f-52b1-c7f3-846b84gggg8',
+        })
+      );
+    });
+
+    it('LeaseDenied should include template and templateId from event', async () => {
+      const event = createLeaseDeniedEventWithTemplate();
+      await processSlackAlert(event);
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'ml training 1.5',
+          templateId: 'c5defe4-dg6g-63c2-d8g4-957c95hhhh9',
+        })
+      );
+    });
+
+    it('LeaseTerminated should include template and templateId from event', async () => {
+      const event = createLeaseTerminatedEventWithTemplate();
+      await processSlackAlert(event);
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          template: 'standard sandbox',
+          templateId: 'd6efgf5-eh7h-74d3-e9h5-068d06iiii0',
         })
       );
     });

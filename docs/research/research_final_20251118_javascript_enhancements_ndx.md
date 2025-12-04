@@ -15,6 +15,7 @@ Based on comprehensive research of Eleventy patterns, GOV.UK Frontend requiremen
 3. **Long-term (As Complexity Grows):** Consider esbuild integration for advanced features
 
 **Key Constraints:**
+
 - Must follow GDS progressive enhancement standards (legal requirement)
 - JavaScript must enhance, not replace, HTML functionality
 - Keep bundle sizes minimal (GOV.UK Frontend already adds ~30KB)
@@ -31,6 +32,7 @@ For small JavaScript additions like filtering, search, or form validation:
 #### **Option A: Direct JavaScript Files with Passthrough Copy**
 
 **1. Create JavaScript directory structure:**
+
 ```
 src/
 ├── assets/
@@ -41,47 +43,50 @@ src/
 ```
 
 **2. Configure Eleventy (.eleventy.js):**
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Copy JavaScript files directly
-  eleventyConfig.addPassthroughCopy({ "src/assets/js": "js" });
+  eleventyConfig.addPassthroughCopy({ "src/assets/js": "js" })
 
   // Existing config...
 }
 ```
 
 **3. Create progressive enhancement pattern (app.js):**
+
 ```javascript
 // Progressive enhancement wrapper
-(function() {
-  'use strict';
+;(function () {
+  "use strict"
 
   // Feature detection
-  if (!('querySelector' in document)) return;
+  if (!("querySelector" in document)) return
 
   // Wait for GOV.UK Frontend to initialize
   if (window.GOVUKFrontend) {
     // Custom initialization after GOV.UK components
-    initCustomEnhancements();
+    initCustomEnhancements()
   } else {
     // Fallback for when GOV.UK JS fails
-    document.addEventListener('DOMContentLoaded', initBasicEnhancements);
+    document.addEventListener("DOMContentLoaded", initBasicEnhancements)
   }
 
   function initCustomEnhancements() {
     // Your custom JavaScript here
-    initCatalogueFilter();
-    initSearchEnhancement();
+    initCatalogueFilter()
+    initSearchEnhancement()
   }
-})();
+})()
 ```
 
-**4. Add to layout template (_includes/layouts/base.njk):**
+**4. Add to layout template (\_includes/layouts/base.njk):**
+
 ```html
 <!-- After GOV.UK Frontend -->
 <script type="module" src="/assets/govuk-frontend.min.js"></script>
 <script type="module">
-  import { initAll } from '/assets/govuk-frontend.min.js'
+  import { initAll } from "/assets/govuk-frontend.min.js"
   initAll()
 </script>
 
@@ -119,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
 For the new capabilities you're adding (trials, access requests, dynamic filtering):
 
 **Why Alpine.js is perfect for NDX:**
+
 - Only 16KB (acceptable addition to GOV.UK's 30KB)
 - Progressive enhancement aligned
 - No build step required
@@ -126,6 +132,7 @@ For the new capabilities you're adding (trials, access requests, dynamic filteri
 - Works well with server-rendered HTML
 
 **1. Add Alpine.js via CDN (simplest):**
+
 ```html
 <!-- In base layout -->
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
@@ -141,15 +148,8 @@ For the new capabilities you're adding (trials, access requests, dynamic filteri
 <div x-data="catalogueFilter()" x-init="init()">
   <form action="/catalogue" method="GET">
     <div class="govuk-form-group">
-      <label class="govuk-label" for="vendor">
-        Vendor
-      </label>
-      <select
-        class="govuk-select"
-        id="vendor"
-        name="vendor"
-        x-model="selectedVendor"
-        @change="filterCatalogue()">
+      <label class="govuk-label" for="vendor"> Vendor </label>
+      <select class="govuk-select" id="vendor" name="vendor" x-model="selectedVendor" @change="filterCatalogue()">
         <option value="">All vendors</option>
         <option value="google">Google</option>
         <option value="microsoft">Microsoft</option>
@@ -157,19 +157,14 @@ For the new capabilities you're adding (trials, access requests, dynamic filteri
     </div>
 
     <noscript>
-      <button type="submit" class="govuk-button">
-        Apply filters
-      </button>
+      <button type="submit" class="govuk-button">Apply filters</button>
     </noscript>
   </form>
 
   <!-- Catalogue items -->
   <div class="catalogue-grid">
     {% for item in collections.catalogue %}
-    <div
-      class="catalogue-item"
-      data-vendor="{{ item.data.vendor }}"
-      x-show="shouldShow('{{ item.data.vendor }}')">
+    <div class="catalogue-item" data-vendor="{{ item.data.vendor }}" x-show="shouldShow('{{ item.data.vendor }}')">
       <!-- Item content -->
     </div>
     {% endfor %}
@@ -177,33 +172,33 @@ For the new capabilities you're adding (trials, access requests, dynamic filteri
 </div>
 
 <script>
-function catalogueFilter() {
-  return {
-    selectedVendor: '',
+  function catalogueFilter() {
+    return {
+      selectedVendor: "",
 
-    init() {
-      // Read from URL params if present
-      const params = new URLSearchParams(window.location.search);
-      this.selectedVendor = params.get('vendor') || '';
-    },
+      init() {
+        // Read from URL params if present
+        const params = new URLSearchParams(window.location.search)
+        this.selectedVendor = params.get("vendor") || ""
+      },
 
-    shouldShow(vendor) {
-      if (!this.selectedVendor) return true;
-      return vendor === this.selectedVendor;
-    },
+      shouldShow(vendor) {
+        if (!this.selectedVendor) return true
+        return vendor === this.selectedVendor
+      },
 
-    filterCatalogue() {
-      // Update URL without reload
-      const url = new URL(window.location);
-      if (this.selectedVendor) {
-        url.searchParams.set('vendor', this.selectedVendor);
-      } else {
-        url.searchParams.delete('vendor');
-      }
-      window.history.pushState({}, '', url);
+      filterCatalogue() {
+        // Update URL without reload
+        const url = new URL(window.location)
+        if (this.selectedVendor) {
+          url.searchParams.set("vendor", this.selectedVendor)
+        } else {
+          url.searchParams.delete("vendor")
+        }
+        window.history.pushState({}, "", url)
+      },
     }
   }
-}
 </script>
 ```
 
@@ -218,15 +213,14 @@ function catalogueFilter() {
       type="submit"
       class="govuk-button"
       x-bind:disabled="submitting"
-      x-text="submitting ? 'Requesting...' : 'Request 24-hour trial'">
+      x-text="submitting ? 'Requesting...' : 'Request 24-hour trial'"
+    >
       Request 24-hour trial
     </button>
 
     <div x-show="success" class="govuk-panel govuk-panel--confirmation">
       <h1 class="govuk-panel__title">Trial activated</h1>
-      <div class="govuk-panel__body">
-        Your trial expires in <span x-text="expiryTime"></span>
-      </div>
+      <div class="govuk-panel__body">Your trial expires in <span x-text="expiryTime"></span></div>
     </div>
   </form>
 </div>
@@ -242,9 +236,9 @@ When you need TypeScript, npm packages, or complex bundling:
 
 ```javascript
 // .eleventy.js
-import esbuild from "esbuild";
+import esbuild from "esbuild"
 
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   eleventyConfig.on("eleventy.before", async () => {
     await esbuild.build({
       entryPoints: ["src/assets/js/app.ts"],
@@ -253,11 +247,11 @@ export default function(eleventyConfig) {
       sourcemap: true,
       target: ["chrome61", "firefox60", "safari11"], // GOV.UK browser support
       outfile: "_site/js/app.js",
-    });
-  });
+    })
+  })
 
   // Watch JavaScript files
-  eleventyConfig.addWatchTarget("./src/assets/js/");
+  eleventyConfig.addWatchTarget("./src/assets/js/")
 }
 ```
 
@@ -268,45 +262,48 @@ export default function(eleventyConfig) {
 ### Required Patterns
 
 **1. Progressive Enhancement Check:**
+
 ```javascript
 // Every feature must have HTML fallback
-if (!('IntersectionObserver' in window)) {
+if (!("IntersectionObserver" in window)) {
   // Don't break - gracefully degrade
-  return;
+  return
 }
 ```
 
 **2. Component Namespacing:**
+
 ```javascript
 // Prefix custom components to avoid conflicts
-window.NDXComponents = window.NDXComponents || {};
+window.NDXComponents = window.NDXComponents || {}
 
 NDXComponents.CatalogueFilter = class {
   constructor(element) {
-    this.element = element;
-    this.init();
+    this.element = element
+    this.init()
   }
 
   init() {
     // Don't interfere with GOV.UK components
-    if (this.element.hasAttribute('data-ndx-enhanced')) return;
-    this.element.setAttribute('data-ndx-enhanced', 'true');
+    if (this.element.hasAttribute("data-ndx-enhanced")) return
+    this.element.setAttribute("data-ndx-enhanced", "true")
     // Enhancement logic
   }
-};
+}
 ```
 
 **3. Initialization After GOV.UK:**
+
 ```javascript
 // Wait for GOV.UK Frontend
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
   // Initialize after a small delay to ensure GOV.UK is ready
-  setTimeout(function() {
-    document.querySelectorAll('[data-module="ndx-filter"]').forEach(element => {
-      new NDXComponents.CatalogueFilter(element);
-    });
-  }, 100);
-});
+  setTimeout(function () {
+    document.querySelectorAll('[data-module="ndx-filter"]').forEach((element) => {
+      new NDXComponents.CatalogueFilter(element)
+    })
+  }, 100)
+})
 ```
 
 ---
@@ -314,21 +311,25 @@ document.addEventListener('DOMContentLoaded', function() {
 ## Specific Recommendations for NDX Features
 
 ### 1. Catalogue Filtering
+
 - **Approach:** Alpine.js with progressive enhancement
 - **Fallback:** Server-side filtering via form submission
 - **Size:** ~2KB custom code + 16KB Alpine.js
 
 ### 2. Trial Request (24-hour access)
+
 - **Approach:** Enhance forms with fetch API
 - **Fallback:** Standard form POST
 - **Size:** ~1KB custom code
 
 ### 3. Search Enhancement
+
 - **Approach:** Client-side filtering of existing content
 - **Fallback:** Server-side search (future)
 - **Library:** Consider Lunr.js (30KB) when catalogue exceeds 100 items
 
 ### 4. User Reviews
+
 - **Approach:** Progressive form enhancement
 - **Fallback:** Full page reload after submission
 - **Validation:** Server-side required, client-side optional
@@ -338,15 +339,18 @@ document.addEventListener('DOMContentLoaded', function() {
 ## Performance Budget
 
 Current:
+
 - GOV.UK Frontend: ~30KB
 - Custom CSS: ~5KB
 
 Recommended additions:
+
 - Alpine.js: 16KB
 - Custom JavaScript: 5-10KB
 - **Total JS Budget:** ~55KB (acceptable for government service)
 
 Future (if needed):
+
 - Search (Lunr.js): +30KB
 - Advanced features: +20KB
 - **Maximum:** 100KB total JavaScript

@@ -152,12 +152,12 @@ NotificationHandler (N-4)
 
 From tech spec (`tech-spec-epic-n5.md:300-350`):
 
-| Event Type | Env Var | Required Fields | Optional Fields |
-|------------|---------|-----------------|-----------------|
-| LeaseRequested | `NOTIFY_TEMPLATE_LEASE_REQUESTED` | userName, templateName, requestTime | comments |
-| LeaseApproved | `NOTIFY_TEMPLATE_LEASE_APPROVED` | userName, accountId, ssoUrl, expiryDate | budgetLimit |
-| LeaseDenied | `NOTIFY_TEMPLATE_LEASE_DENIED` | userName, templateName, reason, deniedBy | - |
-| LeaseTerminated | `NOTIFY_TEMPLATE_LEASE_TERMINATED` | userName, accountId, reason, finalCost | - |
+| Event Type      | Env Var                            | Required Fields                          | Optional Fields |
+| --------------- | ---------------------------------- | ---------------------------------------- | --------------- |
+| LeaseRequested  | `NOTIFY_TEMPLATE_LEASE_REQUESTED`  | userName, templateName, requestTime      | comments        |
+| LeaseApproved   | `NOTIFY_TEMPLATE_LEASE_APPROVED`   | userName, accountId, ssoUrl, expiryDate  | budgetLimit     |
+| LeaseDenied     | `NOTIFY_TEMPLATE_LEASE_DENIED`     | userName, templateName, reason, deniedBy | -               |
+| LeaseTerminated | `NOTIFY_TEMPLATE_LEASE_TERMINATED` | userName, accountId, reason, finalCost   | -               |
 
 ### Portal Deep Link Pattern
 
@@ -169,21 +169,21 @@ const generatePortalLink = (leaseKey: LeaseKey, action: string): string => {
     action,
     exp: Date.now() + 15 * 60 * 1000, // 15-min expiry
     aud: `${leaseKey.userEmail}:${leaseKey.uuid}`, // Audience claim
-  };
-  const token = signHmac(payload, process.env.PORTAL_LINK_SECRET!);
-  return `${process.env.PORTAL_URL}/actions/${action}?token=${token}&utm_source=email&utm_campaign=${action}`;
-};
+  }
+  const token = signHmac(payload, process.env.PORTAL_LINK_SECRET!)
+  return `${process.env.PORTAL_URL}/actions/${action}?token=${token}&utm_source=email&utm_campaign=${action}`
+}
 ```
 
 ### Human-Readable Reason Mapping
 
 ```typescript
 const TERMINATION_REASONS: Record<string, string> = {
-  'BUDGET_EXCEEDED': 'Your sandbox lease was terminated because the budget limit was reached.',
-  'EXPIRED': 'Your sandbox lease has expired.',
-  'MANUAL': 'Your sandbox lease was terminated by an administrator.',
-  'POLICY_VIOLATION': 'Your sandbox lease was terminated due to a policy violation.',
-};
+  BUDGET_EXCEEDED: "Your sandbox lease was terminated because the budget limit was reached.",
+  EXPIRED: "Your sandbox lease has expired.",
+  MANUAL: "Your sandbox lease was terminated by an administrator.",
+  POLICY_VIOLATION: "Your sandbox lease was terminated due to a policy violation.",
+}
 ```
 
 ### Key Dependencies
@@ -267,28 +267,33 @@ claude-opus-4-5-20251101
 
 ### File List
 
-| File | Action | Lines |
-|------|--------|-------|
-| `infra/lib/lambda/notification/templates.ts` | Created | 551 |
-| `infra/lib/lambda/notification/templates.test.ts` | Created | 886 |
-| `infra/lib/notification-stack.ts` | Modified | 695 (+100) |
-| `infra/lib/notification-stack.test.ts` | Modified | 570 (+4) |
+| File                                              | Action   | Lines      |
+| ------------------------------------------------- | -------- | ---------- |
+| `infra/lib/lambda/notification/templates.ts`      | Created  | 551        |
+| `infra/lib/lambda/notification/templates.test.ts` | Created  | 886        |
+| `infra/lib/notification-stack.ts`                 | Modified | 695 (+100) |
+| `infra/lib/notification-stack.test.ts`            | Modified | 570 (+4)   |
 
 ---
 
 ## Senior Developer Review (AI)
 
 ### Reviewer
+
 cns (claude-opus-4-5-20251101)
 
 ### Date
+
 2025-11-28
 
 ### Outcome
+
 **APPROVED** - All MUST acceptance criteria satisfied with comprehensive test coverage.
 
 ### Summary
+
 Story n5-4 implements the template registry pattern for lease lifecycle email notifications. The implementation includes:
+
 - Template registry with 4 lease lifecycle templates
 - HMAC-SHA256 signed portal links with 15-minute expiry
 - Human-readable termination reason mapping
@@ -300,57 +305,58 @@ Story n5-4 implements the template registry pattern for lease lifecycle email no
 **No HIGH or MEDIUM severity issues found.**
 
 **LOW severity observations:**
+
 - Note: Portal link generation gracefully handles missing PORTAL_URL/PORTAL_LINK_SECRET env vars (logs warning, omits links)
 - Note: Task 10 (integration tests) correctly deferred to n5-8 per tech spec
 
 ### Acceptance Criteria Coverage
 
-| AC | Description | Status | Evidence |
-|----|-------------|--------|----------|
-| 4.1 | Template IDs from env vars | IMPLEMENTED | templates.ts:82-107, tests pass |
-| 4.2 | LeaseRequested fields | IMPLEMENTED | templates.ts:83-88,357-368 |
-| 4.3 | LeaseApproved fields | IMPLEMENTED | templates.ts:89-94,375-418 |
-| 4.4 | Portal deep link | IMPLEMENTED | templates.ts:392-401 |
-| 4.5 | LeaseDenied fields | IMPLEMENTED | templates.ts:95-99,423-453 |
-| 4.6 | LeaseTerminated fields | IMPLEMENTED | templates.ts:101-106,459-490 |
-| 4.7 | Human-readable reason | IMPLEMENTED | templates.ts:126-146,472 |
-| 4.8 | PermanentError on missing | IMPLEMENTED | templates.ts:294-313 |
-| 4.9 | Optional defaults to empty | IMPLEMENTED | templates.ts:319-330 |
-| 4.10 | Authenticated CTA link | IMPLEMENTED | templates.ts:191-224 |
-| 4.11 | HMAC-SHA256, 15-min expiry | IMPLEMENTED | templates.ts:153,172-177,197-201 |
-| 4.12 | Audience claim | IMPLEMENTED | templates.ts:203 |
-| 4.13 | Email client compatibility | DEFERRED | n5-8 per tech spec |
-| 4.14 | Increase Budget link | IMPLEMENTED | templates.ts:230-236,403-408 |
-| 4.15 | Budget form pre-fill | IMPLEMENTED | templates.ts:230-236 |
-| 4.16 | Email client testing | DEFERRED | n5-8 per tech spec |
-| 4.17 | O365 Safe Links | DEFERRED | n5-8 per tech spec |
-| 4.18 | Plain-text fallback | IMPLEMENTED | templates.ts:251-254,410-411 |
-| 4.19 | Link instructions | IMPLEMENTED | templates.ts:244-245,413-414 |
-| 4.20 | Load test | DEFERRED | n5-8 per tech spec |
-| 4.21 | Complaint rate alarm | IMPLEMENTED | notification-stack.ts:455-481 |
-| 4.22 | Bounce rate alarm | IMPLEMENTED | notification-stack.ts:487-513 |
-| 4.23 | Deliverability runbook | IMPLEMENTED | Runbook URLs in alarm descriptions |
-| 4.24 | Unsubscribe rate alarm | IMPLEMENTED | notification-stack.ts:519-545 |
-| 4.25 | UTM parameters | IMPLEMENTED | templates.ts:213-221 |
-| 4.26 | Accessibility review | DEFERRED | n5-8 per tech spec |
+| AC   | Description                | Status      | Evidence                           |
+| ---- | -------------------------- | ----------- | ---------------------------------- |
+| 4.1  | Template IDs from env vars | IMPLEMENTED | templates.ts:82-107, tests pass    |
+| 4.2  | LeaseRequested fields      | IMPLEMENTED | templates.ts:83-88,357-368         |
+| 4.3  | LeaseApproved fields       | IMPLEMENTED | templates.ts:89-94,375-418         |
+| 4.4  | Portal deep link           | IMPLEMENTED | templates.ts:392-401               |
+| 4.5  | LeaseDenied fields         | IMPLEMENTED | templates.ts:95-99,423-453         |
+| 4.6  | LeaseTerminated fields     | IMPLEMENTED | templates.ts:101-106,459-490       |
+| 4.7  | Human-readable reason      | IMPLEMENTED | templates.ts:126-146,472           |
+| 4.8  | PermanentError on missing  | IMPLEMENTED | templates.ts:294-313               |
+| 4.9  | Optional defaults to empty | IMPLEMENTED | templates.ts:319-330               |
+| 4.10 | Authenticated CTA link     | IMPLEMENTED | templates.ts:191-224               |
+| 4.11 | HMAC-SHA256, 15-min expiry | IMPLEMENTED | templates.ts:153,172-177,197-201   |
+| 4.12 | Audience claim             | IMPLEMENTED | templates.ts:203                   |
+| 4.13 | Email client compatibility | DEFERRED    | n5-8 per tech spec                 |
+| 4.14 | Increase Budget link       | IMPLEMENTED | templates.ts:230-236,403-408       |
+| 4.15 | Budget form pre-fill       | IMPLEMENTED | templates.ts:230-236               |
+| 4.16 | Email client testing       | DEFERRED    | n5-8 per tech spec                 |
+| 4.17 | O365 Safe Links            | DEFERRED    | n5-8 per tech spec                 |
+| 4.18 | Plain-text fallback        | IMPLEMENTED | templates.ts:251-254,410-411       |
+| 4.19 | Link instructions          | IMPLEMENTED | templates.ts:244-245,413-414       |
+| 4.20 | Load test                  | DEFERRED    | n5-8 per tech spec                 |
+| 4.21 | Complaint rate alarm       | IMPLEMENTED | notification-stack.ts:455-481      |
+| 4.22 | Bounce rate alarm          | IMPLEMENTED | notification-stack.ts:487-513      |
+| 4.23 | Deliverability runbook     | IMPLEMENTED | Runbook URLs in alarm descriptions |
+| 4.24 | Unsubscribe rate alarm     | IMPLEMENTED | notification-stack.ts:519-545      |
+| 4.25 | UTM parameters             | IMPLEMENTED | templates.ts:213-221               |
+| 4.26 | Accessibility review       | DEFERRED    | n5-8 per tech spec                 |
 
 **Summary: 20 of 26 ACs fully implemented, 6 correctly deferred to n5-8**
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Template registry module | ✓ Complete | VERIFIED | templates.ts:36-273 |
-| Task 2: LeaseRequested template | ✓ Complete | VERIFIED | templates.ts:357-368 |
-| Task 3: LeaseApproved template | ✓ Complete | VERIFIED | templates.ts:375-418 |
-| Task 4: LeaseDenied template | ✓ Complete | VERIFIED | templates.ts:423-453 |
-| Task 5: LeaseTerminated template | ✓ Complete | VERIFIED | templates.ts:459-490 |
-| Task 6: CTA link generation | ✓ Complete | VERIFIED | templates.ts:148-236 |
-| Task 7: Link fallback | ✓ Complete | VERIFIED | templates.ts:238-254 |
-| Task 8: Deliverability metrics | ✓ Complete | VERIFIED | notification-stack.ts:445-560 |
-| Task 9: Unit tests | ✓ Complete | VERIFIED | 57 tests passing |
-| Task 10: Integration tests | DEFERRED | CORRECT | Deferred to n5-8 |
-| Task 11: Documentation | ✓ Complete | VERIFIED | Runbook URLs in alarms |
+| Task                             | Marked As  | Verified As | Evidence                      |
+| -------------------------------- | ---------- | ----------- | ----------------------------- |
+| Task 1: Template registry module | ✓ Complete | VERIFIED    | templates.ts:36-273           |
+| Task 2: LeaseRequested template  | ✓ Complete | VERIFIED    | templates.ts:357-368          |
+| Task 3: LeaseApproved template   | ✓ Complete | VERIFIED    | templates.ts:375-418          |
+| Task 4: LeaseDenied template     | ✓ Complete | VERIFIED    | templates.ts:423-453          |
+| Task 5: LeaseTerminated template | ✓ Complete | VERIFIED    | templates.ts:459-490          |
+| Task 6: CTA link generation      | ✓ Complete | VERIFIED    | templates.ts:148-236          |
+| Task 7: Link fallback            | ✓ Complete | VERIFIED    | templates.ts:238-254          |
+| Task 8: Deliverability metrics   | ✓ Complete | VERIFIED    | notification-stack.ts:445-560 |
+| Task 9: Unit tests               | ✓ Complete | VERIFIED    | 57 tests passing              |
+| Task 10: Integration tests       | DEFERRED   | CORRECT     | Deferred to n5-8              |
+| Task 11: Documentation           | ✓ Complete | VERIFIED    | Runbook URLs in alarms        |
 
 **Summary: 10 of 10 completed tasks verified, 0 questionable, 0 falsely marked complete**
 
@@ -384,6 +390,7 @@ Story n5-4 implements the template registry pattern for lease lifecycle email no
 ### Action Items
 
 **Advisory Notes:**
+
 - Note: Consider adding integration test for portal link token verification in n5-8
 - Note: Email template design accessibility review deferred to n5-8 (requires GOV.UK Notify template setup)
 
@@ -393,7 +400,7 @@ Story n5-4 implements the template registry pattern for lease lifecycle email no
 
 ## Change Log
 
-| Date | Version | Change |
-|------|---------|--------|
-| 2025-11-28 | 1.0 | Initial implementation complete |
-| 2025-11-28 | 1.0 | Senior Developer Review notes appended - APPROVED |
+| Date       | Version | Change                                            |
+| ---------- | ------- | ------------------------------------------------- |
+| 2025-11-28 | 1.0     | Initial implementation complete                   |
+| 2025-11-28 | 1.0     | Senior Developer Review notes appended - APPROVED |

@@ -1,16 +1,16 @@
 // Configuration for NDX Infrastructure
 export interface EnvironmentConfig {
-  readonly distributionId: string;
-  readonly oacId: string;
-  readonly bucketName: string;
-  readonly region: string;
-  readonly account: string;
+  readonly distributionId: string
+  readonly oacId: string
+  readonly bucketName: string
+  readonly region: string
+  readonly account: string
   // Alternate domain name (CNAME) configuration
   // Step 1: Create ACM certificate in us-east-1 manually, add DNS validation records
   // Step 2: Once validated, add certificateArn here
   // Step 3: Add alternateDomainName and deploy
-  readonly alternateDomainName?: string;
-  readonly certificateArn?: string; // ACM certificate ARN in us-east-1
+  readonly alternateDomainName?: string
+  readonly certificateArn?: string // ACM certificate ARN in us-east-1
 }
 
 /**
@@ -27,29 +27,29 @@ export interface ISBConfig {
    * ISB namespace (e.g., 'prod', 'staging')
    * Used to construct the event bus name: ISB-{namespace}-ISBEventBus
    */
-  readonly namespace: string;
+  readonly namespace: string
 
   /**
    * AWS Account ID where the ISB EventBridge bus resides
    * Used for account-level filtering in EventBridge rules (Red Team requirement)
    * This prevents cross-account event injection attacks
    */
-  readonly accountId: string;
+  readonly accountId: string
 
   /**
    * AWS Region where the ISB EventBridge bus is deployed
    */
-  readonly region: string;
+  readonly region: string
 
   /**
    * DynamoDB table names for data enrichment (Epic N-5)
    * Used to look up user email, lease details, sandbox account info
    */
   readonly dynamoDbTables: {
-    readonly leaseTable: string;
-    readonly leaseTemplateTable: string;
-    readonly sandboxAccountTable: string;
-  };
+    readonly leaseTable: string
+    readonly leaseTemplateTable: string
+    readonly sandboxAccountTable: string
+  }
 }
 
 /**
@@ -60,26 +60,26 @@ export interface ISBConfig {
  */
 export const ISB_CONFIG: Record<string, ISBConfig> = {
   prod: {
-    namespace: 'InnovationSandboxCompute',
-    accountId: '568672915267',
-    region: 'us-west-2',
+    namespace: "InnovationSandboxCompute",
+    accountId: "568672915267",
+    region: "us-west-2",
     dynamoDbTables: {
-      leaseTable: 'ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1',
-      leaseTemplateTable: 'ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8',
-      sandboxAccountTable: 'ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV',
+      leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
+      leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
+      sandboxAccountTable: "ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV",
     },
   },
   staging: {
-    namespace: 'InnovationSandboxCompute',
-    accountId: '568672915267',
-    region: 'us-west-2',
+    namespace: "InnovationSandboxCompute",
+    accountId: "568672915267",
+    region: "us-west-2",
     dynamoDbTables: {
-      leaseTable: 'ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1',
-      leaseTemplateTable: 'ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8',
-      sandboxAccountTable: 'ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV',
+      leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
+      leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
+      sandboxAccountTable: "ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV",
     },
   },
-};
+}
 
 /**
  * Get ISB configuration for the specified environment
@@ -88,13 +88,13 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
  * @returns ISB configuration for the environment
  * @throws Error if environment is not configured
  */
-export function getISBConfig(env: string = 'prod'): ISBConfig {
-  const config = ISB_CONFIG[env];
+export function getISBConfig(env: string = "prod"): ISBConfig {
+  const config = ISB_CONFIG[env]
   if (!config) {
-    const validEnvs = Object.keys(ISB_CONFIG).join(', ');
-    throw new Error(`Unknown ISB environment: ${env}. Valid environments: ${validEnvs}`);
+    const validEnvs = Object.keys(ISB_CONFIG).join(", ")
+    throw new Error(`Unknown ISB environment: ${env}. Valid environments: ${validEnvs}`)
   }
-  return config;
+  return config
 }
 
 /**
@@ -106,7 +106,7 @@ export function getISBConfig(env: string = 'prod'): ISBConfig {
 export function getISBEventBusArn(config: ISBConfig): string {
   // ISB event bus name format: {namespace}ISBEventBus{suffix}
   // e.g., InnovationSandboxComputeISBEventBus6697FE33
-  return `arn:aws:events:${config.region}:${config.accountId}:event-bus/${config.namespace}ISBEventBus6697FE33`;
+  return `arn:aws:events:${config.region}:${config.accountId}:event-bus/${config.namespace}ISBEventBus6697FE33`
 }
 
 /**
@@ -128,28 +128,28 @@ export function getISBEventBusArn(config: ISBConfig): string {
  */
 export const ISB_EVENT_TYPES = [
   // Lease lifecycle events (user notifications)
-  'LeaseRequested',
-  'LeaseApproved',
-  'LeaseDenied',
-  'LeaseTerminated',
-  'LeaseFrozen',
+  "LeaseRequested",
+  "LeaseApproved",
+  "LeaseDenied",
+  "LeaseTerminated",
+  "LeaseFrozen",
   // Monitoring threshold events (user notifications)
-  'LeaseBudgetThresholdAlert',
-  'LeaseDurationThresholdAlert',
-  'LeaseFreezingThresholdAlert',
-  'LeaseBudgetExceeded',
-  'LeaseExpired',
+  "LeaseBudgetThresholdAlert",
+  "LeaseDurationThresholdAlert",
+  "LeaseFreezingThresholdAlert",
+  "LeaseBudgetExceeded",
+  "LeaseExpired",
   // Ops events (Slack alerts)
-  'AccountQuarantined',
-  'AccountCleanupFailed',
-  'AccountDriftDetected',
-] as const;
+  "AccountQuarantined",
+  "AccountCleanupFailed",
+  "AccountDriftDetected",
+] as const
 
 /**
  * The expected source field value for ISB events
  * Used for defense-in-depth validation alongside account filtering
  */
-export const ISB_EVENT_SOURCE = 'innovation-sandbox';
+export const ISB_EVENT_SOURCE = "innovation-sandbox"
 
 // =============================================================================
 // GOV.UK Notify Template IDs
@@ -167,19 +167,19 @@ export const ISB_EVENT_SOURCE = 'innovation-sandbox';
  */
 export const NOTIFY_TEMPLATE_IDS = {
   // Lease lifecycle events (N5.4)
-  LEASE_REQUESTED: '30a9e926-36fd-4646-a8fc-76000c95f2a7',
-  LEASE_APPROVED: 'd09a78f6-e1c3-441f-80a7-3b85529d78e9',
-  LEASE_DENIED: '8686af3c-4121-41f1-8a28-06576b9e7c22',
-  LEASE_TERMINATED: '343d9762-915b-4e5e-9655-a7561c38582e',
+  LEASE_REQUESTED: "30a9e926-36fd-4646-a8fc-76000c95f2a7",
+  LEASE_APPROVED: "d09a78f6-e1c3-441f-80a7-3b85529d78e9",
+  LEASE_DENIED: "8686af3c-4121-41f1-8a28-06576b9e7c22",
+  LEASE_TERMINATED: "343d9762-915b-4e5e-9655-a7561c38582e",
 
   // Monitoring alert events (N5.5)
-  BUDGET_THRESHOLD: 'e7128846-a9ef-46b9-97c1-851b06d38d66',
-  DURATION_THRESHOLD: '331bd0d4-5979-4394-9745-0a9a7d6cfb05',
-  FREEZING_THRESHOLD: '57718a30-b297-4de6-a674-e63ec33b970b',
-  BUDGET_EXCEEDED: 'cbe9abe8-1eda-4d06-a5c7-ea9b78863ce2',
-  LEASE_EXPIRED: 'f25aa223-41f5-45dc-825c-e3fed7f9b794',
-  LEASE_FROZEN: '6daa353b-a39d-46c0-b279-907e15b09bc2',
-} as const;
+  BUDGET_THRESHOLD: "e7128846-a9ef-46b9-97c1-851b06d38d66",
+  DURATION_THRESHOLD: "331bd0d4-5979-4394-9745-0a9a7d6cfb05",
+  FREEZING_THRESHOLD: "57718a30-b297-4de6-a674-e63ec33b970b",
+  BUDGET_EXCEEDED: "cbe9abe8-1eda-4d06-a5c7-ea9b78863ce2",
+  LEASE_EXPIRED: "f25aa223-41f5-45dc-825c-e3fed7f9b794",
+  LEASE_FROZEN: "6daa353b-a39d-46c0-b279-907e15b09bc2",
+} as const
 
 /**
  * Map from event type to template ID
@@ -196,32 +196,32 @@ export const EVENT_TYPE_TO_TEMPLATE_ID: Record<string, string> = {
   LeaseBudgetExceeded: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
   LeaseExpired: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
   LeaseFrozen: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
-};
+}
 
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   prod: {
-    distributionId: 'E3THG4UHYDHVWP',
-    oacId: 'E3P8MA1G9Y5BYE',
-    bucketName: 'ndx-static-prod',
-    region: 'us-west-2',
-    account: '568672915267',
-    alternateDomainName: 'ndx.digital.cabinet-office.gov.uk',
-    certificateArn: 'arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6',
+    distributionId: "E3THG4UHYDHVWP",
+    oacId: "E3P8MA1G9Y5BYE",
+    bucketName: "ndx-static-prod",
+    region: "us-west-2",
+    account: "568672915267",
+    alternateDomainName: "ndx.digital.cabinet-office.gov.uk",
+    certificateArn: "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
   },
   test: {
-    distributionId: 'E3TESTDISTID',
-    oacId: 'E3TESTOAC',
-    bucketName: 'ndx-static-test',
-    region: 'us-west-2',
-    account: '568672915267',
+    distributionId: "E3TESTDISTID",
+    oacId: "E3TESTOAC",
+    bucketName: "ndx-static-test",
+    region: "us-west-2",
+    account: "568672915267",
   },
-};
+}
 
-export function getEnvironmentConfig(env: string = 'prod'): EnvironmentConfig {
-  const config = ENVIRONMENTS[env];
+export function getEnvironmentConfig(env: string = "prod"): EnvironmentConfig {
+  const config = ENVIRONMENTS[env]
   if (!config) {
-    const validEnvs = Object.keys(ENVIRONMENTS).join(', ');
-    throw new Error('Unknown environment: ' + env + '. Valid environments: ' + validEnvs);
+    const validEnvs = Object.keys(ENVIRONMENTS).join(", ")
+    throw new Error("Unknown environment: " + env + ". Valid environments: " + validEnvs)
   }
-  return config;
+  return config
 }

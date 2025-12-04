@@ -15,17 +15,17 @@ So that unintended infrastructure changes are detected automatically.
    **Then** the test file includes:
 
    ```typescript
-   import { Template } from 'aws-cdk-lib/assertions';
-   import * as cdk from 'aws-cdk-lib';
-   import { NdxStaticStack } from './ndx-stack';
+   import { Template } from "aws-cdk-lib/assertions"
+   import * as cdk from "aws-cdk-lib"
+   import { NdxStaticStack } from "./ndx-stack"
 
-   test('Stack snapshot matches expected CloudFormation', () => {
-     const app = new cdk.App();
-     const stack = new NdxStaticStack(app, 'TestStack');
-     const template = Template.fromStack(stack);
+   test("Stack snapshot matches expected CloudFormation", () => {
+     const app = new cdk.App()
+     const stack = new NdxStaticStack(app, "TestStack")
+     const template = Template.fromStack(stack)
 
-     expect(template.toJSON()).toMatchSnapshot();
-   });
+     expect(template.toJSON()).toMatchSnapshot()
+   })
    ```
 
 2. **And** running `yarn test` generates snapshot file
@@ -52,7 +52,7 @@ So that unintended infrastructure changes are detected automatically.
 
 - [x] Task 2: Generate initial snapshot (AC: #2, #3)
   - [x] Run yarn test in infra directory
-  - [x] Verify __snapshots__ directory created
+  - [x] Verify **snapshots** directory created
   - [x] Verify snapshot file contains CloudFormation template
   - [x] Inspect snapshot for S3 bucket resource, properties, tags
   - [x] Commit snapshot file to version control
@@ -72,18 +72,21 @@ So that unintended infrastructure changes are detected automatically.
 **CDK Testing Strategy** [Source: docs/infrastructure-architecture.md#Testing-Patterns]
 
 Jest snapshot tests provide broad coverage with minimal code:
+
 - Captures ANY unintended CloudFormation changes
 - Uses `Template.fromStack()` to extract CloudFormation
 - `toMatchSnapshot()` creates version-controlled snapshot file
 - Snapshots committed to git for change tracking
 
 **Test Co-location Pattern (ADR-005)** [Source: docs/infrastructure-architecture.md#ADR-005]
+
 - Tests live alongside source: `lib/ndx-stack.test.ts` next to `lib/ndx-stack.ts`
 - Standard CDK pattern for easier maintenance
 - Simpler imports (no path traversal needed)
 - `test/` directory only contains Jest config
 
 **Snapshot Test Benefits** [Source: docs/epics.md#Story-3.3 Technical Notes]
+
 - Snapshot tests provide broad coverage with minimal code
 - Catches ANY unintended CloudFormation changes
 - Jest `toMatchSnapshot()` creates `__snapshots__/` directory
@@ -110,6 +113,7 @@ Story 3.2 modified deployment script only. Story 3.3 creates NEW test file in in
 ### Project Structure Notes
 
 **CDK Project Structure After Story 3.3:**
+
 ```
 infra/
 ├── bin/
@@ -127,6 +131,7 @@ infra/
 ```
 
 **Snapshot File Structure:**
+
 ```javascript
 // __snapshots__/ndx-stack.test.ts.snap
 exports[`Stack snapshot matches expected CloudFormation 1`] = `
@@ -144,12 +149,13 @@ exports[`Stack snapshot matches expected CloudFormation 1`] = `
     }
   }
 }
-`;
+`
 ```
 
 ### Functional Requirements Coverage
 
 This story implements:
+
 - **FR13:** CDK snapshot tests for CloudFormation template validation ✓
 - **FR16:** Tests must pass before deployment (partial - creates test infrastructure) ✓
 - **NFR-MAINT-2:** 100% snapshot coverage (single stack, 100% coverage) ✓
@@ -157,21 +163,24 @@ This story implements:
 ### Testing Standards
 
 **Test Execution:**
+
 ```bash
 cd infra
-yarn test              # Run all tests
-yarn test --coverage   # With coverage report
-yarn test -u           # Update snapshots (intentional changes)
+yarn test            # Run all tests
+yarn test --coverage # With coverage report
+yarn test -u         # Update snapshots (intentional changes)
 ```
 
 **Success Criteria:**
+
 - Test file created with proper imports
-- Snapshot file generated in __snapshots__/ directory
+- Snapshot file generated in **snapshots**/ directory
 - Snapshot captures complete CloudFormation template
 - Tests pass on subsequent runs
 - Intentional CDK changes cause test failure with clear diff
 
 **Snapshot Update Workflow:**
+
 1. Make intentional CDK code change
 2. Run `yarn test` - test fails with diff
 3. Review diff to ensure change is intentional
@@ -198,6 +207,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Implementation Plan:**
+
 1. Update jest.config.js to include lib/ directory in roots for co-located tests
 2. Create infra/lib/ndx-stack.test.ts with snapshot test using Template.fromStack()
 3. Run yarn test to generate initial snapshot file
@@ -206,10 +216,11 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 6. Validate snapshot diff detection capability with test tag modification
 
 **Execution:**
+
 - Updated jest.config.js to add '<rootDir>/lib' to roots array for co-located test discovery
 - Created infra/lib/ndx-stack.test.ts with snapshot test importing Template, cdk, and NdxStaticStack
 - Test uses Template.fromStack() to extract CloudFormation and expect().toMatchSnapshot() for validation
-- Ran yarn test, successfully generated snapshot at infra/lib/__snapshots__/ndx-stack.test.ts.snap
+- Ran yarn test, successfully generated snapshot at infra/lib/**snapshots**/ndx-stack.test.ts.snap
 - Snapshot captures complete CloudFormation template (82 lines) including:
   - S3 bucket resource (AWS::S3::Bucket)
   - Bucket encryption configuration (AES256)
@@ -227,7 +238,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Created co-located snapshot test at infra/lib/ndx-stack.test.ts per ADR-005 standard CDK pattern
 - Implements all 6 acceptance criteria:
   - AC1: Test file created with proper imports and snapshot test structure ✓
-  - AC2: Running yarn test generates __snapshots__/ndx-stack.test.ts.snap file ✓
+  - AC2: Running yarn test generates **snapshots**/ndx-stack.test.ts.snap file ✓
   - AC3: Snapshot captures complete CloudFormation template including S3 bucket resource, encryption, versioning, public access block, and tags ✓
   - AC4: Subsequent test runs pass when snapshot matches current template ✓
   - AC5: CDK code changes trigger snapshot updates (auto-update in dev mode) ✓
@@ -257,10 +268,12 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### File List
 
 **NEW:**
+
 - infra/lib/ndx-stack.test.ts - Snapshot test for NdxStaticStack CloudFormation template
-- infra/lib/__snapshots__/ndx-stack.test.ts.snap - Generated snapshot file (82 lines)
+- infra/lib/**snapshots**/ndx-stack.test.ts.snap - Generated snapshot file (82 lines)
 
 **MODIFIED:**
+
 - infra/jest.config.js - Added '<rootDir>/lib' to roots array for co-located test discovery
 
 ---
@@ -281,52 +294,54 @@ Story 3.3 successfully implements CDK snapshot testing infrastructure with compl
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | Test file infra/lib/ndx-stack.test.ts created with snapshot test importing Template, NdxStaticStack, using toMatchSnapshot() | IMPLEMENTED | infra/lib/ndx-stack.test.ts:1-11 - All required imports present (Template from aws-cdk-lib/assertions:1, cdk:2, NdxStaticStack:3), snapshot test structure correct (lines 5-11) ✓ |
-| AC2 | Running yarn test generates __snapshots__/ndx-stack.test.ts.snap file | IMPLEMENTED | infra/lib/__snapshots__/ndx-stack.test.ts.snap exists (82 lines), generated by Jest, Jest Snapshot v1 header present (line 1) ✓ |
+| AC# | Description                                                                                                                                         | Status      | Evidence                                                                                                                                                                                                                                                                                                   |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC1 | Test file infra/lib/ndx-stack.test.ts created with snapshot test importing Template, NdxStaticStack, using toMatchSnapshot()                        | IMPLEMENTED | infra/lib/ndx-stack.test.ts:1-11 - All required imports present (Template from aws-cdk-lib/assertions:1, cdk:2, NdxStaticStack:3), snapshot test structure correct (lines 5-11) ✓                                                                                                                          |
+| AC2 | Running yarn test generates **snapshots**/ndx-stack.test.ts.snap file                                                                               | IMPLEMENTED | infra/lib/**snapshots**/ndx-stack.test.ts.snap exists (82 lines), generated by Jest, Jest Snapshot v1 header present (line 1) ✓                                                                                                                                                                            |
 | AC3 | Snapshot captures complete CloudFormation template including S3 bucket resource, properties (encryption, versioning, public access block), and tags | IMPLEMENTED | Snapshot file lines 13-52: S3 bucket resource (Type: AWS::S3::Bucket, line 50), BucketEncryption with AES256 (lines 16-24), VersioningConfiguration Enabled (lines 46-48), PublicAccessBlockConfiguration all 4 settings true (lines 26-31), Tags array with project/environment/managedby (lines 32-45) ✓ |
-| AC4 | Subsequent test runs pass when snapshot matches current template | IMPLEMENTED | Test execution log shows "1 snapshot passed" on second run, no snapshot updates triggered, all tests passing ✓ |
-| AC5 | Intentional CDK code changes cause test failure | IMPLEMENTED | Jest snapshot behavior validated - updates trigger snapshot changes, diff mechanism functional ✓ |
-| AC6 | Test failure message clearly shows CloudFormation differences | IMPLEMENTED | Jest snapshot diff functionality validated - provides clear diff output showing CloudFormation property changes ✓ |
+| AC4 | Subsequent test runs pass when snapshot matches current template                                                                                    | IMPLEMENTED | Test execution log shows "1 snapshot passed" on second run, no snapshot updates triggered, all tests passing ✓                                                                                                                                                                                             |
+| AC5 | Intentional CDK code changes cause test failure                                                                                                     | IMPLEMENTED | Jest snapshot behavior validated - updates trigger snapshot changes, diff mechanism functional ✓                                                                                                                                                                                                           |
+| AC6 | Test failure message clearly shows CloudFormation differences                                                                                       | IMPLEMENTED | Jest snapshot diff functionality validated - provides clear diff output showing CloudFormation property changes ✓                                                                                                                                                                                          |
 
 **Summary:** 6 of 6 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Create snapshot test file | COMPLETED [x] | VERIFIED COMPLETE | infra/lib/ndx-stack.test.ts created with all required components |
-| Task 1.1: Create infra/lib/ndx-stack.test.ts with snapshot test | COMPLETED [x] | VERIFIED COMPLETE | File exists at correct path, test structure valid |
-| Task 1.2: Import Template from aws-cdk-lib/assertions | COMPLETED [x] | VERIFIED COMPLETE | Line 1: `import { Template } from 'aws-cdk-lib/assertions';` |
-| Task 1.3: Import NdxStaticStack from ./ndx-stack | COMPLETED [x] | VERIFIED COMPLETE | Line 3: `import { NdxStaticStack } from './ndx-stack';` |
-| Task 1.4: Write snapshot test using Template.fromStack() | COMPLETED [x] | VERIFIED COMPLETE | Lines 5-11: Test uses Template.fromStack(stack) on line 8 |
-| Task 1.5: Use expect().toMatchSnapshot() for CloudFormation validation | COMPLETED [x] | VERIFIED COMPLETE | Line 10: `expect(template.toJSON()).toMatchSnapshot();` |
-| Task 2: Generate initial snapshot | COMPLETED [x] | VERIFIED COMPLETE | Snapshot file generated at infra/lib/__snapshots__/ndx-stack.test.ts.snap |
-| Task 2.1: Run yarn test in infra directory | COMPLETED [x] | VERIFIED COMPLETE | Test execution logs confirm yarn test ran successfully, 1 snapshot written |
-| Task 2.2: Verify __snapshots__ directory created | COMPLETED [x] | VERIFIED COMPLETE | Directory exists at infra/lib/__snapshots__/ with correct permissions |
-| Task 2.3: Verify snapshot file contains CloudFormation template | COMPLETED [x] | VERIFIED COMPLETE | Snapshot file lines 4-81 contain complete CloudFormation template JSON |
-| Task 2.4: Inspect snapshot for S3 bucket resource, properties, tags | COMPLETED [x] | VERIFIED COMPLETE | Snapshot inspection confirmed in completion notes - all properties present |
-| Task 2.5: Commit snapshot file to version control | COMPLETED [x] | VERIFIED COMPLETE | File staged in git, ready for commit |
-| Task 3: Validate snapshot test behavior | COMPLETED [x] | VERIFIED COMPLETE | All validation subtasks completed |
-| Task 3.1: Run yarn test again, verify tests pass (snapshot matches) | COMPLETED [x] | VERIFIED COMPLETE | Test logs show "1 snapshot passed" on subsequent run |
-| Task 3.2: Make intentional CDK change (e.g., add tag) | COMPLETED [x] | VERIFIED COMPLETE | Test tag added and removed during validation |
-| Task 3.3: Run yarn test, verify test fails with clear diff | COMPLETED [x] | VERIFIED COMPLETE | Jest diff mechanism validated |
-| Task 3.4: Review failure message for CloudFormation differences | COMPLETED [x] | VERIFIED COMPLETE | Jest snapshot diff output reviewed |
-| Task 3.5: Revert change or update snapshot with yarn test -u | COMPLETED [x] | VERIFIED COMPLETE | Tag reverted, snapshot update workflow tested |
-| Task 3.6: Document snapshot update workflow | COMPLETED [x] | VERIFIED COMPLETE | Dev Notes section includes complete snapshot update workflow documentation (lines 174-179 of story) |
+| Task                                                                   | Marked As     | Verified As       | Evidence                                                                                            |
+| ---------------------------------------------------------------------- | ------------- | ----------------- | --------------------------------------------------------------------------------------------------- |
+| Task 1: Create snapshot test file                                      | COMPLETED [x] | VERIFIED COMPLETE | infra/lib/ndx-stack.test.ts created with all required components                                    |
+| Task 1.1: Create infra/lib/ndx-stack.test.ts with snapshot test        | COMPLETED [x] | VERIFIED COMPLETE | File exists at correct path, test structure valid                                                   |
+| Task 1.2: Import Template from aws-cdk-lib/assertions                  | COMPLETED [x] | VERIFIED COMPLETE | Line 1: `import { Template } from 'aws-cdk-lib/assertions';`                                        |
+| Task 1.3: Import NdxStaticStack from ./ndx-stack                       | COMPLETED [x] | VERIFIED COMPLETE | Line 3: `import { NdxStaticStack } from './ndx-stack';`                                             |
+| Task 1.4: Write snapshot test using Template.fromStack()               | COMPLETED [x] | VERIFIED COMPLETE | Lines 5-11: Test uses Template.fromStack(stack) on line 8                                           |
+| Task 1.5: Use expect().toMatchSnapshot() for CloudFormation validation | COMPLETED [x] | VERIFIED COMPLETE | Line 10: `expect(template.toJSON()).toMatchSnapshot();`                                             |
+| Task 2: Generate initial snapshot                                      | COMPLETED [x] | VERIFIED COMPLETE | Snapshot file generated at infra/lib/**snapshots**/ndx-stack.test.ts.snap                           |
+| Task 2.1: Run yarn test in infra directory                             | COMPLETED [x] | VERIFIED COMPLETE | Test execution logs confirm yarn test ran successfully, 1 snapshot written                          |
+| Task 2.2: Verify **snapshots** directory created                       | COMPLETED [x] | VERIFIED COMPLETE | Directory exists at infra/lib/**snapshots**/ with correct permissions                               |
+| Task 2.3: Verify snapshot file contains CloudFormation template        | COMPLETED [x] | VERIFIED COMPLETE | Snapshot file lines 4-81 contain complete CloudFormation template JSON                              |
+| Task 2.4: Inspect snapshot for S3 bucket resource, properties, tags    | COMPLETED [x] | VERIFIED COMPLETE | Snapshot inspection confirmed in completion notes - all properties present                          |
+| Task 2.5: Commit snapshot file to version control                      | COMPLETED [x] | VERIFIED COMPLETE | File staged in git, ready for commit                                                                |
+| Task 3: Validate snapshot test behavior                                | COMPLETED [x] | VERIFIED COMPLETE | All validation subtasks completed                                                                   |
+| Task 3.1: Run yarn test again, verify tests pass (snapshot matches)    | COMPLETED [x] | VERIFIED COMPLETE | Test logs show "1 snapshot passed" on subsequent run                                                |
+| Task 3.2: Make intentional CDK change (e.g., add tag)                  | COMPLETED [x] | VERIFIED COMPLETE | Test tag added and removed during validation                                                        |
+| Task 3.3: Run yarn test, verify test fails with clear diff             | COMPLETED [x] | VERIFIED COMPLETE | Jest diff mechanism validated                                                                       |
+| Task 3.4: Review failure message for CloudFormation differences        | COMPLETED [x] | VERIFIED COMPLETE | Jest snapshot diff output reviewed                                                                  |
+| Task 3.5: Revert change or update snapshot with yarn test -u           | COMPLETED [x] | VERIFIED COMPLETE | Tag reverted, snapshot update workflow tested                                                       |
+| Task 3.6: Document snapshot update workflow                            | COMPLETED [x] | VERIFIED COMPLETE | Dev Notes section includes complete snapshot update workflow documentation (lines 174-179 of story) |
 
 **Summary:** 18 of 18 completed tasks verified, 0 questionable, 0 falsely marked complete ✓
 
 ### Test Coverage and Gaps
 
 **Test Coverage:** ✓ EXCELLENT
+
 - Snapshot test covers complete CloudFormation template generation
 - Test validates S3 bucket resource definition, encryption, versioning, public access configuration, and tags
 - Test execution successful: 2 test suites passing, 1 snapshot validated
 - No test gaps identified for this story scope
 
 **Test Quality:**
+
 - Clean test structure following standard CDK testing patterns
 - Proper use of Template.fromStack() API
 - Snapshot approach provides broad coverage with minimal code
@@ -337,16 +352,18 @@ Story 3.3 successfully implements CDK snapshot testing infrastructure with compl
 **Architecture Compliance:** ✓ FULL COMPLIANCE
 
 All architectural constraints from infrastructure-architecture.md satisfied:
+
 - ✓ Tests co-located per ADR-005: lib/ndx-stack.test.ts next to lib/ndx-stack.ts
 - ✓ Uses Template.fromStack() from aws-cdk-lib/assertions (correct API)
 - ✓ Uses Jest toMatchSnapshot() for CloudFormation validation
 - ✓ Snapshot files version-controlled (not gitignored)
 - ✓ Jest config updated to include lib/ directory in roots array
 - ✓ Test file naming pattern correct: ndx-stack.test.ts
-- ✓ Snapshot directory auto-created: lib/__snapshots__/
+- ✓ Snapshot directory auto-created: lib/**snapshots**/
 - ✓ NFR-MAINT-2: 100% snapshot coverage achieved (single stack, 100% coverage)
 
 **Functional Requirements Satisfied:**
+
 - FR13: CDK snapshot tests for CloudFormation template validation ✓
 - FR16: Tests must pass before deployment (infrastructure created) ✓
 - NFR-MAINT-2: 100% snapshot coverage ✓
@@ -356,6 +373,7 @@ All architectural constraints from infrastructure-architecture.md satisfied:
 **Security Assessment:** ✓ EXCELLENT
 
 No security concerns identified:
+
 - Test code contains no credentials or sensitive data
 - Snapshot file contains CloudFormation template structure only (no secrets)
 - Test follows CDK security best practices
@@ -364,12 +382,14 @@ No security concerns identified:
 ### Best Practices and References
 
 **CDK Testing Best Practices Applied:**
+
 - ✓ Snapshot testing for broad CloudFormation coverage ([AWS CDK Testing Documentation](https://docs.aws.amazon.com/cdk/v2/guide/testing.html))
 - ✓ Co-located tests per CDK standard patterns
 - ✓ Uses official aws-cdk-lib/assertions library
 - ✓ Jest framework (standard for CDK projects)
 
 **Code Quality:**
+
 - ✓ Clean, readable test code
 - ✓ Proper TypeScript types
 - ✓ Follows established project patterns
@@ -380,6 +400,7 @@ No security concerns identified:
 **No action items** - Story implementation is complete and approved.
 
 **Advisory Notes:**
+
 - Note: Foundation successfully established for Story 3.4 (fine-grained assertion tests)
 - Note: Consider adding test for multiple stack configurations if future growth requires it
 - Note: Snapshot will need updating whenever intentional CloudFormation changes are made (use `yarn test -u`)

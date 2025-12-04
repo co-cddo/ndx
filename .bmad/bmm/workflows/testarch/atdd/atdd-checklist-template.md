@@ -76,8 +76,8 @@
 **Example Usage:**
 
 ```typescript
-const user = createUser({ email: 'specific@example.com' });
-const users = createUsers(5); // Generate 5 random users
+const user = createUser({ email: "specific@example.com" })
+const users = createUsers(5) // Generate 5 random users
 ```
 
 ---

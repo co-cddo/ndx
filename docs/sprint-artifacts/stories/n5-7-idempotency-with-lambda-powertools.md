@@ -118,7 +118,7 @@ NotificationHandler (N-4)
 
 ```typescript
 // Key format includes namespace and schema version for collision prevention
-const idempotencyKey = `ndx-notify:${event.schemaVersion || 'v1'}:${event.eventId}`;
+const idempotencyKey = `ndx-notify:${event.schemaVersion || "v1"}:${event.eventId}`
 
 // Example: ndx-notify:v1:abc123-def456-789012
 ```
@@ -127,12 +127,12 @@ const idempotencyKey = `ndx-notify:${event.schemaVersion || 'v1'}:${event.eventI
 
 ```typescript
 // 7-day TTL matches EventBridge max replay window
-const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 function isEventTooOld(eventTimestamp: string): boolean {
-  const eventTime = new Date(eventTimestamp).getTime();
-  const age = Date.now() - eventTime;
-  return age > MAX_EVENT_AGE_MS;
+  const eventTime = new Date(eventTimestamp).getTime()
+  const age = Date.now() - eventTime
+  return age > MAX_EVENT_AGE_MS
 }
 ```
 
@@ -143,36 +143,37 @@ When idempotency returns a cached response, we must verify the current request's
 ```typescript
 // On cache hit:
 if (cachedEvent.userEmail !== currentEvent.userEmail) {
-  logger.error('SECURITY ALERT: Idempotency key reused with different email', {
+  logger.error("SECURITY ALERT: Idempotency key reused with different email", {
     eventId: currentEvent.eventId,
     cachedEmail: hashForLog(cachedEvent.userEmail),
     currentEmail: hashForLog(currentEvent.userEmail),
-    securityWarning: 'potential replay attack',
-  });
-  metrics.addMetric('IdempotencyTampering', MetricUnit.Count, 1);
-  throw new PermanentError('Email mismatch on idempotency check');
+    securityWarning: "potential replay attack",
+  })
+  metrics.addMetric("IdempotencyTampering", MetricUnit.Count, 1)
+  throw new PermanentError("Email mismatch on idempotency check")
 }
 ```
 
 ### Lambda Powertools Integration
 
 ```typescript
-import { makeIdempotent, IdempotencyConfig } from '@aws-lambda-powertools/idempotency';
-import { DynamoDBPersistenceLayer } from '@aws-lambda-powertools/idempotency/dynamodb';
+import { makeIdempotent, IdempotencyConfig } from "@aws-lambda-powertools/idempotency"
+import { DynamoDBPersistenceLayer } from "@aws-lambda-powertools/idempotency/dynamodb"
 
 const persistenceStore = new DynamoDBPersistenceLayer({
   tableName: process.env.IDEMPOTENCY_TABLE_NAME!,
-});
+})
 
 const config = new IdempotencyConfig({
   expiresAfterSeconds: 7 * 24 * 60 * 60, // 7 days
-  eventKeyJmesPath: 'eventId', // Will be wrapped with namespace
-});
+  eventKeyJmesPath: "eventId", // Will be wrapped with namespace
+})
 ```
 
 ### Existing NdxIdempotency Table (from N-4)
 
 The table was created in Epic N-4:
+
 - Table Name: `NdxIdempotency`
 - Partition Key: `id` (String)
 - TTL Attribute: `expiration`
@@ -207,48 +208,48 @@ infra/lib/lambda/notification/
 
 #### Core Idempotency (MUST) - 5/5 PASS
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-7.1 | ✅ PASS | `idempotency.ts:97-104` - `generateIdempotencyKey(eventId)` uses event.id as key |
-| AC-7.8 | ✅ PASS | `idempotency.ts:29` - `IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60` (7 days) |
-| AC-7.9 | ✅ PASS | `idempotency.ts:103` - Key format: `${IDEMPOTENCY_NAMESPACE}:${schemaVersion}:${eventId}` |
-| AC-7.10 | ✅ PASS | `idempotency.ts:136-140` - `isEventTooOld()` checks event.time > 7 days |
-| AC-7.10b | ✅ PASS | `idempotency.ts:161-185` - `validateEventAge()` enforces age check for all events |
+| AC       | Status  | Evidence                                                                                  |
+| -------- | ------- | ----------------------------------------------------------------------------------------- |
+| AC-7.1   | ✅ PASS | `idempotency.ts:97-104` - `generateIdempotencyKey(eventId)` uses event.id as key          |
+| AC-7.8   | ✅ PASS | `idempotency.ts:29` - `IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60` (7 days)               |
+| AC-7.9   | ✅ PASS | `idempotency.ts:103` - Key format: `${IDEMPOTENCY_NAMESPACE}:${schemaVersion}:${eventId}` |
+| AC-7.10  | ✅ PASS | `idempotency.ts:136-140` - `isEventTooOld()` checks event.time > 7 days                   |
+| AC-7.10b | ✅ PASS | `idempotency.ts:161-185` - `validateEventAge()` enforces age check for all events         |
 
 #### Security (MUST) - 3/3 PASS
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-7.12 | ✅ PASS | `idempotency.ts:199-231` - `verifyEmailOnCacheHit()` re-checks email |
-| AC-7.13 | ✅ PASS | `idempotency.ts:221-224` - Throws `PermanentError` with security context |
+| AC      | Status  | Evidence                                                                                      |
+| ------- | ------- | --------------------------------------------------------------------------------------------- |
+| AC-7.12 | ✅ PASS | `idempotency.ts:199-231` - `verifyEmailOnCacheHit()` re-checks email                          |
+| AC-7.13 | ✅ PASS | `idempotency.ts:221-224` - Throws `PermanentError` with security context                      |
 | AC-7.14 | ✅ PASS | `idempotency.ts:208-215` - Logs "SECURITY ALERT: Idempotency key reused with different email" |
 
 #### Observability (SHOULD) - 4/4 PASS
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-7.7 | ✅ PASS | `idempotency.ts:175,285` - `NotificationSkipped` metric with reason dimension |
+| AC      | Status  | Evidence                                                                         |
+| ------- | ------- | -------------------------------------------------------------------------------- |
+| AC-7.7  | ✅ PASS | `idempotency.ts:175,285` - `NotificationSkipped` metric with reason dimension    |
 | AC-7.11 | ✅ PASS | `idempotency.ts:289,374` - Split: `IdempotencyHit` and `LeaseWindowSkip` metrics |
-| AC-7.15 | ✅ PASS | `idempotency.ts:218` - `IdempotencyTampering` metric on email mismatch |
-| AC-7.17 | ✅ PASS | `idempotency.ts:179` - `StaleEventRejected` metric for events beyond TTL |
+| AC-7.15 | ✅ PASS | `idempotency.ts:218` - `IdempotencyTampering` metric on email mismatch           |
+| AC-7.17 | ✅ PASS | `idempotency.ts:179` - `StaleEventRejected` metric for events beyond TTL         |
 
 #### Versioning (SHOULD) - 1/4 PARTIAL
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-7.19 | ✅ PASS | `idempotency.ts:97-104` - Schema version included in key format |
-| AC-7.20 | ⚠️ DEFER | Integration test deferred to dedicated integration test story |
-| AC-7.21 | ⚠️ DEFER | Table sharing verification deferred to integration test |
-| AC-7.22 | ⚠️ DEFER | Integration test deferred |
+| AC      | Status   | Evidence                                                        |
+| ------- | -------- | --------------------------------------------------------------- |
+| AC-7.19 | ✅ PASS  | `idempotency.ts:97-104` - Schema version included in key format |
+| AC-7.20 | ⚠️ DEFER | Integration test deferred to dedicated integration test story   |
+| AC-7.21 | ⚠️ DEFER | Table sharing verification deferred to integration test         |
+| AC-7.22 | ⚠️ DEFER | Integration test deferred                                       |
 
 #### Documentation (SHOULD) - 1/4 PARTIAL
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-7.8a | ⚠️ DEFER | EventBridge replay link deferred to operational docs |
-| AC-7.16 | ⚠️ DEFER | Runbook deferred to operational docs |
-| AC-7.18 | ⚠️ DEFER | Alert response guidance deferred to operational docs |
-| AC-7.23 | ✅ PASS | Story Dev Notes documents N-4 NdxIdempotency table dependency |
+| AC      | Status   | Evidence                                                      |
+| ------- | -------- | ------------------------------------------------------------- |
+| AC-7.8a | ⚠️ DEFER | EventBridge replay link deferred to operational docs          |
+| AC-7.16 | ⚠️ DEFER | Runbook deferred to operational docs                          |
+| AC-7.18 | ⚠️ DEFER | Alert response guidance deferred to operational docs          |
+| AC-7.23 | ✅ PASS  | Story Dev Notes documents N-4 NdxIdempotency table dependency |
 
 ### Test Coverage Summary
 
@@ -264,12 +265,12 @@ infra/lib/lambda/notification/
 
 ### Code Quality
 
-| Check | Result |
-|-------|--------|
-| TypeScript compilation | ✅ PASS |
-| ESLint | ✅ PASS (0 errors in idempotency files) |
-| Test suite | ✅ PASS (527 tests, all passing) |
-| Security controls | ✅ Email verification on cache hit |
+| Check                  | Result                                  |
+| ---------------------- | --------------------------------------- |
+| TypeScript compilation | ✅ PASS                                 |
+| ESLint                 | ✅ PASS (0 errors in idempotency files) |
+| Test suite             | ✅ PASS (527 tests, all passing)        |
+| Security controls      | ✅ Email verification on cache hit      |
 
 ### Review Decision
 

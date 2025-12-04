@@ -14,6 +14,7 @@
 The NDX Infrastructure Evolution project has completed thorough documentation (PRD, Architecture, Epics) and is **READY for Phase 4 implementation** with **3 critical issues** requiring immediate resolution before Story 2.2 execution.
 
 **Key Findings:**
+
 - **Total Gaps:** 4 (3 critical, 1 minor)
 - **Contradictions:** 2 (both resolved with clarifications)
 - **Alignment:** 98% (24/26 FRs fully traced, 2 FRs have minor ambiguity)
@@ -35,16 +36,19 @@ The NDX Infrastructure Evolution project has completed thorough documentation (P
 The architecture document and PRD contain contradictory statements about S3 static website hosting:
 
 **Architecture Doc (Section: Infrastructure-Specific Requirements):**
+
 - "Static website hosting: **Disabled** (prepared for CloudFront in growth phase)"
 - "Public access: Configured for CloudFront origin access (not direct public bucket)"
 - **BUT** Section 7.1 shows: `blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL`
 
 **Epics Doc (Story 2.3):**
+
 - Explicitly calls out this contradiction
 - Provides two options but doesn't make a decision
 - **Consequence:** Files uploaded successfully but **site returns 403 Forbidden**
 
 **Impact:**
+
 - Team could complete deployment (Story 3.2) but site is inaccessible
 - User thinks deployment failed when actually it succeeded
 - CloudFront is listed as "Growth Feature" (post-MVP) but may be required for MVP
@@ -53,6 +57,7 @@ The architecture document and PRD contain contradictory statements about S3 stat
 **Resolution Required:**
 
 **Option A: CloudFront is MVP Requirement (RECOMMENDED)**
+
 - Move CloudFront from "Growth Features" to MVP scope
 - Add Story 2.5: "Deploy CloudFront Distribution with S3 OAI"
 - S3 remains private (current architecture)
@@ -61,6 +66,7 @@ The architecture document and PRD contain contradictory statements about S3 stat
 - **Alignment:** Matches architecture doc's "prepared for CloudFront" language
 
 **Option B: Enable S3 Static Website Hosting Temporarily**
+
 - Change CDK stack to enable `websiteIndexDocument: 'index.html'`
 - Adjust `blockPublicAccess` to allow static hosting
 - Site accessible via S3 website endpoint immediately
@@ -69,6 +75,7 @@ The architecture document and PRD contain contradictory statements about S3 stat
 - **Alignment:** Contradicts architecture doc's "static hosting disabled"
 
 **Recommended Decision:** **Option A** (CloudFront in MVP)
+
 - Matches original architectural vision
 - Avoids migration complexity later
 - Provides production-grade CDN from day one
@@ -86,16 +93,20 @@ The architecture document and PRD contain contradictory statements about S3 stat
 PRD and Architecture documents classify CloudFront inconsistently:
 
 **PRD Section: Product Scope → Growth Features (Post-MVP):**
+
 - "CloudFront CDN: Global content delivery network in front of S3"
 
 **Architecture Section: Decision Summary:**
+
 - "S3 Public Access: Blocked (CloudFront-ready)" - implies CloudFront IS the access mechanism
 
 **Epics Doc (Story 2.3):**
+
 - Documents this contradiction
 - Notes CloudFront may be required for site access in MVP
 
 **Impact:**
+
 - Scope creep if CloudFront is added to MVP without PRD update
 - Site inaccessible if CloudFront not included in MVP
 - User confusion about what "MVP" actually delivers
@@ -130,6 +141,7 @@ PRD and Architecture documents classify CloudFront inconsistently:
 **The Problem:**
 
 **Deployment Script (Story 3.2):**
+
 ```bash
 aws s3 sync _site/ s3://ndx-static-prod/ \
   --profile NDX/InnovationSandboxHub \
@@ -137,12 +149,14 @@ aws s3 sync _site/ s3://ndx-static-prod/ \
 ```
 
 **Bucket name is hardcoded** but:
+
 - Story 2.1 validates bucket name availability (could fail)
 - Architecture doc supports multi-environment: `ndx-static-prod`, `ndx-static-notprod`
 - Story 3.5 integration test uses `--context env=test` (implies different bucket)
 - **FR26:** Infrastructure supports multi-environment contexts
 
 **Impact:**
+
 - Deployment script only works with `ndx-static-prod`
 - Cannot deploy to test/staging environments
 - Integration test (Story 3.5) cannot use different bucket name
@@ -151,6 +165,7 @@ aws s3 sync _site/ s3://ndx-static-prod/ \
 **Resolution Required:**
 
 **Deployment Script Enhancement:**
+
 ```bash
 #!/bin/bash
 set -e
@@ -174,12 +189,14 @@ aws s3 sync _site/ s3://${BUCKET_NAME}/ \
 ```
 
 **Usage:**
+
 ```bash
-yarn deploy          # Deploys to ndx-static-prod
-yarn deploy notprod  # Deploys to ndx-static-notprod
+yarn deploy         # Deploys to ndx-static-prod
+yarn deploy notprod # Deploys to ndx-static-notprod
 ```
 
 **Update Required:**
+
 - Story 3.2 acceptance criteria to include environment parameter
 - Story 3.5 integration test to use `yarn deploy test` or similar
 
@@ -195,6 +212,7 @@ yarn deploy notprod  # Deploys to ndx-static-notprod
 **The Problem:**
 
 Architecture specifies `eslint-plugin-awscdk` but:
+
 - No verification that this plugin exists in npm registry
 - Plugin may be unofficial or unmaintained
 - Could cause Story 1.3 to fail during `yarn add`
@@ -202,20 +220,23 @@ Architecture specifies `eslint-plugin-awscdk` but:
 **Resolution:**
 
 Pre-flight check before Story 1.3:
+
 ```bash
 npm view eslint-plugin-awscdk
 ```
 
 **If plugin doesn't exist:**
+
 - Use `@typescript-eslint/eslint-plugin` + AWS CDK TypeScript rules only
 - Document in Story 1.3 technical notes
 - Update Architecture doc section 3.4
 
 **Fallback Configuration (if plugin unavailable):**
+
 ```javascript
 // eslint.config.mjs
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
+import js from "@eslint/js"
+import tseslint from "typescript-eslint"
 
 export default [
   js.configs.recommended,
@@ -228,7 +249,7 @@ export default [
       },
     },
   },
-];
+]
 ```
 
 ---
@@ -238,12 +259,14 @@ export default [
 ### CONTRADICTION #1: CDK Version Specificity
 
 **Location:**
+
 - **PRD:** "AWS CDK v2 (current standard)"
 - **Architecture Doc:** "AWS CDK v2.224.0 (Nov 2025 release)"
 
 **Clarification:**
 
 This is **NOT a true contradiction** - it's specificity increase:
+
 - PRD: High-level requirement (CDK v2 family)
 - Architecture: Specific version for reproducibility
 
@@ -254,6 +277,7 @@ This is **NOT a true contradiction** - it's specificity increase:
 ### CONTRADICTION #2: Bootstrap Documentation Location
 
 **Location:**
+
 - **Architecture Section 11 (Development Environment):** Bootstrap command in "Initial Setup"
 - **Epics Story 1.5:** Bootstrap as separate story with full acceptance criteria
 - **Epics Story 1.6:** README created BEFORE bootstrap (Story 1.5)
@@ -261,6 +285,7 @@ This is **NOT a true contradiction** - it's specificity increase:
 **Clarification:**
 
 This is a **sequencing issue**, not a contradiction:
+
 - Story 1.6 creates initial README with bootstrap command documented
 - Story 1.5 (which comes BEFORE 1.6) actually executes the bootstrap
 - **Problem:** Story 1.6 should reference "bootstrap completed in Story 1.5"
@@ -268,8 +293,10 @@ This is a **sequencing issue**, not a contradiction:
 **Resolution:**
 
 Update Story 1.6 acceptance criteria:
+
 ```markdown
 **Section 3: Initial Setup** (one-time)
+
 - Note: "CDK bootstrap completed in Story 1.5"
 - Dependency installation: `yarn install`
 - Build verification: `yarn build`
@@ -283,14 +310,14 @@ Update Story 1.6 acceptance criteria:
 
 **Complete Traceability:** 26/26 FRs mapped to stories ✓
 
-| FR Category | FRs | Stories | Coverage | Issues |
-|-------------|-----|---------|----------|--------|
-| Infrastructure Provisioning | FR1-FR7 | Epic 2 (2.1-2.4) | 100% | None |
-| File Deployment | FR8-FR12 | Epic 3 (3.1-3.2) | 100% | Hardcoded bucket name (Issue #3) |
-| Quality & Testing | FR13-FR17 | Epic 1 (1.3-1.4), Epic 3 (3.3-3.4) | 100% | ESLint plugin availability (Minor) |
-| Documentation | FR18-FR20 | Epic 1 (1.6), Epic 3 (3.6) | 100% | Bootstrap sequencing (Contradiction #2) |
-| Rollback & Safety | FR21-FR23 | Epic 2 (2.2, 2.4) | 100% | None |
-| Future Extensibility | FR24-FR26 | Epic 2 (2.2), Epic 3 (3.5) | 100% | CloudFront scope (Issue #2) |
+| FR Category                 | FRs       | Stories                            | Coverage | Issues                                  |
+| --------------------------- | --------- | ---------------------------------- | -------- | --------------------------------------- |
+| Infrastructure Provisioning | FR1-FR7   | Epic 2 (2.1-2.4)                   | 100%     | None                                    |
+| File Deployment             | FR8-FR12  | Epic 3 (3.1-3.2)                   | 100%     | Hardcoded bucket name (Issue #3)        |
+| Quality & Testing           | FR13-FR17 | Epic 1 (1.3-1.4), Epic 3 (3.3-3.4) | 100%     | ESLint plugin availability (Minor)      |
+| Documentation               | FR18-FR20 | Epic 1 (1.6), Epic 3 (3.6)         | 100%     | Bootstrap sequencing (Contradiction #2) |
+| Rollback & Safety           | FR21-FR23 | Epic 2 (2.2, 2.4)                  | 100%     | None                                    |
+| Future Extensibility        | FR24-FR26 | Epic 2 (2.2), Epic 3 (3.5)         | 100%     | CloudFront scope (Issue #2)             |
 
 **Overall FR Coverage:** ✅ **100%**
 
@@ -300,14 +327,14 @@ Update Story 1.6 acceptance criteria:
 
 **NFR Mapping to Architecture Decisions:**
 
-| NFR Category | NFRs | Architecture Decisions | Coverage | Issues |
-|--------------|------|------------------------|----------|--------|
-| Security | NFR-SEC-1 to NFR-SEC-5 | S3 encryption, public access, no credentials, auditability | 100% | Access pattern ambiguity (Issue #1) |
-| Reliability | NFR-REL-1 to NFR-REL-4 | Idempotency, CloudFormation rollback, error messages, validation | 100% | None |
-| Performance | NFR-PERF-1 to NFR-PERF-4 | CDK synth speed, cost efficiency | 100% | None |
-| Maintainability | NFR-MAINT-1 to NFR-MAINT-5 | ESLint, tests, naming, git commits, README | 100% | ESLint plugin (Minor) |
-| Portability | NFR-PORT-1 to NFR-PORT-3 | Cross-platform, no env-specific paths, pinned versions | 100% | None |
-| Operational Excellence | NFR-OPS-1 to NFR-OPS-4 | Documentation, diff output, error messages, tagging | 100% | None |
+| NFR Category           | NFRs                       | Architecture Decisions                                           | Coverage | Issues                              |
+| ---------------------- | -------------------------- | ---------------------------------------------------------------- | -------- | ----------------------------------- |
+| Security               | NFR-SEC-1 to NFR-SEC-5     | S3 encryption, public access, no credentials, auditability       | 100%     | Access pattern ambiguity (Issue #1) |
+| Reliability            | NFR-REL-1 to NFR-REL-4     | Idempotency, CloudFormation rollback, error messages, validation | 100%     | None                                |
+| Performance            | NFR-PERF-1 to NFR-PERF-4   | CDK synth speed, cost efficiency                                 | 100%     | None                                |
+| Maintainability        | NFR-MAINT-1 to NFR-MAINT-5 | ESLint, tests, naming, git commits, README                       | 100%     | ESLint plugin (Minor)               |
+| Portability            | NFR-PORT-1 to NFR-PORT-3   | Cross-platform, no env-specific paths, pinned versions           | 100%     | None                                |
+| Operational Excellence | NFR-OPS-1 to NFR-OPS-4     | Documentation, diff output, error messages, tagging              | 100%     | None                                |
 
 **Overall NFR Coverage:** ✅ **100%**
 
@@ -317,21 +344,21 @@ Update Story 1.6 acceptance criteria:
 
 **13 Architectural Decisions from Architecture Doc:**
 
-| Decision | ADR | Epic/Story | Validation |
-|----------|-----|------------|------------|
-| AWS CDK v2 with TypeScript | ADR-001 | Story 1.1 | ✅ Aligned |
-| Yarn package manager | Implicit | Story 1.2 | ✅ Aligned |
-| Single monolithic stack | ADR-002 | Story 2.2 | ✅ Aligned |
-| S3 versioning enabled | ADR-003 | Story 2.2 | ✅ Aligned |
-| ESLint flat config + AWS CDK plugin | ADR-004 | Story 1.3 | ⚠️ Plugin availability (Minor) |
-| Co-located tests | ADR-005 | Story 3.3, 3.4 | ✅ Aligned |
-| Manual deployment (MVP) | ADR-006 | Story 3.1, 3.2 | ✅ Aligned |
-| S3 bucket name: ndx-static-prod | Decision Summary | Story 2.1, 2.2 | ⚠️ Hardcoded in deploy script (Issue #3) |
-| S3 encryption: SSE-S3 | Decision Summary | Story 2.2 | ✅ Aligned |
-| S3 public access: BLOCKED | Decision Summary | Story 2.2 | 🚨 Access pattern ambiguity (Issue #1) |
-| Resource tagging | Decision Summary | Story 2.2 | ✅ Aligned |
-| CloudFormation auto-rollback | Decision Summary | Story 2.4 | ✅ Aligned |
-| Test co-location | ADR-005 | Story 3.3 | ✅ Aligned |
+| Decision                            | ADR              | Epic/Story     | Validation                               |
+| ----------------------------------- | ---------------- | -------------- | ---------------------------------------- |
+| AWS CDK v2 with TypeScript          | ADR-001          | Story 1.1      | ✅ Aligned                               |
+| Yarn package manager                | Implicit         | Story 1.2      | ✅ Aligned                               |
+| Single monolithic stack             | ADR-002          | Story 2.2      | ✅ Aligned                               |
+| S3 versioning enabled               | ADR-003          | Story 2.2      | ✅ Aligned                               |
+| ESLint flat config + AWS CDK plugin | ADR-004          | Story 1.3      | ⚠️ Plugin availability (Minor)           |
+| Co-located tests                    | ADR-005          | Story 3.3, 3.4 | ✅ Aligned                               |
+| Manual deployment (MVP)             | ADR-006          | Story 3.1, 3.2 | ✅ Aligned                               |
+| S3 bucket name: ndx-static-prod     | Decision Summary | Story 2.1, 2.2 | ⚠️ Hardcoded in deploy script (Issue #3) |
+| S3 encryption: SSE-S3               | Decision Summary | Story 2.2      | ✅ Aligned                               |
+| S3 public access: BLOCKED           | Decision Summary | Story 2.2      | 🚨 Access pattern ambiguity (Issue #1)   |
+| Resource tagging                    | Decision Summary | Story 2.2      | ✅ Aligned                               |
+| CloudFormation auto-rollback        | Decision Summary | Story 2.4      | ✅ Aligned                               |
+| Test co-location                    | ADR-005          | Story 3.3      | ✅ Aligned                               |
 
 **Overall Decision Alignment:** ✅ **11/13 fully aligned, 2 require clarification**
 
@@ -339,14 +366,14 @@ Update Story 1.6 acceptance criteria:
 
 ### 6 ADRs from Architecture Doc
 
-| ADR | Title | Epic/Story Implementation | Validation |
-|-----|-------|---------------------------|------------|
-| ADR-001 | Use AWS CDK v2 for IaC | Story 1.1 (cdk init) | ✅ Aligned |
-| ADR-002 | Single Monolithic Stack for MVP | Story 2.2 (NdxStaticStack) | ✅ Aligned |
-| ADR-003 | Enable S3 Versioning in MVP | Story 2.2 (versioned: true) | ✅ Aligned |
-| ADR-004 | Use ESLint Flat Config with AWS CDK Plugin | Story 1.3 (eslint.config.mjs) | ⚠️ Plugin availability (Minor) |
-| ADR-005 | Co-locate Tests with Source | Story 3.3, 3.4 (lib/*.test.ts) | ✅ Aligned |
-| ADR-006 | Manual Deployment for MVP, GitHub Actions for Growth | Story 3.1, 3.2 (yarn deploy script) | ✅ Aligned |
+| ADR     | Title                                                | Epic/Story Implementation           | Validation                     |
+| ------- | ---------------------------------------------------- | ----------------------------------- | ------------------------------ |
+| ADR-001 | Use AWS CDK v2 for IaC                               | Story 1.1 (cdk init)                | ✅ Aligned                     |
+| ADR-002 | Single Monolithic Stack for MVP                      | Story 2.2 (NdxStaticStack)          | ✅ Aligned                     |
+| ADR-003 | Enable S3 Versioning in MVP                          | Story 2.2 (versioned: true)         | ✅ Aligned                     |
+| ADR-004 | Use ESLint Flat Config with AWS CDK Plugin           | Story 1.3 (eslint.config.mjs)       | ⚠️ Plugin availability (Minor) |
+| ADR-005 | Co-locate Tests with Source                          | Story 3.3, 3.4 (lib/\*.test.ts)     | ✅ Aligned                     |
+| ADR-006 | Manual Deployment for MVP, GitHub Actions for Growth | Story 3.1, 3.2 (yarn deploy script) | ✅ Aligned                     |
 
 **Overall ADR Implementation:** ✅ **6/6 ADRs have corresponding stories**
 
@@ -361,6 +388,7 @@ Update Story 1.6 acceptance criteria:
 **Stories:** 6 stories (1.1 - 1.6)
 
 **Validation:**
+
 - ✅ Sequential dependencies correct (1.1 → 1.2 → 1.3 → 1.4 → 1.5 → 1.6)
 - ✅ Prerequisites clearly documented
 - ✅ BDD acceptance criteria (Given/When/Then)
@@ -378,6 +406,7 @@ Update Story 1.6 acceptance criteria:
 **Stories:** 4 stories (2.1 - 2.4)
 
 **Validation:**
+
 - ✅ Sequential dependencies correct (2.1 → 2.2 → 2.3 → 2.4)
 - ✅ Pre-flight validation (Story 2.1) prevents deployment failures
 - 🚨 **BLOCKER:** Story 2.3 (Access Pattern Validation) is a decision point, NOT a validation story
@@ -395,6 +424,7 @@ Update Story 1.6 acceptance criteria:
 **Stories:** 7 stories (3.1 - 3.7)
 
 **Validation:**
+
 - ✅ Sequential dependencies correct (3.1 → 3.2 → 3.3 → 3.4 → 3.5 → 3.6 → 3.7)
 - ⚠️ Story 3.2 (Deployment Script) has hardcoded bucket name (Issue #3)
 - ✅ Story 3.5 (Integration Test) provides end-to-end validation
@@ -412,11 +442,13 @@ Update Story 1.6 acceptance criteria:
 **Missing Component:** CloudFront CDN deployment
 
 **Why It's Missing:**
+
 - PRD classifies CloudFront as "Growth Features (Post-MVP)"
 - Architecture doc says "prepared for CloudFront" but doesn't include in MVP
 - Epics doc identifies this gap in Story 2.3 but doesn't resolve it
 
 **Impact:**
+
 - Site uploaded to S3 but returns 403 Forbidden
 - Success criteria unmet: "identical functionality to current GitHub Pages deployment"
 - User confusion: deployment succeeds but site inaccessible
@@ -426,6 +458,7 @@ Update Story 1.6 acceptance criteria:
 Add **Story 2.5: Deploy CloudFront Distribution**
 
 **Acceptance Criteria:**
+
 ```markdown
 As a developer,
 I want to deploy a CloudFront distribution in front of the S3 bucket,
@@ -452,11 +485,13 @@ So that the NDX static site is publicly accessible via CDN.
 ```
 
 **FRs Addressed:**
+
 - FR3: Configure S3 for CloudFront origin access ✅
 - FR24: Infrastructure supports future CloudFront ✅
 - NFR-SEC-1: Public access blocked on bucket (CloudFront OAI provides access) ✅
 
 **Updates Required:**
+
 - PRD: Move CloudFront from Growth to MVP
 - Epic 2 story count: 4 → 5 stories
 - Story 3.7 smoke test: Validate CloudFront endpoint, not S3
@@ -468,11 +503,13 @@ So that the NDX static site is publicly accessible via CDN.
 **Missing Component:** Environment-specific bucket naming in deployment script
 
 **Why It's Missing:**
+
 - Architecture doc supports multi-environment (`prod`, `notprod`)
 - FR26 requires multi-environment context support
 - Deployment script (Story 3.2) hardcodes `ndx-static-prod`
 
 **Impact:**
+
 - Cannot deploy to test/staging environments
 - Integration test (Story 3.5) cannot use different bucket
 - Future growth hindered
@@ -488,12 +525,14 @@ Update Story 3.2 acceptance criteria to include environment parameter (see Criti
 **Missing Component:** S3 bucket deletion protection beyond CDK `RemovalPolicy.RETAIN`
 
 **Why It's Missing:**
+
 - Architecture doc specifies `removalPolicy: cdk.RemovalPolicy.RETAIN`
 - **BUT** this only prevents deletion when CDK stack is deleted
 - Doesn't prevent manual `aws s3 rb` deletion
 - Doesn't prevent accidental deletion via AWS Console
 
 **Impact:**
+
 - LOW: Manual deletion still possible (human error)
 - Versioning provides some protection (FR22)
 - UK government service with high stakes
@@ -501,8 +540,9 @@ Update Story 3.2 acceptance criteria to include environment parameter (see Criti
 **Recommended Enhancement:**
 
 Add to Story 2.2 (optional, best practice):
+
 ```typescript
-new s3.Bucket(this, 'StaticSiteBucket', {
+new s3.Bucket(this, "StaticSiteBucket", {
   // ... existing config
   removalPolicy: cdk.RemovalPolicy.RETAIN,
   objectLockEnabled: false, // Not needed for static site
@@ -513,7 +553,7 @@ new s3.Bucket(this, 'StaticSiteBucket', {
       noncurrentVersionExpiration: cdk.Duration.days(90), // Keep old versions 90 days
     },
   ],
-});
+})
 ```
 
 **Note:** This is **NOT a blocker** - RETAIN policy is sufficient for MVP. Consider for growth phase.
@@ -525,11 +565,13 @@ new s3.Bucket(this, 'StaticSiteBucket', {
 **Missing Component:** AWS Budget alerts for cost monitoring
 
 **Why It's Missing:**
+
 - NFR-PERF-4 specifies cost target (< $5/month)
 - PRD "Growth Features" includes "Cost Monitoring: AWS Budget alerts"
 - No story implements cost tracking
 
 **Impact:**
+
 - LOW: Static site costs minimal (S3 + CloudFront free tier likely covers)
 - Cannot detect cost overruns until AWS bill arrives
 - UK government service should track taxpayer spending
@@ -537,6 +579,7 @@ new s3.Bucket(this, 'StaticSiteBucket', {
 **Recommended Enhancement (Growth Phase):**
 
 Add story in future epic:
+
 - Deploy AWS Budget with $10/month threshold
 - SNS topic for budget alerts
 - Email notification on 80% threshold
@@ -554,11 +597,13 @@ Add story in future epic:
 **The Issue:**
 
 PRD states:
+
 - "Static site deploys successfully to S3 with **identical functionality** to current GitHub Pages deployment"
 
 **Ambiguous Term:** "identical functionality"
 
 **Interpretations:**
+
 1. **Files uploaded successfully** (technical deployment)
 2. **Site publicly accessible** (user-facing deployment)
 3. **All features work** (functional deployment)
@@ -568,6 +613,7 @@ PRD states:
 **Recommended Clarification:**
 
 "Identical functionality" means:
+
 - ✅ All 165+ files uploaded to S3
 - ✅ Site publicly accessible via HTTPS
 - ✅ Global CDN distribution (CloudFront)
@@ -585,12 +631,14 @@ PRD states:
 **The Issue:**
 
 Architecture doc states:
+
 - "Infrastructure changes: Require `cdk deploy` in `/infra`"
 - "File updates only: Just run `yarn deploy` from root"
 
 **Ambiguous Boundary:** What constitutes "infrastructure change" vs "file update"?
 
 **Examples:**
+
 - Adding new S3 bucket tag → Infrastructure change or file update?
 - Changing CloudFront cache TTL → Infrastructure or file?
 - Updating bucket lifecycle policy → Infrastructure or file?
@@ -598,12 +646,14 @@ Architecture doc states:
 **Recommended Clarification:**
 
 **Infrastructure Changes (require `cdk deploy`):**
+
 - Changes to `/infra/lib/*.ts` files
 - Adding/removing AWS resources
 - Modifying resource properties (encryption, versioning, tags)
 - Updating CDK dependencies
 
 **File Updates Only (just `yarn deploy`):**
+
 - Changes to `/src/**` (Eleventy content)
 - Changes to `/_site/**` (build output)
 - No changes to CDK stack code
@@ -618,15 +668,15 @@ Architecture doc states:
 
 The epics document includes **7 pre-mortem insights**:
 
-| Story | Pre-Mortem Insight | Validation |
-|-------|-------------------|------------|
-| 1.5 | Bootstrap is one-time AWS setup required before `cdk deploy` | ✅ Correctly addressed |
-| 1.6 | Documentation as living document, not one-time artifact | ✅ Correctly addressed (Story 3.6) |
-| 2.1 | S3 bucket names globally unique - early validation prevents wasted effort | ✅ Correctly addressed |
-| 2.3 | Access pattern ambiguity - files uploaded but site dark | 🚨 **IDENTIFIED AS CRITICAL ISSUE #1** |
-| 3.2 | Network failures mid-upload leave bucket in broken state | ✅ Correctly addressed (--exact-timestamps, file count check) |
-| 3.5 | Unit tests miss real AWS issues - integration test catches environment problems | ✅ Correctly addressed |
-| 3.7 | "Deployment complete" ≠ "site works" - smoke test validates accessibility | 🚨 **BLOCKED BY CRITICAL ISSUE #1** |
+| Story | Pre-Mortem Insight                                                              | Validation                                                    |
+| ----- | ------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1.5   | Bootstrap is one-time AWS setup required before `cdk deploy`                    | ✅ Correctly addressed                                        |
+| 1.6   | Documentation as living document, not one-time artifact                         | ✅ Correctly addressed (Story 3.6)                            |
+| 2.1   | S3 bucket names globally unique - early validation prevents wasted effort       | ✅ Correctly addressed                                        |
+| 2.3   | Access pattern ambiguity - files uploaded but site dark                         | 🚨 **IDENTIFIED AS CRITICAL ISSUE #1**                        |
+| 3.2   | Network failures mid-upload leave bucket in broken state                        | ✅ Correctly addressed (--exact-timestamps, file count check) |
+| 3.5   | Unit tests miss real AWS issues - integration test catches environment problems | ✅ Correctly addressed                                        |
+| 3.7   | "Deployment complete" ≠ "site works" - smoke test validates accessibility       | 🚨 **BLOCKED BY CRITICAL ISSUE #1**                           |
 
 **Pre-Mortem Effectiveness:** ✅ **6/7 insights correctly addressed, 1 insight IS the critical issue**
 
@@ -641,12 +691,14 @@ The epics document includes **7 pre-mortem insights**:
 **Location:** All deployment commands
 
 **The Issue:**
+
 - `--profile NDX/InnovationSandboxHub` hardcoded everywhere
 - No environment variable fallback
 - Cannot use default AWS profile
 - Team members with different profile names cannot deploy
 
 **Recommended Future Enhancement:**
+
 ```bash
 AWS_PROFILE="${AWS_PROFILE:-NDX/InnovationSandboxHub}"
 cdk deploy --profile $AWS_PROFILE
@@ -661,11 +713,13 @@ cdk deploy --profile $AWS_PROFILE
 **Location:** Story 3.2 (Deployment Script)
 
 **The Issue:**
+
 - Deployment script is bash, not unit tested
 - Integration test (Story 3.5) tests CDK, not deployment script
 - Script errors discovered at runtime
 
 **Recommended Future Enhancement:**
+
 - Use `bats` (Bash Automated Testing System) for script tests
 - Mock AWS CLI calls
 - Test error handling paths
@@ -679,11 +733,13 @@ cdk deploy --profile $AWS_PROFILE
 **Location:** FR22, FR23 (Rollback & Safety)
 
 **The Issue:**
+
 - S3 versioning enabled (FR22)
 - CloudFormation rollback documented (FR23)
 - **BUT** no documented process for rolling back site files to previous version
 
 **Recommended Future Enhancement:**
+
 - Document S3 versioning rollback: `aws s3api list-object-versions`
 - Create `scripts/rollback.sh` to restore previous version
 - Add rollback to `/infra/README.md`
@@ -698,14 +754,14 @@ cdk deploy --profile $AWS_PROFILE
 
 **Sampled Stories:** 6/17 stories checked
 
-| Story | BDD Format | Given/When/Then | Specificity | Issues |
-|-------|------------|-----------------|-------------|--------|
-| 1.1 | ✅ Yes | ✅ Complete | ✅ Specific commands | None |
-| 2.2 | ✅ Yes | ✅ Complete | ✅ Full TypeScript code | None |
-| 2.3 | ⚠️ Partial | ❌ Decision tree | ⚠️ Two options | **Decision point, not testable** |
-| 3.2 | ✅ Yes | ✅ Complete | ✅ Full bash script | None |
-| 3.4 | ✅ Yes | ✅ Complete | ✅ Full test code | None |
-| 3.7 | ⚠️ Conditional | ⚠️ Depends on 2.3 | ⚠️ Two options | **Blocked by Story 2.3 decision** |
+| Story | BDD Format     | Given/When/Then   | Specificity             | Issues                            |
+| ----- | -------------- | ----------------- | ----------------------- | --------------------------------- |
+| 1.1   | ✅ Yes         | ✅ Complete       | ✅ Specific commands    | None                              |
+| 2.2   | ✅ Yes         | ✅ Complete       | ✅ Full TypeScript code | None                              |
+| 2.3   | ⚠️ Partial     | ❌ Decision tree  | ⚠️ Two options          | **Decision point, not testable**  |
+| 3.2   | ✅ Yes         | ✅ Complete       | ✅ Full bash script     | None                              |
+| 3.4   | ✅ Yes         | ✅ Complete       | ✅ Full test code       | None                              |
+| 3.7   | ⚠️ Conditional | ⚠️ Depends on 2.3 | ⚠️ Two options          | **Blocked by Story 2.3 decision** |
 
 **Finding:** 4/6 stories have excellent BDD acceptance criteria. 2/6 stories are **decision points** requiring user input before implementation.
 
@@ -717,25 +773,25 @@ cdk deploy --profile $AWS_PROFILE
 
 **Validation:** All prerequisite chains checked for circular dependencies or forward references
 
-| Epic | Story | Prerequisites | Validation |
-|------|-------|---------------|------------|
-| 1 | 1.1 | None | ✅ Valid (first story) |
-| 1 | 1.2 | Story 1.1 | ✅ Valid (sequential) |
-| 1 | 1.3 | Story 1.2 | ✅ Valid (sequential) |
-| 1 | 1.4 | Story 1.3 | ✅ Valid (sequential) |
-| 1 | 1.5 | Story 1.4 | ✅ Valid (sequential) |
-| 1 | 1.6 | Story 1.5 | ⚠️ Valid but documents bootstrap AFTER executing it |
-| 2 | 2.1 | Story 1.6 | ✅ Valid (Epic 1 complete) |
-| 2 | 2.2 | Story 2.1 | ✅ Valid (bucket name validated) |
-| 2 | 2.3 | Story 2.2 | ✅ Valid (bucket defined) |
-| 2 | 2.4 | Story 2.3 | ❌ **BLOCKER:** 2.3 is decision point, may require 2.5 |
-| 3 | 3.1 | Story 2.4 | ✅ Valid (S3 deployed) |
-| 3 | 3.2 | Story 3.1 | ✅ Valid (script placeholder created) |
-| 3 | 3.3 | Story 3.2 | ✅ Valid (deployment script complete) |
-| 3 | 3.4 | Story 3.3 | ✅ Valid (snapshot tests complete) |
-| 3 | 3.5 | Story 3.4 | ✅ Valid (all tests complete) |
-| 3 | 3.6 | Story 3.5 | ✅ Valid (testing complete) |
-| 3 | 3.7 | Story 3.6 | ❌ **BLOCKER:** Depends on Story 2.3 decision |
+| Epic | Story | Prerequisites | Validation                                             |
+| ---- | ----- | ------------- | ------------------------------------------------------ |
+| 1    | 1.1   | None          | ✅ Valid (first story)                                 |
+| 1    | 1.2   | Story 1.1     | ✅ Valid (sequential)                                  |
+| 1    | 1.3   | Story 1.2     | ✅ Valid (sequential)                                  |
+| 1    | 1.4   | Story 1.3     | ✅ Valid (sequential)                                  |
+| 1    | 1.5   | Story 1.4     | ✅ Valid (sequential)                                  |
+| 1    | 1.6   | Story 1.5     | ⚠️ Valid but documents bootstrap AFTER executing it    |
+| 2    | 2.1   | Story 1.6     | ✅ Valid (Epic 1 complete)                             |
+| 2    | 2.2   | Story 2.1     | ✅ Valid (bucket name validated)                       |
+| 2    | 2.3   | Story 2.2     | ✅ Valid (bucket defined)                              |
+| 2    | 2.4   | Story 2.3     | ❌ **BLOCKER:** 2.3 is decision point, may require 2.5 |
+| 3    | 3.1   | Story 2.4     | ✅ Valid (S3 deployed)                                 |
+| 3    | 3.2   | Story 3.1     | ✅ Valid (script placeholder created)                  |
+| 3    | 3.3   | Story 3.2     | ✅ Valid (deployment script complete)                  |
+| 3    | 3.4   | Story 3.3     | ✅ Valid (snapshot tests complete)                     |
+| 3    | 3.5   | Story 3.4     | ✅ Valid (all tests complete)                          |
+| 3    | 3.6   | Story 3.5     | ✅ Valid (testing complete)                            |
+| 3    | 3.7   | Story 3.6     | ❌ **BLOCKER:** Depends on Story 2.3 decision          |
 
 **Finding:** 15/17 stories have valid prerequisites. **2 stories blocked by unresolved Story 2.3 decision.**
 
@@ -772,6 +828,7 @@ cdk deploy --profile $AWS_PROFILE
 **Probability:** MEDIUM (manual steps error-prone)
 **Impact:** LOW (easy to re-run)
 **Mitigation:**
+
 - Deployment script validates prerequisites (Story 3.2)
 - Smoke test validates success (Story 3.7)
 - Error messages actionable (NFR-REL-3)
@@ -839,6 +896,7 @@ cdk deploy --profile $AWS_PROFILE
 The NDX Infrastructure Evolution project has **excellent documentation quality** with comprehensive PRD, Architecture, and Epics documents. The functional requirements are **100% traced to stories**, and the architecture decisions are **well-documented and justified**.
 
 **Strengths:**
+
 - ✅ Complete FR coverage (26/26 FRs mapped)
 - ✅ Comprehensive NFR coverage (23/23 NFRs addressed)
 - ✅ Pre-mortem insights applied (6/7 insights correctly addressed)
@@ -848,11 +906,13 @@ The NDX Infrastructure Evolution project has **excellent documentation quality**
 - ✅ Living documentation pattern established
 
 **Critical Blockers (MUST RESOLVE BEFORE IMPLEMENTATION):**
+
 - 🚨 **Critical Issue #1:** S3 access pattern ambiguity → **DECISION REQUIRED**
 - 🚨 **Critical Issue #2:** CloudFront scope contradiction → **PRD UPDATE REQUIRED**
 - 🚨 **Critical Issue #3:** Hardcoded bucket name → **STORY 3.2 UPDATE REQUIRED**
 
 **Minor Issues (CAN RESOLVE DURING IMPLEMENTATION):**
+
 - ⚠️ ESLint plugin availability → Pre-flight check + fallback
 - ⚠️ Bootstrap documentation sequencing → Story 1.6 clarification
 

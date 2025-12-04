@@ -10,13 +10,13 @@ so that **I understand why I cannot proceed and what options I have**.
 
 ## Acceptance Criteria
 
-| ID | Criterion | Test Approach |
-|----|-----------|---------------|
-| AC-1 | API error displays "Unable to load session details" | Error message test |
-| AC-2 | 404 displays "This sandbox is currently unavailable" | 404 message test |
-| AC-3 | Continue button remains disabled on error | Button state test |
-| AC-4 | Cancel button works normally on error | Cancel test |
-| AC-5 | Error logging captures template ID and error code | Logging test |
+| ID   | Criterion                                            | Test Approach      |
+| ---- | ---------------------------------------------------- | ------------------ |
+| AC-1 | API error displays "Unable to load session details"  | Error message test |
+| AC-2 | 404 displays "This sandbox is currently unavailable" | 404 message test   |
+| AC-3 | Continue button remains disabled on error            | Button state test  |
+| AC-4 | Cancel button works normally on error                | Cancel test        |
+| AC-5 | Error logging captures template ID and error code    | Logging test       |
 
 ## Tasks / Subtasks
 
@@ -63,11 +63,11 @@ so that **I understand why I cannot proceed and what options I have**.
 
 ### Source Tree Components
 
-| Component | Path | Action |
-|-----------|------|--------|
-| AUP Modal | `src/try/ui/components/aup-modal.ts` | MODIFY |
-| AUP Modal Tests | `src/try/ui/components/aup-modal.test.ts` | MODIFY |
-| Lease Template Service | `src/try/api/lease-templates-service.ts` | READ (for errorCode) |
+| Component              | Path                                      | Action               |
+| ---------------------- | ----------------------------------------- | -------------------- |
+| AUP Modal              | `src/try/ui/components/aup-modal.ts`      | MODIFY               |
+| AUP Modal Tests        | `src/try/ui/components/aup-modal.test.ts` | MODIFY               |
+| Lease Template Service | `src/try/api/lease-templates-service.ts`  | READ (for errorCode) |
 
 ### Testing Standards
 
@@ -135,25 +135,29 @@ claude-opus-4-5-20251101
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-12-02 | 1.0.0 | Story implementation complete - 5/5 ACs satisfied, 77 tests passing |
-| 2025-12-02 | 1.0.1 | Senior Developer Review notes appended - APPROVED |
+| Date       | Version | Description                                                         |
+| ---------- | ------- | ------------------------------------------------------------------- |
+| 2025-12-02 | 1.0.0   | Story implementation complete - 5/5 ACs satisfied, 77 tests passing |
+| 2025-12-02 | 1.0.1   | Senior Developer Review notes appended - APPROVED                   |
 
 ---
 
 ## Senior Developer Review (AI)
 
 ### Reviewer
+
 cns
 
 ### Date
+
 2025-12-02
 
 ### Outcome
+
 **APPROVE** - All acceptance criteria implemented with comprehensive test coverage
 
 ### Summary
+
 Story 9.4 successfully implements clear error states for failed lease template loads in the AUP modal. The implementation correctly distinguishes between 404 errors (displaying "This sandbox is currently unavailable") and generic API errors (displaying "Unable to load session details"). Enhanced error logging captures tryId and errorCode for debugging. All error messages are displayed via showError() and announced assertively for screen reader accessibility. Implementation follows established patterns from Stories 9.1-9.3.
 
 ### Key Findings
@@ -161,35 +165,36 @@ Story 9.4 successfully implements clear error states for failed lease template l
 **No HIGH or MEDIUM severity issues found.**
 
 **LOW severity (informational):**
+
 - Task 2.2 mentions "include retry guidance in error message" but implementation uses simple error message without explicit retry text. This is acceptable per tech-spec which states "user can close and click Try again" - no in-modal retry guidance needed.
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC-1 | API error displays "Unable to load session details" | ✅ IMPLEMENTED | aup-modal.ts:281, 305 |
-| AC-2 | 404 displays "This sandbox is currently unavailable" | ✅ IMPLEMENTED | aup-modal.ts:277 |
-| AC-3 | Continue button remains disabled on error | ✅ IMPLEMENTED | Via isFullyLoaded getter at aup-modal.ts:149-151 |
-| AC-4 | Cancel button works normally on error | ✅ IMPLEMENTED | Cancel handler unchanged, tests at aup-modal.test.ts:1163-1184 |
-| AC-5 | Error logging captures template ID and error code | ✅ IMPLEMENTED | aup-modal.ts:268-272, 293-297 |
+| AC#  | Description                                          | Status         | Evidence                                                       |
+| ---- | ---------------------------------------------------- | -------------- | -------------------------------------------------------------- |
+| AC-1 | API error displays "Unable to load session details"  | ✅ IMPLEMENTED | aup-modal.ts:281, 305                                          |
+| AC-2 | 404 displays "This sandbox is currently unavailable" | ✅ IMPLEMENTED | aup-modal.ts:277                                               |
+| AC-3 | Continue button remains disabled on error            | ✅ IMPLEMENTED | Via isFullyLoaded getter at aup-modal.ts:149-151               |
+| AC-4 | Cancel button works normally on error                | ✅ IMPLEMENTED | Cancel handler unchanged, tests at aup-modal.test.ts:1163-1184 |
+| AC-5 | Error logging captures template ID and error code    | ✅ IMPLEMENTED | aup-modal.ts:268-272, 293-297                                  |
 
 **Summary: 5 of 5 acceptance criteria fully implemented**
 
 ### Task Completion Validation
 
-| Task | Marked | Verified | Evidence |
-|------|--------|----------|----------|
-| 1.1 Check for errorCode: 'NOT_FOUND' | [x] | ✅ DONE | aup-modal.ts:275 |
-| 1.2 Display 404 message | [x] | ✅ DONE | aup-modal.ts:277 |
-| 1.3 Use showError() method | [x] | ✅ DONE | aup-modal.ts:277, 281, 305 |
-| 1.4 ARIA announce error | [x] | ✅ DONE | aup-modal.ts:278, 282, 306 |
-| 2.1 Display generic error | [x] | ✅ DONE | aup-modal.ts:281, 305 |
-| 2.2 Retry guidance | [x] | ✅ DONE | Simple message acceptable per tech-spec |
-| 2.3 ARIA announce | [x] | ✅ DONE | aup-modal.ts:282, 306 |
-| 3.1-3.3 Button state | [x] | ✅ DONE | Tests at aup-modal.test.ts:1145-1161 |
-| 4.1-4.3 Cancel button | [x] | ✅ DONE | Tests at aup-modal.test.ts:1163-1218 |
-| 5.1-5.4 Error logging | [x] | ✅ DONE | aup-modal.ts:267-272, 292-297 |
-| 6.1-6.5 Unit tests | [x] | ✅ DONE | 11 tests at aup-modal.test.ts:1064-1291 |
+| Task                                 | Marked | Verified | Evidence                                |
+| ------------------------------------ | ------ | -------- | --------------------------------------- |
+| 1.1 Check for errorCode: 'NOT_FOUND' | [x]    | ✅ DONE  | aup-modal.ts:275                        |
+| 1.2 Display 404 message              | [x]    | ✅ DONE  | aup-modal.ts:277                        |
+| 1.3 Use showError() method           | [x]    | ✅ DONE  | aup-modal.ts:277, 281, 305              |
+| 1.4 ARIA announce error              | [x]    | ✅ DONE  | aup-modal.ts:278, 282, 306              |
+| 2.1 Display generic error            | [x]    | ✅ DONE  | aup-modal.ts:281, 305                   |
+| 2.2 Retry guidance                   | [x]    | ✅ DONE  | Simple message acceptable per tech-spec |
+| 2.3 ARIA announce                    | [x]    | ✅ DONE  | aup-modal.ts:282, 306                   |
+| 3.1-3.3 Button state                 | [x]    | ✅ DONE  | Tests at aup-modal.test.ts:1145-1161    |
+| 4.1-4.3 Cancel button                | [x]    | ✅ DONE  | Tests at aup-modal.test.ts:1163-1218    |
+| 5.1-5.4 Error logging                | [x]    | ✅ DONE  | aup-modal.ts:267-272, 292-297           |
+| 6.1-6.5 Unit tests                   | [x]    | ✅ DONE  | 11 tests at aup-modal.test.ts:1064-1291 |
 
 **Summary: 22 of 22 completed subtasks verified, 0 questionable, 0 false completions**
 
@@ -230,7 +235,9 @@ Story 9.4 successfully implements clear error states for failed lease template l
 ### Action Items
 
 **Code Changes Required:**
+
 - None
 
 **Advisory Notes:**
+
 - Note: Consider adding E2E tests for error state display in future sprint

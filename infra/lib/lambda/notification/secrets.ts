@@ -17,15 +17,15 @@ import {
   SecretsManagerClient,
   GetSecretValueCommand,
   SecretsManagerServiceException,
-} from '@aws-sdk/client-secrets-manager';
-import { Logger } from '@aws-lambda-powertools/logger';
-import { CriticalError } from './errors';
+} from "@aws-sdk/client-secrets-manager"
+import { Logger } from "@aws-lambda-powertools/logger"
+import { CriticalError } from "./errors"
 
 // Logger for secrets module
-const logger = new Logger({ serviceName: 'ndx-notifications' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
 
 // Secrets Manager client - reused across invocations
-const secretsClient = new SecretsManagerClient({});
+const secretsClient = new SecretsManagerClient({})
 
 /**
  * Notification secrets structure
@@ -33,9 +33,9 @@ const secretsClient = new SecretsManagerClient({});
  */
 export interface NotificationSecrets {
   /** GOV.UK Notify API key (team + service key format) */
-  notifyApiKey: string;
+  notifyApiKey: string
   /** Slack Incoming Webhook URL for ops alerts */
-  slackWebhookUrl: string;
+  slackWebhookUrl: string
 }
 
 /**
@@ -44,72 +44,64 @@ export interface NotificationSecrets {
  */
 export interface E2ETestSecrets {
   /** GOV.UK Notify Sandbox API key for E2E testing */
-  notifySandboxApiKey: string;
+  notifySandboxApiKey: string
 }
 
 /**
  * Cached secrets value - persists for Lambda container lifetime
  * Cleared automatically on cold start (new container)
  */
-let cachedSecrets: NotificationSecrets | null = null;
+let cachedSecrets: NotificationSecrets | null = null
 
 /**
  * Pre-warm promise - starts fetching secrets during module initialization
  * This reduces cold start latency by fetching secrets in parallel with
  * other module initialization work.
  */
-let preWarmPromise: Promise<NotificationSecrets> | null = null;
+let preWarmPromise: Promise<NotificationSecrets> | null = null
 
 /**
  * Get the secrets path from environment
  * Defaults to standard path if not set
  */
 function getSecretsPath(): string {
-  return process.env.SECRETS_PATH || '/ndx/notifications/credentials';
+  return process.env.SECRETS_PATH || "/ndx/notifications/credentials"
 }
 
 /**
  * Internal function to fetch secrets from Secrets Manager
  * Used by both pre-warming and on-demand fetching
  */
-async function fetchSecretsInternal(
-  secretPath: string
-): Promise<NotificationSecrets> {
-  logger.info('Retrieving secrets from Secrets Manager', {
+async function fetchSecretsInternal(secretPath: string): Promise<NotificationSecrets> {
+  logger.info("Retrieving secrets from Secrets Manager", {
     secretPath,
-  });
+  })
 
   // EC-AC-12: Explicitly request AWSCURRENT version
   const command = new GetSecretValueCommand({
     SecretId: secretPath,
-    VersionStage: 'AWSCURRENT',
-  });
+    VersionStage: "AWSCURRENT",
+  })
 
-  const response = await secretsClient.send(command);
+  const response = await secretsClient.send(command)
 
   if (!response.SecretString) {
-    throw new CriticalError(
-      'Secret value is empty or binary (expected JSON string)',
-      'secrets'
-    );
+    throw new CriticalError("Secret value is empty or binary (expected JSON string)", "secrets")
   }
 
   // Parse and validate secret structure
-  let parsed: unknown;
+  let parsed: unknown
   try {
-    parsed = JSON.parse(response.SecretString);
+    parsed = JSON.parse(response.SecretString)
   } catch {
-    throw new CriticalError('Secret value is not valid JSON', 'secrets');
+    throw new CriticalError("Secret value is not valid JSON", "secrets")
   }
 
   if (!validateSecrets(parsed)) {
-    throw new CriticalError(
-      'Secret missing required fields (notifyApiKey, slackWebhookUrl)',
-      'secrets'
-    );
+    throw new CriticalError("Secret missing required fields (notifyApiKey, slackWebhookUrl)", "secrets")
   }
 
-  return parsed;
+  return parsed
 }
 
 /**
@@ -121,40 +113,40 @@ async function fetchSecretsInternal(
  * Only pre-warms if SECRETS_PATH is set (production/deployed environment)
  */
 function initializePreWarm(): void {
-  const secretPath = getSecretsPath();
+  const secretPath = getSecretsPath()
 
   // Only pre-warm if we have a real secrets path configured
   // Skip in test environments or when SECRETS_PATH is not set
   if (secretPath && !process.env.SKIP_SECRETS_PREWARM) {
-    logger.debug('Pre-warming secrets fetch', { secretPath });
+    logger.debug("Pre-warming secrets fetch", { secretPath })
     preWarmPromise = fetchSecretsInternal(secretPath).catch((error) => {
       // Log but don't throw - let getSecrets() handle the error
-      logger.warn('Pre-warm failed, will retry on first call', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      preWarmPromise = null;
-      throw error;
-    });
+      logger.warn("Pre-warm failed, will retry on first call", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      })
+      preWarmPromise = null
+      throw error
+    })
   }
 }
 
 // Initialize pre-warming at module load time
-initializePreWarm();
+initializePreWarm()
 
 /**
  * Validate that parsed secrets have required fields
  */
 function validateSecrets(parsed: unknown): parsed is NotificationSecrets {
-  if (typeof parsed !== 'object' || parsed === null) {
-    return false;
+  if (typeof parsed !== "object" || parsed === null) {
+    return false
   }
-  const obj = parsed as Record<string, unknown>;
+  const obj = parsed as Record<string, unknown>
   return (
-    typeof obj.notifyApiKey === 'string' &&
-    typeof obj.slackWebhookUrl === 'string' &&
+    typeof obj.notifyApiKey === "string" &&
+    typeof obj.slackWebhookUrl === "string" &&
     obj.notifyApiKey.length > 0 &&
     obj.slackWebhookUrl.length > 0
-  );
+  )
 }
 
 /**
@@ -173,58 +165,50 @@ function validateSecrets(parsed: unknown): parsed is NotificationSecrets {
 export async function getSecrets(): Promise<NotificationSecrets> {
   // Return cached secrets if available
   if (cachedSecrets !== null) {
-    logger.debug('Returning cached secrets');
-    return cachedSecrets;
+    logger.debug("Returning cached secrets")
+    return cachedSecrets
   }
 
-  const secretPath = getSecretsPath();
+  const secretPath = getSecretsPath()
 
   try {
     // Use pre-warm promise if available (P-H1: reduced cold start latency)
     if (preWarmPromise !== null) {
-      logger.debug('Using pre-warmed secrets fetch');
-      cachedSecrets = await preWarmPromise;
-      logger.info('Secrets retrieved successfully (pre-warmed)');
-      return cachedSecrets;
+      logger.debug("Using pre-warmed secrets fetch")
+      cachedSecrets = await preWarmPromise
+      logger.info("Secrets retrieved successfully (pre-warmed)")
+      return cachedSecrets
     }
 
     // Fall back to on-demand fetch if pre-warming wasn't available
-    logger.debug('Pre-warm not available, fetching on-demand');
-    cachedSecrets = await fetchSecretsInternal(secretPath);
-    logger.info('Secrets retrieved successfully');
-    return cachedSecrets;
+    logger.debug("Pre-warm not available, fetching on-demand")
+    cachedSecrets = await fetchSecretsInternal(secretPath)
+    logger.info("Secrets retrieved successfully")
+    return cachedSecrets
   } catch (error: unknown) {
     // Handle AWS SDK errors
     if (error instanceof SecretsManagerServiceException) {
-      logger.error('Secrets Manager error', {
+      logger.error("Secrets Manager error", {
         errorCode: error.name,
         // Never log the actual secret path in error details for security
-        errorMessage: '[REDACTED - check Secrets Manager permissions]',
-      });
+        errorMessage: "[REDACTED - check Secrets Manager permissions]",
+      })
 
-      throw new CriticalError(
-        `Secrets Manager error: ${error.name}`,
-        'secrets',
-        error
-      );
+      throw new CriticalError(`Secrets Manager error: ${error.name}`, "secrets", error)
     }
 
     // Re-throw CriticalErrors
     if (error instanceof CriticalError) {
-      throw error;
+      throw error
     }
 
     // Wrap unexpected errors
-    const errorInstance = error instanceof Error ? error : undefined;
-    logger.error('Unexpected error retrieving secrets', {
-      errorName: errorInstance?.name ?? 'Unknown',
-    });
+    const errorInstance = error instanceof Error ? error : undefined
+    logger.error("Unexpected error retrieving secrets", {
+      errorName: errorInstance?.name ?? "Unknown",
+    })
 
-    throw new CriticalError(
-      'Unexpected error retrieving secrets',
-      'secrets',
-      errorInstance
-    );
+    throw new CriticalError("Unexpected error retrieving secrets", "secrets", errorInstance)
   }
 }
 
@@ -233,8 +217,8 @@ export async function getSecrets(): Promise<NotificationSecrets> {
  * Used for testing and rotation scenarios
  */
 export function clearSecretsCache(): void {
-  cachedSecrets = null;
-  preWarmPromise = null;
+  cachedSecrets = null
+  preWarmPromise = null
 }
 
 /**
@@ -242,7 +226,7 @@ export function clearSecretsCache(): void {
  * Used for testing
  */
 export function isSecretsCached(): boolean {
-  return cachedSecrets !== null;
+  return cachedSecrets !== null
 }
 
 /**
@@ -250,7 +234,7 @@ export function isSecretsCached(): boolean {
  * Used for testing
  */
 export function isPreWarmInProgress(): boolean {
-  return preWarmPromise !== null;
+  return preWarmPromise !== null
 }
 
 // =============================================================================
@@ -260,28 +244,25 @@ export function isPreWarmInProgress(): boolean {
 /**
  * Cached E2E secrets value
  */
-let cachedE2ESecrets: E2ETestSecrets | null = null;
+let cachedE2ESecrets: E2ETestSecrets | null = null
 
 /**
  * Get the E2E secrets path from environment
  * Defaults to standard path if not set
  */
 function getE2ESecretsPath(): string {
-  return process.env.E2E_SECRETS_PATH || '/ndx/notifications/e2e-credentials';
+  return process.env.E2E_SECRETS_PATH || "/ndx/notifications/e2e-credentials"
 }
 
 /**
  * Validate that parsed E2E secrets have required fields
  */
 function validateE2ESecrets(parsed: unknown): parsed is E2ETestSecrets {
-  if (typeof parsed !== 'object' || parsed === null) {
-    return false;
+  if (typeof parsed !== "object" || parsed === null) {
+    return false
   }
-  const obj = parsed as Record<string, unknown>;
-  return (
-    typeof obj.notifySandboxApiKey === 'string' &&
-    obj.notifySandboxApiKey.length > 0
-  );
+  const obj = parsed as Record<string, unknown>
+  return typeof obj.notifySandboxApiKey === "string" && obj.notifySandboxApiKey.length > 0
 }
 
 /**
@@ -303,14 +284,14 @@ export function isSandboxApiKey(apiKey: string): boolean {
   // Basic format validation: should be a non-empty string with expected format
   // Key format: {key_name}-{uuid}-{uuid} (about 72+ characters)
   if (!apiKey || apiKey.length < 50) {
-    return false;
+    return false
   }
 
   // The key name portion (before first uuid) indicates the type
   // Common patterns: 'team-xxxxx' for test, various names for production
   // We don't have a reliable way to distinguish without calling the API
 
-  return true; // Assume valid if format looks correct
+  return true // Assume valid if format looks correct
 }
 
 /**
@@ -325,94 +306,74 @@ export function isSandboxApiKey(apiKey: string): boolean {
 export async function getE2ESecrets(): Promise<E2ETestSecrets> {
   // Return cached secrets if available
   if (cachedE2ESecrets !== null) {
-    logger.debug('Returning cached E2E secrets');
-    return cachedE2ESecrets;
+    logger.debug("Returning cached E2E secrets")
+    return cachedE2ESecrets
   }
 
-  const secretPath = getE2ESecretsPath();
+  const secretPath = getE2ESecretsPath()
 
   try {
-    logger.info('Retrieving E2E secrets from Secrets Manager', {
+    logger.info("Retrieving E2E secrets from Secrets Manager", {
       secretPath,
-    });
+    })
 
     const command = new GetSecretValueCommand({
       SecretId: secretPath,
-      VersionStage: 'AWSCURRENT',
-    });
+      VersionStage: "AWSCURRENT",
+    })
 
-    const response = await secretsClient.send(command);
+    const response = await secretsClient.send(command)
 
     if (!response.SecretString) {
-      throw new CriticalError(
-        'E2E secret value is empty or binary (expected JSON string)',
-        'secrets'
-      );
+      throw new CriticalError("E2E secret value is empty or binary (expected JSON string)", "secrets")
     }
 
     // Parse and validate secret structure
-    let parsed: unknown;
+    let parsed: unknown
     try {
-      parsed = JSON.parse(response.SecretString);
+      parsed = JSON.parse(response.SecretString)
     } catch {
-      throw new CriticalError(
-        'E2E secret value is not valid JSON',
-        'secrets'
-      );
+      throw new CriticalError("E2E secret value is not valid JSON", "secrets")
     }
 
     if (!validateE2ESecrets(parsed)) {
-      throw new CriticalError(
-        'E2E secret missing required field (notifySandboxApiKey)',
-        'secrets'
-      );
+      throw new CriticalError("E2E secret missing required field (notifySandboxApiKey)", "secrets")
     }
 
     // Verify it's actually a sandbox key (AC-8.1)
     if (!isSandboxApiKey(parsed.notifySandboxApiKey)) {
-      throw new CriticalError(
-        'E2E secret does not appear to be a valid sandbox API key',
-        'secrets'
-      );
+      throw new CriticalError("E2E secret does not appear to be a valid sandbox API key", "secrets")
     }
 
     // Cache for container lifetime
-    cachedE2ESecrets = parsed;
+    cachedE2ESecrets = parsed
 
-    logger.info('E2E secrets retrieved successfully');
+    logger.info("E2E secrets retrieved successfully")
 
-    return cachedE2ESecrets;
+    return cachedE2ESecrets
   } catch (error: unknown) {
     // Handle AWS SDK errors
     if (error instanceof SecretsManagerServiceException) {
-      logger.error('Secrets Manager error (E2E)', {
+      logger.error("Secrets Manager error (E2E)", {
         errorCode: error.name,
-        errorMessage: '[REDACTED - check Secrets Manager permissions]',
-      });
+        errorMessage: "[REDACTED - check Secrets Manager permissions]",
+      })
 
-      throw new CriticalError(
-        `Secrets Manager error: ${error.name}`,
-        'secrets',
-        error
-      );
+      throw new CriticalError(`Secrets Manager error: ${error.name}`, "secrets", error)
     }
 
     // Re-throw CriticalErrors
     if (error instanceof CriticalError) {
-      throw error;
+      throw error
     }
 
     // Wrap unexpected errors
-    const errorInstance = error instanceof Error ? error : undefined;
-    logger.error('Unexpected error retrieving E2E secrets', {
-      errorName: errorInstance?.name ?? 'Unknown',
-    });
+    const errorInstance = error instanceof Error ? error : undefined
+    logger.error("Unexpected error retrieving E2E secrets", {
+      errorName: errorInstance?.name ?? "Unknown",
+    })
 
-    throw new CriticalError(
-      'Unexpected error retrieving E2E secrets',
-      'secrets',
-      errorInstance
-    );
+    throw new CriticalError("Unexpected error retrieving E2E secrets", "secrets", errorInstance)
   }
 }
 
@@ -421,5 +382,5 @@ export async function getE2ESecrets(): Promise<E2ETestSecrets> {
  * Used for testing
  */
 export function clearE2ESecretsCache(): void {
-  cachedE2ESecrets = null;
+  cachedE2ESecrets = null
 }

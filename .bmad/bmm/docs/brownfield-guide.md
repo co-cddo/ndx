@@ -213,7 +213,7 @@ If you have **good, current documentation** but it's in massive files:
 .bmad/core/tools/shard-doc.xml \
   --input docs/api-documentation.md \
   --output docs/api/ \
-  --level 2  # Split on ## headers (default)
+  --level 2 # Split on ## headers (default)
 ```
 
 **Step 2: Generate index**
@@ -621,40 +621,40 @@ Document in tech-spec/architecture:
 ```bash
 # Phase 0: Documentation (If Needed)
 # Analyst agent:
-document-project        # Create comprehensive docs (10-30min)
+document-project # Create comprehensive docs (10-30min)
 # OR load index-docs task for existing docs (2-5min)
 
 # Phase 1: Analysis (Optional)
 # Analyst agent:
-brainstorm-project      # Explore solutions
-research                # Gather data
-product-brief           # Strategic planning (BMad Method/Enterprise only)
+brainstorm-project # Explore solutions
+research           # Gather data
+product-brief      # Strategic planning (BMad Method/Enterprise only)
 
 # Phase 2: Planning (Required)
 # PM agent:
-tech-spec               # Quick Flow track
-prd                     # BMad Method/Enterprise tracks
+tech-spec # Quick Flow track
+prd       # BMad Method/Enterprise tracks
 
 # Phase 3: Solutioning (BMad Method/Enterprise)
 # Architect agent:
-create-architecture          # Extend architecture
-create-epics-and-stories     # Create epics and stories (after architecture)
-implementation-readiness       # Final validation
+create-architecture      # Extend architecture
+create-epics-and-stories # Create epics and stories (after architecture)
+implementation-readiness # Final validation
 
 # Phase 4: Implementation (All Tracks)
 # SM agent:
-sprint-planning              # Initialize tracking
-epic-tech-context            # Epic context
-create-story                 # Draft story
-story-context                # Story context
+sprint-planning   # Initialize tracking
+epic-tech-context # Epic context
+create-story      # Draft story
+story-context     # Story context
 
 # DEV agent:
-dev-story                    # Implement
-code-review                  # Review
+dev-story   # Implement
+code-review # Review
 
 # SM agent:
-retrospective                # After epic
-correct-course               # If issues
+retrospective  # After epic
+correct-course # If issues
 ```
 
 ### Key Files

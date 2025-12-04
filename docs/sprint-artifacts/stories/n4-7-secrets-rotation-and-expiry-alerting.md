@@ -11,12 +11,14 @@ So that I can respond to credential lifecycle events before they impact the syst
 ## Acceptance Criteria
 
 **AC-7.1: Secret rotation runbook documented**
+
 - **Given** the ops team needs to rotate credentials
 - **When** they access the runbook
 - **Then** step-by-step rotation procedure is documented
 - **Verification:** Documentation review
 
 **AC-7.2: Proactive alarm: secret age > 335 days**
+
 - **Given** the notification credentials secret
 - **When** age exceeds 335 days (30 days before 1-year rotation)
 - **Then** alarm triggers to prompt rotation
@@ -24,12 +26,14 @@ So that I can respond to credential lifecycle events before they impact the syst
 - **Verification:** CDK assertion test (in n4-6 tests)
 
 **AC-7.3: Rotation procedure tested in staging**
+
 - **Given** the documented rotation procedure
 - **When** followed in staging
 - **Then** no service disruption occurs
 - **Verification:** Manual verification (staging deployment)
 
 **AC-7.4: Auth failure alarm documentation**
+
 - **Given** the separate auth failure alarm (AC-6.5)
 - **When** it triggers
 - **Then** documentation explains: auth = credential issue, requires different response than code bugs
@@ -78,6 +82,7 @@ This story is primarily **documentation-focused**. The technical implementation 
    - Note the key value (only shown once)
 
 2. **Update AWS Secrets Manager**
+
    ```bash
    aws secretsmanager update-secret \
      --secret-id /ndx/notifications/credentials \
@@ -101,6 +106,7 @@ This story is primarily **documentation-focused**. The technical implementation 
    - Copy new webhook URL
 
 2. **Update AWS Secrets Manager**
+
    ```bash
    aws secretsmanager update-secret \
      --secret-id /ndx/notifications/credentials \
@@ -145,6 +151,7 @@ When `ndx-notification-secrets-expiry` alarm triggers (age > 335 days):
 ## Architecture Reference
 
 From tech-spec-epic-n4.md:
+
 ```
 Pre-mortem finding: Secrets Expired
 - Failure Mode: API key expires, 401 errors flood DLQ

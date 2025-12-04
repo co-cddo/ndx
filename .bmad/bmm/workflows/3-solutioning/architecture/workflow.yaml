@@ -51,5 +51,4 @@ pattern_categories: "{installed_path}/pattern-categories.csv"
 default_output_file: "{output_folder}/architecture.md"
 
 standalone: true
-
 # Web bundle configuration for standalone deployment

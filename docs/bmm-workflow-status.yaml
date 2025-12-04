@@ -25,7 +25,7 @@ workflow_path: ".bmad/bmm/workflows/workflow-status/paths/method-brownfield.yaml
 workflow_status:
   # Prerequisite Phase - Documentation (if needed)
   prerequisite:
-    - document-project: "docs/index.md"  # conditional: if_undocumented
+    - document-project: "docs/index.md" # conditional: if_undocumented
 
   # Phase 0: Discovery (Optional)
   phase_0_discovery:
@@ -37,17 +37,17 @@ workflow_status:
   phase_1_planning:
     - prd: "docs/prd.md"
     - validate-prd: "optional"
-    - create-epics-and-stories: "optional"  # Early epic breakdown
-    - create-design: "docs/ux-design-specification.md"  # Completed 2025-11-22 for Try Before You Buy feature
-    - create-epics-and-stories-after-ux: "optional"  # Epic breakdown with UX context
+    - create-epics-and-stories: "optional" # Early epic breakdown
+    - create-design: "docs/ux-design-specification.md" # Completed 2025-11-22 for Try Before You Buy feature
+    - create-epics-and-stories-after-ux: "optional" # Epic breakdown with UX context
 
   # Phase 2: Solutioning
   phase_2_solutioning:
-    - create-architecture: "docs/notification-architecture.md"  # Features 3 & 4 completed 2025-11-27
-    - create-epics-and-stories-final: "docs/epics-notifications.md"  # Features 3 & 4 completed 2025-11-27
+    - create-architecture: "docs/notification-architecture.md" # Features 3 & 4 completed 2025-11-27
+    - create-epics-and-stories-final: "docs/epics-notifications.md" # Features 3 & 4 completed 2025-11-27
     - test-design: "skipped"
     - validate-architecture: "skipped"
-    - implementation-readiness: "docs/implementation-readiness-report-2025-11-27.md"  # Features 3 & 4 complete 2025-11-27
+    - implementation-readiness: "docs/implementation-readiness-report-2025-11-27.md" # Features 3 & 4 complete 2025-11-27
 
   # Phase 3: Implementation
   phase_3_implementation:

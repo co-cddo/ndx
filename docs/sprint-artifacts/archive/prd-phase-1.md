@@ -38,6 +38,7 @@ The differentiator is taking a **methodical, engineering-first approach** to inf
 This project adds infrastructure-as-code capabilities to the existing NDX static site. While the application itself remains a JAMstack Eleventy site, the deployment infrastructure is being elevated to production standards.
 
 **Domain Context:** As a UK government service, NDX must comply with:
+
 - Government Digital Service (GDS) standards
 - UK government security frameworks
 - Public sector transparency requirements
@@ -61,6 +62,7 @@ The infrastructure must support future capabilities including secure trial envir
 5. **Cost Efficiency:** AWS hosting costs remain minimal (comparable to free GitHub Pages) during static site phase
 
 **What Winning Looks Like:**
+
 - Team can confidently deploy updates to production S3 infrastructure using manual process
 - CDK infrastructure code is tested, linted, and version-controlled with same rigor as application code
 - Foundation is proven for future GitHub Actions + OIDC keyless authentication integration
@@ -73,55 +75,40 @@ The infrastructure must support future capabilities including secure trial envir
 ### MVP - Minimum Viable Product
 
 **Core Infrastructure:**
+
 1. **S3 Static Site Hosting:** Bucket configured for static website hosting with public read access
 2. **CDK Infrastructure Definition:** TypeScript CDK app defining all AWS resources as code
 3. **Manual Deployment Process:** Document and validate manual upload process to S3 bucket
 4. **AWS Profile Integration:** Use existing `NDX/InnovationSandboxHub` profile for deployments
 
-**Infrastructure Hygiene:**
-5. **CDK Testing:** Unit tests for CDK infrastructure code
-6. **CDK Linting:** ESLint configuration for CDK TypeScript code
-7. **Infrastructure Documentation:** README explaining CDK setup, deployment, and architecture
-8. **Version Control:** CDK code in git with proper .gitignore for AWS artifacts
+**Infrastructure Hygiene:** 5. **CDK Testing:** Unit tests for CDK infrastructure code 6. **CDK Linting:** ESLint configuration for CDK TypeScript code 7. **Infrastructure Documentation:** README explaining CDK setup, deployment, and architecture 8. **Version Control:** CDK code in git with proper .gitignore for AWS artifacts
 
-**Quality Gates:**
-9. **Build Validation:** CDK synth validates infrastructure before deployment
-10. **Diff Preview:** CDK diff shows changes before applying to AWS
+**Quality Gates:** 9. **Build Validation:** CDK synth validates infrastructure before deployment 10. **Diff Preview:** CDK diff shows changes before applying to AWS
 
 ### Growth Features (Post-MVP)
 
 **CI/CD Automation:**
+
 1. **GitHub Actions Workflow:** Automated deployment pipeline triggered on commits to main branch
 2. **OIDC Keyless Authentication:** GitHub Actions authenticates to AWS without long-lived credentials
 3. **Deployment Approvals:** Production deployment gates and approval process
 4. **Automated Testing:** Infrastructure tests run in CI/CD pipeline
 
-**Production Enhancements:**
-5. **CloudFront CDN:** Global content delivery network in front of S3
-6. **Custom Domain:** DNS configuration for production domain
-7. **SSL/TLS Certificates:** AWS Certificate Manager integration
-8. **Monitoring & Logging:** CloudWatch dashboards for site health and access patterns
-9. **Backup & Versioning:** S3 versioning and backup policies
+**Production Enhancements:** 5. **CloudFront CDN:** Global content delivery network in front of S3 6. **Custom Domain:** DNS configuration for production domain 7. **SSL/TLS Certificates:** AWS Certificate Manager integration 8. **Monitoring & Logging:** CloudWatch dashboards for site health and access patterns 9. **Backup & Versioning:** S3 versioning and backup policies
 
-**Infrastructure Evolution:**
-10. **Multi-Environment:** Separate dev/staging/production environments via CDK context
-11. **Cost Monitoring:** AWS Budget alerts and cost allocation tags
-12. **Security Scanning:** Infrastructure security scanning in CI/CD
+**Infrastructure Evolution:** 10. **Multi-Environment:** Separate dev/staging/production environments via CDK context 11. **Cost Monitoring:** AWS Budget alerts and cost allocation tags 12. **Security Scanning:** Infrastructure security scanning in CI/CD
 
 ### Vision (Future)
 
 **Dynamic Capabilities Foundation:**
+
 1. **API Gateway Integration:** Prepare infrastructure for future backend APIs (trial requests, access management)
 2. **Lambda Functions:** Serverless compute for dynamic features
 3. **Database Layer:** DynamoDB or RDS for user data, requests, sessions
 4. **Authentication Infrastructure:** Cognito or similar for user authentication
 5. **Trial Environment Provisioning:** Infrastructure to spin up 24-hour trial environments
 
-**Enterprise Scale:**
-6. **Multi-Region Deployment:** High availability across AWS regions
-7. **WAF Integration:** Web Application Firewall for security
-8. **Compliance Automation:** Automated compliance checking against GDS standards
-9. **Disaster Recovery:** Automated backup and recovery procedures
+**Enterprise Scale:** 6. **Multi-Region Deployment:** High availability across AWS regions 7. **WAF Integration:** Web Application Firewall for security 8. **Compliance Automation:** Automated compliance checking against GDS standards 9. **Disaster Recovery:** Automated backup and recovery procedures
 
 ---
 
@@ -145,6 +132,7 @@ The MVP infrastructure phase has minimal government-specific requirements since 
 ### CDK Project Structure
 
 **Location & Technology:**
+
 - CDK code lives in `/infra` directory within main repository
 - TypeScript for CDK (industry standard)
 - AWS CDK v2 (current standard)
@@ -153,6 +141,7 @@ The MVP infrastructure phase has minimal government-specific requirements since 
 ### AWS Resource Configuration
 
 **S3 Bucket:**
+
 - Bucket name: `ndx-static-prod`
 - Purpose: Static asset storage (files only, not static website hosting)
 - Static website hosting: **Disabled** (prepared for CloudFront in growth phase)
@@ -161,18 +150,21 @@ The MVP infrastructure phase has minimal government-specific requirements since 
 - Versioning: To be determined (recommended for rollback capability)
 
 **Deployment Profile:**
+
 - AWS Profile: `NDX/InnovationSandboxHub` (pre-configured locally)
 - Region: `us-west-2`
 
 ### Testing & Quality Standards
 
 **Industry Best Practices for CDK Testing:**
+
 1. **Snapshot Tests:** Capture CloudFormation template, detect unintended changes
 2. **Fine-grained Assertions:** Validate specific resource properties (bucket name, encryption, policies)
 3. **Synth Validation:** CDK synth must succeed before any deployment
 4. **Linting:** ESLint for TypeScript CDK code with AWS CDK recommended rules
 
 **Quality Gates:**
+
 - All tests pass before deployment
 - CDK synth produces valid CloudFormation
 - CDK diff reviewed before deploy
@@ -181,10 +173,12 @@ The MVP infrastructure phase has minimal government-specific requirements since 
 ### Build & Deployment Workflow
 
 **Separation of Concerns:**
+
 - **CDK (`/infra`):** Manages AWS infrastructure only (S3 bucket, future CloudFront, OIDC roles)
 - **Application (`/`):** Builds site and deploys files to infrastructure
 
 **Deployment Script:**
+
 - Location: Main application `package.json`
 - Command: `yarn deploy`
 - Implementation: Shell script using AWS CLI
@@ -193,21 +187,23 @@ The MVP infrastructure phase has minimal government-specific requirements since 
 - Dependencies: Requires prior `yarn build` (Eleventy build)
 
 **Manual Deployment Flow (MVP):**
+
 ```bash
 # 1. Build static site
 yarn build
 
 # 2. Deploy infrastructure (first time or when infra changes)
 cd infra
-cdk diff          # Review infrastructure changes
-cdk deploy        # Apply infrastructure changes
+cdk diff   # Review infrastructure changes
+cdk deploy # Apply infrastructure changes
 
 # 3. Deploy site files
 cd ..
-yarn deploy       # Upload _site/ to S3 bucket
+yarn deploy # Upload _site/ to S3 bucket
 ```
 
 **Team Access:**
+
 - Solo deployment for MVP (single developer with AWS profile)
 - Team deployment deferred to Growth phase (GitHub Actions + OIDC)
 
@@ -371,6 +367,7 @@ yarn deploy       # Upload _site/ to S3 bucket
 ## PRD Summary
 
 **Captured Requirements:**
+
 - **26 Functional Requirements** across 6 capability areas
   - Infrastructure Provisioning (7)
   - File Deployment (5)
@@ -388,6 +385,7 @@ yarn deploy       # Upload _site/ to S3 bucket
   - Operational Excellence (4)
 
 **Key Deliverables:**
+
 1. AWS CDK TypeScript infrastructure in `/infra` directory
 2. S3 bucket `ndx-static-prod` configured for CloudFront origin access
 3. `yarn deploy` script for uploading built site to S3
@@ -396,6 +394,7 @@ yarn deploy       # Upload _site/ to S3 bucket
 6. Infrastructure documentation in `/infra/README.md`
 
 **Success Validation:**
+
 - CDK infrastructure deploys successfully to AWS us-west-2
 - Static site files upload to S3 bucket via `yarn deploy`
 - All tests pass (CDK tests + ESLint)

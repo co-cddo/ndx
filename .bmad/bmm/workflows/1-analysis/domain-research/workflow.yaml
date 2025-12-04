@@ -24,5 +24,4 @@ domain_knowledge_base: "{installed_path}/domain-knowledge-base.md"
 default_output_file: "{output_folder}/domain-brief.md"
 
 standalone: true
-
 # Web bundle configuration for standalone deployment

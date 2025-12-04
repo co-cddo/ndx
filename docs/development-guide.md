@@ -8,12 +8,12 @@
 
 ### Required Tools
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Node.js** | 20.17.0 | Runtime environment |
-| **Yarn** | ≥ 4.5.0 | Package manager (required, npm blocked) |
-| **Git** | Latest | Version control |
-| **nvm** | Latest (recommended) | Node version management |
+| Tool        | Version              | Purpose                                 |
+| ----------- | -------------------- | --------------------------------------- |
+| **Node.js** | 20.17.0              | Runtime environment                     |
+| **Yarn**    | ≥ 4.5.0              | Package manager (required, npm blocked) |
+| **Git**     | Latest               | Version control                         |
+| **nvm**     | Latest (recommended) | Node version management                 |
 
 ### Version Management
 
@@ -90,6 +90,7 @@ yarn install
 ```
 
 **What gets installed:**
+
 - **Eleventy 3.1.2** - Static site generator
 - **GOV.UK Frontend** - Design system
 - **@x-govuk/govuk-eleventy-plugin 7.2.1** - GOV.UK Eleventy integration
@@ -108,6 +109,7 @@ yarn start
 ```
 
 **What happens:**
+
 1. Removes `_site/` directory
 2. Runs `eleventy --serve`
 3. Starts server at `http://localhost:8080`
@@ -115,6 +117,7 @@ yarn start
 5. Auto-rebuilds and reloads browser
 
 **Dev Server Features:**
+
 - Live reload on file changes
 - BrowserSync integration
 - Source maps for debugging
@@ -128,12 +131,14 @@ yarn build
 ```
 
 **Build Output:**
+
 - **Location:** `_site/`
 - **Contents:** Static HTML, CSS, JS, images, fonts
 - **Path Prefix:** Configurable via `PATH_PREFIX` env var
 - **Example:** `PATH_PREFIX=/ndx/ yarn build` (for GitHub Pages subdirectory)
 
 **Build Process:**
+
 1. Processes `src/**/*.md` → HTML
 2. Compiles `src/**/*.njk` → HTML
 3. Compiles `src/assets/styles.scss` → CSS
@@ -151,12 +156,14 @@ yarn lint
 ```
 
 **What it checks:**
+
 - JavaScript formatting (Prettier)
 - Markdown formatting
 - YAML/JSON formatting
 - Shell script formatting (via prettier-plugin-sh)
 
 **Prettier Configuration** (`package.json`):
+
 ```json
 {
   "prettier": {
@@ -179,11 +186,13 @@ npx prettier --write .
 ### Git Hooks (Husky)
 
 **Pre-Commit Hook:**
+
 - Automatically runs `lint-staged` before commits
 - Checks and auto-fixes formatting on staged files only
 - Configured in `.lintstagedrc.json`
 
 **Hook Setup:**
+
 ```bash
 # Hooks installed automatically via `yarn install`
 # Configured in `package.json`:
@@ -195,6 +204,7 @@ npx prettier --write .
 ```
 
 **What runs on commit:**
+
 - Prettier formatting check on staged files
 - Auto-fix if possible
 - Commit blocked if formatting fails
@@ -224,32 +234,35 @@ src/
 
 ### Configuration Files
 
-| File | Purpose |
-|------|---------|
+| File                 | Purpose                                      |
+| -------------------- | -------------------------------------------- |
 | `eleventy.config.js` | Eleventy configuration, collections, plugins |
-| `package.json` | Dependencies, scripts, Prettier config |
-| `.nvmrc` | Node.js version (20.17.0) |
-| `.yarnrc.yml` | Yarn configuration |
-| `.editorconfig` | Editor settings (indentation, line endings) |
-| `.eleventyignore` | Files to exclude from Eleventy processing |
-| `.gitignore` | Files to exclude from Git |
-| `.lintstagedrc.json` | Lint-staged configuration |
+| `package.json`       | Dependencies, scripts, Prettier config       |
+| `.nvmrc`             | Node.js version (20.17.0)                    |
+| `.yarnrc.yml`        | Yarn configuration                           |
+| `.editorconfig`      | Editor settings (indentation, line endings)  |
+| `.eleventyignore`    | Files to exclude from Eleventy processing    |
+| `.gitignore`         | Files to exclude from Git                    |
+| `.lintstagedrc.json` | Lint-staged configuration                    |
 
 ## Adding Content
 
 ### Create a New Catalogue Entry
 
 1. Create vendor directory (if new):
+
    ```bash
    mkdir -p src/catalogue/vendor-name
    ```
 
 2. Create service markdown file:
+
    ```bash
    touch src/catalogue/vendor-name/service-name.md
    ```
 
 3. Add frontmatter and content:
+
    ```yaml
    ---
    layout: product
@@ -265,7 +278,6 @@ src/
      - Technology Category
      - cloud
    ---
-
    # Service content here
    ```
 
@@ -288,9 +300,8 @@ touch src/discover/news/yyyy-mm-dd-news-title.md
 title: News Title
 date: 2025-01-18
 eleventyNavigation:
-  url: https://external-link.com  # Optional external URL
+  url: https://external-link.com # Optional external URL
 ---
-
 News content here...
 ```
 
@@ -306,7 +317,6 @@ touch src/challenges/department-name/challenge-name.md
 title: Challenge Title
 date: 2025-01-18
 ---
-
 Challenge description...
 ```
 
@@ -317,6 +327,7 @@ Challenge description...
 **Current State:** No test suite is configured.
 
 **Testing Approach:**
+
 1. **Manual Testing:**
    - Run `yarn start`
    - Navigate to `http://localhost:8080`
@@ -357,6 +368,7 @@ on:
 ```
 
 **Build Job:**
+
 1. Harden runner (step-security)
 2. Checkout code
 3. Enable corepack
@@ -368,6 +380,7 @@ on:
 9. Upload artifact
 
 **Publish Job** (only on `main` branch):
+
 1. Download artifact
 2. Untar files
 3. Configure GitHub Pages
@@ -390,11 +403,12 @@ npx http-server _site -p 8080
 
 ### Environment Variables
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `PATH_PREFIX` | URL path prefix for deployment | `/` |
+| Variable      | Purpose                        | Default |
+| ------------- | ------------------------------ | ------- |
+| `PATH_PREFIX` | URL path prefix for deployment | `/`     |
 
 **Example:** For GitHub Pages subdirectory deployment:
+
 ```bash
 PATH_PREFIX=/ndx/ yarn build
 ```
@@ -404,6 +418,7 @@ PATH_PREFIX=/ndx/ yarn build
 ### Add a New Vendor
 
 1. Create directories:
+
    ```bash
    mkdir -p src/catalogue/vendor-name
    mkdir -p src/assets/catalogue/vendor-name
@@ -426,11 +441,13 @@ yarn start
 ### Add a New Page Section
 
 1. Create directory in `src/`:
+
    ```bash
    mkdir src/new-section
    ```
 
 2. Create index page:
+
    ```bash
    touch src/new-section/index.md
    ```
@@ -440,7 +457,7 @@ yarn start
    serviceNavigation: {
      navigation: [
        // ... existing items
-       { text: "New Section", href: "/new-section" }
+       { text: "New Section", href: "/new-section" },
      ]
    }
    ```
@@ -508,6 +525,7 @@ yarn lint
 **Error:** `The engine "yarn" is incompatible with this module`
 
 **Solution:**
+
 ```bash
 corepack enable
 corepack prepare yarn@4.5.0 --activate
@@ -518,6 +536,7 @@ corepack prepare yarn@4.5.0 --activate
 **Error:** Build fails with syntax errors
 
 **Solution:**
+
 ```bash
 nvm use
 # or
@@ -529,6 +548,7 @@ nvm install
 **Error:** `EADDRINUSE: address already in use :::8080`
 
 **Solution:**
+
 ```bash
 # Kill process on port 8080
 lsof -ti:8080 | xargs kill
@@ -542,6 +562,7 @@ npx @11ty/eleventy --serve --port 3000
 **Symptom:** `yarn build` never completes
 
 **Solution:**
+
 ```bash
 # Remove _site and rebuild
 rm -rf _site
@@ -551,6 +572,7 @@ yarn build
 ### Husky Hooks Not Running
 
 **Solution:**
+
 ```bash
 # Reinstall Husky hooks
 npx husky install
@@ -563,6 +585,7 @@ npx husky install
 **Current:** Fast (static site, minimal processing)
 
 **Optimization Tips:**
+
 - Use `.eleventyignore` to exclude large files
 - Minimize plugins
 - Use passthrough copy for static assets
@@ -573,6 +596,7 @@ npx husky install
 **N/A** - Static site (no server-side runtime)
 
 **Client-side Performance:**
+
 - Minimal JavaScript
 - GOV.UK Frontend is lightweight
 - Static assets cached
@@ -583,6 +607,7 @@ npx husky install
 ### Pre-Commit Security
 
 **GitHub Actions:**
+
 - **Harden Runner** - step-security/harden-runner@v2.13.0
 - **CodeQL** - Automated security scanning
 - **OpenSSF Scorecard** - Security best practices scoring
@@ -590,6 +615,7 @@ npx husky install
 ### Dependency Security
 
 **Dependabot:**
+
 - Automated dependency updates
 - Auto-merge for minor/patch versions (`.github/workflows/automerge-dependabot.yaml`)
 - Security vulnerability alerts

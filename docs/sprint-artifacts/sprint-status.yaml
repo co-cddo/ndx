@@ -300,7 +300,7 @@ development_status:
   # Epic File: docs/epics/epic-9-aup-modal-dynamic-lease-details.md
   # Prerequisites: Verify GET /api/leaseTemplates/{id} endpoint exists
   # Elicitation: 2025-12-02 - Pre-mortem, Journey Mapping, Devil's Advocate, Decision Matrix, Empathy Map
-  epic-9-aup-modal-dynamic-lease-details: done  # All 4 stories complete 2025-12-02 - 77 tests passing
+  epic-9-aup-modal-dynamic-lease-details: done # All 4 stories complete 2025-12-02 - 77 tests passing
   9-1-create-lease-template-service: done # Code review complete 2025-12-02: APPROVED - 28 tests, all 10 ACs satisfied
   9-2-display-dynamic-lease-details-in-modal: done # Code review complete 2025-12-02: APPROVED - 10/10 ACs, 18 tests
   9-3-gate-continue-button-on-all-data-loaded: done # Code review complete 2025-12-02: APPROVED - 10/10 ACs, 66 tests

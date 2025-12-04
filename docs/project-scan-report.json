@@ -86,7 +86,14 @@
       "display_name": "National Digital Exchange Website"
     }
   ],
-  "outputs_generated": ["project-scan-report.json", "component-inventory.md", "source-tree-analysis.md", "development-guide.md", "architecture.md", "index.md"],
+  "outputs_generated": [
+    "project-scan-report.json",
+    "component-inventory.md",
+    "source-tree-analysis.md",
+    "development-guide.md",
+    "architecture.md",
+    "index.md"
+  ],
   "resume_instructions": "Workflow complete",
   "user_context": "NDX is currently a prototype/concept demo showing stakeholders the vision. Team is about to add real capability (service trials, access requests, authentication). Documentation captures baseline before evolution."
 }

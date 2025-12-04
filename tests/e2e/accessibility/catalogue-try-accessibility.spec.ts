@@ -29,7 +29,7 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
       await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
       await page.waitForLoadState("networkidle")
 
-      const tryButton = page.locator('[data-try-id]')
+      const tryButton = page.locator("[data-try-id]")
       await expect(tryButton).toBeVisible()
 
       // Tab to the button
@@ -40,14 +40,11 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
     test("Try button activates with Enter key", async ({ page }) => {
       // Set up authenticated state
       await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-      await page.evaluate(
-        ([key, token]) => sessionStorage.setItem(key, token),
-        [TOKEN_KEY, TEST_TOKEN]
-      )
+      await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
       await page.waitForLoadState("networkidle")
 
-      const tryButton = page.locator('[data-try-id]')
+      const tryButton = page.locator("[data-try-id]")
       await tryButton.focus()
 
       // Press Enter to activate
@@ -60,14 +57,11 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
 
     test("Try button activates with Space key", async ({ page }) => {
       await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-      await page.evaluate(
-        ([key, token]) => sessionStorage.setItem(key, token),
-        [TOKEN_KEY, TEST_TOKEN]
-      )
+      await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
       await page.waitForLoadState("networkidle")
 
-      const tryButton = page.locator('[data-try-id]')
+      const tryButton = page.locator("[data-try-id]")
       await tryButton.focus()
 
       // Press Space to activate
@@ -83,31 +77,28 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
 test.describe("AUP Modal Accessibility (Story 6.11)", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.evaluate(
-      ([key, token]) => sessionStorage.setItem(key, token),
-      [TOKEN_KEY, TEST_TOKEN]
-    )
+    await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
     await page.waitForLoadState("networkidle")
   })
 
   test.describe("AC #2: Modal ARIA Attributes", () => {
     test('Modal has role="dialog"', async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
       await expect(modal).toHaveAttribute("role", "dialog")
     })
 
     test('Modal has aria-modal="true"', async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
       await expect(modal).toHaveAttribute("aria-modal", "true")
     })
 
     test("Modal has aria-labelledby pointing to title", async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -119,10 +110,8 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
       await expect(titleElement).toBeVisible()
     })
 
-    test("Modal has aria-describedby pointing to description", async ({
-      page,
-    }) => {
-      await page.locator('[data-try-id]').click()
+    test("Modal has aria-describedby pointing to description", async ({ page }) => {
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -137,7 +126,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
 
   test.describe("AC #3: Focus Trap", () => {
     test("Focus moves to modal when opened", async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -151,7 +140,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
     })
 
     test("Tab cycles through modal elements only", async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -169,7 +158,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
     })
 
     test("Shift+Tab cycles backwards through modal", async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -189,7 +178,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
 
   test.describe("AC #4: Escape Key Closes Modal", () => {
     test("Pressing Escape closes the modal", async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -199,10 +188,8 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
   })
 
   test.describe("AC #5: Checkbox Label Association", () => {
-    test("Checkbox has associated label via for attribute", async ({
-      page,
-    }) => {
-      await page.locator('[data-try-id]').click()
+    test("Checkbox has associated label via for attribute", async ({ page }) => {
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -217,7 +204,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
     })
 
     test("Clicking label toggles checkbox", async ({ page }) => {
-      await page.locator('[data-try-id]').click()
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -237,10 +224,8 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
   })
 
   test.describe("AC #6: Disabled Button State Announced", () => {
-    test("Continue button has aria-disabled when disabled", async ({
-      page,
-    }) => {
-      await page.locator('[data-try-id]').click()
+    test("Continue button has aria-disabled when disabled", async ({ page }) => {
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -249,10 +234,8 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
       await expect(continueBtn).toHaveAttribute("aria-disabled", "true")
     })
 
-    test("Continue button aria-disabled updates when checkbox checked", async ({
-      page,
-    }) => {
-      await page.locator('[data-try-id]').click()
+    test("Continue button aria-disabled updates when checkbox checked", async ({ page }) => {
+      await page.locator("[data-try-id]").click()
       const modal = page.locator('[role="dialog"]')
       await expect(modal).toBeVisible()
 
@@ -270,9 +253,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
 })
 
 test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
-  test("Product page with Try button has no WCAG AA violations", async ({
-    page,
-  }) => {
+  test("Product page with Try button has no WCAG AA violations", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
     await page.waitForLoadState("networkidle")
 
@@ -283,16 +264,14 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
     if (accessibilityScanResults.violations.length > 0) {
       console.log(
         "Accessibility violations on product page:",
-        JSON.stringify(accessibilityScanResults.violations, null, 2)
+        JSON.stringify(accessibilityScanResults.violations, null, 2),
       )
     }
 
     expect(accessibilityScanResults.violations).toEqual([])
   })
 
-  test("Try Before You Buy filter page has no WCAG AA violations", async ({
-    page,
-  }) => {
+  test("Try Before You Buy filter page has no WCAG AA violations", async ({ page }) => {
     await page.goto(`${BASE_URL}${TRY_FILTER_PAGE}`)
     await page.waitForLoadState("networkidle")
 
@@ -303,7 +282,7 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
     if (accessibilityScanResults.violations.length > 0) {
       console.log(
         "Accessibility violations on Try filter page:",
-        JSON.stringify(accessibilityScanResults.violations, null, 2)
+        JSON.stringify(accessibilityScanResults.violations, null, 2),
       )
     }
 
@@ -312,15 +291,12 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
 
   test("AUP modal has no WCAG AA violations", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.evaluate(
-      ([key, token]) => sessionStorage.setItem(key, token),
-      [TOKEN_KEY, TEST_TOKEN]
-    )
+    await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
     await page.waitForLoadState("networkidle")
 
     // Open modal
-    await page.locator('[data-try-id]').click()
+    await page.locator("[data-try-id]").click()
     await expect(page.locator('[role="dialog"]')).toBeVisible()
 
     // Scan with modal open
@@ -331,16 +307,14 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
     if (accessibilityScanResults.violations.length > 0) {
       console.log(
         "Accessibility violations with AUP modal open:",
-        JSON.stringify(accessibilityScanResults.violations, null, 2)
+        JSON.stringify(accessibilityScanResults.violations, null, 2),
       )
     }
 
     expect(accessibilityScanResults.violations).toEqual([])
   })
 
-  test("Catalogue page with Try tags has no WCAG AA violations", async ({
-    page,
-  }) => {
+  test("Catalogue page with Try tags has no WCAG AA violations", async ({ page }) => {
     await page.goto(`${BASE_URL}${CATALOGUE_PAGE}`)
     await page.waitForLoadState("networkidle")
 
@@ -351,7 +325,7 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
     if (accessibilityScanResults.violations.length > 0) {
       console.log(
         "Accessibility violations on catalogue page:",
-        JSON.stringify(accessibilityScanResults.violations, null, 2)
+        JSON.stringify(accessibilityScanResults.violations, null, 2),
       )
     }
 

@@ -11,6 +11,7 @@ so that I can store the token for authenticated API calls.
 ## Acceptance Criteria
 
 **AC1: Token extraction runs automatically on callback page**
+
 - **Given** I am redirected back to NDX after OAuth authentication
 - **When** the callback page loads with JWT token in URL (e.g., `?token=eyJ...`)
 - **Then** client-side JavaScript automatically extracts token from URL query parameter
@@ -18,6 +19,7 @@ so that I can store the token for authenticated API calls.
 - **And** extraction logic is defensive (handles missing token, malformed URL)
 
 **AC2: Token stored in sessionStorage with correct key**
+
 - **Given** JWT token is successfully extracted from URL
 - **When** token is stored in sessionStorage
 - **Then** sessionStorage key is `isb-jwt` (matches Story 5.1 AuthState convention)
@@ -25,6 +27,7 @@ so that I can store the token for authenticated API calls.
 - **And** storage operation handles sessionStorage unavailability gracefully
 
 **AC3: URL cleaned after token extraction**
+
 - **Given** Token has been extracted and stored in sessionStorage
 - **When** URL cleanup runs
 - **Then** token parameter is removed from browser address bar
@@ -33,6 +36,7 @@ so that I can store the token for authenticated API calls.
 - **And** cleaned URL does not cause page reload (history API only)
 
 **AC4: User redirected to original page after token extraction**
+
 - **Given** Token extraction and URL cleanup are complete
 - **When** redirect logic executes
 - **Then** user is automatically redirected to return URL from sessionStorage (key: `auth-return-to`)
@@ -41,6 +45,7 @@ so that I can store the token for authenticated API calls.
 - **And** redirect happens immediately (no user action required, no visible delay)
 
 **AC5: AuthState notified of authentication success**
+
 - **Given** Token is stored in sessionStorage
 - **When** AuthState checks authentication status
 - **Then** `authState.isAuthenticated()` returns `true`
@@ -49,6 +54,7 @@ so that I can store the token for authenticated API calls.
 - **And** AuthState integration uses existing event-driven pattern from Story 5.1
 
 **AC6: Token extraction handles error scenarios gracefully**
+
 - **Given** Callback page loads without token parameter (e.g., OAuth error already handled by Story 5.2)
 - **When** token extraction logic runs
 - **Then** no error is thrown (defensive programming)
@@ -144,6 +150,7 @@ so that I can store the token for authenticated API calls.
 This story implements **JWT token extraction** for Epic 5 (Authentication Foundation), completing the OAuth authentication round-trip started in Story 5.2:
 
 **Epic 5 Story Sequence:**
+
 - Story 5.1: Sign In/Out Button UI Components (DONE) - Created auth UI foundation
 - Story 5.2: Sign In OAuth Redirect Flow (DONE) - Initiated OAuth flow, stored return URL
 - **Story 5.3**: JWT Token Extraction from URL (this story) - Complete OAuth callback
@@ -162,6 +169,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 **From Story 5.2 (Sign In OAuth Redirect Flow - Status: review):**
 
 **OAuth Redirect Flow Foundation Complete:**
+
 - OAuth flow utilities module created (`oauth-flow.ts`)
 - Return URL management implemented (`storeReturnURL()`, `getReturnURL()`, `clearReturnURL()`)
 - OAuth callback page created (`/callback.html`) with GOV.UK Design System layout
@@ -170,6 +178,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 - Event-driven AuthState pattern from Story 5.1 preserved and extended
 
 **Key Insights from Story 5.2:**
+
 - **OAuth callback page ready for Story 5.3** - Placeholder JavaScript in `callback.html` (lines 69-76) documents what Story 5.3 will implement
 - **Return URL mechanism working** - Story 5.2 implemented `storeReturnURL()`, `getReturnURL()`, `clearReturnURL()`; Story 5.3 will use `getReturnURL()` for post-auth redirect
 - **Error handling already in place** - Story 5.2 handles OAuth errors (`?error=` parameter); Story 5.3 only needs to handle missing token (graceful degradation)
@@ -177,6 +186,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 - **GOV.UK Design System integrated** - Callback page uses GOV.UK layout, error summary component; Story 5.3 maintains styling
 
 **Patterns to Reuse from Story 5.2:**
+
 - **Module organization** - Add token extraction functions to existing `oauth-flow.ts` module (lines 1-198)
 - **sessionStorage patterns** - Use try-catch blocks, check availability (Story 5.2: lines 68-70, 101-103, 131-133)
 - **Defensive programming** - Return booleans for success/failure, handle edge cases gracefully (Story 5.2: `parseOAuthError()` returns null if no error)
@@ -184,39 +194,46 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 - **JSDoc documentation** - Comprehensive function documentation with examples (Story 5.2: oauth-flow.ts lines 42-59, 82-97)
 
 **Technical Context from Story 5.2:**
+
 - **OAuth callback page exists**: `src/callback.html` (79 lines, GOV.UK layout, loading indicator)
 - **Placeholder for token extraction**: Lines 69-76 document what Story 5.3 will implement
 - **Error handling script**: Lines 46-67 handle OAuth errors (don't break this in Story 5.3)
 - **Return URL stored**: Story 5.2 stores original page in sessionStorage `auth-return-to` before OAuth redirect
 
 **Files from Story 5.2 to Update in Story 5.3:**
+
 - **UPDATE**: `src/try/auth/oauth-flow.ts` - Add `extractTokenFromURL()`, `cleanupURLAfterExtraction()`, `handleOAuthCallback()`
 - **UPDATE**: `src/callback.html` - Replace placeholder JavaScript (lines 69-76) with actual token extraction call
 - **UPDATE**: `src/try/auth/oauth-flow.test.ts` - Add unit tests for token extraction functions
 - **UPDATE**: `docs/development/authentication-state-management.md` - Add token extraction documentation
 
 **New Interfaces/Services Created in Story 5.2:**
+
 - **New Function**: `storeReturnURL()` - Saves current page URL before OAuth redirect
 - **New Function**: `getReturnURL()` - Retrieves stored return URL (Story 5.3 uses this for post-auth redirect)
 - **New Function**: `clearReturnURL()` - Cleans up return URL from sessionStorage (Story 5.3 calls this after redirect)
 - **New Page**: `/callback.html` - OAuth callback landing page (Story 5.3 completes JavaScript implementation)
 
 **Architectural Patterns from Story 5.2:**
+
 - **ADR-023 OAuth Callback Page Pattern** - Story 5.2 created dedicated `/callback` page; Story 5.3 implements token extraction logic
 - **ADR-024 AuthState Event-Driven Pattern** - Story 5.2 preserved AuthState from Story 5.1; Story 5.3 triggers auth state change after token storage
 - **sessionStorage Keys**: `auth-return-to` (Story 5.2), `isb-jwt` (Story 5.1, Story 5.3 uses for token)
 
 **Technical Debt from Story 5.2:**
+
 - None - Story 5.2 implementation is production-ready, approved by senior developer review
 - Story 5.3 simply completes the callback page JavaScript (placeholder replaced with actual implementation)
 
 **Warnings/Recommendations from Story 5.2:**
+
 - **Maintain OAuth error handling** - Story 5.2 implemented `parseOAuthError()` for `?error=` parameter; Story 5.3 must not break this flow
 - **Use existing return URL functions** - Story 5.2 created `getReturnURL()` and `clearReturnURL()`; Story 5.3 reuses these (don't duplicate)
 - **Follow defensive programming pattern** - Story 5.2 wrapped sessionStorage in try-catch; Story 5.3 follows same pattern for token storage
 - **Preserve AuthState integration** - Story 5.2 kept AuthState event-driven pattern from Story 5.1; Story 5.3 notifies AuthState after token storage
 
 **Review Findings from Story 5.2:**
+
 - No pending action items - Story 5.2 approved for production
 - All 6 acceptance criteria fully implemented
 - 40 tasks verified complete with evidence
@@ -230,6 +247,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 ### Architecture References
 
 **From try-before-you-buy-architecture.md:**
+
 - **ADR-023**: OAuth callback page pattern - CRITICAL for Story 5.3
   - Story 5.2 created `/callback` page structure
   - **Story 5.3 implements callback page JavaScript**: Extract token, store in sessionStorage, clean URL, redirect to return URL
@@ -246,6 +264,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
   - Story 5.3 stores JWT in sessionStorage immediately after extraction
 
 **From ux-design-specification.md:**
+
 - **User Journey 1: Authentication Sign In** (Section 5.1) - Token extraction for Story 5.3:
   - **Step 3:** After OAuth, callback page extracts token from `?token=eyJ...` parameter (Story 5.3 implements)
   - **Step 4:** Token stored in sessionStorage, URL cleaned, user redirected to original page (Story 5.3 implements)
@@ -257,6 +276,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
   - No token visible in address bar - URL cleaned immediately after extraction
 
 **From prd.md:**
+
 - **FR-TRY-3**: System can extract JWT token from URL query parameter `?token=eyJ...`
 - **FR-TRY-4**: System can store JWT token in sessionStorage with key `isb-jwt`
 - **FR-TRY-5**: System can clean up URL query parameters after extracting token
@@ -268,6 +288,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 - **NFR-TRY-REL-5**: Browser back button works correctly after OAuth redirect (no broken states)
 
 **From epic-5-authentication-foundation.md:**
+
 - **Story 5.3 Technical Notes**:
   - URLSearchParams API for query parameter parsing (defensive, handles malformed URLs)
   - `window.history.replaceState()` removes token from URL without reload
@@ -279,6 +300,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 **OAuth Flow Module Updates:**
 
 **Path**: `src/try/auth/oauth-flow.ts`
+
 - **Current State**: 198 lines, Story 5.2 functions (storeReturnURL, getReturnURL, clearReturnURL, parseOAuthError)
 - **Story 5.3 Additions**:
   - `extractTokenFromURL(): boolean` - Extract JWT from `?token=...` parameter, store in sessionStorage
@@ -289,6 +311,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 **OAuth Callback Page Updates:**
 
 **Path**: `src/callback.html`
+
 - **Current State**: 79 lines, GOV.UK layout, loading indicator, OAuth error handling (Story 5.2)
 - **Story 5.3 Changes**:
   - Replace placeholder JavaScript (lines 69-76) with actual implementation
@@ -299,6 +322,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
 **Updated Files:**
 
 **Path**: `src/try/auth/oauth-flow.test.ts`
+
 - **Current State**: 240 lines, 24 tests for Story 5.2 functions (100% coverage)
 - **Story 5.3 Additions**:
   - Unit tests for `extractTokenFromURL()` (valid token, missing token, empty token, sessionStorage unavailable)
@@ -307,6 +331,7 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
   - Target: 15+ new tests, maintain 100% coverage
 
 **Path**: `docs/development/authentication-state-management.md`
+
 - **Current State**: OAuth flow section added in Story 5.2 (sequence diagram, return URL mechanism, error handling)
 - **Story 5.3 Changes**:
   - Add token extraction section with code examples
@@ -337,25 +362,25 @@ This story implements **JWT token extraction** for Epic 5 (Authentication Founda
  */
 export function extractTokenFromURL(): boolean {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get("token")
 
     // No token parameter or empty value
-    if (!token || token.trim() === '') {
-      return false;
+    if (!token || token.trim() === "") {
+      return false
     }
 
     // Store token in sessionStorage
     try {
-      sessionStorage.setItem('isb-jwt', token);
-      return true;
+      sessionStorage.setItem("isb-jwt", token)
+      return true
     } catch (storageError) {
-      console.warn('Failed to store JWT token in sessionStorage:', storageError);
-      return false;
+      console.warn("Failed to store JWT token in sessionStorage:", storageError)
+      return false
     }
   } catch (error) {
-    console.warn('Failed to extract token from URL:', error);
-    return false;
+    console.warn("Failed to extract token from URL:", error)
+    return false
   }
 }
 ```
@@ -381,15 +406,15 @@ export function cleanupURLAfterExtraction(): void {
   try {
     // Check if history API is available
     if (!window.history || !window.history.replaceState) {
-      console.warn('History API not available, skipping URL cleanup');
-      return;
+      console.warn("History API not available, skipping URL cleanup")
+      return
     }
 
     // Remove query parameters, preserve pathname
-    const cleanURL = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanURL);
+    const cleanURL = window.location.pathname
+    window.history.replaceState({}, document.title, cleanURL)
   } catch (error) {
-    console.warn('Failed to clean up URL after token extraction:', error);
+    console.warn("Failed to clean up URL after token extraction:", error)
     // Non-critical error, continue execution
   }
 }
@@ -420,27 +445,27 @@ export function cleanupURLAfterExtraction(): void {
  */
 export function handleOAuthCallback(): void {
   // Step 1: Extract token from URL
-  const tokenExtracted = extractTokenFromURL();
+  const tokenExtracted = extractTokenFromURL()
 
   if (!tokenExtracted) {
     // No token found (possibly OAuth error already handled by Story 5.2)
     // Redirect to home page and clear return URL
-    clearReturnURL();
-    window.location.href = '/';
-    return;
+    clearReturnURL()
+    window.location.href = "/"
+    return
   }
 
   // Step 2: Clean up URL (remove token from address bar)
-  cleanupURLAfterExtraction();
+  cleanupURLAfterExtraction()
 
   // Step 3: Get return URL (original page before OAuth redirect)
-  const returnURL = getReturnURL();
+  const returnURL = getReturnURL()
 
   // Step 4: Clear return URL from sessionStorage
-  clearReturnURL();
+  clearReturnURL()
 
   // Step 5: Redirect to original page
-  window.location.href = returnURL;
+  window.location.href = returnURL
 }
 ```
 
@@ -449,24 +474,24 @@ export function handleOAuthCallback(): void {
 ```html
 <script type="module">
   // OAuth callback handler
-  import { handleOAuthCallback, parseOAuthError } from './assets/try.bundle.js';
+  import { handleOAuthCallback, parseOAuthError } from "./assets/try.bundle.js"
 
   // Check for OAuth errors first (from Story 5.2)
-  const error = parseOAuthError();
+  const error = parseOAuthError()
   if (error) {
-    document.getElementById('callback-content').style.display = 'none';
-    document.getElementById('error-content').style.display = 'block';
-    document.getElementById('error-message').textContent = error.message;
+    document.getElementById("callback-content").style.display = "none"
+    document.getElementById("error-content").style.display = "block"
+    document.getElementById("error-message").textContent = error.message
 
     // Auto-redirect to home after 5 seconds
     setTimeout(() => {
-      window.location.href = '/';
-    }, 5000);
+      window.location.href = "/"
+    }, 5000)
   } else {
     // No error, proceed with token extraction and redirect
-    document.addEventListener('DOMContentLoaded', () => {
-      handleOAuthCallback();
-    });
+    document.addEventListener("DOMContentLoaded", () => {
+      handleOAuthCallback()
+    })
   }
 </script>
 ```
@@ -476,113 +501,117 @@ export function handleOAuthCallback(): void {
 **Unit Tests for Token Extraction:**
 
 ```typescript
-describe('extractTokenFromURL', () => {
+describe("extractTokenFromURL", () => {
   beforeEach(() => {
-    sessionStorage.clear();
-    delete (window as any).location;
-    (window as any).location = {
-      pathname: '/callback',
-      search: '',
-    };
-  });
+    sessionStorage.clear()
+    delete (window as any).location
+    ;(window as any).location = {
+      pathname: "/callback",
+      search: "",
+    }
+  })
 
-  it('should extract and store valid token', () => {
-    (window as any).location.search = '?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
-    const result = extractTokenFromURL();
-    expect(result).toBe(true);
-    expect(sessionStorage.getItem('isb-jwt')).toBe('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c');
-  });
+  it("should extract and store valid token", () => {
+    ;(window as any).location.search =
+      "?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    const result = extractTokenFromURL()
+    expect(result).toBe(true)
+    expect(sessionStorage.getItem("isb-jwt")).toBe(
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    )
+  })
 
-  it('should return false if no token parameter', () => {
-    (window as any).location.search = '?other=value';
-    const result = extractTokenFromURL();
-    expect(result).toBe(false);
-    expect(sessionStorage.getItem('isb-jwt')).toBeNull();
-  });
+  it("should return false if no token parameter", () => {
+    ;(window as any).location.search = "?other=value"
+    const result = extractTokenFromURL()
+    expect(result).toBe(false)
+    expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+  })
 
-  it('should return false if token parameter is empty', () => {
-    (window as any).location.search = '?token=';
-    const result = extractTokenFromURL();
-    expect(result).toBe(false);
-    expect(sessionStorage.getItem('isb-jwt')).toBeNull();
-  });
+  it("should return false if token parameter is empty", () => {
+    ;(window as any).location.search = "?token="
+    const result = extractTokenFromURL()
+    expect(result).toBe(false)
+    expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+  })
 
-  it('should handle sessionStorage unavailable', () => {
-    (window as any).location.search = '?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+  it("should handle sessionStorage unavailable", () => {
+    ;(window as any).location.search = "?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     // Mock sessionStorage.setItem to throw error
-    const setItemSpy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('QuotaExceededError');
-    });
-    const result = extractTokenFromURL();
-    expect(result).toBe(false);
-    setItemSpy.mockRestore();
-  });
-});
+    const setItemSpy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError")
+    })
+    const result = extractTokenFromURL()
+    expect(result).toBe(false)
+    setItemSpy.mockRestore()
+  })
+})
 
-describe('cleanupURLAfterExtraction', () => {
+describe("cleanupURLAfterExtraction", () => {
   beforeEach(() => {
-    delete (window as any).location;
-    delete (window as any).history;
-    (window as any).location = {
-      pathname: '/callback',
-      search: '?token=eyJ...',
-    };
-    (window as any).history = {
+    delete (window as any).location
+    delete (window as any).history
+    ;(window as any).location = {
+      pathname: "/callback",
+      search: "?token=eyJ...",
+    }
+    ;(window as any).history = {
       replaceState: jest.fn(),
-    };
-  });
+    }
+  })
 
-  it('should remove query parameters from URL', () => {
-    cleanupURLAfterExtraction();
-    expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), '/callback');
-  });
+  it("should remove query parameters from URL", () => {
+    cleanupURLAfterExtraction()
+    expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), "/callback")
+  })
 
-  it('should preserve pathname', () => {
-    (window as any).location.pathname = '/callback';
-    cleanupURLAfterExtraction();
-    expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), '/callback');
-  });
+  it("should preserve pathname", () => {
+    ;(window as any).location.pathname = "/callback"
+    cleanupURLAfterExtraction()
+    expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), "/callback")
+  })
 
-  it('should not throw if history API unavailable', () => {
-    delete (window as any).history;
-    expect(() => cleanupURLAfterExtraction()).not.toThrow();
-  });
-});
+  it("should not throw if history API unavailable", () => {
+    delete (window as any).history
+    expect(() => cleanupURLAfterExtraction()).not.toThrow()
+  })
+})
 
-describe('handleOAuthCallback', () => {
+describe("handleOAuthCallback", () => {
   beforeEach(() => {
-    sessionStorage.clear();
-    delete (window as any).location;
-    (window as any).location = {
-      pathname: '/callback',
-      search: '?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      href: '',
-    };
-  });
+    sessionStorage.clear()
+    delete (window as any).location
+    ;(window as any).location = {
+      pathname: "/callback",
+      search: "?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      href: "",
+    }
+  })
 
-  it('should extract token, cleanup URL, and redirect to return URL', () => {
-    sessionStorage.setItem('auth-return-to', 'https://ndx.gov.uk/catalogue');
-    handleOAuthCallback();
-    expect(sessionStorage.getItem('isb-jwt')).toBeTruthy();
-    expect(sessionStorage.getItem('auth-return-to')).toBeNull();
-    expect((window as any).location.href).toBe('https://ndx.gov.uk/catalogue');
-  });
+  it("should extract token, cleanup URL, and redirect to return URL", () => {
+    sessionStorage.setItem("auth-return-to", "https://ndx.gov.uk/catalogue")
+    handleOAuthCallback()
+    expect(sessionStorage.getItem("isb-jwt")).toBeTruthy()
+    expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+    expect((window as any).location.href).toBe("https://ndx.gov.uk/catalogue")
+  })
 
-  it('should redirect to home page if no return URL', () => {
-    handleOAuthCallback();
-    expect((window as any).location.href).toBe('/');
-  });
+  it("should redirect to home page if no return URL", () => {
+    handleOAuthCallback()
+    expect((window as any).location.href).toBe("/")
+  })
 
-  it('should redirect to home page if token extraction fails', () => {
-    (window as any).location.search = '?other=value'; // No token
-    handleOAuthCallback();
-    expect(sessionStorage.getItem('isb-jwt')).toBeNull();
-    expect((window as any).location.href).toBe('/');
-  });
-});
+  it("should redirect to home page if token extraction fails", () => {
+    ;(window as any).location.search = "?other=value" // No token
+    handleOAuthCallback()
+    expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+    expect((window as any).location.href).toBe("/")
+  })
+})
 ```
 
 **Manual End-to-End Testing Checklist:**
+
 - [ ] Sign in from home page (`/`)
 - [ ] Verify redirect to Innovation Sandbox OAuth login page
 - [ ] Complete OAuth authentication with test credentials (use 1Password CLI if available)
@@ -629,6 +658,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Implementation Plan:**
+
 1. Added 3 new functions to `oauth-flow.ts`: `extractTokenFromURL`, `cleanupURLAfterExtraction`, `handleOAuthCallback`
 2. Updated `callback.html` to replace placeholder JavaScript with actual token extraction implementation
 3. Wrote 25 new unit tests (total: 48 tests in oauth-flow.test.ts, all passing)
@@ -649,6 +679,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - AuthState integration ready (Story 5.1 event-driven pattern works with token storage)
 
 **Key Technical Decisions:**
+
 - Used URLSearchParams API for robust query parameter parsing
 - Defensive programming: all functions handle edge cases (missing token, sessionStorage unavailable, History API unavailable)
 - Returns boolean from `extractTokenFromURL()` for clear success/failure indication
@@ -656,6 +687,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Follows ADR-023 (OAuth callback page pattern) and ADR-024 (AuthState event-driven pattern)
 
 **Test Coverage Highlights:**
+
 - Token extraction: valid token, missing token, empty token, whitespace token, sessionStorage errors
 - URL cleanup: removes query params, preserves pathname, handles missing History API
 - OAuth callback handler: full flow, error scenarios, return URL handling
@@ -687,6 +719,7 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 ### Key Findings
 
 **✅ STRENGTHS:**
+
 - **Comprehensive token extraction:** Handles valid tokens, missing tokens, empty tokens, malformed URLs gracefully
 - **Security-first design:** Token removed from URL history via replaceState, never logged to console
 - **Defensive programming:** All sessionStorage access wrapped in try-catch, History API availability checked
@@ -698,14 +731,14 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 
 ### Acceptance Criteria Coverage
 
-| AC # | Description | Status | Evidence |
-|------|-------------|--------|----------|
+| AC #    | Description                                          | Status         | Evidence                                                                     |
+| ------- | ---------------------------------------------------- | -------------- | ---------------------------------------------------------------------------- |
 | **AC1** | Token extraction runs automatically on callback page | ✅ IMPLEMENTED | `callback.html:54` - DOMContentLoaded event triggers `handleOAuthCallback()` |
-| **AC2** | Token stored in sessionStorage with correct key | ✅ IMPLEMENTED | `oauth-flow.ts:242` - `sessionStorage.setItem('isb-jwt', token)` |
-| **AC3** | URL cleaned after token extraction | ✅ IMPLEMENTED | `oauth-flow.ts:284` - `window.history.replaceState()` removes query params |
-| **AC4** | User redirected to original page after extraction | ✅ IMPLEMENTED | `oauth-flow.ts:333-339` - getReturnURL() → redirect, fallback to home |
-| **AC5** | AuthState notified of authentication success | ✅ IMPLEMENTED | Reactive pattern - AuthState checks sessionStorage automatically |
-| **AC6** | Token extraction handles error scenarios gracefully | ✅ IMPLEMENTED | `oauth-flow.ts:236, 249-251, 319-327` - Defensive programming throughout |
+| **AC2** | Token stored in sessionStorage with correct key      | ✅ IMPLEMENTED | `oauth-flow.ts:242` - `sessionStorage.setItem('isb-jwt', token)`             |
+| **AC3** | URL cleaned after token extraction                   | ✅ IMPLEMENTED | `oauth-flow.ts:284` - `window.history.replaceState()` removes query params   |
+| **AC4** | User redirected to original page after extraction    | ✅ IMPLEMENTED | `oauth-flow.ts:333-339` - getReturnURL() → redirect, fallback to home        |
+| **AC5** | AuthState notified of authentication success         | ✅ IMPLEMENTED | Reactive pattern - AuthState checks sessionStorage automatically             |
+| **AC6** | Token extraction handles error scenarios gracefully  | ✅ IMPLEMENTED | `oauth-flow.ts:236, 249-251, 319-327` - Defensive programming throughout     |
 
 **Summary:** ✅ 6 of 6 acceptance criteria fully implemented with evidence
 
@@ -714,42 +747,52 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 **Validated ALL 40 tasks marked [x] complete:**
 
 **Task 1: Token extraction function (6 subtasks)** - ✅ ALL VERIFIED
+
 - 1.1-1.6: `extractTokenFromURL()` implemented (`oauth-flow.ts:230-252`)
 - URLSearchParams API, defensive error handling, boolean return values confirmed
 
 **Task 2: URL cleanup function (5 subtasks)** - ✅ ALL VERIFIED
+
 - 2.1-2.5: `cleanupURLAfterExtraction()` implemented (`oauth-flow.ts:274-289`)
 - replaceState usage, pathname preservation, History API fallback confirmed
 
 **Task 3: Callback redirect logic (7 subtasks)** - ✅ ALL VERIFIED
+
 - 3.1-3.7: `handleOAuthCallback()` orchestrator implemented (`oauth-flow.ts:317-340`)
 - Extract → cleanup → redirect flow, error handling confirmed
 
 **Task 4: Update callback page (4 subtasks)** - ✅ ALL VERIFIED
+
 - 4.1-4.4: Callback page JavaScript replaced (`callback.html:54-58`)
 - OAuth error handling preserved (`callback.html:42-52`)
 
 **Task 5: AuthState integration (4 subtasks)** - ✅ ALL VERIFIED
+
 - 5.1-5.4: Reactive pattern validated - AuthState checks sessionStorage automatically
 - No manual notify() needed per ADR-024 design
 
 **Task 6: Unit tests for token extraction (9 subtasks)** - ✅ ALL VERIFIED
+
 - 6.1-6.9: 25 new tests added (`oauth-flow.test.ts:321-568`)
 - Edge cases: valid token, missing token, empty token, sessionStorage unavailable
 - 100% coverage maintained
 
 **Task 7: Integration tests (6 subtasks)** - ✅ ALL VERIFIED
+
 - 7.1-7.6: Complete OAuth flow tested (`oauth-flow.test.ts:485-519`)
 - Mock sessionStorage, window.location, verify full round-trip
 
 **Task 8: Manual E2E testing (8 subtasks)** - ✅ ALL VERIFIED
+
 - 8.1-8.8: Dev confirmed E2E testing complete (story marked ready for review)
 
 **Task 9: Error scenarios (5 subtasks)** - ✅ ALL VERIFIED
+
 - 9.1-9.5: Error handling tests comprehensive
 - Callback without token, malformed token, sessionStorage disabled all tested
 
 **Task 10: Documentation (5 subtasks)** - ✅ ALL VERIFIED
+
 - 10.1-10.5: Story Dev Notes sections 140-617 provide comprehensive documentation
 
 **Summary:** ✅ 40 of 40 completed tasks verified, **ZERO tasks falsely marked complete**, **ZERO questionable completions**
@@ -759,6 +802,7 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 **Test Suite:** 63 tests total (48 existing, 25 new for Story 5.3)
 
 **Story 5.3 Test Coverage:**
+
 - `extractTokenFromURL()`: 8 tests (valid token, missing, empty, whitespace, sessionStorage errors)
 - `cleanupURLAfterExtraction()`: 4 tests (remove params, preserve pathname, History API unavailable)
 - `handleOAuthCallback()`: 8 tests (full flow, no return URL, token fail, empty token, URL cleanup)
@@ -781,22 +825,26 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 ### Architectural Alignment
 
 **ADR-023: OAuth Callback Page Pattern** - ✅ FULLY IMPLEMENTED
+
 - Dedicated `/callback` page handles token extraction (not mixed with main page logic)
 - Extract → Store → Clean URL → Redirect pattern implemented exactly as specified
 - Callback page has minimal UI (loading indicator only)
 
 **ADR-016: sessionStorage for JWT Tokens** - ✅ FULLY COMPLIANT
+
 - Token stored with key `isb-jwt` (consistent across all auth modules)
 - sessionStorage clears on browser close (security benefit documented)
 - sessionStorage accessible across tabs (UX convenience documented)
 - NOT localStorage, NOT cookies per ADR requirements
 
 **ADR-024: AuthState Event-Driven Pattern** - ✅ FULLY INTEGRATED
+
 - Reactive pattern: AuthState checks sessionStorage, no manual notify() needed
 - AuthState subscribers automatically detect token storage
 - Sign in/out buttons update via subscription (confirmed in Story 5.1)
 
 **Epic 5 Functional Requirements:**
+
 - ✅ FR-TRY-3: Extract JWT token from URL query parameter
 - ✅ FR-TRY-4: Store JWT in sessionStorage 'isb-jwt'
 - ✅ FR-TRY-5: Clean up URL query parameters after extraction
@@ -804,6 +852,7 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 - ✅ FR-TRY-9: Authentication clears on browser restart (sessionStorage behavior)
 
 **Non-Functional Requirements:**
+
 - ✅ NFR-TRY-SEC-1: JWT tokens in sessionStorage only (never localStorage or cookies)
 - ✅ NFR-TRY-SEC-6: No sensitive data in URL after OAuth redirect (token cleaned up)
 - ✅ NFR-TRY-REL-5: Browser back button works correctly (replaceState, not pushState)
@@ -813,21 +862,25 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 ### Security Notes
 
 **✅ Secure Token Storage:**
+
 - Token stored in sessionStorage only (ADR-016, NFR-TRY-SEC-1)
 - sessionStorage clears on browser close (government shared device security)
 - No token exposure in localStorage (persistent) or cookies (HTTP headers)
 
 **✅ URL Cleanup Security:**
+
 - `window.history.replaceState()` removes token from browser history
 - Token not visible in address bar after extraction
 - Prevents token exposure if user shares browser history (NFR-TRY-SEC-6)
 
 **✅ No Token Logging:**
+
 - Token never logged to console (verified in all console.warn calls)
 - Error messages user-friendly, no sensitive data exposed
 - sessionStorage errors logged, but token values never included
 
 **✅ Defensive Programming:**
+
 - All sessionStorage access wrapped in try-catch (private browsing mode protection)
 - History API availability checked before use (old browser support)
 - Malformed URLs handled gracefully (URLSearchParams robust parsing)
@@ -837,6 +890,7 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 ### Best-Practices and References
 
 **TypeScript Best Practices:**
+
 - ✅ Strict mode enabled
 - ✅ Proper return types on all functions
 - ✅ Comprehensive JSDoc with @param, @returns, @example
@@ -844,12 +898,14 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 - ✅ Const for magic strings (RETURN_URL_KEY, CALLBACK_PATH, JWT_TOKEN_KEY)
 
 **Defensive Programming:**
+
 - ✅ sessionStorage availability checks (`typeof sessionStorage === 'undefined'`)
 - ✅ Try-catch blocks around all storage operations
 - ✅ History API availability checks (`window.history && window.history.replaceState`)
 - ✅ Graceful degradation (fallback to home page if errors)
 
 **Testing Best Practices:**
+
 - ✅ AAA pattern (Arrange-Act-Assert) in all tests
 - ✅ Descriptive test names (what is tested, expected outcome)
 - ✅ Edge case coverage (missing data, unavailable APIs, errors)
@@ -857,12 +913,14 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 - ✅ Deterministic tests (no flakiness, mocked dependencies)
 
 **GOV.UK Design System Alignment:**
+
 - ✅ Error messages plain language (no technical jargon)
 - ✅ Calm tone in error messages (don't alarm users)
 - ✅ OAuth callback page uses GOV.UK layout (Story 5.2)
 - ✅ Loading indicator follows GOV.UK patterns
 
 **References:**
+
 - [OAuth 2.0 Specification](https://datatracker.ietf.org/doc/html/rfc6749) - Authorization Code Flow
 - [Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) - sessionStorage vs localStorage
 - [History API](https://developer.mozilla.org/en-US/docs/Web/API/History_API) - replaceState for URL cleanup
@@ -873,6 +931,7 @@ Story 5.3 successfully completes the OAuth authentication round-trip started in 
 **Code Changes Required:** NONE - No action items, story fully complete
 
 **Advisory Notes:**
+
 - ✅ Note: AuthState reactive pattern (ADR-024) correctly implemented - no manual notify() call needed as AuthState checks sessionStorage directly. This is intentional design from Epic 5 Story 5.1.
 - ✅ Note: sessionStorage clears on browser close - this is DESIRED behavior per PRD FR-TRY-9 (government shared device security). Users re-authenticate on browser restart.
 - ✅ Note: URL cleanup uses replaceState (not pushState) - this prevents extra history entry and ensures browser back button works correctly (NFR-TRY-REL-5).
@@ -945,6 +1004,7 @@ This suggests the token extraction may not work in production despite passing al
 **File:** `src/try/auth/oauth-flow.test.ts` (569 lines, 63 unit tests)
 
 **extractTokenFromURL() - 11 tests (Lines 243-327):**
+
 - ✅ Extract and store valid token
 - ✅ Return false if no token parameter
 - ✅ Return false if token parameter is empty
@@ -955,6 +1015,7 @@ This suggests the token extraction may not work in production despite passing al
 - ✅ Overwrite previous token if called multiple times
 
 **cleanupURLAfterExtraction() - 7 tests (Lines 329-381):**
+
 - ✅ Remove query parameters from URL
 - ✅ Preserve pathname
 - ✅ Not throw if history API unavailable
@@ -963,6 +1024,7 @@ This suggests the token extraction may not work in production despite passing al
 - ✅ Use document.title in replaceState call
 
 **handleOAuthCallback() - 7 tests (Lines 383-474):**
+
 - ✅ Extract token, cleanup URL, redirect to return URL
 - ✅ Redirect to home page if no return URL
 - ✅ Redirect to home page if token extraction fails
@@ -972,6 +1034,7 @@ This suggests the token extraction may not work in production despite passing al
 - ✅ Preserve return URL with hash fragment
 
 **Integration Tests - 3 tests (Lines 476-567):**
+
 - ✅ Complete OAuth flow: sign in → extract → redirect
 - ✅ Handle OAuth error flow without token extraction
 - ✅ Handle missing token gracefully (edge case)
@@ -983,6 +1046,7 @@ This suggests the token extraction may not work in production despite passing al
 #### ❌ FAIL: E2E Test Coverage (BLOCKING)
 
 **Searched Locations:**
+
 - `tests/e2e/**/*.spec.ts` - 3 files found
 - `tests/e2e/smoke/home-page.spec.ts` - No token extraction tests
 - `tests/e2e/smoke/proxy-routing.spec.ts` - No token extraction tests
@@ -993,17 +1057,19 @@ This suggests the token extraction may not work in production despite passing al
 **Gap Analysis:**
 
 Story 5.4 E2E tests manually set tokens:
+
 ```typescript
 // Story 5.4 test (NOT validating extraction)
 await page.evaluate(
   ({ key, token }) => {
     sessionStorage.setItem(key, token) // Manually set token
   },
-  { key: TOKEN_KEY, token: TEST_TOKEN }
+  { key: TOKEN_KEY, token: TEST_TOKEN },
 )
 ```
 
 Story 5.3 needs E2E tests that:
+
 1. Navigate to `/callback?token=eyJ...`
 2. Wait for `handleOAuthCallback()` to execute
 3. Verify token stored in sessionStorage
@@ -1088,6 +1154,7 @@ Story 5.3 needs E2E tests that:
 ### File List Verification
 
 **Expected Files (from story Task 7):**
+
 1. ✅ `src/try/auth/oauth-flow.ts` - Exists (341 lines)
 2. ✅ `src/try/auth/oauth-flow.test.ts` - Exists (569 lines, 63 tests)
 3. ✅ `src/callback.html` - Exists (59 lines)
@@ -1102,6 +1169,7 @@ Story 5.3 needs E2E tests that:
 **Issue:** Story 5.3 lacks E2E tests to validate token extraction works in production.
 
 **Impact:**
+
 - Cannot verify token extraction works in real browser environment
 - Cannot validate module bundling (try.bundle.js exports)
 - Cannot validate DOMContentLoaded timing
@@ -1123,12 +1191,14 @@ Story 5.3 needs E2E tests that:
 4. **Verify all tests pass:** 100% pass rate required
 
 **Rationale:**
+
 - Story 5.4 was blocked for the same reason (missing E2E tests for sessionStorage)
 - User explicitly requested E2E tests: "are there e2e tests?"
 - Epic 8 Story 8.0 completed E2E testing infrastructure setup (Playwright, CI pipeline)
 - E2E tests are now required for all authentication stories per project standards
 
 **Estimated Effort:** 2-3 hours
+
 - Write 7-10 E2E tests covering all acceptance criteria
 - Test cross-browser compatibility (Chrome, Firefox, Safari)
 - Validate module bundling and browser API behavior
@@ -1172,6 +1242,7 @@ Story 5.3 needs E2E tests that:
 The OAuth callback flow redirect logic (`window.location.href` assignment in `handleOAuthCallback()`) does not complete navigation in the Playwright E2E test environment, even though the function executes successfully.
 
 **Current Test Results:** 9/11 tests passing
+
 - ✅ Token extraction working (9 tests pass)
 - ✅ sessionStorage persistence working
 - ✅ URL cleanup working
@@ -1179,10 +1250,12 @@ The OAuth callback flow redirect logic (`window.location.href` assignment in `ha
 - ❌ Redirect to return URL fails (2 tests fail with timeout)
 
 **Failing Tests:**
+
 1. `AC #3: Redirect to return URL after token extraction` - Times out waiting for navigation to `/catalogue`
 2. `Integration: Complete OAuth flow with return URL preservation` - Times out waiting for navigation to `/catalogue?tag=aws&sort=name`
 
 **Evidence:**
+
 - Console logs show `handleOAuthCallback()` executing correctly:
   ```
   [handleOAuthCallback] Starting OAuth callback handling
@@ -1197,6 +1270,7 @@ The OAuth callback flow redirect logic (`window.location.href` assignment in `ha
 - `window.location.href = returnURL` is executed but navigation doesn't complete
 
 **Technical Analysis:**
+
 - Implementation code is correct (`src/try/auth/oauth-flow.ts:317-351`)
 - Unit tests pass (63/63 tests)
 - E2E tests: 9/11 passing
@@ -1205,6 +1279,7 @@ The OAuth callback flow redirect logic (`window.location.href` assignment in `ha
 - Redirect works correctly in manual testing
 
 **Impact Assessment:**
+
 - **Production Impact:** NONE - Manual testing confirms OAuth flow works correctly in real browsers
 - **Test Coverage Impact:** LOW - 82% E2E test pass rate (9/11 tests), core functionality (token extraction) verified
 - **User Experience Impact:** NONE - Users can successfully authenticate via OAuth in production
@@ -1217,16 +1292,19 @@ Manual testing confirms OAuth callback flow works correctly. E2E tests validate 
 
 **Resolution Plan:**
 Defer to **Story 5.11: Authentication E2E Test Suite** for comprehensive OAuth flow testing including investigation of redirect timing issues in test environment. Story 5.11 will focus on:
+
 1. Comprehensive E2E coverage for all Epic 5 stories
 2. Investigation of Playwright redirect timing issues
 3. Alternative test strategies (e.g., mock navigation, verify redirect intent)
 4. Cross-browser E2E validation
 
 **Related Files:**
+
 - Test file: `tests/e2e/auth/oauth-callback-flow.spec.ts` (lines 58-94, 165-192)
 - Implementation: `src/try/auth/oauth-flow.ts` (lines 317-351)
 
 **References:**
+
 - Test output: 9/11 tests passing (2025-11-24)
 - Dev conversation: Investigation of redirect timing with setTimeout, proxy configuration
 - Story 5.11: Will address comprehensive E2E testing for all auth flows

@@ -16,12 +16,12 @@ This document provides the complete epic and story breakdown for the NDX Notific
 
 ### Epic Summary
 
-| Epic | Title | User Value | Stories | FRs Covered |
-|------|-------|------------|---------|-------------|
-| 4 | Notification Infrastructure Foundation | Platform ready to process events securely | 6 | 32 |
-| 5 | User Email Notifications | Users receive professional branded emails | 7 | 39 |
-| 6 | Operations Slack Alerts | Ops team gets real-time visibility | 6 | 31 |
-| 7 | DynamoDB Lease Enrichment | Context-rich notifications with full lease data | 6 | 50 |
+| Epic | Title                                  | User Value                                      | Stories | FRs Covered |
+| ---- | -------------------------------------- | ----------------------------------------------- | ------- | ----------- |
+| 4    | Notification Infrastructure Foundation | Platform ready to process events securely       | 6       | 32          |
+| 5    | User Email Notifications               | Users receive professional branded emails       | 7       | 39          |
+| 6    | Operations Slack Alerts                | Ops team gets real-time visibility              | 6       | 31          |
+| 7    | DynamoDB Lease Enrichment              | Context-rich notifications with full lease data | 6       | 50          |
 
 **Total:** 4 Epics, 25 Stories, 152 FRs
 
@@ -71,12 +71,12 @@ This document provides the complete epic and story breakdown for the NDX Notific
 
 ## FR Coverage Map
 
-| Epic | FRs Covered | Coverage |
-|------|-------------|----------|
-| Epic 4 (Foundation) | FR-NOTIFY-1-5, FR-NOTIFY-32-43, FR-SLACK-1-5, FR-SLACK-43-54 | Infrastructure, Error Handling, Monitoring |
-| Epic 5 (User Emails) | FR-NOTIFY-6-31, FR-NOTIFY-44-48 | All user notification events |
-| Epic 6 (Ops Alerts) | FR-SLACK-6-42 | All Slack alert types |
-| Epic 7 (Enrichment) | FR-ENRICH-1-50 | DynamoDB query, flattening, keys parameter, error handling |
+| Epic                 | FRs Covered                                                  | Coverage                                                   |
+| -------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Epic 4 (Foundation)  | FR-NOTIFY-1-5, FR-NOTIFY-32-43, FR-SLACK-1-5, FR-SLACK-43-54 | Infrastructure, Error Handling, Monitoring                 |
+| Epic 5 (User Emails) | FR-NOTIFY-6-31, FR-NOTIFY-44-48                              | All user notification events                               |
+| Epic 6 (Ops Alerts)  | FR-SLACK-6-42                                                | All Slack alert types                                      |
+| Epic 7 (Enrichment)  | FR-ENRICH-1-50                                               | DynamoDB query, flattening, keys parameter, error handling |
 
 ---
 
@@ -101,6 +101,7 @@ So that I have a clean foundation for building the notification system.
 **Then** the stack compiles without errors
 
 **And** the project structure matches architecture spec:
+
 ```
 infra/lib/
 ├── notification-stack.ts
@@ -118,6 +119,7 @@ infra/lib/
 **Prerequisites:** None (first story)
 
 **Technical Notes:**
+
 - Extend existing CDK project (don't create new repo)
 - Use NodejsFunction for Lambda (esbuild bundling)
 - Stack name: `NdxNotificationStack`
@@ -138,6 +140,7 @@ So that I receive all events that need user or ops notifications.
 **Then** an EventBridge rule is created targeting the notification Lambda
 
 **And** the rule filters for these detail-types:
+
 - LeaseRequested, LeaseApproved, LeaseDenied, LeaseTerminated
 - LeaseBudgetThresholdAlert, LeaseDurationThresholdAlert, LeaseFreezingThresholdAlert
 - LeaseBudgetExceeded, LeaseExpired, LeaseFrozen
@@ -150,6 +153,7 @@ So that I receive all events that need user or ops notifications.
 **Prerequisites:** Story 4.1
 
 **Technical Notes:**
+
 - Use `EventBus.fromEventBusName()` to reference existing bus
 - Namespace from config (`lib/config.ts`)
 - Rule name: `ndx-notification-rule`
@@ -180,6 +184,7 @@ So that only legitimate ISB events trigger notifications.
 **Prerequisites:** Story 4.2
 
 **Technical Notes:**
+
 - Import `@aws-lambda-powertools/logger`
 - Service name: `ndx-notifications`
 - Log levels: ERROR for DLQ-worthy, WARN for retries, INFO for success
@@ -210,6 +215,7 @@ So that no notifications are permanently lost and I can investigate failures.
 **Prerequisites:** Story 4.3
 
 **Technical Notes:**
+
 - Queue name: `ndx-notification-dlq`
 - Lambda `deadLetterQueue` property
 - Log DLQ sends at ERROR level
@@ -240,6 +246,7 @@ So that secrets are never in code or environment variables.
 **Prerequisites:** Story 4.4
 
 **Technical Notes:**
+
 - Secret JSON structure: `{ notifyApiKey, slackWebhookUrl }`
 - Lazy load on first use, cache globally
 - See Architecture ADR-006 for resource policy pattern
@@ -258,6 +265,7 @@ So that I can respond quickly to failures.
 **Given** the NotificationStack is deployed
 **When** notification system issues occur
 **Then** appropriate alarms fire:
+
 - DLQ depth > 0 messages → alarm
 - Lambda errors > 5 in 5 minutes → alarm
 - Zero invocations in 24 hours → alarm (canary)
@@ -271,6 +279,7 @@ So that I can respond quickly to failures.
 **Prerequisites:** Story 4.5
 
 **Technical Notes:**
+
 - Alarm names: `ndx-notification-dlq-depth`, `ndx-notification-errors`
 - AWS Chatbot configuration for `#ndx-infra-alerts` channel
 - Use Lambda Powertools Metrics for custom metrics
@@ -309,6 +318,7 @@ So that I can send properly formatted government emails.
 **Prerequisites:** Story 4.6 (Epic 4 complete)
 
 **Technical Notes:**
+
 - `yarn add notifications-node-client`
 - File: `lambda/notification/notify-sender.ts`
 - Wrap SDK errors with classifyHttpError() from errors.ts
@@ -331,6 +341,7 @@ So that malformed events fail fast with clear error messages.
 **And** validation failures throw PermanentError (no retry)
 
 **And** the validation module supports all ISB event types:
+
 - LeaseKey, LeaseApprovedEvent, LeaseRequestedEvent, LeaseDeniedEvent
 - LeaseFrozenEvent, LeaseTerminatedEvent, LeaseBudgetThresholdTriggeredEvent
 - AccountQuarantinedEvent, AccountCleanupFailureEvent, AccountDriftEvent
@@ -340,6 +351,7 @@ So that malformed events fail fast with clear error messages.
 **Prerequisites:** Story 5.1
 
 **Technical Notes:**
+
 - File: `lambda/notification/validation.ts`
 - Copy Zod schemas from Architecture ISB Integration section
 - Discriminated unions for reason types (Expired, BudgetExceeded, etc.)
@@ -368,6 +380,7 @@ So that emails only go to the legitimate lease owner.
 **Prerequisites:** Story 5.2
 
 **Technical Notes:**
+
 - File: `lambda/notification/enrichment.ts`
 - LeaseTable: PK=userEmail, SK=uuid
 - Cross-check `event.userEmail` with `lease.userEmail`
@@ -387,12 +400,12 @@ So that I know when I can access my sandbox and what to do next.
 **When** the notification system processes it
 **Then** it sends the appropriate GOV.UK Notify email:
 
-| Event | Template | Key Personalisation Fields |
-|-------|----------|---------------------------|
-| LeaseRequested | Confirmation | userName, templateName, requestTime |
-| LeaseApproved | Welcome | userName, accountId, ssoUrl, expiryDate, budgetLimit |
-| LeaseDenied | Denial | userName, templateName, reason, deniedBy |
-| LeaseTerminated | Farewell | userName, accountId, reason, finalCost |
+| Event           | Template     | Key Personalisation Fields                           |
+| --------------- | ------------ | ---------------------------------------------------- |
+| LeaseRequested  | Confirmation | userName, templateName, requestTime                  |
+| LeaseApproved   | Welcome      | userName, accountId, ssoUrl, expiryDate, budgetLimit |
+| LeaseDenied     | Denial       | userName, templateName, reason, deniedBy             |
+| LeaseTerminated | Farewell     | userName, accountId, reason, finalCost               |
 
 **And** emails are sent within 5 seconds of event receipt
 
@@ -401,6 +414,7 @@ So that I know when I can access my sandbox and what to do next.
 **Prerequisites:** Story 5.3
 
 **Technical Notes:**
+
 - File: `lambda/notification/templates.ts`
 - Template registry maps event type → templateId + requiredFields
 - Env vars: NOTIFY_TEMPLATE_LEASE_APPROVED, etc.
@@ -420,20 +434,21 @@ So that I can save my work and take action.
 **When** the notification system processes it
 **Then** it sends the appropriate warning email:
 
-| Event | Template | Key Personalisation Fields |
-|-------|----------|---------------------------|
-| LeaseBudgetThresholdAlert | Budget Warning | userName, currentSpend, budgetLimit, percentUsed |
-| LeaseDurationThresholdAlert | Time Warning | userName, hoursRemaining, expiryDate |
-| LeaseFreezingThresholdAlert | Freeze Imminent | userName, reason, freezeTime |
-| LeaseBudgetExceeded | Over Budget | userName, finalSpend, budgetLimit |
-| LeaseExpired | Expired | userName, accountId, expiryTime |
-| LeaseFrozen | Frozen | userName, accountId, reason, resumeInstructions |
+| Event                       | Template        | Key Personalisation Fields                       |
+| --------------------------- | --------------- | ------------------------------------------------ |
+| LeaseBudgetThresholdAlert   | Budget Warning  | userName, currentSpend, budgetLimit, percentUsed |
+| LeaseDurationThresholdAlert | Time Warning    | userName, hoursRemaining, expiryDate             |
+| LeaseFreezingThresholdAlert | Freeze Imminent | userName, reason, freezeTime                     |
+| LeaseBudgetExceeded         | Over Budget     | userName, finalSpend, budgetLimit                |
+| LeaseExpired                | Expired         | userName, accountId, expiryTime                  |
+| LeaseFrozen                 | Frozen          | userName, accountId, reason, resumeInstructions  |
 
 **And** emails include clear call-to-action (save work, extend, contact admin)
 
 **Prerequisites:** Story 5.4
 
 **Technical Notes:**
+
 - Budget thresholds come from event: 50%, 75%, 90%
 - Freeze reasons are discriminated union (Expired, BudgetExceeded, ManuallyFrozen)
 - Test: Each alert type with sample threshold values
@@ -451,6 +466,7 @@ So that emails have all the information users need.
 **Given** an event is missing required template fields
 **When** I prepare the notification
 **Then** I query ISB DynamoDB tables for missing data:
+
 - LeaseTable: userName, expirationDate, maxSpend, totalCostAccrued
 - SandboxAccountTable: name, email
 - LeaseTemplateTable: name, leaseDurationInHours
@@ -464,6 +480,7 @@ So that emails have all the information users need.
 **Prerequisites:** Story 5.5
 
 **Technical Notes:**
+
 - Query by leaseId (composite key: userEmail + uuid)
 - GSI StatusIndex for status-based queries if needed
 - Cache nothing (data freshness > latency)
@@ -494,6 +511,7 @@ So that users don't receive the same email multiple times.
 **Prerequisites:** Story 5.6
 
 **Technical Notes:**
+
 - `yarn add @aws-lambda-powertools/idempotency`
 - Table: `NdxIdempotency` (Powertools-managed schema)
 - Wrap handler with `makeIdempotent()`
@@ -532,6 +550,7 @@ So that ops alerts appear in the configured Slack channel.
 **Prerequisites:** Epic 5 complete (shared infrastructure)
 
 **Technical Notes:**
+
 - File: `lambda/notification/slack-sender.ts`
 - Use native `fetch()` (Node.js 20 built-in)
 - Webhook URL from `/ndx/notifications/credentials` secret
@@ -550,6 +569,7 @@ So that I can quickly understand and act on alerts.
 **Given** an ops event needs a Slack alert
 **When** the SlackSender builds the message
 **Then** it uses Block Kit structure with:
+
 - Header block with alert title and severity icon
 - Section block with key details
 - Context block with timestamp and event ID
@@ -562,6 +582,7 @@ So that I can quickly understand and act on alerts.
 **Prerequisites:** Story 6.1
 
 **Technical Notes:**
+
 - Block Kit builder function in slack-sender.ts
 - Priority enum: 'critical' | 'normal'
 - Test: Each event type produces valid Block Kit JSON
@@ -579,6 +600,7 @@ So that I can investigate and remediate policy violations.
 **Given** an AccountQuarantined event is received
 **When** the notification system processes it
 **Then** Slack receives a critical alert (red) containing:
+
 - AWS account ID
 - Quarantine reason
 - Timestamp
@@ -590,6 +612,7 @@ So that I can investigate and remediate policy violations.
 **Prerequisites:** Story 6.2
 
 **Technical Notes:**
+
 - Event schema: `{ awsAccountId, reason }`
 - Channel: #ndx-ops-alerts
 - Consider @here mention for critical
@@ -607,6 +630,7 @@ So that I have visibility into user impact.
 **Given** a LeaseFrozen event is received
 **When** the notification system processes it
 **Then** Slack receives a warning alert (yellow) containing:
+
 - AWS account ID
 - Freeze reason (Expired, BudgetExceeded, ManuallyFrozen)
 - Affected user (anonymized if needed)
@@ -617,6 +641,7 @@ So that I have visibility into user impact.
 **Prerequisites:** Story 6.3
 
 **Technical Notes:**
+
 - LeaseFrozen goes to BOTH Notify (user) and Slack (ops)
 - Route decision in handler.ts based on event type
 - No user email in Slack message (use account ID)
@@ -634,6 +659,7 @@ So that I can intervene with manual remediation.
 **Given** an AccountCleanupFailed event is received
 **When** the notification system processes it
 **Then** Slack receives a critical alert (red) containing:
+
 - AWS account ID
 - State machine execution ARN (link to Step Functions)
 - Execution start time
@@ -642,6 +668,7 @@ So that I can intervene with manual remediation.
 **Prerequisites:** Story 6.4
 
 **Technical Notes:**
+
 - Event schema: `{ accountId, cleanupExecutionContext }`
 - Include deep link to Step Functions execution
 - This is ops-only, no user notification
@@ -659,6 +686,7 @@ So that I can investigate unexpected OU placement.
 **Given** an AccountDriftDetected event is received
 **When** the notification system processes it
 **Then** Slack receives a critical alert (red) containing:
+
 - AWS account ID
 - Expected OU (Active, CleanUp, etc.)
 - Actual OU
@@ -669,6 +697,7 @@ So that I can investigate unexpected OU placement.
 **Prerequisites:** Story 6.5
 
 **Technical Notes:**
+
 - OU values: Available, Active, CleanUp, Quarantine, Frozen, Entry, Exit
 - Drift is a security concern - treat as critical
 - Link to AWS Organizations console
@@ -677,130 +706,130 @@ So that I can investigate unexpected OU placement.
 
 ## FR Coverage Matrix
 
-| FR | Description | Epic | Story |
-|----|-------------|------|-------|
-| FR-NOTIFY-1 | EventBridge rule for ISB source | 4 | 4.2 |
-| FR-NOTIFY-2 | Filter by detail-type | 4 | 4.2 |
-| FR-NOTIFY-3 | Target Lambda function | 4 | 4.2 |
-| FR-NOTIFY-4 | Receive event payload | 4 | 4.3 |
-| FR-NOTIFY-5 | Preserve event metadata | 4 | 4.3 |
-| FR-NOTIFY-6 | Extract recipient email | 5 | 5.3 |
-| FR-NOTIFY-7 | Determine template ID | 5 | 5.4 |
-| FR-NOTIFY-8 | Construct personalisation | 5 | 5.4, 5.5 |
-| FR-NOTIFY-9 | Retrieve API key | 4 | 4.5 |
-| FR-NOTIFY-10 | Call Notify API | 5 | 5.1 |
-| FR-NOTIFY-11 | Handle rate limiting | 5 | 5.1 |
-| FR-NOTIFY-12 | Structured logging | 4 | 4.3 |
-| FR-NOTIFY-13 | Return success/failure | 5 | 5.1 |
-| FR-NOTIFY-14 | LeaseRequested notification | 5 | 5.4 |
-| FR-NOTIFY-15 | LeaseApproved notification | 5 | 5.4 |
-| FR-NOTIFY-16 | LeaseDenied notification | 5 | 5.4 |
-| FR-NOTIFY-17 | LeaseTerminated notification | 5 | 5.4 |
-| FR-NOTIFY-18 | BudgetThresholdAlert | 5 | 5.5 |
-| FR-NOTIFY-19 | BudgetExceeded | 5 | 5.5 |
-| FR-NOTIFY-20 | DurationThresholdAlert | 5 | 5.5 |
-| FR-NOTIFY-21 | FreezingThresholdAlert | 5 | 5.5 |
-| FR-NOTIFY-22 | LeaseExpired | 5 | 5.5 |
-| FR-NOTIFY-23 | LeaseFrozen | 5 | 5.5 |
-| FR-NOTIFY-24 | LeaseUnfrozen | 5 | 5.5 |
-| FR-NOTIFY-25-29 | Account Management Events | 5 | 5.5 |
-| FR-NOTIFY-30-31 | Cost Reporting Events | 5 | 5.5 |
-| FR-NOTIFY-32 | DLQ for failures | 4 | 4.4 |
-| FR-NOTIFY-33 | DLQ includes context | 4 | 4.4 |
-| FR-NOTIFY-34 | Retry transient failures | 4 | 4.4 |
-| FR-NOTIFY-35 | Log all attempts | 4 | 4.3 |
-| FR-NOTIFY-36 | Handle malformed events | 5 | 5.2 |
-| FR-NOTIFY-37 | Retrieve API key from Secrets | 4 | 4.5 |
-| FR-NOTIFY-38 | Cache secrets | 4 | 4.5 |
-| FR-NOTIFY-39 | Handle Secrets errors | 4 | 4.5 |
-| FR-NOTIFY-40 | Lambda error alarm | 4 | 4.6 |
-| FR-NOTIFY-41 | DLQ depth alarm | 4 | 4.6 |
-| FR-NOTIFY-42 | Notify API failure alarm | 4 | 4.6 |
-| FR-NOTIFY-43 | Custom metrics | 4 | 4.6 |
-| FR-NOTIFY-44 | 18 distinct templates | 5 | 5.4, 5.5 |
-| FR-NOTIFY-45 | GOV.UK branding | 5 | 5.4 |
-| FR-NOTIFY-46 | Personalisation fields | 5 | 5.4, 5.5 |
-| FR-NOTIFY-47 | Clear call-to-action | 5 | 5.4, 5.5 |
-| FR-NOTIFY-48 | Plain English content | 5 | 5.4, 5.5 |
-| FR-SLACK-1 | EventBridge rule for ISB | 4 | 4.2 |
-| FR-SLACK-2 | Filter ISB events | 4 | 4.2 |
-| FR-SLACK-3 | Scheduled event (Growth) | - | Deferred |
-| FR-SLACK-4 | Target Lambda | 4 | 4.2 |
-| FR-SLACK-5 | Preserve metadata | 4 | 4.3 |
-| FR-SLACK-6-10 | AWS Billing (Growth) | - | Deferred |
-| FR-SLACK-11 | Determine template | 6 | 6.2 |
-| FR-SLACK-12 | Block Kit message | 6 | 6.2 |
-| FR-SLACK-13 | Retrieve webhook | 4 | 4.5 |
-| FR-SLACK-14 | Call webhook URL | 6 | 6.1 |
-| FR-SLACK-15 | Handle rate limiting | 6 | 6.1 |
-| FR-SLACK-16 | Structured logging | 4 | 4.3 |
-| FR-SLACK-17 | Return status | 6 | 6.1 |
-| FR-SLACK-18-27 | Billing Alerts (Growth) | - | Deferred |
-| FR-SLACK-28-32 | Account Activated (Growth) | - | Deferred |
-| FR-SLACK-33-37 | AccountQuarantined | 6 | 6.3 |
-| FR-SLACK-38-42 | LeaseFrozen | 6 | 6.4 |
-| FR-SLACK-43 | DLQ for failures | 4 | 4.4 |
-| FR-SLACK-44 | DLQ context | 4 | 4.4 |
-| FR-SLACK-45 | Retry transient | 4 | 4.4 |
-| FR-SLACK-46 | Log all attempts | 4 | 4.3 |
-| FR-SLACK-47 | Handle malformed | 5 | 5.2 |
-| FR-SLACK-48 | Retrieve webhook from Secrets | 4 | 4.5 |
-| FR-SLACK-49 | Cache secrets | 4 | 4.5 |
-| FR-SLACK-50 | Handle Secrets errors | 4 | 4.5 |
-| FR-SLACK-51 | Lambda error alarm | 4 | 4.6 |
-| FR-SLACK-52 | DLQ depth alarm | 4 | 4.6 |
-| FR-SLACK-53 | Slack API failure alarm | 4 | 4.6 |
-| FR-SLACK-54 | Custom metrics | 4 | 4.6 |
-| FR-ENRICH-1 | Extract userEmail and uuid from event | 7 | 7.1 |
-| FR-ENRICH-2 | Query DynamoDB LeaseTable | 7 | 7.1 |
-| FR-ENRICH-3 | Retrieve complete lease record | 7 | 7.1 |
-| FR-ENRICH-4 | Handle lease not found | 7 | 7.5 |
-| FR-ENRICH-5 | Handle DynamoDB errors | 7 | 7.5 |
-| FR-ENRICH-6 | Cache DynamoDB client | 7 | 7.1 |
-| FR-ENRICH-7 | Flatten nested objects (underscore separator) | 7 | 7.2 |
-| FR-ENRICH-8 | Handle multiple nesting levels | 7 | 7.2 |
-| FR-ENRICH-9 | Flatten meta.createdTime | 7 | 7.2 |
-| FR-ENRICH-10 | Flatten meta.lastEditTime | 7 | 7.2 |
-| FR-ENRICH-11 | Flatten meta.schemaVersion | 7 | 7.2 |
-| FR-ENRICH-12 | Flatten arrays of objects | 7 | 7.2 |
-| FR-ENRICH-13 | Flatten budgetThresholds.dollarsSpent | 7 | 7.2 |
-| FR-ENRICH-14 | Flatten budgetThresholds.action | 7 | 7.2 |
-| FR-ENRICH-15 | Flatten durationThresholds.hoursRemaining | 7 | 7.2 |
-| FR-ENRICH-16 | Flatten durationThresholds.action | 7 | 7.2 |
-| FR-ENRICH-17 | Flatten arrays of primitives | 7 | 7.2 |
-| FR-ENRICH-18 | Handle empty arrays | 7 | 7.2 |
-| FR-ENRICH-19 | Convert values to strings | 7 | 7.3 |
-| FR-ENRICH-20 | Stringify numbers | 7 | 7.3 |
-| FR-ENRICH-21 | Stringify booleans | 7 | 7.3 |
-| FR-ENRICH-22 | Preserve string values | 7 | 7.3 |
-| FR-ENRICH-23 | Skip null values | 7 | 7.3 |
-| FR-ENRICH-24 | Skip undefined values | 7 | 7.3 |
-| FR-ENRICH-25 | Generate keys field | 7 | 7.3 |
-| FR-ENRICH-26 | Sort keys alphabetically | 7 | 7.3 |
-| FR-ENRICH-27 | Exclude keys field from keys list | 7 | 7.3 |
-| FR-ENRICH-28 | Include keys in all payloads | 7 | 7.3, 7.4 |
-| FR-ENRICH-29 | Merge enriched with event data | 7 | 7.4 |
-| FR-ENRICH-30 | Enriched data takes precedence | 7 | 7.4 |
-| FR-ENRICH-31 | Send enriched to GOV.UK Notify | 7 | 7.4 |
-| FR-ENRICH-32 | Send enriched to Slack | 7 | 7.4 |
-| FR-ENRICH-33 | Include leaseDurationInHours | 7 | 7.4 |
-| FR-ENRICH-34 | Include maxSpend | 7 | 7.4 |
-| FR-ENRICH-35 | Include totalCostAccrued | 7 | 7.4 |
-| FR-ENRICH-36 | Log warning for lease not found | 7 | 7.5 |
-| FR-ENRICH-37 | Emit LeaseNotFound metric | 7 | 7.5 |
-| FR-ENRICH-38 | Log error for DynamoDB failure | 7 | 7.5 |
-| FR-ENRICH-39 | Emit DynamoDBError metric | 7 | 7.5 |
-| FR-ENRICH-40 | Graceful degradation | 7 | 7.5 |
-| FR-ENRICH-41 | _enriched: false flag | 7 | 7.5 |
-| FR-ENRICH-42 | _enriched: true flag | 7 | 7.5 |
-| FR-ENRICH-43 | Enrich PendingApproval leases | 7 | 7.6 |
-| FR-ENRICH-44 | Enrich ApprovalDenied leases | 7 | 7.6 |
-| FR-ENRICH-45 | Enrich Active leases | 7 | 7.6 |
-| FR-ENRICH-46 | Enrich Frozen leases | 7 | 7.6 |
-| FR-ENRICH-47 | Enrich Expired leases | 7 | 7.6 |
-| FR-ENRICH-48 | Enrich BudgetExceeded leases | 7 | 7.6 |
-| FR-ENRICH-49 | Enrich ManuallyTerminated leases | 7 | 7.6 |
-| FR-ENRICH-50 | Enrich AccountQuarantined leases | 7 | 7.6 |
+| FR              | Description                                   | Epic | Story    |
+| --------------- | --------------------------------------------- | ---- | -------- |
+| FR-NOTIFY-1     | EventBridge rule for ISB source               | 4    | 4.2      |
+| FR-NOTIFY-2     | Filter by detail-type                         | 4    | 4.2      |
+| FR-NOTIFY-3     | Target Lambda function                        | 4    | 4.2      |
+| FR-NOTIFY-4     | Receive event payload                         | 4    | 4.3      |
+| FR-NOTIFY-5     | Preserve event metadata                       | 4    | 4.3      |
+| FR-NOTIFY-6     | Extract recipient email                       | 5    | 5.3      |
+| FR-NOTIFY-7     | Determine template ID                         | 5    | 5.4      |
+| FR-NOTIFY-8     | Construct personalisation                     | 5    | 5.4, 5.5 |
+| FR-NOTIFY-9     | Retrieve API key                              | 4    | 4.5      |
+| FR-NOTIFY-10    | Call Notify API                               | 5    | 5.1      |
+| FR-NOTIFY-11    | Handle rate limiting                          | 5    | 5.1      |
+| FR-NOTIFY-12    | Structured logging                            | 4    | 4.3      |
+| FR-NOTIFY-13    | Return success/failure                        | 5    | 5.1      |
+| FR-NOTIFY-14    | LeaseRequested notification                   | 5    | 5.4      |
+| FR-NOTIFY-15    | LeaseApproved notification                    | 5    | 5.4      |
+| FR-NOTIFY-16    | LeaseDenied notification                      | 5    | 5.4      |
+| FR-NOTIFY-17    | LeaseTerminated notification                  | 5    | 5.4      |
+| FR-NOTIFY-18    | BudgetThresholdAlert                          | 5    | 5.5      |
+| FR-NOTIFY-19    | BudgetExceeded                                | 5    | 5.5      |
+| FR-NOTIFY-20    | DurationThresholdAlert                        | 5    | 5.5      |
+| FR-NOTIFY-21    | FreezingThresholdAlert                        | 5    | 5.5      |
+| FR-NOTIFY-22    | LeaseExpired                                  | 5    | 5.5      |
+| FR-NOTIFY-23    | LeaseFrozen                                   | 5    | 5.5      |
+| FR-NOTIFY-24    | LeaseUnfrozen                                 | 5    | 5.5      |
+| FR-NOTIFY-25-29 | Account Management Events                     | 5    | 5.5      |
+| FR-NOTIFY-30-31 | Cost Reporting Events                         | 5    | 5.5      |
+| FR-NOTIFY-32    | DLQ for failures                              | 4    | 4.4      |
+| FR-NOTIFY-33    | DLQ includes context                          | 4    | 4.4      |
+| FR-NOTIFY-34    | Retry transient failures                      | 4    | 4.4      |
+| FR-NOTIFY-35    | Log all attempts                              | 4    | 4.3      |
+| FR-NOTIFY-36    | Handle malformed events                       | 5    | 5.2      |
+| FR-NOTIFY-37    | Retrieve API key from Secrets                 | 4    | 4.5      |
+| FR-NOTIFY-38    | Cache secrets                                 | 4    | 4.5      |
+| FR-NOTIFY-39    | Handle Secrets errors                         | 4    | 4.5      |
+| FR-NOTIFY-40    | Lambda error alarm                            | 4    | 4.6      |
+| FR-NOTIFY-41    | DLQ depth alarm                               | 4    | 4.6      |
+| FR-NOTIFY-42    | Notify API failure alarm                      | 4    | 4.6      |
+| FR-NOTIFY-43    | Custom metrics                                | 4    | 4.6      |
+| FR-NOTIFY-44    | 18 distinct templates                         | 5    | 5.4, 5.5 |
+| FR-NOTIFY-45    | GOV.UK branding                               | 5    | 5.4      |
+| FR-NOTIFY-46    | Personalisation fields                        | 5    | 5.4, 5.5 |
+| FR-NOTIFY-47    | Clear call-to-action                          | 5    | 5.4, 5.5 |
+| FR-NOTIFY-48    | Plain English content                         | 5    | 5.4, 5.5 |
+| FR-SLACK-1      | EventBridge rule for ISB                      | 4    | 4.2      |
+| FR-SLACK-2      | Filter ISB events                             | 4    | 4.2      |
+| FR-SLACK-3      | Scheduled event (Growth)                      | -    | Deferred |
+| FR-SLACK-4      | Target Lambda                                 | 4    | 4.2      |
+| FR-SLACK-5      | Preserve metadata                             | 4    | 4.3      |
+| FR-SLACK-6-10   | AWS Billing (Growth)                          | -    | Deferred |
+| FR-SLACK-11     | Determine template                            | 6    | 6.2      |
+| FR-SLACK-12     | Block Kit message                             | 6    | 6.2      |
+| FR-SLACK-13     | Retrieve webhook                              | 4    | 4.5      |
+| FR-SLACK-14     | Call webhook URL                              | 6    | 6.1      |
+| FR-SLACK-15     | Handle rate limiting                          | 6    | 6.1      |
+| FR-SLACK-16     | Structured logging                            | 4    | 4.3      |
+| FR-SLACK-17     | Return status                                 | 6    | 6.1      |
+| FR-SLACK-18-27  | Billing Alerts (Growth)                       | -    | Deferred |
+| FR-SLACK-28-32  | Account Activated (Growth)                    | -    | Deferred |
+| FR-SLACK-33-37  | AccountQuarantined                            | 6    | 6.3      |
+| FR-SLACK-38-42  | LeaseFrozen                                   | 6    | 6.4      |
+| FR-SLACK-43     | DLQ for failures                              | 4    | 4.4      |
+| FR-SLACK-44     | DLQ context                                   | 4    | 4.4      |
+| FR-SLACK-45     | Retry transient                               | 4    | 4.4      |
+| FR-SLACK-46     | Log all attempts                              | 4    | 4.3      |
+| FR-SLACK-47     | Handle malformed                              | 5    | 5.2      |
+| FR-SLACK-48     | Retrieve webhook from Secrets                 | 4    | 4.5      |
+| FR-SLACK-49     | Cache secrets                                 | 4    | 4.5      |
+| FR-SLACK-50     | Handle Secrets errors                         | 4    | 4.5      |
+| FR-SLACK-51     | Lambda error alarm                            | 4    | 4.6      |
+| FR-SLACK-52     | DLQ depth alarm                               | 4    | 4.6      |
+| FR-SLACK-53     | Slack API failure alarm                       | 4    | 4.6      |
+| FR-SLACK-54     | Custom metrics                                | 4    | 4.6      |
+| FR-ENRICH-1     | Extract userEmail and uuid from event         | 7    | 7.1      |
+| FR-ENRICH-2     | Query DynamoDB LeaseTable                     | 7    | 7.1      |
+| FR-ENRICH-3     | Retrieve complete lease record                | 7    | 7.1      |
+| FR-ENRICH-4     | Handle lease not found                        | 7    | 7.5      |
+| FR-ENRICH-5     | Handle DynamoDB errors                        | 7    | 7.5      |
+| FR-ENRICH-6     | Cache DynamoDB client                         | 7    | 7.1      |
+| FR-ENRICH-7     | Flatten nested objects (underscore separator) | 7    | 7.2      |
+| FR-ENRICH-8     | Handle multiple nesting levels                | 7    | 7.2      |
+| FR-ENRICH-9     | Flatten meta.createdTime                      | 7    | 7.2      |
+| FR-ENRICH-10    | Flatten meta.lastEditTime                     | 7    | 7.2      |
+| FR-ENRICH-11    | Flatten meta.schemaVersion                    | 7    | 7.2      |
+| FR-ENRICH-12    | Flatten arrays of objects                     | 7    | 7.2      |
+| FR-ENRICH-13    | Flatten budgetThresholds.dollarsSpent         | 7    | 7.2      |
+| FR-ENRICH-14    | Flatten budgetThresholds.action               | 7    | 7.2      |
+| FR-ENRICH-15    | Flatten durationThresholds.hoursRemaining     | 7    | 7.2      |
+| FR-ENRICH-16    | Flatten durationThresholds.action             | 7    | 7.2      |
+| FR-ENRICH-17    | Flatten arrays of primitives                  | 7    | 7.2      |
+| FR-ENRICH-18    | Handle empty arrays                           | 7    | 7.2      |
+| FR-ENRICH-19    | Convert values to strings                     | 7    | 7.3      |
+| FR-ENRICH-20    | Stringify numbers                             | 7    | 7.3      |
+| FR-ENRICH-21    | Stringify booleans                            | 7    | 7.3      |
+| FR-ENRICH-22    | Preserve string values                        | 7    | 7.3      |
+| FR-ENRICH-23    | Skip null values                              | 7    | 7.3      |
+| FR-ENRICH-24    | Skip undefined values                         | 7    | 7.3      |
+| FR-ENRICH-25    | Generate keys field                           | 7    | 7.3      |
+| FR-ENRICH-26    | Sort keys alphabetically                      | 7    | 7.3      |
+| FR-ENRICH-27    | Exclude keys field from keys list             | 7    | 7.3      |
+| FR-ENRICH-28    | Include keys in all payloads                  | 7    | 7.3, 7.4 |
+| FR-ENRICH-29    | Merge enriched with event data                | 7    | 7.4      |
+| FR-ENRICH-30    | Enriched data takes precedence                | 7    | 7.4      |
+| FR-ENRICH-31    | Send enriched to GOV.UK Notify                | 7    | 7.4      |
+| FR-ENRICH-32    | Send enriched to Slack                        | 7    | 7.4      |
+| FR-ENRICH-33    | Include leaseDurationInHours                  | 7    | 7.4      |
+| FR-ENRICH-34    | Include maxSpend                              | 7    | 7.4      |
+| FR-ENRICH-35    | Include totalCostAccrued                      | 7    | 7.4      |
+| FR-ENRICH-36    | Log warning for lease not found               | 7    | 7.5      |
+| FR-ENRICH-37    | Emit LeaseNotFound metric                     | 7    | 7.5      |
+| FR-ENRICH-38    | Log error for DynamoDB failure                | 7    | 7.5      |
+| FR-ENRICH-39    | Emit DynamoDBError metric                     | 7    | 7.5      |
+| FR-ENRICH-40    | Graceful degradation                          | 7    | 7.5      |
+| FR-ENRICH-41    | \_enriched: false flag                        | 7    | 7.5      |
+| FR-ENRICH-42    | \_enriched: true flag                         | 7    | 7.5      |
+| FR-ENRICH-43    | Enrich PendingApproval leases                 | 7    | 7.6      |
+| FR-ENRICH-44    | Enrich ApprovalDenied leases                  | 7    | 7.6      |
+| FR-ENRICH-45    | Enrich Active leases                          | 7    | 7.6      |
+| FR-ENRICH-46    | Enrich Frozen leases                          | 7    | 7.6      |
+| FR-ENRICH-47    | Enrich Expired leases                         | 7    | 7.6      |
+| FR-ENRICH-48    | Enrich BudgetExceeded leases                  | 7    | 7.6      |
+| FR-ENRICH-49    | Enrich ManuallyTerminated leases              | 7    | 7.6      |
+| FR-ENRICH-50    | Enrich AccountQuarantined leases              | 7    | 7.6      |
 
 ---
 
@@ -845,6 +874,7 @@ So that I can enrich notifications with full lease context.
 **Prerequisites:** Epic 5 complete (notification system operational)
 
 **Technical Notes:**
+
 - File: `lambda/notification/enrichment.ts` (extend existing)
 - Use `@aws-sdk/client-dynamodb` with DocumentClient
 - Table name from `process.env.LEASE_TABLE_NAME`
@@ -887,6 +917,7 @@ So that the enriched data is compatible with GOV.UK Notify and Slack APIs.
 **Prerequisites:** Story 7.1
 
 **Technical Notes:**
+
 - File: `lambda/notification/flatten.ts` (new module)
 - Recursive algorithm handling objects and arrays
 - Separator constant: `const SEPARATOR = '_'`
@@ -932,6 +963,7 @@ So that the payload is Notify/Slack compatible and debuggable.
 **Prerequisites:** Story 7.2
 
 **Technical Notes:**
+
 - Extend `flatten.ts` with stringification
 - Keys generation: `Object.keys(flattened).sort().join(',')`
 - Max keys length: `const MAX_KEYS_LENGTH = 5000`
@@ -968,6 +1000,7 @@ So that recipients receive comprehensive, context-rich notifications.
 **Prerequisites:** Story 7.3
 
 **Technical Notes:**
+
 - File: `lambda/notification/handler.ts` (modify)
 - Merge: `{ ...eventData, ...enrichedLeaseData }` (lease wins conflicts)
 - Update NotifySender to pass enriched personalisation
@@ -1012,6 +1045,7 @@ So that I can monitor enrichment health while ensuring notification reliability.
 **Prerequisites:** Story 7.4
 
 **Technical Notes:**
+
 - Use Lambda Powertools Metrics for custom metrics
 - Namespace: `NdxNotifications`
 - Metrics: `EnrichmentSuccess`, `EnrichmentFailure`, `LeaseNotFound`, `DynamoDBError`
@@ -1034,7 +1068,7 @@ So that notifications include status-appropriate context.
 
 **Given** a PendingApproval lease
 **When** enriched
-**Then** base fields included (userEmail, uuid, status, leaseDurationInHours, maxSpend, meta_*, budgetThresholds_*, durationThresholds_*)
+**Then** base fields included (userEmail, uuid, status, leaseDurationInHours, maxSpend, meta*\*, budgetThresholds*_, durationThresholds\__)
 
 **Given** an Active or Frozen lease
 **When** enriched
@@ -1059,6 +1093,7 @@ So that notifications include status-appropriate context.
 **Prerequisites:** Story 7.5
 
 **Technical Notes:**
+
 - Lease status discriminated union from ISB schema
 - Statuses: PendingApproval, ApprovalDenied, Active, Frozen, Expired, BudgetExceeded, ManuallyTerminated, AccountQuarantined, Ejected
 - Each status has different field set - flattening must handle gracefully
@@ -1085,20 +1120,22 @@ These will be addressed in Growth phase after MVP proves value.
 
 **4 Epics, 25 Stories covering 152 Functional Requirements**
 
-| Epic | Stories | Status | Dependencies |
-|------|---------|--------|--------------|
-| Epic 4: Notification Infrastructure Foundation | 6 | Ready | None |
-| Epic 5: User Email Notifications | 7 | Ready | Epic 4 |
-| Epic 6: Operations Slack Alerts | 6 | Ready | Epic 5 (shared infra) |
-| Epic 7: DynamoDB Lease Enrichment | 6 | Ready | Epic 5 (extends Notify/Slack) |
+| Epic                                           | Stories | Status | Dependencies                  |
+| ---------------------------------------------- | ------- | ------ | ----------------------------- |
+| Epic 4: Notification Infrastructure Foundation | 6       | Ready  | None                          |
+| Epic 5: User Email Notifications               | 7       | Ready  | Epic 4                        |
+| Epic 6: Operations Slack Alerts                | 6       | Ready  | Epic 5 (shared infra)         |
+| Epic 7: DynamoDB Lease Enrichment              | 6       | Ready  | Epic 5 (extends Notify/Slack) |
 
 **Implementation Order:**
+
 1. Epic 4 → Foundation (must be first)
 2. Epic 5 → User emails (primary user value)
 3. Epic 6 → Ops alerts (builds on same infrastructure)
 4. Epic 7 → Enrichment (enhances all notifications with lease data)
 
 **Technical Stack:**
+
 - AWS CDK v2 (TypeScript)
 - Lambda Node.js 20.x
 - Lambda Powertools (Logger, Idempotency, Metrics)

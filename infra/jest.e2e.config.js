@@ -9,19 +9,19 @@
  * @see docs/sprint-artifacts/stories/n5-8-govuk-notify-sandbox-integration-test.md
  */
 module.exports = {
-  testEnvironment: 'node',
-  roots: ['<rootDir>/test/e2e'],
-  testMatch: ['**/*.e2e.test.ts'],
-  testPathIgnorePatterns: ['/node_modules/'],
+  testEnvironment: "node",
+  roots: ["<rootDir>/test/e2e"],
+  testMatch: ["**/*.e2e.test.ts"],
+  testPathIgnorePatterns: ["/node_modules/"],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    "^.+\\.tsx?$": "ts-jest",
   },
   // Extended timeout for external API calls (60 seconds)
   testTimeout: 60000,
   // Run tests sequentially to avoid rate limiting
   maxWorkers: 1,
   // Setup file for E2E environment
-  setupFilesAfterEnv: ['<rootDir>/test/e2e/setup.ts'],
+  setupFilesAfterEnv: ["<rootDir>/test/e2e/setup.ts"],
   // Verbose output for debugging
   verbose: true,
-};
+}

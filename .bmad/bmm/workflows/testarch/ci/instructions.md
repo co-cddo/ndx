@@ -144,7 +144,7 @@ Scaffolds a production-ready CI/CD quality pipeline with test execution, burn-in
        - name: Setup Node
          uses: actions/setup-node@v4
          with:
-           node-version-file: '.nvmrc'
+           node-version-file: ".nvmrc"
 
        - name: Install dependencies
          run: npm ci
@@ -245,7 +245,7 @@ Scaffolds a production-ready CI/CD quality pipeline with test execution, burn-in
      uses: 8398a7/action-slack@v3
      with:
        status: ${{ job.status }}
-       text: 'Test failures detected in PR #${{ github.event.pull_request.number }}'
+       text: "Test failures detected in PR #${{ github.event.pull_request.number }}"
        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
    ```
 
@@ -256,9 +256,9 @@ Scaffolds a production-ready CI/CD quality pipeline with test execution, burn-in
    ```bash
    #!/bin/bash
    # Run only tests for changed files
-
+   
    CHANGED_FILES=$(git diff --name-only HEAD~1)
-
+   
    if echo "$CHANGED_FILES" | grep -q "src/.*\.ts$"; then
      echo "Running affected tests..."
      npm run test:e2e -- --grep="$(echo $CHANGED_FILES | sed 's/src\///g' | sed 's/\.ts//g')"
@@ -272,21 +272,21 @@ Scaffolds a production-ready CI/CD quality pipeline with test execution, burn-in
    ```bash
    #!/bin/bash
    # Mirror CI execution locally for debugging
-
+   
    echo "🔍 Running CI pipeline locally..."
-
+   
    # Lint
    npm run lint || exit 1
-
+   
    # Tests
    npm run test:e2e || exit 1
-
+   
    # Burn-in (reduced iterations)
    for i in {1..3}; do
      echo "🔥 Burn-in $i/3"
      npm run test:e2e || exit 1
    done
-
+   
    echo "✅ Local CI pipeline passed"
    ```
 

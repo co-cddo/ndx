@@ -15,7 +15,7 @@ Without startup validation, template changes in GOV.UK Notify Admin could silent
 3. Next email send fails with `ValidationError: Missing required field`
 4. User doesn't receive critical notification (e.g., lease approval)
 
-Startup validation catches this *before* any emails are sent.
+Startup validation catches this _before_ any emails are sent.
 
 ## Template Configuration
 
@@ -24,13 +24,13 @@ Templates are configured in `lib/lambda/notification/templates.ts`:
 ```typescript
 export const NOTIFY_TEMPLATES: Record<string, TemplateConfig> = {
   LeaseApproved: {
-    templateIdEnvVar: 'NOTIFY_TEMPLATE_LEASE_APPROVED',
-    requiredFields: ['userName', 'accountId', 'ssoUrl', 'expiryDate'],
-    optionalFields: ['budgetLimit'],
-    enrichmentQueries: ['lease'],
+    templateIdEnvVar: "NOTIFY_TEMPLATE_LEASE_APPROVED",
+    requiredFields: ["userName", "accountId", "ssoUrl", "expiryDate"],
+    optionalFields: ["budgetLimit"],
+    enrichmentQueries: ["lease"],
   },
   // ... other templates
-};
+}
 ```
 
 **Required fields**: Must be present in the GOV.UK Notify template. Missing required fields cause a **critical error** that blocks Lambda init.
@@ -48,6 +48,7 @@ Before modifying a template in GOV.UK Notify Admin:
    - Adding fields is safe; removing required fields is dangerous
 
 2. **Update the code first (if removing fields)**
+
    ```typescript
    // Move field from requiredFields to optionalFields if you want to remove it from template
    requiredFields: ['userName', 'accountId'],  // Removed 'ssoUrl'
@@ -55,6 +56,7 @@ Before modifying a template in GOV.UK Notify Admin:
    ```
 
 3. **Deploy the code change**
+
    ```bash
    yarn build && yarn cdk deploy
    ```
@@ -132,13 +134,13 @@ aws lambda update-function-configuration \
 
 ### Metrics
 
-| Metric | Meaning | Alert Threshold |
-|--------|---------|-----------------|
-| `TemplateValidationFailed` | Template missing required fields | Any occurrence |
-| `TemplateValidationSuccess` | Template validated successfully | Expected during cold starts |
-| `TemplateVersion` | Current version of each template | N/A (informational) |
-| `TemplateVersionChanged` | Template version changed since last check | Any occurrence (INFO) |
-| `ColdStartValidationDuration` | Time to validate all templates | > 5000ms |
+| Metric                        | Meaning                                   | Alert Threshold             |
+| ----------------------------- | ----------------------------------------- | --------------------------- |
+| `TemplateValidationFailed`    | Template missing required fields          | Any occurrence              |
+| `TemplateValidationSuccess`   | Template validated successfully           | Expected during cold starts |
+| `TemplateVersion`             | Current version of each template          | N/A (informational)         |
+| `TemplateVersionChanged`      | Template version changed since last check | Any occurrence (INFO)       |
+| `ColdStartValidationDuration` | Time to validate all templates            | > 5000ms                    |
 
 ### CloudWatch Alarm
 
@@ -179,9 +181,9 @@ For audit purposes, track all template changes in a changelog. Template version 
 
 Maintain a manual changelog for significant changes:
 
-| Date | Template | Changed By | Old Fields | New Fields | Reason |
-|------|----------|------------|------------|------------|--------|
-| 2024-01-15 | LeaseApproved | @engineer | userName, accountId | userName, accountId, budgetLimit | Added budget display |
+| Date       | Template      | Changed By | Old Fields          | New Fields                       | Reason               |
+| ---------- | ------------- | ---------- | ------------------- | -------------------------------- | -------------------- |
+| 2024-01-15 | LeaseApproved | @engineer  | userName, accountId | userName, accountId, budgetLimit | Added budget display |
 
 ## Troubleshooting
 
@@ -190,6 +192,7 @@ Maintain a manual changelog for significant changes:
 **Cause**: A required field is missing from the GOV.UK Notify template.
 
 **Resolution**:
+
 1. Check CloudWatch logs for specific missing fields
 2. Either add the field back to the template OR
 3. Move the field to `optionalFields` in code and redeploy
@@ -199,6 +202,7 @@ Maintain a manual changelog for significant changes:
 **Cause**: Template ID in environment variable doesn't exist in GOV.UK Notify.
 
 **Resolution**:
+
 1. Verify the template exists in GOV.UK Notify Admin
 2. Check the template ID matches the environment variable
 3. Ensure the API key has access to the template's service
@@ -208,6 +212,7 @@ Maintain a manual changelog for significant changes:
 **Cause**: Field name mismatch between code and template (case sensitive).
 
 **Resolution**:
+
 1. Compare field names exactly (including case)
 2. Template uses `((userName))` → code must use `userName`
 3. Watch for typos: `expiryDate` vs `expiry_date`

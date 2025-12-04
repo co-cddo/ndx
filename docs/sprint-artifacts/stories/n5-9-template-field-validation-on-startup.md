@@ -8,10 +8,12 @@ Status: done
 **Verdict:** ✅ APPROVED
 
 ### AC Verification Summary
+
 - **MUST ACs:** 7/7 PASS (AC-9.1 through AC-9.10, AC-9.13)
 - **SHOULD ACs:** 12/12 PASS
 
 ### Key Findings
+
 1. Cold start validation properly integrated in handler.ts
 2. 27 unit tests passing covering all scenarios
 3. Template field extraction, comparison, and rendering tests implemented
@@ -24,6 +26,7 @@ Status: done
    - AC-9.19: Template change log (lines 163-185)
 
 ### Test Results
+
 ```
 Test Suites: 1 passed, 1 total
 Tests:       27 passed, 27 total
@@ -158,12 +161,13 @@ Extracted: ["userName", "leaseId", "expiryDate"]
 ```
 
 Regex pattern:
+
 ```typescript
-const FIELD_PATTERN = /\(\(([^)]+)\)\)/g;
+const FIELD_PATTERN = /\(\(([^)]+)\)\)/g
 
 function extractPersonalisationFields(templateBody: string): string[] {
-  const matches = [...templateBody.matchAll(FIELD_PATTERN)];
-  return matches.map(match => match[1]);
+  const matches = [...templateBody.matchAll(FIELD_PATTERN)]
+  return matches.map((match) => match[1])
 }
 ```
 
@@ -225,52 +229,52 @@ async validateTemplate(templateId: string, fields: string[]): Promise<boolean> {
 
 ```typescript
 // handler.ts - Global scope initialization
-let templatesValidated = false;
+let templatesValidated = false
 
 async function validateAllTemplatesOnce(): Promise<void> {
   if (templatesValidated) {
-    return; // Skip if already validated this Lambda container
+    return // Skip if already validated this Lambda container
   }
 
-  logger.info('Starting template validation');
+  logger.info("Starting template validation")
 
-  const sender = await NotifySender.getInstance();
+  const sender = await NotifySender.getInstance()
 
   for (const [eventType, config] of Object.entries(NOTIFY_TEMPLATES)) {
     try {
-      const templateId = process.env[config.templateIdEnvVar];
+      const templateId = process.env[config.templateIdEnvVar]
       if (!templateId) {
-        logger.error('Template ID not configured', { eventType });
-        throw new Error(`Missing template ID for ${eventType}`);
+        logger.error("Template ID not configured", { eventType })
+        throw new Error(`Missing template ID for ${eventType}`)
       }
 
-      await sender.validateTemplate(templateId, config.requiredFields);
-      logger.info('Template validated', { eventType, templateId });
+      await sender.validateTemplate(templateId, config.requiredFields)
+      logger.info("Template validated", { eventType, templateId })
     } catch (error) {
-      logger.error('Template validation failed', {
+      logger.error("Template validation failed", {
         eventType,
         error: error.message,
-      });
+      })
 
       // Critical errors fail Lambda init
-      if (error instanceof PermanentError && error.message.includes('not found')) {
-        throw error;
+      if (error instanceof PermanentError && error.message.includes("not found")) {
+        throw error
       }
 
       // Non-critical errors log warning but allow Lambda to start
-      logger.warn('Continuing despite template validation warning', { eventType });
+      logger.warn("Continuing despite template validation warning", { eventType })
     }
   }
 
-  templatesValidated = true;
-  logger.info('Template validation complete');
+  templatesValidated = true
+  logger.info("Template validation complete")
 }
 
 // Call during Lambda initialization
-validateAllTemplatesOnce().catch(error => {
-  logger.error('CRITICAL: Template validation failed during initialization', { error });
-  throw error;
-});
+validateAllTemplatesOnce().catch((error) => {
+  logger.error("CRITICAL: Template validation failed during initialization", { error })
+  throw error
+})
 ```
 
 ### Template Rendering Test
@@ -314,12 +318,14 @@ function findUnfilledPlaceholders(htmlBody: string): string[] {
 - **Documentation Structure**: `infra/docs/e2e-testing.md` provides template for operational documentation
 
 **Reuse Opportunities:**
+
 1. Use the same placeholder detection regex from n5-8 for template rendering validation
 2. Leverage the E2E test client structure for integration tests of startup validation
 3. Follow the same error handling patterns for GOV.UK Notify API calls
 4. Use similar CloudWatch metrics patterns established in n5-8
 
 **New Capabilities to Add:**
+
 1. Template field extraction from Notify API response (not just test data)
 2. Cold start validation hook (global scope initialization)
 3. Template version tracking with CloudWatch custom metrics
@@ -328,6 +334,7 @@ function findUnfilledPlaceholders(htmlBody: string): string[] {
 ### Project Structure Notes
 
 **Existing Components (from N5-8):**
+
 ```
 infra/lib/lambda/notification/
 ├── secrets.ts                  ← E2E secrets support added
@@ -341,6 +348,7 @@ infra/test/e2e/
 ```
 
 **New Components (This Story):**
+
 ```
 infra/lib/lambda/notification/
 └── notify-sender.ts            ← Add validateTemplate(), validateAllTemplates()
@@ -353,6 +361,7 @@ infra/docs/
 ```
 
 **Integration Points:**
+
 - Handler initialization calls `validateAllTemplatesOnce()` before processing events
 - Uses NotifyClient from `notifications-node-client` SDK
 - Emits metrics to CloudWatch via Lambda Powertools
@@ -390,9 +399,11 @@ N/A
 ### File List
 
 #### New Files
+
 - `infra/lib/lambda/notification/template-validation.ts` - Core validation module
 - `infra/lib/lambda/notification/template-validation.test.ts` - 27 unit tests
 - `infra/docs/template-management.md` - Operational documentation
 
 #### Modified Files
+
 - `infra/lib/lambda/notification/handler.ts` - Added cold start validation hook

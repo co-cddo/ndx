@@ -7,10 +7,7 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest",
-        "--config=playwright-config.json"
-      ],
+      "args": ["@playwright/mcp@latest", "--config=playwright-config.json"],
       "env": {}
     },
     "asana": {

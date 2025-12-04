@@ -201,12 +201,14 @@ ndx/                                    # Project root
 ## Critical Directories
 
 ### Build & Development
+
 - **`src/`** - All source content and templates (ENTRY POINT)
 - **`eleventy.config.js`** - Build configuration and collections
 - **`.github/workflows/`** - CI/CD automation
 - **`_site/`** - Generated output (deployed to GitHub Pages)
 
 ### Core Content Areas
+
 - **`src/catalogue/`** - 33+ vendors, multiple products per vendor (~5642 lines of content)
 - **`src/_includes/components/`** - Custom Nunjucks components
 - **`src/assets/`** - Logos, icons, stylesheets
@@ -214,6 +216,7 @@ ndx/                                    # Project root
 - **`src/challenges/`** - Government procurement challenges
 
 ### Configuration
+
 - **`package.json`** - Dependencies and build scripts
 - **`.nvmrc`** - Node 20.17.0
 - **`.github/workflows/ci.yaml`** - Build, lint, deploy pipeline
@@ -221,6 +224,7 @@ ndx/                                    # Project root
 ## Integration Points
 
 ### Build Process
+
 1. **Input:** `src/**/*.md`, `src/**/*.njk`
 2. **Processing:** Eleventy + Nunjucks + Markdown-it
 3. **Styling:** SASS → CSS compilation
@@ -228,12 +232,14 @@ ndx/                                    # Project root
 5. **Deploy:** GitHub Actions → GitHub Pages
 
 ### Data Flow
+
 1. **Content Files** (markdown) → Eleventy Collections
 2. **Collections** → Nunjucks Templates
 3. **Templates** → Static HTML
 4. **Assets** → Passthrough Copy to `_site/`
 
 ### External Dependencies
+
 - **GOV.UK Frontend:** Design system components from node_modules
 - **Remote Content:** `remoteInclude` shortcode fetches from GitHub
 - **Search Index:** `search.json.njk` generates searchable index
@@ -241,17 +247,20 @@ ndx/                                    # Project root
 ## Entry Points
 
 ### Application Entry
+
 - **Homepage:** `src/index.md` → `/index.html`
 - **Build Entry:** `eleventy.config.js`
 - **Styles Entry:** `src/assets/styles.scss`
 
 ### Content Entry Points
+
 - **Catalogue:** `src/catalogue/index.md`
 - **Discover:** `src/discover/index.md`
 - **About:** `src/About/index.md`
 - **Challenges:** `src/challenges/index.md`
 
 ### Development Entry
+
 - **Dev Server:** `yarn start` → `eleventy --serve`
 - **Build:** `yarn build` → `eleventy`
 - **Lint:** `yarn lint` → `prettier -c .`
@@ -269,16 +278,19 @@ ndx/                                    # Project root
 ## Shared Code Patterns
 
 ### Template Inheritance
+
 - Base layouts from `@x-govuk/govuk-eleventy-plugin`
 - Custom layouts: `collection`, `product`, `homepage`
 - Component includes via `{% include %}`
 
 ### Reusable Components
+
 - Macros in `src/_includes/macros/`
 - GOV.UK components via Nunjucks imports
 - Custom components in `src/_includes/components/`
 
 ### Content Organization
+
 - Collection-based content aggregation
 - Frontmatter-driven metadata
 - Tag-based categorization
@@ -287,33 +299,36 @@ ndx/                                    # Project root
 ## Asset Management
 
 ### Static Assets
+
 - **Images:** Vendor logos in `src/assets/catalogue/`
 - **Icons:** Custom SVGs in `src/assets/icons/`
 - **Fonts:** GOV.UK fonts from node_modules
 - **Styles:** SASS in `src/assets/` and `src/sass/`
 
 ### Asset Pipeline
+
 - SASS compilation via `@x-govuk/govuk-eleventy-plugin`
 - Passthrough copy for images, fonts, other assets
 - No bundler (vanilla static assets)
 
 ## Critical Files
 
-| File | Purpose | Changes Impact |
-|------|---------|----------------|
-| `eleventy.config.js` | Build config, collections | Site structure, data access |
-| `package.json` | Dependencies, scripts | Build process, available tools |
-| `src/index.md` | Homepage | Landing page experience |
-| `src/assets/styles.scss` | Main stylesheet | Site-wide styling |
-| `.github/workflows/ci.yaml` | CI/CD | Deployment process |
-| `src/_includes/components/header/template.njk` | Site header | Every page navigation |
-| `src/_includes/catalogue-collection.njk` | Catalogue layout | Catalogue presentation |
+| File                                           | Purpose                   | Changes Impact                 |
+| ---------------------------------------------- | ------------------------- | ------------------------------ |
+| `eleventy.config.js`                           | Build config, collections | Site structure, data access    |
+| `package.json`                                 | Dependencies, scripts     | Build process, available tools |
+| `src/index.md`                                 | Homepage                  | Landing page experience        |
+| `src/assets/styles.scss`                       | Main stylesheet           | Site-wide styling              |
+| `.github/workflows/ci.yaml`                    | CI/CD                     | Deployment process             |
+| `src/_includes/components/header/template.njk` | Site header               | Every page navigation          |
+| `src/_includes/catalogue-collection.njk`       | Catalogue layout          | Catalogue presentation         |
 
 ## Monorepo vs Monolith
 
 **Classification:** **Monolith**
 
 **Rationale:**
+
 - Single cohesive application
 - Unified build process
 - Shared configuration
@@ -321,6 +336,7 @@ ndx/                                    # Project root
 - All code serves single website
 
 **No Separate Parts:**
+
 - All content under `src/` belongs to one website
 - No client/server split
 - No separate deployable units
@@ -329,6 +345,7 @@ ndx/                                    # Project root
 ---
 
 **Next Steps:**
+
 - See `component-inventory.md` for detailed component documentation
 - Review `eleventy.config.js` for collection and plugin configuration
 - Check `.github/workflows/ci.yaml` for deployment process

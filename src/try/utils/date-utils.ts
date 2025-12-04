@@ -18,28 +18,28 @@
  * formatRelativeTime(new Date(Date.now() - 86400000)) // "1 day ago"
  */
 export function formatRelativeTime(date: Date | string): string {
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  const now = new Date();
-  const diffMs = targetDate.getTime() - now.getTime();
-  const diffSecs = Math.round(diffMs / 1000);
-  const diffMins = Math.round(diffSecs / 60);
-  const diffHours = Math.round(diffMins / 60);
-  const diffDays = Math.round(diffHours / 24);
+  const targetDate = typeof date === "string" ? new Date(date) : date
+  const now = new Date()
+  const diffMs = targetDate.getTime() - now.getTime()
+  const diffSecs = Math.round(diffMs / 1000)
+  const diffMins = Math.round(diffSecs / 60)
+  const diffHours = Math.round(diffMins / 60)
+  const diffDays = Math.round(diffHours / 24)
 
-  const rtf = new Intl.RelativeTimeFormat('en-GB', { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" })
 
   // Choose appropriate unit
   if (Math.abs(diffSecs) < 60) {
-    return rtf.format(diffSecs, 'second');
+    return rtf.format(diffSecs, "second")
   } else if (Math.abs(diffMins) < 60) {
-    return rtf.format(diffMins, 'minute');
+    return rtf.format(diffMins, "minute")
   } else if (Math.abs(diffHours) < 24) {
-    return rtf.format(diffHours, 'hour');
+    return rtf.format(diffHours, "hour")
   } else if (Math.abs(diffDays) < 30) {
-    return rtf.format(diffDays, 'day');
+    return rtf.format(diffDays, "day")
   } else {
     // Fall back to absolute date for very old/future dates
-    return formatAbsoluteDate(targetDate);
+    return formatAbsoluteDate(targetDate)
   }
 }
 
@@ -53,16 +53,16 @@ export function formatRelativeTime(date: Date | string): string {
  * formatAbsoluteDate(new Date('2025-11-24T14:30:00Z')) // "24 Nov 2025, 14:30"
  */
 export function formatAbsoluteDate(date: Date | string): string {
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const targetDate = typeof date === "string" ? new Date(date) : date
 
-  return targetDate.toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return targetDate.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: false,
-  });
+  })
 }
 
 /**
@@ -75,28 +75,28 @@ export function formatAbsoluteDate(date: Date | string): string {
  * formatRemainingDuration(new Date(Date.now() + 85500000)) // "23h 45m remaining"
  */
 export function formatRemainingDuration(expiresAt: Date | string): string | null {
-  const targetDate = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt;
-  const now = new Date();
-  const diffMs = targetDate.getTime() - now.getTime();
+  const targetDate = typeof expiresAt === "string" ? new Date(expiresAt) : expiresAt
+  const now = new Date()
+  const diffMs = targetDate.getTime() - now.getTime()
 
   if (diffMs <= 0) {
-    return null; // Expired
+    return null // Expired
   }
 
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const hours = Math.floor(diffMs / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
   if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `${days}d ${remainingHours}h remaining`;
+    const days = Math.floor(hours / 24)
+    const remainingHours = hours % 24
+    return `${days}d ${remainingHours}h remaining`
   }
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m remaining`;
+    return `${hours}h ${minutes}m remaining`
   }
 
-  return `${minutes}m remaining`;
+  return `${minutes}m remaining`
 }
 
 /**
@@ -106,8 +106,8 @@ export function formatRemainingDuration(expiresAt: Date | string): string | null
  * @returns true if date is in the past
  */
 export function isExpired(date: Date | string): boolean {
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  return targetDate.getTime() < Date.now();
+  const targetDate = typeof date === "string" ? new Date(date) : date
+  return targetDate.getTime() < Date.now()
 }
 
 /**
@@ -121,7 +121,7 @@ export function isExpired(date: Date | string): boolean {
  * // "in 1 hour (24 Nov 2025, 15:30)"
  */
 export function formatExpiry(expiresAt: Date | string): string {
-  const relative = formatRelativeTime(expiresAt);
-  const absolute = formatAbsoluteDate(expiresAt);
-  return `${relative} (${absolute})`;
+  const relative = formatRelativeTime(expiresAt)
+  const absolute = formatAbsoluteDate(expiresAt)
+  return `${relative} (${absolute})`
 }

@@ -12,7 +12,8 @@ import { test, expect } from "@playwright/test"
  */
 
 test.describe("sessionStorage JWT Persistence", () => {
-  const TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+  const TEST_TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
   const TOKEN_KEY = "isb-jwt"
 
   test.beforeEach(async ({ page }) => {
@@ -137,19 +138,19 @@ test.describe("sessionStorage JWT Persistence", () => {
 
     // Navigate to catalogue page
     await page.goto("/catalogue/")
-    await page.waitForLoadState('domcontentloaded')
+    await page.waitForLoadState("domcontentloaded")
     const token1 = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
     expect(token1).toBe(TEST_TOKEN)
 
     // Navigate to try page (different route)
     await page.goto("/try")
-    await page.waitForLoadState('domcontentloaded')
+    await page.waitForLoadState("domcontentloaded")
     const token2 = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
     expect(token2).toBe(TEST_TOKEN)
 
     // Navigate back to homepage (but add a dummy query param to avoid browser cache clearing sessionStorage)
     await page.goto("/?test=1")
-    await page.waitForLoadState('domcontentloaded')
+    await page.waitForLoadState("domcontentloaded")
     const token3 = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
     expect(token3).toBe(TEST_TOKEN)
 

@@ -104,15 +104,15 @@ From tech spec (`tech-spec-epic-n5.md:206-293`):
 ```typescript
 // Strict mode wrapper
 const strictParse = <T extends z.ZodSchema>(schema: T, data: unknown) => {
-  return schema.strict().parse(data);
-};
+  return schema.strict().parse(data)
+}
 
 // Discriminated union for freeze reasons
-const LeaseFrozenReasonSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('Expired'), triggeredDurationThreshold: z.number() }),
-  z.object({ type: z.literal('BudgetExceeded'), triggeredBudgetThreshold: z.number() }),
-  z.object({ type: z.literal('ManuallyFrozen'), comment: z.string().max(1000) }),
-]);
+const LeaseFrozenReasonSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("Expired"), triggeredDurationThreshold: z.number() }),
+  z.object({ type: z.literal("BudgetExceeded"), triggeredBudgetThreshold: z.number() }),
+  z.object({ type: z.literal("ManuallyFrozen"), comment: z.string().max(1000) }),
+])
 ```
 
 ### Security Considerations
@@ -124,11 +124,11 @@ const LeaseFrozenReasonSchema = z.discriminatedUnion('type', [
 
 ### Error Classification
 
-| Validation Error | Error Type | Retry | DLQ |
-|------------------|------------|-------|-----|
-| Invalid schema | PermanentError | No | Yes |
-| Unknown event type | PermanentError | No | Yes |
-| Injection attempt | PermanentError | No | Yes + security log |
+| Validation Error   | Error Type     | Retry | DLQ                |
+| ------------------ | -------------- | ----- | ------------------ |
+| Invalid schema     | PermanentError | No    | Yes                |
+| Unknown event type | PermanentError | No    | Yes                |
+| Injection attempt  | PermanentError | No    | Yes + security log |
 
 ### Project Structure Notes
 
@@ -185,22 +185,24 @@ Claude claude-opus-4-5-20251101
 ### File List
 
 #### New Files
+
 - `infra/lib/lambda/notification/validation.ts` - Core validation module with Zod schemas
 - `infra/lib/lambda/notification/validation.test.ts` - 73 unit tests for validation
 
 #### Modified Files
+
 - `infra/package.json` - Added zod 3.23.8 dependency
 
 ## Code Review
 
 ### Review Summary
 
-| Category | Status |
-|----------|--------|
+| Category     | Status                                             |
+| ------------ | -------------------------------------------------- |
 | **Reviewer** | Senior Dev Agent (Claude claude-opus-4-5-20251101) |
-| **Date** | 2025-11-28 |
-| **Verdict** | ✅ **APPROVED** |
-| **Tests** | 254/254 passing (73 validation tests) |
+| **Date**     | 2025-11-28                                         |
+| **Verdict**  | ✅ **APPROVED**                                    |
+| **Tests**    | 254/254 passing (73 validation tests)              |
 
 ### Architecture & Design ✅
 
@@ -213,29 +215,29 @@ Claude claude-opus-4-5-20251101
 
 All 12 MUST criteria satisfied with explicit test coverage:
 
-| AC | Description | Implementation | Tests |
-|----|-------------|----------------|-------|
-| AC-2.1 | 10 event schemas | EVENT_SCHEMAS registry | 20 tests |
-| AC-2.2 | LeaseKeySchema | validation.ts:66-71 | 5 tests |
-| AC-2.3 | LeaseFrozenReason union | validation.ts:81-96 | 5 tests |
-| AC-2.4 | LeaseTerminatedReason 5 types | validation.ts:101-124 | 6 tests |
-| AC-2.5 | Strict mode | .strict() on all schemas | 3 tests |
-| AC-2.6 | AccountId 12-digit | validation.ts:59-61 | 6 tests |
-| AC-2.7 | validateEvent returns ValidatedEvent | validation.ts:345-403 | 2 tests |
-| AC-2.8 | PermanentError with details | validation.ts:380-388 | 3 tests |
-| AC-2.9 | Field paths in errors | formatZodError() | 2 tests |
-| AC-2.10 | Unknown event type | validation.ts:352-363 | 3 tests |
-| AC-2.11 | UUID injection rejection | validation.ts:28-37 | 7 tests |
-| AC-2.12 | Email injection rejection | validation.ts:43-54 | 8 tests |
+| AC      | Description                          | Implementation           | Tests    |
+| ------- | ------------------------------------ | ------------------------ | -------- |
+| AC-2.1  | 10 event schemas                     | EVENT_SCHEMAS registry   | 20 tests |
+| AC-2.2  | LeaseKeySchema                       | validation.ts:66-71      | 5 tests  |
+| AC-2.3  | LeaseFrozenReason union              | validation.ts:81-96      | 5 tests  |
+| AC-2.4  | LeaseTerminatedReason 5 types        | validation.ts:101-124    | 6 tests  |
+| AC-2.5  | Strict mode                          | .strict() on all schemas | 3 tests  |
+| AC-2.6  | AccountId 12-digit                   | validation.ts:59-61      | 6 tests  |
+| AC-2.7  | validateEvent returns ValidatedEvent | validation.ts:345-403    | 2 tests  |
+| AC-2.8  | PermanentError with details          | validation.ts:380-388    | 3 tests  |
+| AC-2.9  | Field paths in errors                | formatZodError()         | 2 tests  |
+| AC-2.10 | Unknown event type                   | validation.ts:352-363    | 3 tests  |
+| AC-2.11 | UUID injection rejection             | validation.ts:28-37      | 7 tests  |
+| AC-2.12 | Email injection rejection            | validation.ts:43-54      | 8 tests  |
 
 ### Security Controls ✅
 
-| Control | Implementation | Rating |
-|---------|---------------|--------|
-| UUID injection prevention | Regex + refine for `?`, `/`, `;` | Excellent |
-| Email injection prevention | Reject `++`, consecutive dots | Excellent |
-| Strict mode | All schemas use `.strict()` | Excellent |
-| PII protection | Log field paths, not values | Excellent |
+| Control                    | Implementation                   | Rating    |
+| -------------------------- | -------------------------------- | --------- |
+| UUID injection prevention  | Regex + refine for `?`, `/`, `;` | Excellent |
+| Email injection prevention | Reject `++`, consecutive dots    | Excellent |
+| Strict mode                | All schemas use `.strict()`      | Excellent |
+| PII protection             | Log field paths, not values      | Excellent |
 
 ### Minor Observations (Non-blocking)
 

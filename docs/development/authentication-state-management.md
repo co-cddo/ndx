@@ -13,6 +13,7 @@ The NDX Try Before You Buy feature uses an event-driven authentication state man
 See [ADR-024: Authentication State Management](../try-before-you-buy-architecture.md#ADR-024) for the complete architectural decision record.
 
 **Key Decision:** Observer pattern for reactive authentication state
+
 - **Rationale:** Multiple components need to react to auth state changes (nav, try buttons, /try page)
 - **Alternative Rejected:** Manual state checking in each component (leads to state inconsistencies)
 
@@ -23,6 +24,7 @@ See [ADR-024: Authentication State Management](../try-before-you-buy-architectur
 Location: `src/try/auth/auth-provider.ts`
 
 The `AuthState` class provides:
+
 1. **Authentication checking:** `isAuthenticated()` - checks for JWT token in sessionStorage
 2. **Event subscription:** `subscribe(listener)` - register callbacks for auth state changes
 3. **State notification:** `notify()` - trigger all subscriber callbacks
@@ -32,12 +34,14 @@ The `AuthState` class provides:
 ### Token Storage
 
 **Storage mechanism:** sessionStorage (not localStorage or cookies)
+
 - **Key:** `isb-jwt`
 - **Scope:** Current browser session only (clears on browser close)
 - **Accessibility:** Available across all tabs in same session
 - **Security:** Does not persist across browser restarts (reduced exposure)
 
 **Why sessionStorage?**
+
 - Clears on browser close (security best practice)
 - Accessible across tabs (better UX than tab-specific state)
 - Aligns with GOV.UK One Login patterns
@@ -47,16 +51,16 @@ The `AuthState` class provides:
 ### Subscribe to Auth State Changes
 
 ```typescript
-import { authState } from './auth/auth-provider';
+import { authState } from "./auth/auth-provider"
 
 // Component subscribes to auth state changes
 authState.subscribe((isAuthenticated) => {
   if (isAuthenticated) {
-    console.log('User signed in - show authenticated UI');
+    console.log("User signed in - show authenticated UI")
   } else {
-    console.log('User signed out - show unauthenticated UI');
+    console.log("User signed out - show unauthenticated UI")
   }
-});
+})
 ```
 
 ### Check Current Auth State
@@ -64,10 +68,10 @@ authState.subscribe((isAuthenticated) => {
 ```typescript
 if (authState.isAuthenticated()) {
   // User is signed in
-  showTryButton();
+  showTryButton()
 } else {
   // User is not signed in
-  hideTryButton();
+  hideTryButton()
 }
 ```
 
@@ -75,11 +79,11 @@ if (authState.isAuthenticated()) {
 
 ```typescript
 // After OAuth redirect, extract token from URL
-const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get('token');
+const urlParams = new URLSearchParams(window.location.search)
+const token = urlParams.get("token")
 
 if (token) {
-  authState.login(token); // Stores token and notifies all subscribers
+  authState.login(token) // Stores token and notifies all subscribers
 }
 ```
 
@@ -87,11 +91,11 @@ if (token) {
 
 ```typescript
 // Sign out button click handler
-document.querySelector('[data-action="signout"]').addEventListener('click', (e) => {
-  e.preventDefault();
-  authState.logout(); // Removes token and notifies all subscribers
-  window.location.href = '/';
-});
+document.querySelector('[data-action="signout"]').addEventListener("click", (e) => {
+  e.preventDefault()
+  authState.logout() // Removes token and notifies all subscribers
+  window.location.href = "/"
+})
 ```
 
 ## Component Integration
@@ -101,12 +105,14 @@ document.querySelector('[data-action="signout"]').addEventListener('click', (e) 
 Location: `src/try/ui/auth-nav.ts`
 
 The `auth-nav` component:
+
 1. Subscribes to `AuthState` changes on initialization
 2. Renders "Sign in" link when `isAuthenticated === false`
 3. Renders "Sign out" link when `isAuthenticated === true`
 4. Uses GOV.UK Design System classes (`govuk-header__link`)
 
 **Template Integration:**
+
 - Header template includes `<li id="auth-nav"></li>` placeholder
 - JavaScript populates this element on page load
 - Progressive enhancement: `<noscript>` provides static "Sign in" link
@@ -116,11 +122,13 @@ The `auth-nav` component:
 Location: `src/try/main.ts`
 
 The main entry point:
+
 1. Listens for `DOMContentLoaded` event
 2. Initializes `auth-nav` component
 3. Will initialize other Try components in future stories
 
 **Build Process:**
+
 - TypeScript compiled via esbuild
 - Output: `src/assets/try.bundle.js`
 - Included globally via GOV.UK plugin `scripts` configuration
@@ -132,6 +140,7 @@ The main entry point:
 Location: `src/try/auth/auth-provider.test.ts`
 
 Test coverage includes:
+
 - ✅ isAuthenticated() returns correct state based on sessionStorage
 - ✅ subscribe() calls listener immediately with current state
 - ✅ notify() triggers all subscriber callbacks
@@ -141,6 +150,7 @@ Test coverage includes:
 - ✅ Multiple subscriber coordination
 
 **Run Tests:**
+
 ```bash
 yarn test
 ```
@@ -171,15 +181,18 @@ To test authentication state management:
 ## Accessibility
 
 ### Keyboard Navigation
+
 - ✅ "Sign in" and "Sign out" links are keyboard navigable (Tab to focus, Enter to activate)
 - ✅ Focus indicator visible (GOV.UK Design System provides default focus ring)
 
 ### Screen Reader Support
+
 - ✅ Links have descriptive text ("Sign in", "Sign out")
 - ✅ Links announced as navigation links by screen readers
 - ✅ Progressive enhancement: `<noscript>` fallback for no-JS users
 
 ### WCAG 2.2 AA Compliance
+
 - ✅ **1.4.3 Contrast (Minimum):** GOV.UK links meet 4.5:1 contrast ratio
 - ✅ **2.1.1 Keyboard:** All functionality keyboard accessible
 - ✅ **2.4.7 Focus Visible:** Focus ring visible on keyboard navigation
@@ -229,6 +242,7 @@ The OAuth authentication flow follows this sequence:
 Location: `src/try/auth/oauth-flow.ts`
 
 The `oauth-flow` module provides:
+
 1. **Return URL storage:** `storeReturnURL()` - saves current page before OAuth redirect
 2. **Return URL retrieval:** `getReturnURL()` - retrieves stored page after OAuth callback
 3. **Return URL cleanup:** `clearReturnURL()` - removes stored URL from sessionStorage
@@ -239,12 +253,14 @@ The `oauth-flow` module provides:
 **Storage mechanism:** sessionStorage (key: `auth-return-to`)
 
 **Why return URL storage?**
+
 - OAuth flow redirects away from NDX (to AWS OAuth page)
 - After authentication, user should return to the page they were on
 - Without storage, user would always return to home page
 - Improves UX by maintaining context
 
 **Loop prevention:**
+
 - Callback page (`/callback`) is never stored as return URL
 - Prevents infinite redirect loops
 
@@ -252,14 +268,15 @@ The `oauth-flow` module provides:
 
 OAuth errors are mapped to user-friendly messages:
 
-| OAuth Error Code | User-Friendly Message |
-|------------------|----------------------|
-| `access_denied` | "You cancelled the sign in process. Please try again if you want to access Try features." |
-| `invalid_request` | "There was a problem with the sign in request. Please try again." |
-| `server_error` | "The authentication service is temporarily unavailable. Please try again in a few minutes." |
-| (unknown) | "An error occurred during sign in. Please try again." |
+| OAuth Error Code  | User-Friendly Message                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| `access_denied`   | "You cancelled the sign in process. Please try again if you want to access Try features."   |
+| `invalid_request` | "There was a problem with the sign in request. Please try again."                           |
+| `server_error`    | "The authentication service is temporarily unavailable. Please try again in a few minutes." |
+| (unknown)         | "An error occurred during sign in. Please try again."                                       |
 
 **Design principles:**
+
 - Plain language (no technical jargon like "OAuth", "JWT", "401")
 - Clear recovery path ("Please try again")
 - Calm tone (don't alarm users)
@@ -270,12 +287,14 @@ OAuth errors are mapped to user-friendly messages:
 Location: `src/callback.html`
 
 The OAuth callback page:
+
 1. **Displays loading state** while processing OAuth response
 2. **Handles OAuth errors** if `?error=...` query parameter present
 3. **Shows user-friendly error message** with 5-second auto-redirect to home
 4. **Prepares for token extraction** (Story 5.3 will implement full callback logic)
 
 **GOV.UK Design System components used:**
+
 - `govuk-error-summary` for error display
 - `govuk-heading-l` for page title
 - `govuk-body` for descriptive text
@@ -283,6 +302,7 @@ The OAuth callback page:
 ### Integration with Auth Navigation
 
 Updated in Story 5.2, the `auth-nav` component now:
+
 1. Imports `storeReturnURL()` from `oauth-flow` module
 2. Adds click handler to "Sign in" button
 3. Calls `storeReturnURL()` before OAuth redirect
@@ -290,12 +310,12 @@ Updated in Story 5.2, the `auth-nav` component now:
 
 ```typescript
 // Story 5.2: Store return URL before OAuth redirect
-const signInButton = container.querySelector('#sign-in-button');
+const signInButton = container.querySelector("#sign-in-button")
 if (signInButton) {
-  signInButton.addEventListener('click', () => {
-    storeReturnURL();
+  signInButton.addEventListener("click", () => {
+    storeReturnURL()
     // Allow default link behavior (browser redirects to /api/auth/login)
-  });
+  })
 }
 ```
 
@@ -306,6 +326,7 @@ if (signInButton) {
 Location: `src/try/auth/oauth-flow.test.ts`
 
 Test coverage includes:
+
 - ✅ storeReturnURL() saves current URL to sessionStorage
 - ✅ storeReturnURL() skips callback page (loop prevention)
 - ✅ getReturnURL() retrieves stored URL
@@ -318,6 +339,7 @@ Test coverage includes:
 - ✅ Callback page loop prevention
 
 **Run Tests:**
+
 ```bash
 yarn test oauth-flow.test.ts
 ```
@@ -384,23 +406,24 @@ Extracts JWT token from URL query parameter and stores in sessionStorage.
  */
 export function extractTokenFromURL(): boolean {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get("token")
 
-    if (!token || token.trim() === '') {
-      return false;
+    if (!token || token.trim() === "") {
+      return false
     }
 
-    sessionStorage.setItem('isb-jwt', token);
-    return true;
+    sessionStorage.setItem("isb-jwt", token)
+    return true
   } catch (error) {
-    console.warn('[oauth-flow] Failed to extract token from URL:', error);
-    return false;
+    console.warn("[oauth-flow] Failed to extract token from URL:", error)
+    return false
   }
 }
 ```
 
 **Edge cases handled:**
+
 - No token parameter in URL (returns false)
 - Empty token value (returns false)
 - sessionStorage unavailable (returns false, logs warning)
@@ -418,25 +441,27 @@ Removes token from browser address bar without page reload.
 export function cleanupURLAfterExtraction(): void {
   try {
     if (!window.history || !window.history.replaceState) {
-      console.warn('[oauth-flow] History API not available, skipping URL cleanup');
-      return;
+      console.warn("[oauth-flow] History API not available, skipping URL cleanup")
+      return
     }
 
-    const cleanURL = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanURL);
+    const cleanURL = window.location.pathname
+    window.history.replaceState({}, document.title, cleanURL)
   } catch (error) {
-    console.warn('[oauth-flow] Failed to clean up URL:', error);
+    console.warn("[oauth-flow] Failed to clean up URL:", error)
     // Non-critical error, continue execution
   }
 }
 ```
 
 **Why URL cleanup?**
+
 - **Security:** Prevents JWT token from appearing in browser history
 - **UX:** User doesn't see sensitive token in address bar
 - **Best Practice:** OAuth tokens should not be exposed in URLs after extraction
 
 **Technical details:**
+
 - Uses `window.history.replaceState()` (not `pushState`) - no extra history entry
 - Preserves pathname (`/callback` → `/callback`)
 - No page reload - History API only
@@ -453,30 +478,31 @@ Orchestrates complete OAuth callback flow.
  */
 export function handleOAuthCallback(): void {
   // Step 1: Extract token from URL
-  const tokenExtracted = extractTokenFromURL();
+  const tokenExtracted = extractTokenFromURL()
 
   if (!tokenExtracted) {
     // No token found - redirect to home page
-    clearReturnURL();
-    window.location.href = '/';
-    return;
+    clearReturnURL()
+    window.location.href = "/"
+    return
   }
 
   // Step 2: Clean up URL (remove token from address bar)
-  cleanupURLAfterExtraction();
+  cleanupURLAfterExtraction()
 
   // Step 3: Get return URL (original page before OAuth redirect)
-  const returnURL = getReturnURL();
+  const returnURL = getReturnURL()
 
   // Step 4: Clear return URL from sessionStorage
-  clearReturnURL();
+  clearReturnURL()
 
   // Step 5: Redirect to original page
-  window.location.href = returnURL;
+  window.location.href = returnURL
 }
 ```
 
 **Flow sequence:**
+
 1. Extract token → Store in sessionStorage
 2. Clean URL → Remove `?token=...` from address bar
 3. Get return URL → Retrieve original page from sessionStorage
@@ -484,6 +510,7 @@ export function handleOAuthCallback(): void {
 5. Redirect → Send user back to original page
 
 **Error handling:**
+
 - If token extraction fails → Redirect to home page, clear return URL
 - If return URL not found → Default to home page (`/`)
 - Non-critical errors (URL cleanup) → Log warning, continue execution
@@ -496,29 +523,30 @@ The callback page JavaScript updated in Story 5.3:
 
 ```html
 <script type="module">
-  import { handleOAuthCallback, parseOAuthError } from './assets/try.bundle.js';
+  import { handleOAuthCallback, parseOAuthError } from "./assets/try.bundle.js"
 
   // Check for OAuth errors first (from Story 5.2)
-  const error = parseOAuthError();
+  const error = parseOAuthError()
   if (error) {
     // Display error message and redirect to home
-    document.getElementById('callback-content').style.display = 'none';
-    document.getElementById('error-content').style.display = 'block';
-    document.getElementById('error-message').textContent = error.message;
+    document.getElementById("callback-content").style.display = "none"
+    document.getElementById("error-content").style.display = "block"
+    document.getElementById("error-message").textContent = error.message
 
     setTimeout(() => {
-      window.location.href = '/';
-    }, 5000);
+      window.location.href = "/"
+    }, 5000)
   } else {
     // No error - proceed with token extraction and redirect
-    document.addEventListener('DOMContentLoaded', () => {
-      handleOAuthCallback();
-    });
+    document.addEventListener("DOMContentLoaded", () => {
+      handleOAuthCallback()
+    })
   }
 </script>
 ```
 
 **OAuth callback page behavior:**
+
 1. Check for OAuth error first (`?error=...` parameter)
 2. If error: Display error message, auto-redirect to home after 5 seconds
 3. If no error: Extract token, clean URL, redirect to original page
@@ -526,10 +554,10 @@ The callback page JavaScript updated in Story 5.3:
 
 ### sessionStorage Keys Reference
 
-| Key | Purpose | Set By | Cleared By |
-|-----|---------|--------|------------|
-| `isb-jwt` | JWT token storage | `extractTokenFromURL()` (Story 5.3) | `authState.logout()` (Story 5.5) |
-| `auth-return-to` | Return URL after OAuth | `storeReturnURL()` (Story 5.2) | `clearReturnURL()` (Story 5.3) |
+| Key              | Purpose                | Set By                              | Cleared By                       |
+| ---------------- | ---------------------- | ----------------------------------- | -------------------------------- |
+| `isb-jwt`        | JWT token storage      | `extractTokenFromURL()` (Story 5.3) | `authState.logout()` (Story 5.5) |
+| `auth-return-to` | Return URL after OAuth | `storeReturnURL()` (Story 5.2)      | `clearReturnURL()` (Story 5.3)   |
 
 ### Testing
 
@@ -540,6 +568,7 @@ Location: `src/try/auth/oauth-flow.test.ts`
 Story 5.3 added 25 new unit tests (total: 48 tests, all passing):
 
 **extractTokenFromURL() tests:**
+
 - ✅ Extracts and stores valid JWT token
 - ✅ Returns false if no token parameter
 - ✅ Returns false if token parameter is empty
@@ -549,6 +578,7 @@ Story 5.3 added 25 new unit tests (total: 48 tests, all passing):
 - ✅ Overwrites previous token if called multiple times
 
 **cleanupURLAfterExtraction() tests:**
+
 - ✅ Removes query parameters from URL
 - ✅ Preserves pathname (`/callback`)
 - ✅ Does not throw if History API unavailable
@@ -557,6 +587,7 @@ Story 5.3 added 25 new unit tests (total: 48 tests, all passing):
 - ✅ Uses document.title in replaceState call
 
 **handleOAuthCallback() tests:**
+
 - ✅ Extracts token, cleans URL, and redirects to return URL
 - ✅ Redirects to home page if no return URL
 - ✅ Redirects to home page if token extraction fails
@@ -566,11 +597,13 @@ Story 5.3 added 25 new unit tests (total: 48 tests, all passing):
 - ✅ Preserves return URL with hash fragment
 
 **Integration tests:**
+
 - ✅ Complete OAuth flow: sign in → extract → redirect
 - ✅ OAuth error flow without token extraction
 - ✅ Missing token edge case (graceful degradation)
 
 **Run Tests:**
+
 ```bash
 npm test oauth-flow.test.ts
 ```
@@ -623,6 +656,7 @@ To test complete OAuth flow (Stories 5.1 + 5.2 + 5.3):
 **Symptoms:** After OAuth redirect, `sessionStorage.getItem('isb-jwt')` returns `null`
 
 **Possible causes:**
+
 1. OAuth callback URL missing token parameter
    - **Check:** URL in address bar - does it contain `?token=...`?
    - **Fix:** Verify OAuth provider configuration includes token in callback URL
@@ -640,6 +674,7 @@ To test complete OAuth flow (Stories 5.1 + 5.2 + 5.3):
 **Symptoms:** After OAuth redirect, address bar shows `/callback?token=...`
 
 **Possible causes:**
+
 1. History API not available (old browser)
    - **Check:** DevTools console for warning: "History API not available"
    - **Fix:** Update browser to modern version
@@ -653,6 +688,7 @@ To test complete OAuth flow (Stories 5.1 + 5.2 + 5.3):
 **Symptoms:** After OAuth, user lands on home page (not original page)
 
 **Possible causes:**
+
 1. Return URL not stored before OAuth redirect
    - **Check:** Before clicking "Sign in", verify `storeReturnURL()` is called
    - **Fix:** Review `auth-nav.ts` sign in button handler
@@ -668,10 +704,12 @@ To test complete OAuth flow (Stories 5.1 + 5.2 + 5.3):
 ## Future Stories
 
 ### Story 5.4: sessionStorage JWT Persistence
+
 - Already implemented in `AuthState` class
 - No additional work required (using sessionStorage from Story 5.1)
 
 ### Story 5.5: Sign Out Functionality
+
 - Implement "Sign out" link click handler
 - Call `authState.logout()` to clear token and notify
 - Redirect to home page after sign out

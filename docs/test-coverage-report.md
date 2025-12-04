@@ -6,12 +6,12 @@ This report documents the test coverage improvements made during the overnight s
 
 ## Coverage Results
 
-| Metric | Current | Threshold | Status |
-|--------|---------|-----------|--------|
-| Statements | 84.41% | 80% | PASS |
-| Branches | 80.53% | 70% | PASS |
-| Functions | 81.57% | 80% | PASS |
-| Lines | 85.71% | 80% | PASS |
+| Metric     | Current | Threshold | Status |
+| ---------- | ------- | --------- | ------ |
+| Statements | 84.41%  | 80%       | PASS   |
+| Branches   | 80.53%  | 70%       | PASS   |
+| Functions  | 81.57%  | 80%       | PASS   |
+| Lines      | 85.71%  | 80%       | PASS   |
 
 ## Unit Test Count
 
@@ -22,30 +22,35 @@ This report documents the test coverage improvements made during the overnight s
 ## Test Files Created/Updated
 
 ### New Test Files
+
 1. `src/try/ui/components/aup-modal.test.ts` - 37 tests
 2. `src/try/ui/try-button.test.ts` - 26 tests
 3. `src/try/api/configurations-service.test.ts` - 22 tests
 4. `src/try/api/leases-service.test.ts` - 22 tests
 
 ### Existing Test Files Fixed
+
 1. `src/try/ui/try-page.test.ts` - Fixed mock for sessions-service
 2. `src/try/ui/utils/focus-trap.test.ts` - Fixed requestAnimationFrame and offsetWidth/Height mocking
 
 ## Coverage by File
 
 ### 100% Coverage
+
 - `src/try/utils/currency-utils.ts`
 - `src/try/utils/date-utils.ts`
 - `src/try/ui/utils/aria-live.ts`
 - `src/try/ui/try-button.ts`
 
 ### 95%+ Coverage
+
 - `src/try/api/configurations-service.ts` - 97.22%
 - `src/try/api/sessions-service.ts` - 95.77%
 - `src/try/ui/utils/focus-trap.ts` - 94%
 - `src/try/api/leases-service.ts` - 98%
 
 ### 85%+ Coverage
+
 - `src/try/api/api-client.ts` - 92.98%
 - `src/try/ui/try-page.ts` - 86.95%
 - `src/try/ui/components/aup-modal.ts` - 86.04%
@@ -53,6 +58,7 @@ This report documents the test coverage improvements made during the overnight s
 - `src/try/auth/oauth-flow.ts` - 84.21%
 
 ### Below Threshold (Need Future Work)
+
 - `src/try/config.ts` - 0% (configuration constants, not critical)
 - `src/try/main.ts` - 0% (entry point, integration tested via E2E)
 - `src/try/ui/auth-nav.ts` - 0% (UI component, tested via E2E)
@@ -62,16 +68,19 @@ This report documents the test coverage improvements made during the overnight s
 E2E tests run via Playwright with mitmproxy:
 
 ### Auth Tests
+
 - **Total**: 24 tests
 - **Passed**: 19 tests
 - **Failed**: 5 tests (OAuth callback redirect timing issues)
 
 ### Smoke Tests
+
 - Home page load: PASS
 
 ## Fixes Applied
 
 ### AUP Loading Issue (Story 6.7)
+
 - **Problem**: API returns JSend format `{ status: "success", data: { termsOfService: "...", leases: {...} } }` but code was reading top-level fields
 - **Root Cause**: The Innovation Sandbox API uses JSend format with nested `data` object, but the parsing logic looked at flat top-level fields
 - **Fix**: Updated `fetchConfigurations()` to extract AUP from nested `data.termsOfService` first, then fallback to flat fields for backwards compatibility
@@ -80,6 +89,7 @@ E2E tests run via Playwright with mitmproxy:
 - **Tests Updated**: Added 13 tests covering nested JSend response format and fallback scenarios
 
 ### Dead Callback Code Removal
+
 - **Removed**: `src/callback.html` (obsolete per ADR-023 REVISED)
 - **Removed**: `oauthCallbackUrl` from `src/try/config.ts`
 
@@ -107,7 +117,7 @@ yarn test --coverage
 
 # Run E2E tests (requires proxy)
 yarn run dev:proxy  # In one terminal
-npx playwright test  # In another terminal
+npx playwright test # In another terminal
 
 # Run specific E2E test suite
 npx playwright test tests/e2e/auth/

@@ -1,6 +1,7 @@
 # Functional Requirements Inventory - Feature 2
 
 ## Authentication & Session Management (10 FRs)
+
 - **FR-TRY-1:** System can detect if user is authenticated by checking sessionStorage for `isb-jwt` token
 - **FR-TRY-2:** System can initiate OAuth login by redirecting to `/api/auth/login`
 - **FR-TRY-3:** System can extract JWT token from URL query parameter after OAuth redirect
@@ -13,6 +14,7 @@
 - **FR-TRY-10:** System sends `Authorization: Bearer {token}` header with all Innovation Sandbox API requests
 
 ## User Interface - Sign In/Out (5 FRs)
+
 - **FR-TRY-11:** System displays "Sign in" button in top-right navigation when user not authenticated
 - **FR-TRY-12:** System displays "Sign out" button in top-right navigation when user authenticated
 - **FR-TRY-13:** Sign in button triggers OAuth redirect to `/api/auth/login`
@@ -20,6 +22,7 @@
 - **FR-TRY-15:** System uses GOV.UK Design System button styling for sign in/out buttons
 
 ## Innovation Sandbox API Integration (9 FRs)
+
 - **FR-TRY-16:** System can call `GET /api/auth/login/status` to check authentication status
 - **FR-TRY-17:** System can parse user session data (email, displayName, userName, roles)
 - **FR-TRY-18:** System can call `GET /api/leases?userEmail={email}` to retrieve user's leases
@@ -31,6 +34,7 @@
 - **FR-TRY-24:** System redirects to login if API returns 401 unauthorized response
 
 ## Try Page (/try) (5 FRs)
+
 - **FR-TRY-25:** System can render `/try` page route
 - **FR-TRY-26:** System displays "Sign in to view your try sessions" message when unauthenticated
 - **FR-TRY-27:** System displays "Sign in" button on /try page when unauthenticated
@@ -38,6 +42,7 @@
 - **FR-TRY-29:** System renders empty state message if user has no leases
 
 ## Try Sessions Display (8 FRs)
+
 - **FR-TRY-30:** System displays sessions table with columns: Template Name, AWS Account ID, Expiry, Budget, Status
 - **FR-TRY-31:** System formats expiry as relative time for past sessions
 - **FR-TRY-32:** System formats expiry as absolute date/time for future expirations
@@ -48,12 +53,14 @@
 - **FR-TRY-37:** System visually distinguishes active sessions from expired/terminated
 
 ## Active Session Management (4 FRs)
+
 - **FR-TRY-38:** System displays "Launch AWS Console" button for sessions with status "Active"
 - **FR-TRY-39:** Launch button opens AWS SSO portal in new tab with correct URL format
 - **FR-TRY-40:** System displays remaining lease duration for active sessions
 - **FR-TRY-41:** System does not show launch button for Expired/Terminated/Failed sessions
 
 ## Catalogue Integration (7 FRs)
+
 - **FR-TRY-42:** System can parse `try` metadata field from product page YAML frontmatter
 - **FR-TRY-43:** System can parse `try_id` metadata field (lease template UUID)
 - **FR-TRY-44:** System adds "Try Before You Buy" tag to products with `try` metadata
@@ -63,6 +70,7 @@
 - **FR-TRY-48:** Try button uses govukButton macro with `isStartButton: true`
 
 ## Try Button & Lease Request Modal (17 FRs)
+
 - **FR-TRY-49:** Clicking "Try" button checks authentication status first
 - **FR-TRY-50:** If unauthenticated, Try button initiates OAuth sign-in flow
 - **FR-TRY-51:** If authenticated, Try button displays lease request modal overlay
@@ -82,12 +90,14 @@
 - **FR-TRY-65:** Modal closes on successful lease request or after error handling
 
 ## Responsive Design & Mobile Support (4 FRs)
+
 - **FR-TRY-66:** All try-related UI elements responsive for mobile/tablet viewports (320px+ width)
 - **FR-TRY-67:** Sessions table adapts to mobile (stacked cards or horizontal scroll)
 - **FR-TRY-68:** Modal overlay adapts to mobile viewport
 - **FR-TRY-69:** Sign in/out buttons accessible on mobile nav
 
 ## Accessibility (WCAG 2.2) (10 FRs)
+
 - **FR-TRY-70:** All interactive elements keyboard navigable
 - **FR-TRY-71:** Focus indicators visible for keyboard navigation
 - **FR-TRY-72:** Modal can be closed with Escape key

@@ -19,25 +19,22 @@
  * - Timestamp validation ensures events are recent (AC-3.7)
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
-import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
-import { SlackSender, SlackSendParams } from './slack-sender';
-import {
-  SLACK_TEMPLATES,
-  isSlackAlertType,
-} from './slack-templates';
-import type { ValidatedEvent } from './validation';
-import { PermanentError } from './errors';
+import { Logger } from "@aws-lambda-powertools/logger"
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { SlackSender, SlackSendParams } from "./slack-sender"
+import { SLACK_TEMPLATES, isSlackAlertType } from "./slack-templates"
+import type { ValidatedEvent } from "./validation"
+import { PermanentError } from "./errors"
 
 // =============================================================================
 // Logger and Metrics
 // =============================================================================
 
-const logger = new Logger({ serviceName: 'ndx-notifications' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
 const metrics = new Metrics({
-  namespace: 'ndx/notifications',
-  serviceName: 'ndx-notifications',
-});
+  namespace: "ndx/notifications",
+  serviceName: "ndx-notifications",
+})
 
 // =============================================================================
 // Types
@@ -47,9 +44,9 @@ const metrics = new Metrics({
  * AccountQuarantined event detail
  */
 interface AccountQuarantinedDetail {
-  accountId: string;
-  reason: string;
-  quarantinedAt: string;
+  accountId: string
+  reason: string
+  quarantinedAt: string
 }
 
 /**
@@ -57,38 +54,38 @@ interface AccountQuarantinedDetail {
  * Note: Slack receives only account info, not user PII
  */
 interface LeaseFrozenDetail {
-  leaseId: { userEmail: string; uuid: string };
-  accountId?: string;
+  leaseId: { userEmail: string; uuid: string }
+  accountId?: string
   reason: {
-    type: 'Expired' | 'BudgetExceeded' | 'ManuallyFrozen';
-    triggeredDurationThreshold?: number;
-    triggeredBudgetThreshold?: number;
-    currentSpend?: number;
-    budget?: number;
-    comment?: string;
-  };
-  frozenAt: string;
+    type: "Expired" | "BudgetExceeded" | "ManuallyFrozen"
+    triggeredDurationThreshold?: number
+    triggeredBudgetThreshold?: number
+    currentSpend?: number
+    budget?: number
+    comment?: string
+  }
+  frozenAt: string
 }
 
 /**
  * AccountCleanupFailed event detail
  */
 interface AccountCleanupFailedDetail {
-  accountId: string;
+  accountId: string
   cleanupExecutionContext?: {
-    executionArn: string;
-    startTime: string;
-  };
-  errorMessage?: string;
+    executionArn: string
+    startTime: string
+  }
+  errorMessage?: string
 }
 
 /**
  * AccountDriftDetected event detail
  */
 interface AccountDriftDetectedDetail {
-  accountId: string;
-  expectedOU: string;
-  actualOU: string;
+  accountId: string
+  expectedOU: string
+  actualOU: string
 }
 
 /**
@@ -96,19 +93,19 @@ interface AccountDriftDetectedDetail {
  * NOTE: leaseId can be string or object depending on ISB version
  */
 interface LeaseRequestedDetail {
-  leaseId: string | { userEmail: string; uuid: string };
-  principalEmail?: string;
-  accountId?: string;
-  requestedAt?: string;
-  requestTime?: string;
-  budget?: number;
-  budgetLimit?: number;
-  duration?: number;
-  leaseDurationInHours?: number;
-  leaseTemplateName?: string;
-  templateName?: string;
-  leaseTemplateId?: string;
-  templateId?: string;
+  leaseId: string | { userEmail: string; uuid: string }
+  principalEmail?: string
+  accountId?: string
+  requestedAt?: string
+  requestTime?: string
+  budget?: number
+  budgetLimit?: number
+  duration?: number
+  leaseDurationInHours?: number
+  leaseTemplateName?: string
+  templateName?: string
+  leaseTemplateId?: string
+  templateId?: string
 }
 
 /**
@@ -116,18 +113,18 @@ interface LeaseRequestedDetail {
  * NOTE: leaseId can be string or object depending on ISB version
  */
 interface LeaseApprovedDetail {
-  leaseId: string | { userEmail: string; uuid: string };
-  principalEmail?: string;
-  accountId?: string;
-  approvedAt?: string;
-  budget?: number;
-  maxSpend?: number;
-  expiresAt?: string;
-  expirationDate?: string;
-  leaseTemplateName?: string;
-  templateName?: string;
-  leaseTemplateId?: string;
-  templateId?: string;
+  leaseId: string | { userEmail: string; uuid: string }
+  principalEmail?: string
+  accountId?: string
+  approvedAt?: string
+  budget?: number
+  maxSpend?: number
+  expiresAt?: string
+  expirationDate?: string
+  leaseTemplateName?: string
+  templateName?: string
+  leaseTemplateId?: string
+  templateId?: string
 }
 
 /**
@@ -135,14 +132,14 @@ interface LeaseApprovedDetail {
  * NOTE: leaseId can be string or object depending on ISB version
  */
 interface LeaseDeniedDetail {
-  leaseId: string | { userEmail: string; uuid: string };
-  principalEmail?: string;
-  deniedAt?: string;
-  reason?: string;
-  leaseTemplateName?: string;
-  templateName?: string;
-  leaseTemplateId?: string;
-  templateId?: string;
+  leaseId: string | { userEmail: string; uuid: string }
+  principalEmail?: string
+  deniedAt?: string
+  reason?: string
+  leaseTemplateName?: string
+  templateName?: string
+  leaseTemplateId?: string
+  templateId?: string
 }
 
 /**
@@ -150,15 +147,15 @@ interface LeaseDeniedDetail {
  * NOTE: leaseId can be string or object depending on ISB version
  */
 interface LeaseTerminatedDetail {
-  leaseId: string | { userEmail: string; uuid: string };
-  principalEmail?: string;
-  accountId?: string;
-  terminatedAt?: string;
-  reason?: string | { type: string };
-  leaseTemplateName?: string;
-  templateName?: string;
-  leaseTemplateId?: string;
-  templateId?: string;
+  leaseId: string | { userEmail: string; uuid: string }
+  principalEmail?: string
+  accountId?: string
+  terminatedAt?: string
+  reason?: string | { type: string }
+  leaseTemplateName?: string
+  templateName?: string
+  leaseTemplateId?: string
+  templateId?: string
 }
 
 /**
@@ -172,7 +169,7 @@ type SlackAlertDetail =
   | LeaseRequestedDetail
   | LeaseApprovedDetail
   | LeaseDeniedDetail
-  | LeaseTerminatedDetail;
+  | LeaseTerminatedDetail
 
 // =============================================================================
 // Alert Processing Functions
@@ -195,27 +192,25 @@ type SlackAlertDetail =
  *
  * @see {@link SLACK_TEMPLATES.AccountQuarantined} for template configuration
  */
-function formatQuarantineAlert(
-  event: ValidatedEvent<AccountQuarantinedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.AccountQuarantined;
-  const detail = event.detail;
+function formatQuarantineAlert(event: ValidatedEvent<AccountQuarantinedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.AccountQuarantined
+  const detail = event.detail
 
   return {
-    alertType: 'AccountQuarantined',
+    alertType: "AccountQuarantined",
     accountId: detail.accountId,
     priority: template.priority,
     details: {
       Reason: detail.reason,
-      'Quarantined At': formatTimestamp(detail.quarantinedAt),
-      Severity: 'Critical',
+      "Quarantined At": formatTimestamp(detail.quarantinedAt),
+      Severity: "Critical",
       Guidance: template.escalationGuidance,
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
-    template: 'N/A',
-    templateId: 'N/A',
-  };
+    template: "N/A",
+    templateId: "N/A",
+  }
 }
 
 /**
@@ -239,62 +234,54 @@ function formatQuarantineAlert(
  *
  * @see {@link formatFreezeReason} for reason-specific detail formatting
  */
-function formatFrozenAlert(
-  event: ValidatedEvent<LeaseFrozenDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.LeaseFrozen;
-  const detail = event.detail;
+function formatFrozenAlert(event: ValidatedEvent<LeaseFrozenDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.LeaseFrozen
+  const detail = event.detail
 
   // Format reason based on type (AC-4.2, AC-4.4, AC-4.5, AC-4.6)
-  const reasonDetails = formatFreezeReason(detail.reason);
+  const reasonDetails = formatFreezeReason(detail.reason)
 
   return {
-    alertType: 'LeaseFrozen',
-    accountId: detail.accountId || 'Unknown',
+    alertType: "LeaseFrozen",
+    accountId: detail.accountId || "Unknown",
     priority: template.priority,
     details: {
-      User: detail.leaseId.userEmail || 'Unknown',
-      'Freeze Type': detail.reason.type,
+      User: detail.leaseId.userEmail || "Unknown",
+      "Freeze Type": detail.reason.type,
       ...reasonDetails,
-      'Frozen At': formatTimestamp(detail.frozenAt),
-      'Lease ID': detail.leaseId.uuid,
+      "Frozen At": formatTimestamp(detail.frozenAt),
+      "Lease ID": detail.leaseId.uuid,
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
-    template: 'N/A',
-    templateId: 'N/A',
-  };
+    template: "N/A",
+    templateId: "N/A",
+  }
 }
 
 /**
  * Format freeze reason details based on type
  */
-function formatFreezeReason(reason: LeaseFrozenDetail['reason']): Record<string, string | number | undefined> {
+function formatFreezeReason(reason: LeaseFrozenDetail["reason"]): Record<string, string | number | undefined> {
   switch (reason.type) {
-    case 'BudgetExceeded':
+    case "BudgetExceeded":
       return {
-        'Current Spend': reason.currentSpend
-          ? `$${reason.currentSpend.toFixed(2)}`
-          : undefined,
-        'Budget Limit': reason.budget
-          ? `$${reason.budget.toFixed(2)}`
-          : undefined,
-        'Threshold Triggered': reason.triggeredBudgetThreshold
-          ? `${reason.triggeredBudgetThreshold}%`
-          : undefined,
-      };
-    case 'Expired':
+        "Current Spend": reason.currentSpend ? `$${reason.currentSpend.toFixed(2)}` : undefined,
+        "Budget Limit": reason.budget ? `$${reason.budget.toFixed(2)}` : undefined,
+        "Threshold Triggered": reason.triggeredBudgetThreshold ? `${reason.triggeredBudgetThreshold}%` : undefined,
+      }
+    case "Expired":
       return {
-        'Duration Threshold': reason.triggeredDurationThreshold
+        "Duration Threshold": reason.triggeredDurationThreshold
           ? `${reason.triggeredDurationThreshold} hours`
           : undefined,
-      };
-    case 'ManuallyFrozen':
+      }
+    case "ManuallyFrozen":
       return {
-        Comment: reason.comment || 'No comment provided',
-      };
+        Comment: reason.comment || "No comment provided",
+      }
     default:
-      return {};
+      return {}
   }
 }
 
@@ -318,45 +305,41 @@ function formatFreezeReason(reason: LeaseFrozenDetail['reason']): Record<string,
  *
  * @see {@link buildStepFunctionsLink} for execution URL generation
  */
-function formatCleanupFailedAlert(
-  event: ValidatedEvent<AccountCleanupFailedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.AccountCleanupFailed;
-  const detail = event.detail;
+function formatCleanupFailedAlert(event: ValidatedEvent<AccountCleanupFailedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.AccountCleanupFailed
+  const detail = event.detail
 
   // Build action links with dynamic execution ARN (AC-5.3)
-  const actionLinks = [...template.actionLinks];
+  const actionLinks = [...template.actionLinks]
   if (detail.cleanupExecutionContext?.executionArn) {
     // Add direct link to the specific execution
-    const executionLink = buildStepFunctionsLink(
-      detail.cleanupExecutionContext.executionArn
-    );
+    const executionLink = buildStepFunctionsLink(detail.cleanupExecutionContext.executionArn)
     if (executionLink) {
       actionLinks.unshift({
-        label: 'View Failed Execution',
+        label: "View Failed Execution",
         url: executionLink,
-        style: 'danger' as const,
-      });
+        style: "danger" as const,
+      })
     }
   }
 
   return {
-    alertType: 'AccountCleanupFailed',
+    alertType: "AccountCleanupFailed",
     accountId: detail.accountId,
     priority: template.priority,
     details: {
-      'Error Message': detail.errorMessage || 'Cleanup automation failed',
-      'Cleanup Started': detail.cleanupExecutionContext?.startTime
+      "Error Message": detail.errorMessage || "Cleanup automation failed",
+      "Cleanup Started": detail.cleanupExecutionContext?.startTime
         ? formatTimestamp(detail.cleanupExecutionContext.startTime)
-        : 'Unknown',
-      Severity: 'Critical',
+        : "Unknown",
+      Severity: "Critical",
       Guidance: template.escalationGuidance,
     },
     eventId: event.eventId,
     actionLinks,
-    template: 'N/A',
-    templateId: 'N/A',
-  };
+    template: "N/A",
+    templateId: "N/A",
+  }
 }
 
 /**
@@ -375,28 +358,26 @@ function formatCleanupFailedAlert(
  * // Event detail structure expected:
  * // { accountId: '123456789012', expectedOU: 'ou-sandbox', actualOU: 'ou-production' }
  */
-function formatDriftAlert(
-  event: ValidatedEvent<AccountDriftDetectedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.AccountDriftDetected;
-  const detail = event.detail;
+function formatDriftAlert(event: ValidatedEvent<AccountDriftDetectedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.AccountDriftDetected
+  const detail = event.detail
 
   return {
-    alertType: 'AccountDriftDetected',
+    alertType: "AccountDriftDetected",
     accountId: detail.accountId,
     priority: template.priority,
     details: {
-      'Expected OU': detail.expectedOU,
-      'Actual OU': detail.actualOU,
-      Status: 'Drift Detected',
-      Severity: 'Critical',
+      "Expected OU": detail.expectedOU,
+      "Actual OU": detail.actualOU,
+      Status: "Drift Detected",
+      Severity: "Critical",
       Guidance: template.escalationGuidance,
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
-    template: 'N/A',
-    templateId: 'N/A',
-  };
+    template: "N/A",
+    templateId: "N/A",
+  }
 }
 
 // =============================================================================
@@ -407,20 +388,20 @@ function formatDriftAlert(
  * Extract lease ID string from leaseId field (handles string or object format)
  */
 function extractLeaseId(leaseId: string | { userEmail?: string; uuid?: string } | undefined): string {
-  if (!leaseId) return 'Unknown';
-  if (typeof leaseId === 'string') return leaseId;
-  return leaseId.uuid || 'Unknown';
+  if (!leaseId) return "Unknown"
+  if (typeof leaseId === "string") return leaseId
+  return leaseId.uuid || "Unknown"
 }
 
 /**
  * Extract user email from leaseId field (handles string or object format)
  */
 function extractUserEmail(leaseId: string | { userEmail?: string; uuid?: string } | undefined): string | undefined {
-  if (!leaseId) return undefined;
-  if (typeof leaseId === 'object' && leaseId.userEmail) {
-    return leaseId.userEmail;
+  if (!leaseId) return undefined
+  if (typeof leaseId === "object" && leaseId.userEmail) {
+    return leaseId.userEmail
   }
-  return undefined;
+  return undefined
 }
 
 /**
@@ -438,35 +419,33 @@ function extractUserEmail(leaseId: string | { userEmail?: string; uuid?: string 
  * //   accountId: 'Pending', budget: 500, duration: 720,
  * //   leaseTemplateName: 'Standard Sandbox', leaseTemplateId: 'template-uuid' }
  */
-function formatLeaseRequestedAlert(
-  event: ValidatedEvent<LeaseRequestedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.LeaseRequested;
-  const detail = event.detail;
-  const budget = detail.budget || detail.budgetLimit;
-  const duration = detail.duration || detail.leaseDurationInHours;
-  const requestedAt = detail.requestedAt || detail.requestTime;
-  const userEmail = extractUserEmail(detail.leaseId);
-  const templateName = detail.leaseTemplateName || detail.templateName;
-  const templateId = detail.leaseTemplateId || detail.templateId;
+function formatLeaseRequestedAlert(event: ValidatedEvent<LeaseRequestedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.LeaseRequested
+  const detail = event.detail
+  const budget = detail.budget || detail.budgetLimit
+  const duration = detail.duration || detail.leaseDurationInHours
+  const requestedAt = detail.requestedAt || detail.requestTime
+  const userEmail = extractUserEmail(detail.leaseId)
+  const templateName = detail.leaseTemplateName || detail.templateName
+  const templateId = detail.leaseTemplateId || detail.templateId
 
   return {
-    alertType: 'LeaseRequested',
-    accountId: detail.accountId || 'Pending',
+    alertType: "LeaseRequested",
+    accountId: detail.accountId || "Pending",
     priority: template.priority,
     details: {
-      User: userEmail || detail.principalEmail || 'Unknown',
-      Template: templateName || 'Standard Sandbox',
-      'Lease ID': extractLeaseId(detail.leaseId),
-      'Requested At': requestedAt ? formatTimestamp(requestedAt) : 'Unknown',
-      Budget: budget ? `$${budget}` : 'Not specified',
-      Duration: duration ? `${duration} hours` : 'Not specified',
+      User: userEmail || detail.principalEmail || "Unknown",
+      Template: templateName || "Standard Sandbox",
+      "Lease ID": extractLeaseId(detail.leaseId),
+      "Requested At": requestedAt ? formatTimestamp(requestedAt) : "Unknown",
+      Budget: budget ? `$${budget}` : "Not specified",
+      Duration: duration ? `${duration} hours` : "Not specified",
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
     template: templateName,
     templateId: templateId,
-  };
+  }
 }
 
 /**
@@ -478,34 +457,32 @@ function formatLeaseRequestedAlert(
  * @param event - Validated EventBridge event containing lease approval details
  * @returns SlackSendParams configured for lease approved alert
  */
-function formatLeaseApprovedAlert(
-  event: ValidatedEvent<LeaseApprovedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.LeaseApproved;
-  const detail = event.detail;
-  const budget = detail.budget || detail.maxSpend;
-  const expires = detail.expiresAt || detail.expirationDate;
-  const userEmail = extractUserEmail(detail.leaseId);
-  const templateName = detail.leaseTemplateName || detail.templateName;
-  const templateId = detail.leaseTemplateId || detail.templateId;
+function formatLeaseApprovedAlert(event: ValidatedEvent<LeaseApprovedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.LeaseApproved
+  const detail = event.detail
+  const budget = detail.budget || detail.maxSpend
+  const expires = detail.expiresAt || detail.expirationDate
+  const userEmail = extractUserEmail(detail.leaseId)
+  const templateName = detail.leaseTemplateName || detail.templateName
+  const templateId = detail.leaseTemplateId || detail.templateId
 
   return {
-    alertType: 'LeaseApproved',
-    accountId: detail.accountId || 'Unknown',
+    alertType: "LeaseApproved",
+    accountId: detail.accountId || "Unknown",
     priority: template.priority,
     details: {
-      User: userEmail || detail.principalEmail || 'Unknown',
-      Template: templateName || 'Standard Sandbox',
-      'Lease ID': extractLeaseId(detail.leaseId),
-      'Approved At': detail.approvedAt ? formatTimestamp(detail.approvedAt) : 'Unknown',
-      Budget: budget ? `$${budget}` : 'Not specified',
-      Expires: expires ? formatTimestamp(expires) : 'Not specified',
+      User: userEmail || detail.principalEmail || "Unknown",
+      Template: templateName || "Standard Sandbox",
+      "Lease ID": extractLeaseId(detail.leaseId),
+      "Approved At": detail.approvedAt ? formatTimestamp(detail.approvedAt) : "Unknown",
+      Budget: budget ? `$${budget}` : "Not specified",
+      Expires: expires ? formatTimestamp(expires) : "Not specified",
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
     template: templateName,
     templateId: templateId,
-  };
+  }
 }
 
 /**
@@ -517,30 +494,28 @@ function formatLeaseApprovedAlert(
  * @param event - Validated EventBridge event containing lease denial details
  * @returns SlackSendParams configured for lease denied alert
  */
-function formatLeaseDeniedAlert(
-  event: ValidatedEvent<LeaseDeniedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.LeaseDenied;
-  const detail = event.detail;
-  const userEmail = extractUserEmail(detail.leaseId);
-  const templateName = detail.leaseTemplateName || detail.templateName;
-  const templateId = detail.leaseTemplateId || detail.templateId;
+function formatLeaseDeniedAlert(event: ValidatedEvent<LeaseDeniedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.LeaseDenied
+  const detail = event.detail
+  const userEmail = extractUserEmail(detail.leaseId)
+  const templateName = detail.leaseTemplateName || detail.templateName
+  const templateId = detail.leaseTemplateId || detail.templateId
 
   return {
-    alertType: 'LeaseDenied',
-    accountId: 'N/A',
+    alertType: "LeaseDenied",
+    accountId: "N/A",
     priority: template.priority,
     details: {
-      User: userEmail || detail.principalEmail || 'Unknown',
-      'Lease ID': extractLeaseId(detail.leaseId),
-      'Denied At': detail.deniedAt ? formatTimestamp(detail.deniedAt) : 'Unknown',
-      Reason: detail.reason || 'Not provided',
+      User: userEmail || detail.principalEmail || "Unknown",
+      "Lease ID": extractLeaseId(detail.leaseId),
+      "Denied At": detail.deniedAt ? formatTimestamp(detail.deniedAt) : "Unknown",
+      Reason: detail.reason || "Not provided",
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
     template: templateName,
     templateId: templateId,
-  };
+  }
 }
 
 /**
@@ -552,31 +527,29 @@ function formatLeaseDeniedAlert(
  * @param event - Validated EventBridge event containing lease termination details
  * @returns SlackSendParams configured for lease terminated alert
  */
-function formatLeaseTerminatedAlert(
-  event: ValidatedEvent<LeaseTerminatedDetail>
-): SlackSendParams {
-  const template = SLACK_TEMPLATES.LeaseTerminated;
-  const detail = event.detail;
-  const reason = typeof detail.reason === 'object' ? detail.reason.type : (detail.reason || 'User or admin initiated');
-  const userEmail = extractUserEmail(detail.leaseId);
-  const templateName = detail.leaseTemplateName || detail.templateName;
-  const templateId = detail.leaseTemplateId || detail.templateId;
+function formatLeaseTerminatedAlert(event: ValidatedEvent<LeaseTerminatedDetail>): SlackSendParams {
+  const template = SLACK_TEMPLATES.LeaseTerminated
+  const detail = event.detail
+  const reason = typeof detail.reason === "object" ? detail.reason.type : detail.reason || "User or admin initiated"
+  const userEmail = extractUserEmail(detail.leaseId)
+  const templateName = detail.leaseTemplateName || detail.templateName
+  const templateId = detail.leaseTemplateId || detail.templateId
 
   return {
-    alertType: 'LeaseTerminated',
-    accountId: detail.accountId || 'Unknown',
+    alertType: "LeaseTerminated",
+    accountId: detail.accountId || "Unknown",
     priority: template.priority,
     details: {
-      User: userEmail || detail.principalEmail || 'Unknown',
-      'Lease ID': extractLeaseId(detail.leaseId),
-      'Terminated At': detail.terminatedAt ? formatTimestamp(detail.terminatedAt) : 'Unknown',
+      User: userEmail || detail.principalEmail || "Unknown",
+      "Lease ID": extractLeaseId(detail.leaseId),
+      "Terminated At": detail.terminatedAt ? formatTimestamp(detail.terminatedAt) : "Unknown",
       Reason: reason,
     },
     eventId: event.eventId,
     actionLinks: template.actionLinks,
     template: templateName,
     templateId: templateId,
-  };
+  }
 }
 
 // =============================================================================
@@ -588,10 +561,13 @@ function formatLeaseTerminatedAlert(
  */
 function formatTimestamp(isoString: string): string {
   try {
-    const date = new Date(isoString);
-    return date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
+    const date = new Date(isoString)
+    return date
+      .toISOString()
+      .replace("T", " ")
+      .replace(/\.\d{3}Z$/, " UTC")
   } catch {
-    return isoString;
+    return isoString
   }
 }
 
@@ -600,14 +576,14 @@ function formatTimestamp(isoString: string): string {
  */
 function buildStepFunctionsLink(executionArn: string): string | undefined {
   // ARN format: arn:aws:states:region:account:execution:state-machine:execution-id
-  const arnParts = executionArn.split(':');
-  if (arnParts.length < 7) return undefined;
+  const arnParts = executionArn.split(":")
+  if (arnParts.length < 7) return undefined
 
-  const region = arnParts[3];
+  const region = arnParts[3]
   // URL encode the full ARN for the console link
-  const encodedArn = encodeURIComponent(executionArn);
+  const encodedArn = encodeURIComponent(executionArn)
 
-  return `https://${region}.console.aws.amazon.com/states/home?region=${region}#/v2/executions/details/${encodedArn}`;
+  return `https://${region}.console.aws.amazon.com/states/home?region=${region}#/v2/executions/details/${encodedArn}`
 }
 
 // =============================================================================
@@ -621,99 +597,83 @@ function buildStepFunctionsLink(executionArn: string): string | undefined {
  * @returns Promise that resolves when alert is sent
  * @throws RetriableError, PermanentError, CriticalError
  */
-export async function processSlackAlert(
-  event: ValidatedEvent<SlackAlertDetail>
-): Promise<void> {
-  const startTime = Date.now();
-  const alertType = event.eventType;
+export async function processSlackAlert(event: ValidatedEvent<SlackAlertDetail>): Promise<void> {
+  const startTime = Date.now()
+  const alertType = event.eventType
 
   // Validate alert type has a template
   if (!isSlackAlertType(alertType)) {
-    throw new PermanentError(`Unknown Slack alert type: ${alertType}`);
+    throw new PermanentError(`Unknown Slack alert type: ${alertType}`)
   }
 
-  logger.info('Processing Slack alert', {
+  logger.info("Processing Slack alert", {
     eventId: event.eventId,
     alertType,
-    accountId: (event.detail as { accountId?: string }).accountId || 'Unknown',
-  });
+    accountId: (event.detail as { accountId?: string }).accountId || "Unknown",
+  })
 
   // Get the appropriate formatter based on alert type
-  let params: SlackSendParams;
+  let params: SlackSendParams
 
   switch (alertType) {
-    case 'AccountQuarantined':
-      params = formatQuarantineAlert(
-        event as ValidatedEvent<AccountQuarantinedDetail>
-      );
-      break;
-    case 'LeaseFrozen':
-      params = formatFrozenAlert(event as ValidatedEvent<LeaseFrozenDetail>);
-      break;
-    case 'AccountCleanupFailed':
-      params = formatCleanupFailedAlert(
-        event as ValidatedEvent<AccountCleanupFailedDetail>
-      );
-      break;
-    case 'AccountDriftDetected':
-      params = formatDriftAlert(
-        event as ValidatedEvent<AccountDriftDetectedDetail>
-      );
-      break;
-    case 'LeaseRequested':
-      params = formatLeaseRequestedAlert(
-        event as ValidatedEvent<LeaseRequestedDetail>
-      );
-      break;
-    case 'LeaseApproved':
-      params = formatLeaseApprovedAlert(
-        event as ValidatedEvent<LeaseApprovedDetail>
-      );
-      break;
-    case 'LeaseDenied':
-      params = formatLeaseDeniedAlert(
-        event as ValidatedEvent<LeaseDeniedDetail>
-      );
-      break;
-    case 'LeaseTerminated':
-      params = formatLeaseTerminatedAlert(
-        event as ValidatedEvent<LeaseTerminatedDetail>
-      );
-      break;
+    case "AccountQuarantined":
+      params = formatQuarantineAlert(event as ValidatedEvent<AccountQuarantinedDetail>)
+      break
+    case "LeaseFrozen":
+      params = formatFrozenAlert(event as ValidatedEvent<LeaseFrozenDetail>)
+      break
+    case "AccountCleanupFailed":
+      params = formatCleanupFailedAlert(event as ValidatedEvent<AccountCleanupFailedDetail>)
+      break
+    case "AccountDriftDetected":
+      params = formatDriftAlert(event as ValidatedEvent<AccountDriftDetectedDetail>)
+      break
+    case "LeaseRequested":
+      params = formatLeaseRequestedAlert(event as ValidatedEvent<LeaseRequestedDetail>)
+      break
+    case "LeaseApproved":
+      params = formatLeaseApprovedAlert(event as ValidatedEvent<LeaseApprovedDetail>)
+      break
+    case "LeaseDenied":
+      params = formatLeaseDeniedAlert(event as ValidatedEvent<LeaseDeniedDetail>)
+      break
+    case "LeaseTerminated":
+      params = formatLeaseTerminatedAlert(event as ValidatedEvent<LeaseTerminatedDetail>)
+      break
     default:
-      throw new PermanentError(`Unhandled Slack alert type: ${alertType}`);
+      throw new PermanentError(`Unhandled Slack alert type: ${alertType}`)
   }
 
   // Send via SlackSender
-  const sender = await SlackSender.getInstance();
-  await sender.send(params);
+  const sender = await SlackSender.getInstance()
+  await sender.send(params)
 
   // Log success with latency (AC-3.7)
-  const latencyMs = Date.now() - startTime;
-  logger.info('Slack alert sent successfully', {
+  const latencyMs = Date.now() - startTime
+  logger.info("Slack alert sent successfully", {
     eventId: event.eventId,
     alertType,
     latencyMs,
-  });
+  })
 
   // Emit metrics
-  metrics.addMetric('SlackAlertSent', MetricUnit.Count, 1);
-  metrics.addDimension('alertType', alertType);
-  metrics.addMetric('SlackAlertLatency', MetricUnit.Milliseconds, latencyMs);
+  metrics.addMetric("SlackAlertSent", MetricUnit.Count, 1)
+  metrics.addDimension("alertType", alertType)
+  metrics.addMetric("SlackAlertLatency", MetricUnit.Milliseconds, latencyMs)
 
   // Verify latency requirement (AC-3.7: < 2 seconds)
   if (latencyMs > 2000) {
-    logger.warn('Slack alert latency exceeded 2 second threshold', {
+    logger.warn("Slack alert latency exceeded 2 second threshold", {
       eventId: event.eventId,
       alertType,
       latencyMs,
       threshold: 2000,
-    });
-    metrics.addMetric('SlackAlertLatencyExceeded', MetricUnit.Count, 1);
+    })
+    metrics.addMetric("SlackAlertLatencyExceeded", MetricUnit.Count, 1)
   }
 }
 
 /**
  * Check if an event type should be processed as a Slack alert
  */
-export { isSlackAlertType, getSlackTemplate, getSlackAlertTypes } from './slack-templates';
+export { isSlackAlertType, getSlackTemplate, getSlackAlertTypes } from "./slack-templates"

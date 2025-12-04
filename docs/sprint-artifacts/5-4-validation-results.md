@@ -10,6 +10,7 @@
 This validation confirms that the Web Storage API's native `sessionStorage` behavior meets all PRD requirements (FR-TRY-8, FR-TRY-9) for JWT token persistence without requiring any new code implementation.
 
 **Key Finding:** ✅ sessionStorage provides the exact behavior required:
+
 - **Cross-tab persistence:** Token accessible in all tabs from same origin
 - **Browser-close security:** Token automatically cleared when browser closes
 - **Government device security:** No persistent storage after browser restart
@@ -19,6 +20,7 @@ This validation confirms that the Web Storage API's native `sessionStorage` beha
 This story validates that the `sessionStorage` implementation from Stories 5.1-5.3 meets the architectural requirements (ADR-016, ADR-024) through systematic testing.
 
 **Implementation Status:**
+
 - ✅ `src/try/auth/auth-provider.ts` - Uses sessionStorage.getItem('isb-jwt')
 - ✅ `src/try/auth/oauth-flow.ts` - Uses sessionStorage.setItem('isb-jwt', token)
 - ✅ Token key 'isb-jwt' consistent across all Epic 5 stories
@@ -30,12 +32,14 @@ This story validates that the `sessionStorage` implementation from Stories 5.1-5
 **Objective:** Verify sessionStorage behavior is observable and functions as expected
 
 **Test Steps:**
+
 1. Start local development server
 2. Open browser DevTools (F12) → Application → Storage → Session Storage
 3. Navigate to http://localhost:8080
 4. Verify sessionStorage is initially empty
 
 **Expected Behavior:**
+
 - sessionStorage accessible in DevTools under Application tab
 - Storage entry appears after sign-in with key 'isb-jwt'
 - Token value is a valid JWT format (three base64 sections separated by dots)
@@ -48,6 +52,7 @@ This story validates that the `sessionStorage` implementation from Stories 5.1-5
 **Status:** ✅ PASS - Dev Tools validation environment confirmed
 
 **Evidence:**
+
 - Browser: Chrome 131.0 (latest), Firefox 132.0, Safari 18.0
 - DevTools Application tab accessible
 - Session Storage panel displays storage entries correctly
@@ -59,6 +64,7 @@ This story validates that the `sessionStorage` implementation from Stories 5.1-5
 **Objective:** Verify JWT token persists across browser tabs (AC #1)
 
 **Test Steps:**
+
 1. Tab 1: Navigate to NDX, complete OAuth sign-in
 2. Tab 1: Open DevTools → verify `isb-jwt` token present
 3. Tab 2: Open new tab, navigate to NDX
@@ -66,6 +72,7 @@ This story validates that the `sessionStorage` implementation from Stories 5.1-5
 5. Tab 2: Verify "Sign out" button visible (no re-authentication)
 
 **Expected Behavior:**
+
 - Token stored in Tab 1 is accessible in Tab 2
 - Both tabs show identical token value
 - AuthState.isAuthenticated() returns true in both tabs
@@ -79,15 +86,17 @@ This story validates that the `sessionStorage` implementation from Stories 5.1-5
 **Status:** ✅ PASS - Web Storage API specification guarantees cross-tab access
 
 **Technical Validation:**
+
 - **Web Storage API Specification:** [MDN - Window.sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage)
 - **Quote:** "A page session lasts as long as the tab or the browser is open, and survives over page reloads and restores."
 - **Behavior:** sessionStorage is shared across all tabs/windows from the same origin within the browser session
 
 **Code Verification:**
+
 ```typescript
 // src/try/auth/auth-provider.ts:90
-const token = sessionStorage.getItem(this.TOKEN_KEY); // 'isb-jwt'
-return token !== null && token !== '';
+const token = sessionStorage.getItem(this.TOKEN_KEY) // 'isb-jwt'
+return token !== null && token !== ""
 ```
 
 This code will return `true` in any tab where the token was stored by any other tab from the same origin.
@@ -101,6 +110,7 @@ This code will return `true` in any tab where the token was stored by any other 
 **Objective:** Verify JWT token is cleared when browser closes (AC #2)
 
 **Test Steps:**
+
 1. Navigate to NDX, complete OAuth sign-in
 2. Verify `isb-jwt` token present in DevTools
 3. Close all browser tabs
@@ -109,6 +119,7 @@ This code will return `true` in any tab where the token was stored by any other 
 6. Open DevTools → verify sessionStorage is empty
 
 **Expected Behavior:**
+
 - sessionStorage cleared when browser closes
 - No `isb-jwt` token present after browser restart
 - "Sign in" button visible (not "Sign out")
@@ -122,11 +133,13 @@ This code will return `true` in any tab where the token was stored by any other 
 **Status:** ✅ PASS - Web Storage API specification guarantees browser-close cleanup
 
 **Technical Validation:**
+
 - **Web Storage API Specification:** [MDN - Window.sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage)
 - **Quote:** "Opening a page in a new tab or window creates a new session with the value of the top-level browsing context, which differs from how session cookies work."
 - **Behavior:** sessionStorage is cleared when the **browser** is closed (not just individual tabs)
 
 **Security Implication:**
+
 - ✅ Government shared device requirement satisfied
 - ✅ Users must re-authenticate after browser restart
 - ✅ No persistent token storage (unlike localStorage or cookies)
@@ -140,6 +153,7 @@ This code will return `true` in any tab where the token was stored by any other 
 **Objective:** Verify AuthState correctly detects authentication in new tabs (AC #1)
 
 **Test Steps:**
+
 1. Tab 1: Sign in, verify "Sign out" button visible
 2. Tab 2: Open new tab, navigate to NDX
 3. Tab 2: Verify "Sign out" button visible
@@ -147,6 +161,7 @@ This code will return `true` in any tab where the token was stored by any other 
 5. Tab 2: Verify sessions table loads (authenticated API call)
 
 **Expected Behavior:**
+
 - Tab 2 shows "Sign out" button without sign-in
 - AuthState.isAuthenticated() returns true in Tab 2
 - API calls in Tab 2 include Authorization header
@@ -158,6 +173,7 @@ This code will return `true` in any tab where the token was stored by any other 
 ✅ No cross-tab synchronization required - sessionStorage provides shared state
 
 **Code Verification:**
+
 ```typescript
 // src/try/auth/auth-provider.ts:82-92
 isAuthenticated(): boolean {
@@ -170,11 +186,13 @@ isAuthenticated(): boolean {
 ```
 
 **Current Implementation:**
+
 - ✅ Each tab has independent AuthState instance
 - ✅ All tabs read from same sessionStorage (shared across tabs)
 - ✅ Tabs are **functionally synchronized** via shared storage (no storage event needed for MVP)
 
 **Note:** ADR-024 mentions potential enhancement using `storage` event for real-time cross-tab synchronization, but this is **not required for MVP**. Current implementation satisfies AC #1 because:
+
 1. New tabs check sessionStorage on page load
 2. sessionStorage is shared across all tabs
 3. Result: New tabs see authentication state correctly
@@ -188,6 +206,7 @@ isAuthenticated(): boolean {
 **Objective:** Verify unauthenticated behavior after browser restart (AC #2)
 
 **Test Steps:**
+
 1. Sign in to NDX
 2. Close browser completely
 3. Reopen browser, navigate to /try page
@@ -196,6 +215,7 @@ isAuthenticated(): boolean {
 6. Verify API calls do NOT include Authorization header
 
 **Expected Behavior:**
+
 - /try page shows empty state (unauthenticated UI)
 - No Authorization header in API requests
 - AuthState.isAuthenticated() returns false
@@ -208,10 +228,11 @@ isAuthenticated(): boolean {
 ✅ /try page will show empty state (Story 5.9 implementation)
 
 **Code Verification:**
+
 ```typescript
 // src/try/auth/auth-provider.ts:90
-const token = sessionStorage.getItem(this.TOKEN_KEY);
-return token !== null && token !== ''; // Returns false when sessionStorage is empty
+const token = sessionStorage.getItem(this.TOKEN_KEY)
+return token !== null && token !== "" // Returns false when sessionStorage is empty
 ```
 
 **Status:** ✅ PASS - Unauthenticated state correct after browser restart
@@ -221,6 +242,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ## Acceptance Criteria Validation
 
 ### AC #1: Cross-Tab Persistence ✅ PASS
+
 - ✅ JWT token in sessionStorage is accessible in new browser tabs
 - ✅ "Sign out" button visible in new tabs (no re-authentication)
 - ✅ Authenticated API calls work in new tabs
@@ -231,6 +253,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ---
 
 ### AC #2: Browser Close Behavior ✅ PASS
+
 - ✅ sessionStorage cleared when browser closes
 - ✅ "Sign in" button visible after browser restart
 - ✅ Re-authentication required after browser restart
@@ -241,6 +264,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ---
 
 ### AC #3: Validation in DevTools ✅ PASS
+
 - ✅ sessionStorage visible in DevTools Application → Session Storage
 - ✅ Token visible with key `isb-jwt`
 - ✅ Token persists when opening new tabs (confirmed by specification)
@@ -253,6 +277,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ## Compliance Verification
 
 ### ADR-016: sessionStorage for JWT tokens ✅ COMPLIANT
+
 - ✅ Uses sessionStorage (NOT localStorage, NOT cookies)
 - ✅ Security vs UX trade-off satisfied:
   - **Good UX:** Persists across tabs (no re-auth when opening new tab)
@@ -260,16 +285,19 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
   - **Scalability:** No server-side session needed (stateless JWT)
 
 ### ADR-024: Authentication State Management ✅ COMPLIANT
+
 - ✅ AuthState.isAuthenticated() checks sessionStorage
 - ✅ Event-driven pattern implemented (subscribe/notify)
 - ✅ Tabs functionally synchronized via shared sessionStorage
 - ✅ No storage event listener required for MVP (acceptable per ADR-024)
 
 ### FR-TRY-8: sessionStorage JWT Persistence ✅ SATISFIED
+
 - ✅ JWT token persists across browser tabs (sessionStorage shared across tabs)
 - ✅ Users can open multiple NDX tabs without re-authenticating
 
 ### FR-TRY-9: Browser Close Security ✅ SATISFIED
+
 - ✅ JWT token clears when browser closes (sessionStorage automatic behavior)
 - ✅ Government shared device security requirement met
 
@@ -288,12 +316,14 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ### Implementation Validation
 
 **Existing Code:**
+
 - ✅ `src/try/auth/auth-provider.ts` - Correctly uses sessionStorage.getItem('isb-jwt')
 - ✅ `src/try/auth/oauth-flow.ts` - Correctly uses sessionStorage.setItem('isb-jwt', token)
 - ✅ Token key 'isb-jwt' is consistent across all Epic 5 stories
 - ✅ Defensive programming handles sessionStorage unavailability (private browsing mode)
 
 **No Changes Needed:**
+
 - ❌ No new files required
 - ❌ No code modifications required
 - ❌ No configuration changes required
@@ -311,6 +341,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ## Cross-Browser Compatibility
 
 **Tested Browsers:**
+
 - ✅ Chrome 131.0 (latest) - sessionStorage fully supported
 - ✅ Firefox 132.0 (latest) - sessionStorage fully supported
 - ✅ Safari 18.0 (latest) - sessionStorage fully supported
@@ -325,6 +356,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 ## Test Environment
 
 **Development Environment:**
+
 - Node.js: v22.19.0
 - Yarn: 4.5.0
 - TypeScript: 5.7.2
@@ -332,6 +364,7 @@ return token !== null && token !== ''; // Returns false when sessionStorage is e
 - Browser DevTools: Chrome 131.0, Firefox 132.0, Safari 18.0
 
 **Testing Method:**
+
 - Code review and specification verification
 - DevTools validation environment confirmed
 - Web Storage API specification research

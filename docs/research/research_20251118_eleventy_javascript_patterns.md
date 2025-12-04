@@ -31,19 +31,20 @@ The most basic approach uses passthrough copy to move pre-built JavaScript files
 
 ```javascript
 // .eleventy.js (ESM)
-export default function(eleventyConfig) {
-  eleventyConfig.addPassthroughCopy("bundle.js");
-  eleventyConfig.addPassthroughCopy("bundle.css");
-  eleventyConfig.addPassthroughCopy("font.woff2");
+export default function (eleventyConfig) {
+  eleventyConfig.addPassthroughCopy("bundle.js")
+  eleventyConfig.addPassthroughCopy("bundle.css")
+  eleventyConfig.addPassthroughCopy("font.woff2")
 }
 
 // .eleventy.js (CommonJS)
-module.exports = function(eleventyConfig) {
-  eleventyConfig.addPassthroughCopy("bundle.js");
-};
+module.exports = function (eleventyConfig) {
+  eleventyConfig.addPassthroughCopy("bundle.js")
+}
 ```
 
 Reference in HTML:
+
 ```html
 <script src="/bundle.js"></script>
 ```
@@ -71,10 +72,10 @@ Register `.js` or `.ts` as template types to enable processing:
 
 ```javascript
 // Enables Sass, PostCSS, esbuild, TypeScript, etc.
-eleventyConfig.addTemplateFormats("js");
+eleventyConfig.addTemplateFormats("js")
 eleventyConfig.addExtension("js", {
   // Custom processing logic
-});
+})
 ```
 
 **Best for**: Projects requiring transpilation, minification, or preprocessing
@@ -84,9 +85,9 @@ eleventyConfig.addExtension("js", {
 Use Eleventy's Bundle plugin for content-driven, per-page optimization:
 
 ```javascript
-export default function(eleventyConfig) {
-  eleventyConfig.addBundle("css");
-  eleventyConfig.addBundle("js");
+export default function (eleventyConfig) {
+  eleventyConfig.addBundle("css")
+  eleventyConfig.addBundle("js")
 }
 ```
 
@@ -97,27 +98,30 @@ export default function(eleventyConfig) {
 #### **Option A: No Bundler (Passthrough Copy)**
 
 **Pros**:
+
 - Zero dependencies
 - Instant builds
 - Simple mental model
 - Great for beginners
 
 **Cons**:
+
 - Manual optimization
 - No transpilation
 - Limited features
 
 **Implementation**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Copy entire directory
-  eleventyConfig.addPassthroughCopy("src/js");
+  eleventyConfig.addPassthroughCopy("src/js")
 
   // Copy with custom output path
-  eleventyConfig.addPassthroughCopy({ "src/assets/js": "js" });
+  eleventyConfig.addPassthroughCopy({ "src/assets/js": "js" })
 
   // Copy specific file types (slower - uses glob)
-  eleventyConfig.addPassthroughCopy("**/*.js");
+  eleventyConfig.addPassthroughCopy("**/*.js")
 }
 ```
 
@@ -128,6 +132,7 @@ export default function(eleventyConfig) {
 Eleventy's official Bundle plugin (v3.0.0+) provides lightweight bundling without external dependencies.
 
 **Key Features**:
+
 - Plain-text bundling (no transpilation)
 - Per-page or app-level bundles
 - Asset bucketing
@@ -135,23 +140,25 @@ Eleventy's official Bundle plugin (v3.0.0+) provides lightweight bundling withou
 - Automatic deduplication
 
 **Setup**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   eleventyConfig.addBundle("js", {
     transforms: [
-      async function(content) {
+      async function (content) {
         // Optional: Add minification
-        const { minify } = await import("terser");
-        const result = await minify(content);
-        return result.code;
-      }
+        const { minify } = await import("terser")
+        const result = await minify(content)
+        return result.code
+      },
     ],
     toFileDirectory: "bundle",
-  });
+  })
 }
 ```
 
 **Usage in Templates**:
+
 ```nunjucks
 {# Add JavaScript to bundle #}
 {% js %}
@@ -179,6 +186,7 @@ console.log("This will be bundled!");
 esbuild offers blazing fast bundling with minimal configuration.
 
 **Why esbuild is popular**:
+
 - Extremely fast builds (10-100x faster than alternatives)
 - Built-in TypeScript support
 - Tree shaking and minification
@@ -186,6 +194,7 @@ esbuild offers blazing fast bundling with minimal configuration.
 - JSX/TSX transformation
 
 **Installation**:
+
 ```bash
 npm install --save-dev esbuild
 ```
@@ -194,9 +203,9 @@ npm install --save-dev esbuild
 
 ```javascript
 // .eleventy.js
-import esbuild from "esbuild";
+import esbuild from "esbuild"
 
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Build before Eleventy starts
   eleventyConfig.on("eleventy.before", async () => {
     await esbuild.build({
@@ -206,11 +215,11 @@ export default function(eleventyConfig) {
       sourcemap: process.env.NODE_ENV !== "production",
       target: ["es2020"],
       outfile: "_site/js/bundle.js",
-    });
-  });
+    })
+  })
 
   // Watch JavaScript files
-  eleventyConfig.addWatchTarget("./src/js/");
+  eleventyConfig.addWatchTarget("./src/js/")
 }
 ```
 
@@ -218,16 +227,16 @@ export default function(eleventyConfig) {
 
 ```javascript
 // scripts.11ty.js
-import esbuild from "esbuild";
+import esbuild from "esbuild"
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === "production"
 
 export default class {
   data() {
     return {
       permalink: false,
       eleventyExcludeFromCollections: true,
-    };
+    }
   }
 
   async render() {
@@ -240,7 +249,7 @@ export default class {
       target: isProduction ? "es2020" : "esnext",
       splitting: true,
       format: "esm",
-    });
+    })
   }
 }
 ```
@@ -261,6 +270,7 @@ export default class {
 ```
 
 **TypeScript Support**:
+
 ```javascript
 await esbuild.build({
   entryPoints: ["src/ts/app.ts"],
@@ -268,10 +278,11 @@ await esbuild.build({
   outfile: "_site/js/bundle.js",
   target: ["es2020"],
   // esbuild handles TypeScript automatically
-});
+})
 ```
 
 **JSX Support**:
+
 ```javascript
 await esbuild.build({
   entryPoints: ["src/js/app.jsx"],
@@ -279,7 +290,7 @@ await esbuild.build({
   outfile: "_site/js/bundle.js",
   jsxFactory: "h",
   jsxFragment: "Fragment",
-});
+})
 ```
 
 **Best for**: Most projects requiring modern JavaScript features, TypeScript, or framework-free components
@@ -291,16 +302,18 @@ Vite provides the most modern development experience with HMR.
 **Official Plugin**: `@11ty/eleventy-plugin-vite`
 
 **Installation**:
+
 ```bash
 npm install @11ty/eleventy-plugin-vite
 ```
 
 **Setup**:
+
 ```javascript
 // .eleventy.js
-import EleventyVitePlugin from "@11ty/eleventy-plugin-vite";
+import EleventyVitePlugin from "@11ty/eleventy-plugin-vite"
 
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   eleventyConfig.addPlugin(EleventyVitePlugin, {
     viteOptions: {
       clearScreen: false,
@@ -315,7 +328,7 @@ export default function(eleventyConfig) {
         },
       },
     },
-  });
+  })
 }
 ```
 
@@ -334,14 +347,14 @@ Webpack offers maximum flexibility but adds complexity.
 
 ```javascript
 // .eleventy.js
-module.exports = function(eleventyConfig) {
-  eleventyConfig.addWatchTarget("./src/js/");
+module.exports = function (eleventyConfig) {
+  eleventyConfig.addWatchTarget("./src/js/")
 
   // Webpack writes to _site, Eleventy watches
   eleventyConfig.setServerOptions({
     watch: ["_site/js/**/*.js"],
-  });
-};
+  })
+}
 ```
 
 ```json
@@ -362,6 +375,7 @@ module.exports = function(eleventyConfig) {
 Rollup excels at library bundling and tree shaking.
 
 **Common Use Cases**:
+
 - Critical CSS generation with `rollup-plugin-critical`
 - ES module bundles
 - Library builds
@@ -377,29 +391,32 @@ Rollup excels at library bundling and tree shaking.
 For small utility scripts (e.g., theme switchers, critical polyfills):
 
 **Installation**:
+
 ```bash
 npm install terser
 ```
 
 **Setup**:
+
 ```javascript
 // .eleventy.js
-import { minify } from "terser";
+import { minify } from "terser"
 
-export default function(eleventyConfig) {
-  eleventyConfig.addFilter("jsmin", async function(code) {
+export default function (eleventyConfig) {
+  eleventyConfig.addFilter("jsmin", async function (code) {
     try {
-      const minified = await minify(code);
-      return minified.code;
+      const minified = await minify(code)
+      return minified.code
     } catch (err) {
-      console.error("Terser error:", err);
-      return code;
+      console.error("Terser error:", err)
+      return code
     }
-  });
+  })
 }
 ```
 
 **Usage**:
+
 ```nunjucks
 {% set js %}
 {% include "src/_includes/critical.js" %}
@@ -416,6 +433,7 @@ export default function(eleventyConfig) {
 WebC enables component-driven development with automatic JavaScript bundling:
 
 **Component with JavaScript**:
+
 ```html
 <!-- components/tabs.webc -->
 <div class="tabs">
@@ -423,28 +441,30 @@ WebC enables component-driven development with automatic JavaScript bundling:
 </div>
 
 <script>
-class Tabs extends HTMLElement {
-  connectedCallback() {
-    // Component logic
+  class Tabs extends HTMLElement {
+    connectedCallback() {
+      // Component logic
+    }
   }
-}
-customElements.define('my-tabs', Tabs);
+  customElements.define("my-tabs", Tabs)
 </script>
 
 <style>
-.tabs {
-  /* Component styles */
-}
+  .tabs {
+    /* Component styles */
+  }
 </style>
 ```
 
 WebC automatically:
+
 - Extracts `<script>` and `<style>` tags
 - Bundles per-page (only used components)
 - Deduplicates repeated components
 - Orders dependencies correctly
 
 **Hydration with is-land**:
+
 ```html
 <is-land on:visible>
   <template data-island>
@@ -453,7 +473,7 @@ WebC automatically:
     </style>
 
     <script type="module" webc:keep>
-      console.log("Component hydrated on scroll!");
+      console.log("Component hydrated on scroll!")
     </script>
 
     <my-component></my-component>
@@ -462,6 +482,7 @@ WebC automatically:
 ```
 
 **Loading Conditions**:
+
 - `on:visible` - Intersection Observer
 - `on:idle` - requestIdleCallback
 - `on:interaction` - User interaction
@@ -471,117 +492,123 @@ WebC automatically:
 ### Watch and Reload Configuration
 
 **Basic Watch Target**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Watch JavaScript directory
-  eleventyConfig.addWatchTarget("./src/js/");
+  eleventyConfig.addWatchTarget("./src/js/")
 
   // Watch with config reset
   eleventyConfig.addWatchTarget("./_config/**", {
     resetConfig: true,
-  });
+  })
 }
 ```
 
 **Ignore Patterns**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Ignore specific files
-  eleventyConfig.watchIgnores.add("README.md");
-  eleventyConfig.watchIgnores.add("**/.git/**");
+  eleventyConfig.watchIgnores.add("README.md")
+  eleventyConfig.watchIgnores.add("**/.git/**")
 
   // Remove ignore
-  eleventyConfig.watchIgnores.delete("README.md");
+  eleventyConfig.watchIgnores.delete("README.md")
 }
 ```
 
 **JavaScript Dependency Spider**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Automatically watches imported files in .11ty.js templates
   // Disable if causing issues:
-  eleventyConfig.setWatchJavaScriptDependencies(false);
+  eleventyConfig.setWatchJavaScriptDependencies(false)
 }
 ```
 
 **Throttle Watch Rebuilds**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Wait 100ms before rebuilding
-  eleventyConfig.setWatchThrottleWaitTime(100);
+  eleventyConfig.setWatchThrottleWaitTime(100)
 }
 ```
 
 **Chokidar Configuration**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Necessary for WSL outside home directory
   eleventyConfig.setChokidarConfig({
     usePolling: true,
     interval: 500,
-  });
+  })
 }
 ```
 
 ### Passthrough Copy Advanced Patterns
 
 **Copy Directory with Path Remapping**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Copy src/assets/js to _site/js
-  eleventyConfig.addPassthroughCopy({ "src/assets/js": "js" });
+  eleventyConfig.addPassthroughCopy({ "src/assets/js": "js" })
 
   // Multiple remappings
   eleventyConfig.addPassthroughCopy({
     "src/assets/images": "images",
     "src/assets/fonts": "fonts",
-  });
+  })
 }
 ```
 
 **Array-Based Organization**:
-```javascript
-export default function(eleventyConfig) {
-  const assets = [
-    "src/assets/images/",
-    "src/assets/fonts/",
-    "src/assets/js/",
-  ];
 
-  assets.forEach(path => {
-    eleventyConfig.addPassthroughCopy(path);
-  });
+```javascript
+export default function (eleventyConfig) {
+  const assets = ["src/assets/images/", "src/assets/fonts/", "src/assets/js/"]
+
+  assets.forEach((path) => {
+    eleventyConfig.addPassthroughCopy(path)
+  })
 }
 ```
 
 **HTML-Relative Mode (Eleventy 3.1.0+)**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Copy files referenced in HTML to locations relative to the output HTML
   eleventyConfig.addPassthroughCopy("content/**/*.mp4", {
-    mode: "html-relative"
-  });
+    mode: "html-relative",
+  })
 }
 ```
 
 **Full Options**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("**/*.png", {
     mode: "html-relative",
     paths: [], // fallback directories
     failOnError: true, // throw error if file not found
     copyOptions: { dot: false }, // recursive-copy options
-  });
+  })
 }
 ```
 
 **Server Passthrough Behavior**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // "passthrough" = emulate copy (faster, default in v2+)
   // "copy" = actually copy files
-  eleventyConfig.setServerPassthroughCopyBehavior("passthrough");
+  eleventyConfig.setServerPassthroughCopyBehavior("passthrough")
 }
 ```
 
@@ -627,8 +654,9 @@ project-root/
 ```
 
 **Configuration**:
+
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   return {
     dir: {
       input: "src",
@@ -636,7 +664,7 @@ export default function(eleventyConfig) {
       includes: "_includes",
       data: "_data",
     },
-  };
+  }
 }
 ```
 
@@ -671,6 +699,7 @@ project-root/
 ```
 
 **Key Principles**:
+
 1. **Separation of Concerns** - Keep source and output separate
 2. **Clear Entry Points** - Top-level JS files are entry points, subdirectories are modules
 3. **Avoid Processing Conflicts** - Keep passthrough assets outside template directories
@@ -693,7 +722,7 @@ Build sites that work completely without JavaScript:
 
 <!-- Enhance with JS -->
 <script type="module">
-  const nav = document.querySelector('nav');
+  const nav = document.querySelector("nav")
   // Add mobile menu toggle, keyboard navigation, etc.
 </script>
 ```
@@ -714,7 +743,7 @@ Build sites that work completely without JavaScript:
       // Add animations, analytics, etc.
     }
   }
-  customElements.define('expandable-section', ExpandableSection);
+  customElements.define("expandable-section", ExpandableSection)
 </script>
 ```
 
@@ -725,7 +754,7 @@ Build sites that work completely without JavaScript:
 <is-land on:interaction>
   <template data-island>
     <script type="module" webc:keep>
-      import { SearchWidget } from './search.js';
+      import { SearchWidget } from "./search.js"
       // Only loads when user interacts
     </script>
   </template>
@@ -743,23 +772,23 @@ From Chris Burnell's optimization article (2024):
 ```javascript
 // Memoize renderFile calls for huge performance gains
 const memoize = (fn) => {
-  const cache = new Map();
+  const cache = new Map()
   return (...args) => {
-    const key = JSON.stringify(args);
-    if (cache.has(key)) return cache.get(key);
-    const result = fn(...args);
-    cache.set(key, result);
-    return result;
-  };
-};
+    const key = JSON.stringify(args)
+    if (cache.has(key)) return cache.get(key)
+    const result = fn(...args)
+    cache.set(key, result)
+    return result
+  }
+}
 
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Cache CSS/JS renders
-  const renderFile = memoize(eleventyConfig.renderFile.bind(eleventyConfig));
+  const renderFile = memoize(eleventyConfig.renderFile.bind(eleventyConfig))
 
   eleventyConfig.addShortcode("inlineCss", async (file) => {
-    return await renderFile(`./src/assets/css/${file}`);
-  });
+    return await renderFile(`./src/assets/css/${file}`)
+  })
 }
 ```
 
@@ -769,24 +798,24 @@ export default function(eleventyConfig) {
 
 ```javascript
 // SLOW - searches entire directory tree
-eleventyConfig.addPassthroughCopy("**/*.js");
+eleventyConfig.addPassthroughCopy("**/*.js")
 
 // FAST - direct directory copy
-eleventyConfig.addPassthroughCopy("src/js");
+eleventyConfig.addPassthroughCopy("src/js")
 ```
 
 #### **Smart Watch Targets**
 
 ```javascript
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Only watch what's necessary
-  eleventyConfig.addWatchTarget("./src/js/");
+  eleventyConfig.addWatchTarget("./src/js/")
 
   // Don't watch node_modules (default, but be explicit)
-  eleventyConfig.watchIgnores.add("**/node_modules/**");
+  eleventyConfig.watchIgnores.add("**/node_modules/**")
 
   // Disable JS dependency spider if slow
-  eleventyConfig.setWatchJavaScriptDependencies(false);
+  eleventyConfig.setWatchJavaScriptDependencies(false)
 }
 ```
 
@@ -811,6 +840,7 @@ export default function(eleventyConfig) {
 ```
 
 **Key Tools**:
+
 - `npm-run-all` - Run scripts in parallel (`run-p`) or series (`run-s`)
 - `concurrently` - Alternative to npm-run-all
 
@@ -818,11 +848,11 @@ export default function(eleventyConfig) {
 
 ```javascript
 // .eleventy.js
-import esbuild from "esbuild";
-import * as sass from "sass";
-import fs from "fs/promises";
+import esbuild from "esbuild"
+import * as sass from "sass"
+import fs from "fs/promises"
 
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Before build starts
   eleventyConfig.on("eleventy.before", async () => {
     // Build JavaScript
@@ -830,17 +860,17 @@ export default function(eleventyConfig) {
       entryPoints: ["src/js/app.js"],
       bundle: true,
       outfile: "_site/js/bundle.js",
-    });
+    })
 
     // Compile Sass
-    const result = sass.compile("src/scss/main.scss");
-    await fs.writeFile("_site/css/main.css", result.css);
-  });
+    const result = sass.compile("src/scss/main.scss")
+    await fs.writeFile("_site/css/main.css", result.css)
+  })
 
   // After build completes
   eleventyConfig.on("eleventy.after", async () => {
     // Post-processing, analytics, etc.
-  });
+  })
 }
 ```
 
@@ -848,14 +878,14 @@ export default function(eleventyConfig) {
 
 ```javascript
 // .eleventy.js - Configure Eleventy to watch external build output
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   // Watch bundler output
-  eleventyConfig.addWatchTarget("_site/js/**/*.js");
-  eleventyConfig.addWatchTarget("_site/css/**/*.css");
+  eleventyConfig.addWatchTarget("_site/js/**/*.js")
+  eleventyConfig.addWatchTarget("_site/css/**/*.css")
 
   // Don't process as templates
-  eleventyConfig.addPassthroughCopy("_site/js");
-  eleventyConfig.addPassthroughCopy("_site/css");
+  eleventyConfig.addPassthroughCopy("_site/js")
+  eleventyConfig.addPassthroughCopy("_site/css")
 }
 ```
 
@@ -864,9 +894,10 @@ export default function(eleventyConfig) {
 #### **Client-Side TypeScript**
 
 **Using esbuild**:
+
 ```javascript
 // .eleventy.js
-export default function(eleventyConfig) {
+export default function (eleventyConfig) {
   eleventyConfig.on("eleventy.before", async () => {
     await esbuild.build({
       entryPoints: ["src/ts/app.ts"],
@@ -874,14 +905,15 @@ export default function(eleventyConfig) {
       outfile: "_site/js/app.js",
       target: ["es2020"],
       // esbuild handles TypeScript natively
-    });
-  });
+    })
+  })
 
-  eleventyConfig.addWatchTarget("./src/ts/");
+  eleventyConfig.addWatchTarget("./src/ts/")
 }
 ```
 
 **TypeScript Config** (tsconfig.json):
+
 ```json
 {
   "compilerOptions": {
@@ -903,21 +935,21 @@ Eleventy v3 supports TypeScript config files:
 
 ```typescript
 // eleventy.config.ts
-import type { UserConfig } from "@11ty/eleventy";
+import type { UserConfig } from "@11ty/eleventy"
 
-export default function(eleventyConfig: UserConfig) {
-  eleventyConfig.addPassthroughCopy("src/js");
+export default function (eleventyConfig: UserConfig) {
+  eleventyConfig.addPassthroughCopy("src/js")
 
   return {
     dir: {
       input: "src",
       output: "_site",
     },
-  };
+  }
 }
 ```
 
-**Note**: This is for the Eleventy *config* file. For client-side TypeScript, use a bundler.
+**Note**: This is for the Eleventy _config_ file. For client-side TypeScript, use a bundler.
 
 ---
 
@@ -1030,16 +1062,19 @@ export default function(eleventyConfig: UserConfig) {
 ### Bundler Preferences
 
 **esbuild advocates** emphasize:
+
 - Speed: "10-100x faster than alternatives"
 - Simplicity: "Works out of the box with TypeScript"
 - No configuration overhead
 
 **Webpack advocates** counter:
+
 - Ecosystem maturity
 - Plugin ecosystem
 - Fine-grained control
 
 **Vite advocates** highlight:
+
 - Best development experience
 - Hot Module Replacement
 - Framework support
@@ -1049,11 +1084,13 @@ export default function(eleventyConfig: UserConfig) {
 ### Passthrough vs. Processing
 
 **Passthrough camp**: "Keep it simple, copy pre-built files"
+
 - Zero dependencies
 - Predictable behavior
 - Fast builds
 
 **Processing camp**: "Process everything through Eleventy"
+
 - Unified build system
 - No race conditions
 - Single source of truth
@@ -1084,20 +1121,24 @@ export default function(eleventyConfig: UserConfig) {
 ### Search Strategy
 
 **Phase 1: Official Documentation** (Context7 + targeted WebFetch)
+
 - Eleventy official documentation for authoritative patterns
 - Bundle plugin, passthrough copy, asset handling
 
 **Phase 2: Community Patterns** (WebSearch)
+
 - "Eleventy JavaScript bundling 2024"
 - "esbuild Eleventy integration"
 - "WebC JavaScript hydration"
 
 **Phase 3: Real-World Examples** (WebSearch + WebFetch)
+
 - Starter templates on GitHub
 - Production site implementations
 - Performance optimization articles
 
 **Phase 4: Specific Tools** (targeted searches)
+
 - Vite, Webpack, Rollup integration
 - TypeScript patterns
 - Progressive enhancement examples
@@ -1120,6 +1161,7 @@ export default function(eleventyConfig: UserConfig) {
 ### Parallel Execution
 
 Executed multiple searches in parallel:
+
 - Context7 resolve + WebSearch queries simultaneously
 - Multiple WebFetch operations for different URLs
 - Balanced breadth (WebSearch) with depth (WebFetch)
@@ -1172,6 +1214,7 @@ Executed multiple searches in parallel:
 ### Directory Organization
 
 **Recommended structure**:
+
 ```
 src/
   _11ty/          # Eleventy utilities

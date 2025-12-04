@@ -77,7 +77,7 @@ fi
 # Check 7: AWS credentials valid
 echo ""
 echo "✓ Validating AWS credentials..."
-ACCOUNT_ID=$(aws sts get-caller-identity --profile "$PROFILE" --query 'Account' --output text 2>/dev/null)
+ACCOUNT_ID=$(aws sts get-caller-identity --profile "$PROFILE" --query 'Account' --output text 2> /dev/null)
 if [ $? -ne 0 ] || [ -z "$ACCOUNT_ID" ]; then
   echo "❌ AWS credentials invalid or expired"
   ERRORS=$((ERRORS + 1))
@@ -98,7 +98,7 @@ fi
 # Check 9: CloudFront distribution health
 echo ""
 echo "✓ Checking CloudFront distribution health..."
-DIST_STATUS=$(aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile "$PROFILE" --query 'Distribution.Status' --output text 2>/dev/null)
+DIST_STATUS=$(aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile "$PROFILE" --query 'Distribution.Status' --output text 2> /dev/null)
 if [ "$DIST_STATUS" != "Deployed" ]; then
   echo "❌ Distribution E3THG4UHYDHVWP not healthy (status: $DIST_STATUS)"
   ERRORS=$((ERRORS + 1))

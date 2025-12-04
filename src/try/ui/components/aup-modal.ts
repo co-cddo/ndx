@@ -32,18 +32,18 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-026|ADR-026: Accessible Modal Pattern}
  */
 
-import { createFocusTrap, type FocusTrap } from '../utils/focus-trap';
-import { announce } from '../utils/aria-live';
-import { fetchConfigurations, getFallbackAup } from '../../api/configurations-service';
-import { fetchLeaseTemplate, type LeaseTemplateResult } from '../../api/lease-templates-service';
+import { createFocusTrap, type FocusTrap } from "../utils/focus-trap"
+import { announce } from "../utils/aria-live"
+import { fetchConfigurations, getFallbackAup } from "../../api/configurations-service"
+import { fetchLeaseTemplate, type LeaseTemplateResult } from "../../api/lease-templates-service"
 
 /**
  * Lease template data for displaying session terms.
  * Story 9.2: Display Dynamic Lease Details in Modal
  */
 export interface LeaseTemplateData {
-  leaseDurationInHours: number;
-  maxSpend: number;
+  leaseDurationInHours: number
+  maxSpend: number
 }
 
 /**
@@ -51,60 +51,60 @@ export interface LeaseTemplateData {
  * Extended in Story 9.2 to include lease template loading state.
  */
 export interface AupModalState {
-  isOpen: boolean;
-  tryId: string | null;
-  aupAccepted: boolean;
-  isLoading: boolean;
-  error: string | null;
+  isOpen: boolean
+  tryId: string | null
+  aupAccepted: boolean
+  isLoading: boolean
+  error: string | null
   /** Story 9.2: Whether lease template is currently loading */
-  leaseTemplateLoading: boolean;
+  leaseTemplateLoading: boolean
   /** Story 9.2: Whether lease template has been loaded (success or failure) */
-  leaseTemplateLoaded: boolean;
+  leaseTemplateLoaded: boolean
   /** Story 9.2: Lease template data (null if not loaded or error) */
-  leaseTemplateData: LeaseTemplateData | null;
+  leaseTemplateData: LeaseTemplateData | null
   /** Story 9.2: Error message if lease template load failed */
-  leaseTemplateError: string | null;
+  leaseTemplateError: string | null
   /** Story 9.3: Whether AUP content has been loaded successfully (not fallback) */
-  aupLoaded: boolean;
+  aupLoaded: boolean
   /** Story 9.3: Computed - Whether all required data is fully loaded */
-  isFullyLoaded: boolean;
+  isFullyLoaded: boolean
 }
 
 /**
  * Callback when user accepts AUP and clicks Continue.
  */
-export type AupAcceptCallback = (tryId: string) => Promise<void>;
+export type AupAcceptCallback = (tryId: string) => Promise<void>
 
 /**
  * Modal element IDs for accessibility linking.
  */
 const IDS = {
-  MODAL: 'aup-modal',
-  TITLE: 'aup-modal-title',
-  DESCRIPTION: 'aup-modal-description',
-  AUP_CONTENT: 'aup-content',
-  CHECKBOX: 'aup-accept-checkbox',
-  CONTINUE_BTN: 'aup-continue-btn',
-  CANCEL_BTN: 'aup-cancel-btn',
-  ERROR: 'aup-error',
+  MODAL: "aup-modal",
+  TITLE: "aup-modal-title",
+  DESCRIPTION: "aup-modal-description",
+  AUP_CONTENT: "aup-content",
+  CHECKBOX: "aup-accept-checkbox",
+  CONTINUE_BTN: "aup-continue-btn",
+  CANCEL_BTN: "aup-cancel-btn",
+  ERROR: "aup-error",
   /** Story 9.2: Session terms container for loading skeleton */
-  SESSION_TERMS: 'aup-session-terms',
+  SESSION_TERMS: "aup-session-terms",
   /** Story 9.2: Duration display element */
-  DURATION: 'aup-duration',
+  DURATION: "aup-duration",
   /** Story 9.2: Budget display element */
-  BUDGET: 'aup-budget',
-} as const;
+  BUDGET: "aup-budget",
+} as const
 
 /**
  * CSS class for body scroll lock when modal is open.
  * Styles are defined in styles.scss to comply with CSP.
  */
-const BODY_MODAL_OPEN_CLASS = 'aup-modal-open';
+const BODY_MODAL_OPEN_CLASS = "aup-modal-open"
 
 /**
  * CSS class for hidden error element.
  */
-const ERROR_HIDDEN_CLASS = 'aup-modal__error--hidden';
+const ERROR_HIDDEN_CLASS = "aup-modal__error--hidden"
 
 /**
  * AUP Modal class for managing the modal lifecycle.
@@ -118,11 +118,11 @@ const ERROR_HIDDEN_CLASS = 'aup-modal__error--hidden';
  * Internal state without computed properties.
  * Story 9.3: isFullyLoaded is computed, not stored.
  */
-type AupModalInternalState = Omit<AupModalState, 'isFullyLoaded'>;
+type AupModalInternalState = Omit<AupModalState, "isFullyLoaded">
 
 class AupModal {
-  private overlay: HTMLElement | null = null;
-  private focusTrap: FocusTrap | null = null;
+  private overlay: HTMLElement | null = null
+  private focusTrap: FocusTrap | null = null
   private state: AupModalInternalState = {
     isOpen: false,
     tryId: null,
@@ -136,18 +136,18 @@ class AupModal {
     leaseTemplateError: null,
     // Story 9.3: AUP loaded state (not just fallback)
     aupLoaded: false,
-  };
-  private onAccept: AupAcceptCallback | null = null;
+  }
+  private onAccept: AupAcceptCallback | null = null
 
   // CRITICAL-2 FIX: Store bound event handlers for proper cleanup
   private boundHandlers: {
-    checkboxChange?: (e: Event) => void;
-    continueClick?: () => Promise<void>;
-    cancelClick?: () => void;
-  } = {};
+    checkboxChange?: (e: Event) => void
+    continueClick?: () => Promise<void>
+    cancelClick?: () => void
+  } = {}
 
   // AbortController for cancelling in-flight requests when modal closes
-  private abortController: AbortController | null = null;
+  private abortController: AbortController | null = null
 
   /**
    * Story 9.3: Computed property for all-or-nothing button gating.
@@ -155,7 +155,7 @@ class AupModal {
    * Note: leaseTemplateData !== null ensures we got actual data, not just completed loading.
    */
   get isFullyLoaded(): boolean {
-    return this.state.aupLoaded && this.state.leaseTemplateLoaded && this.state.leaseTemplateData !== null;
+    return this.state.aupLoaded && this.state.leaseTemplateLoaded && this.state.leaseTemplateData !== null
   }
 
   /**
@@ -166,43 +166,43 @@ class AupModal {
    */
   open(tryId: string, onAccept: AupAcceptCallback): void {
     if (this.state.isOpen) {
-      console.warn('[AupModal] Modal already open');
-      return;
+      console.warn("[AupModal] Modal already open")
+      return
     }
 
     // Create new AbortController for this modal session
     // Allows cancellation of in-flight requests when modal closes
-    this.abortController = new AbortController();
+    this.abortController = new AbortController()
 
-    this.state.tryId = tryId;
-    this.state.isOpen = true;
-    this.state.aupAccepted = false;
-    this.state.error = null;
+    this.state.tryId = tryId
+    this.state.isOpen = true
+    this.state.aupAccepted = false
+    this.state.error = null
     // Story 9.2: Reset lease template state
-    this.state.leaseTemplateLoading = true;
-    this.state.leaseTemplateLoaded = false;
-    this.state.leaseTemplateData = null;
-    this.state.leaseTemplateError = null;
+    this.state.leaseTemplateLoading = true
+    this.state.leaseTemplateLoaded = false
+    this.state.leaseTemplateData = null
+    this.state.leaseTemplateError = null
     // Story 9.3: Reset AUP loaded state
-    this.state.aupLoaded = false;
-    this.onAccept = onAccept;
+    this.state.aupLoaded = false
+    this.onAccept = onAccept
 
-    this.render();
-    this.setupFocusTrap();
+    this.render()
+    this.setupFocusTrap()
     // Story 9.3: Set initial button state to "Loading..."
-    this.updateButtons();
+    this.updateButtons()
 
     // Prevent body scroll via CSS class (CSP compliant)
-    document.body.classList.add(BODY_MODAL_OPEN_CLASS);
+    document.body.classList.add(BODY_MODAL_OPEN_CLASS)
 
-    announce('Request AWS Sandbox Access dialog opened');
+    announce("Request AWS Sandbox Access dialog opened")
 
     // Story 9.2: Announce loading session terms
-    announce('Loading session terms...');
+    announce("Loading session terms...")
 
     // Story 6.7 & 9.2: Fetch AUP content and lease template in parallel
-    this.loadAupContent();
-    this.loadLeaseTemplate(tryId);
+    this.loadAupContent()
+    this.loadLeaseTemplate(tryId)
   }
 
   /**
@@ -210,54 +210,54 @@ class AupModal {
    * Story 6.7: Fetch and display AUP from Innovation Sandbox API
    */
   private async loadAupContent(): Promise<void> {
-    const aupContent = document.getElementById(IDS.AUP_CONTENT);
-    if (!aupContent) return;
+    const aupContent = document.getElementById(IDS.AUP_CONTENT)
+    if (!aupContent) return
 
     // Show loading state
-    aupContent.textContent = 'Loading Acceptable Use Policy...';
-    announce('Loading Acceptable Use Policy');
+    aupContent.textContent = "Loading Acceptable Use Policy..."
+    announce("Loading Acceptable Use Policy")
 
     try {
-      const result = await fetchConfigurations();
+      const result = await fetchConfigurations()
 
       // Check if modal was closed while request was in flight
       if (this.abortController?.signal.aborted) {
-        console.debug('[AupModal] AUP request completed after modal closed, ignoring');
-        return;
+        console.debug("[AupModal] AUP request completed after modal closed, ignoring")
+        return
       }
 
       if (result.success && result.data?.aup) {
-        aupContent.textContent = result.data.aup;
+        aupContent.textContent = result.data.aup
         // Story 9.3: Mark AUP as successfully loaded (not fallback)
-        this.state.aupLoaded = true;
-        announce('Acceptable Use Policy loaded');
+        this.state.aupLoaded = true
+        announce("Acceptable Use Policy loaded")
       } else {
         // Show error but provide fallback AUP
-        console.warn('[AupModal] Failed to fetch AUP:', result.error);
-        aupContent.textContent = getFallbackAup();
+        console.warn("[AupModal] Failed to fetch AUP:", result.error)
+        aupContent.textContent = getFallbackAup()
         // Story 9.3: Fallback AUP means not fully loaded
-        this.state.aupLoaded = false;
+        this.state.aupLoaded = false
 
         if (result.error) {
-          this.showError(result.error + ' Using default policy.');
+          this.showError(result.error + " Using default policy.")
         }
       }
     } catch (error) {
       // Check if modal was closed while request was in flight
       if (this.abortController?.signal.aborted) {
-        console.debug('[AupModal] AUP request aborted');
-        return;
+        console.debug("[AupModal] AUP request aborted")
+        return
       }
 
-      console.error('[AupModal] Error loading AUP:', error);
-      aupContent.textContent = getFallbackAup();
+      console.error("[AupModal] Error loading AUP:", error)
+      aupContent.textContent = getFallbackAup()
       // Story 9.3: Fallback AUP means not fully loaded
-      this.state.aupLoaded = false;
-      this.showError('Unable to load policy. Using default policy.');
+      this.state.aupLoaded = false
+      this.showError("Unable to load policy. Using default policy.")
     }
 
     // Story 9.3: Update buttons after AUP load completes (race condition handling)
-    this.updateButtons();
+    this.updateButtons()
   }
 
   /**
@@ -268,84 +268,84 @@ class AupModal {
    */
   private async loadLeaseTemplate(tryId: string): Promise<void> {
     try {
-      const result: LeaseTemplateResult = await fetchLeaseTemplate(tryId);
+      const result: LeaseTemplateResult = await fetchLeaseTemplate(tryId)
 
       // Check if modal was closed while request was in flight
       if (this.abortController?.signal.aborted) {
-        console.debug('[AupModal] Lease template request completed after modal closed, ignoring');
-        return;
+        console.debug("[AupModal] Lease template request completed after modal closed, ignoring")
+        return
       }
 
-      this.state.leaseTemplateLoading = false;
-      this.state.leaseTemplateLoaded = true;
+      this.state.leaseTemplateLoading = false
+      this.state.leaseTemplateLoaded = true
 
       if (result.success && result.data) {
         this.state.leaseTemplateData = {
           leaseDurationInHours: result.data.leaseDurationInHours,
           maxSpend: result.data.maxSpend,
-        };
-        this.state.leaseTemplateError = null;
+        }
+        this.state.leaseTemplateError = null
 
         // Story 9.2: Announce loaded values
         announce(
-          `Session terms loaded: ${result.data.leaseDurationInHours} hour session with $${result.data.maxSpend} budget`
-        );
+          `Session terms loaded: ${result.data.leaseDurationInHours} hour session with $${result.data.maxSpend} budget`,
+        )
       } else {
-        this.state.leaseTemplateData = null;
-        this.state.leaseTemplateError = result.error || 'Failed to load session terms';
+        this.state.leaseTemplateData = null
+        this.state.leaseTemplateError = result.error || "Failed to load session terms"
 
         // Story 9.4: Enhanced error logging with tryId and errorCode
-        console.warn('[AupModal] Failed to fetch lease template:', {
+        console.warn("[AupModal] Failed to fetch lease template:", {
           tryId,
-          errorCode: result.errorCode || 'UNKNOWN',
+          errorCode: result.errorCode || "UNKNOWN",
           message: result.error,
-        });
+        })
 
         // Story 9.4: Display error message in modal based on error type
-        if (result.errorCode === 'NOT_FOUND') {
+        if (result.errorCode === "NOT_FOUND") {
           // AC-2: 404 displays specific message
-          this.showError('This sandbox is currently unavailable');
-          announce('This sandbox is currently unavailable', 'assertive');
+          this.showError("This sandbox is currently unavailable")
+          announce("This sandbox is currently unavailable", "assertive")
         } else {
           // AC-1: Generic API error message
-          this.showError('Unable to load session details');
-          announce('Unable to load session details', 'assertive');
+          this.showError("Unable to load session details")
+          announce("Unable to load session details", "assertive")
         }
       }
 
       // Update the display
-      this.updateSessionTermsDisplay();
-      this.updateCheckboxState();
+      this.updateSessionTermsDisplay()
+      this.updateCheckboxState()
       // Story 9.3: Update buttons after lease template load (race condition handling)
-      this.updateButtons();
+      this.updateButtons()
     } catch (error) {
       // Check if modal was closed while request was in flight
       if (this.abortController?.signal.aborted) {
-        console.debug('[AupModal] Lease template request aborted');
-        return;
+        console.debug("[AupModal] Lease template request aborted")
+        return
       }
 
       // Story 9.4: Enhanced error logging with tryId
-      console.warn('[AupModal] Failed to fetch lease template:', {
+      console.warn("[AupModal] Failed to fetch lease template:", {
         tryId,
-        errorCode: 'NETWORK_ERROR',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+        errorCode: "NETWORK_ERROR",
+        message: error instanceof Error ? error.message : "Unknown error",
+      })
 
-      this.state.leaseTemplateLoading = false;
-      this.state.leaseTemplateLoaded = true;
-      this.state.leaseTemplateData = null;
-      this.state.leaseTemplateError = 'Unable to load session terms';
+      this.state.leaseTemplateLoading = false
+      this.state.leaseTemplateLoaded = true
+      this.state.leaseTemplateData = null
+      this.state.leaseTemplateError = "Unable to load session terms"
 
       // Story 9.4: AC-1 - Generic API error message for network errors
-      this.showError('Unable to load session details');
-      announce('Unable to load session details', 'assertive');
+      this.showError("Unable to load session details")
+      announce("Unable to load session details", "assertive")
 
       // Update the display
-      this.updateSessionTermsDisplay();
-      this.updateCheckboxState();
+      this.updateSessionTermsDisplay()
+      this.updateCheckboxState()
       // Story 9.3: Update buttons after lease template load (race condition handling)
-      this.updateButtons();
+      this.updateButtons()
     }
   }
 
@@ -357,45 +357,45 @@ class AupModal {
    * Updates are synchronous for predictable test behavior.
    */
   private updateSessionTermsDisplay(): void {
-    const durationEl = document.getElementById(IDS.DURATION);
-    const budgetEl = document.getElementById(IDS.BUDGET);
-    const termsContainer = document.getElementById(IDS.SESSION_TERMS);
+    const durationEl = document.getElementById(IDS.DURATION)
+    const budgetEl = document.getElementById(IDS.BUDGET)
+    const termsContainer = document.getElementById(IDS.SESSION_TERMS)
 
-    if (!termsContainer) return;
+    if (!termsContainer) return
 
     // Remove skeleton if present
-    const skeleton = termsContainer.querySelector('.aup-modal__skeleton');
+    const skeleton = termsContainer.querySelector(".aup-modal__skeleton")
     if (skeleton) {
-      skeleton.remove();
+      skeleton.remove()
     }
 
     if (this.state.leaseTemplateData) {
       // Success: show actual values
       if (durationEl) {
-        durationEl.textContent = `${this.state.leaseTemplateData.leaseDurationInHours} hours`;
-        durationEl.classList.remove('aup-modal__value--error');
+        durationEl.textContent = `${this.state.leaseTemplateData.leaseDurationInHours} hours`
+        durationEl.classList.remove("aup-modal__value--error")
       }
       if (budgetEl) {
-        budgetEl.textContent = `$${this.state.leaseTemplateData.maxSpend} USD`;
-        budgetEl.classList.remove('aup-modal__value--error');
+        budgetEl.textContent = `$${this.state.leaseTemplateData.maxSpend} USD`
+        budgetEl.classList.remove("aup-modal__value--error")
       }
     } else {
       // Error: show Unknown with error styling
       if (durationEl) {
-        durationEl.textContent = 'Unknown';
-        durationEl.classList.add('aup-modal__value--error');
+        durationEl.textContent = "Unknown"
+        durationEl.classList.add("aup-modal__value--error")
       }
       if (budgetEl) {
-        budgetEl.textContent = 'Unknown';
-        budgetEl.classList.add('aup-modal__value--error');
+        budgetEl.textContent = "Unknown"
+        budgetEl.classList.add("aup-modal__value--error")
       }
     }
 
     // Show the values (they may have been hidden during loading)
-    const valueEls = termsContainer.querySelectorAll('.aup-modal__info-text');
-    valueEls.forEach(el => {
-      (el as HTMLElement).style.display = '';
-    });
+    const valueEls = termsContainer.querySelectorAll(".aup-modal__info-text")
+    valueEls.forEach((el) => {
+      ;(el as HTMLElement).style.display = ""
+    })
   }
 
   /**
@@ -403,15 +403,15 @@ class AupModal {
    * Story 9.2: Disable checkbox with tooltip during loading.
    */
   private updateCheckboxState(): void {
-    const checkbox = document.getElementById(IDS.CHECKBOX) as HTMLInputElement;
-    if (!checkbox) return;
+    const checkbox = document.getElementById(IDS.CHECKBOX) as HTMLInputElement
+    if (!checkbox) return
 
     if (this.state.leaseTemplateLoading) {
-      checkbox.disabled = true;
-      checkbox.title = 'Loading...';
+      checkbox.disabled = true
+      checkbox.title = "Loading..."
     } else {
-      checkbox.disabled = false;
-      checkbox.title = '';
+      checkbox.disabled = false
+      checkbox.title = ""
     }
   }
 
@@ -419,41 +419,41 @@ class AupModal {
    * Close the modal.
    */
   close(): void {
-    if (!this.state.isOpen) return;
+    if (!this.state.isOpen) return
 
     // Abort any in-flight requests to prevent memory leaks and stale updates
-    this.abortController?.abort();
-    this.abortController = null;
+    this.abortController?.abort()
+    this.abortController = null
 
-    this.state.isOpen = false;
-    this.state.tryId = null;
-    this.state.aupAccepted = false;
-    this.state.isLoading = false;
-    this.state.error = null;
+    this.state.isOpen = false
+    this.state.tryId = null
+    this.state.aupAccepted = false
+    this.state.isLoading = false
+    this.state.error = null
     // Story 9.2: Reset lease template state
-    this.state.leaseTemplateLoading = false;
-    this.state.leaseTemplateLoaded = false;
-    this.state.leaseTemplateData = null;
-    this.state.leaseTemplateError = null;
+    this.state.leaseTemplateLoading = false
+    this.state.leaseTemplateLoaded = false
+    this.state.leaseTemplateData = null
+    this.state.leaseTemplateError = null
     // Story 9.3: Reset AUP loaded state
-    this.state.aupLoaded = false;
-    this.onAccept = null;
+    this.state.aupLoaded = false
+    this.onAccept = null
 
     // Deactivate focus trap
-    this.focusTrap?.deactivate();
-    this.focusTrap = null;
+    this.focusTrap?.deactivate()
+    this.focusTrap = null
 
     // CRITICAL-2 FIX: Remove event listeners before DOM removal
-    this.detachEventListeners();
+    this.detachEventListeners()
 
     // Remove modal from DOM
-    this.overlay?.remove();
-    this.overlay = null;
+    this.overlay?.remove()
+    this.overlay = null
 
     // Restore body scroll via CSS class (CSP compliant)
-    document.body.classList.remove(BODY_MODAL_OPEN_CLASS);
+    document.body.classList.remove(BODY_MODAL_OPEN_CLASS)
 
-    announce('Dialog closed');
+    announce("Dialog closed")
   }
 
   /**
@@ -465,9 +465,9 @@ class AupModal {
    * @param content - AUP text content (HTML will be escaped)
    */
   setAupContent(content: string): void {
-    const aupContent = document.getElementById(IDS.AUP_CONTENT);
+    const aupContent = document.getElementById(IDS.AUP_CONTENT)
     if (aupContent) {
-      aupContent.textContent = content;
+      aupContent.textContent = content
     }
   }
 
@@ -478,9 +478,9 @@ class AupModal {
    *
    * @param message - Loading message to display
    */
-  showLoading(message = 'Loading...'): void {
-    this.state.isLoading = true;
-    const body = this.overlay?.querySelector('.aup-modal__body');
+  showLoading(message = "Loading..."): void {
+    this.state.isLoading = true
+    const body = this.overlay?.querySelector(".aup-modal__body")
     if (body) {
       // XSS-safe: Create DOM structure without user content interpolation
       body.innerHTML = `
@@ -488,15 +488,15 @@ class AupModal {
           <div class="aup-modal__spinner" aria-hidden="true"></div>
           <span id="aup-loading-message"></span>
         </div>
-      `;
+      `
       // XSS-safe: Use textContent for dynamic message to prevent script injection
-      const messageEl = body.querySelector('#aup-loading-message');
+      const messageEl = body.querySelector("#aup-loading-message")
       if (messageEl) {
-        messageEl.textContent = message;
+        messageEl.textContent = message
       }
     }
-    this.updateButtons();
-    announce(message);
+    this.updateButtons()
+    announce(message)
   }
 
   /**
@@ -505,25 +505,25 @@ class AupModal {
    * @param message - Error message to display
    */
   showError(message: string): void {
-    this.state.error = message;
-    this.state.isLoading = false;
-    const errorEl = document.getElementById(IDS.ERROR);
+    this.state.error = message
+    this.state.isLoading = false
+    const errorEl = document.getElementById(IDS.ERROR)
     if (errorEl) {
-      errorEl.textContent = message;
-      errorEl.classList.remove(ERROR_HIDDEN_CLASS);
+      errorEl.textContent = message
+      errorEl.classList.remove(ERROR_HIDDEN_CLASS)
     }
-    this.updateButtons();
-    announce(message, 'assertive');
+    this.updateButtons()
+    announce(message, "assertive")
   }
 
   /**
    * Hide error message.
    */
   hideError(): void {
-    this.state.error = null;
-    const errorEl = document.getElementById(IDS.ERROR);
+    this.state.error = null
+    const errorEl = document.getElementById(IDS.ERROR)
     if (errorEl) {
-      errorEl.classList.add(ERROR_HIDDEN_CLASS);
+      errorEl.classList.add(ERROR_HIDDEN_CLASS)
     }
   }
 
@@ -536,7 +536,7 @@ class AupModal {
       ...this.state,
       // Story 9.3: Include computed isFullyLoaded property
       isFullyLoaded: this.isFullyLoaded,
-    };
+    }
   }
 
   /**
@@ -549,9 +549,9 @@ class AupModal {
    * the innerHTML template string.
    */
   private render(): void {
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'aup-modal-overlay';
-    this.overlay.setAttribute('aria-hidden', 'false');
+    this.overlay = document.createElement("div")
+    this.overlay.className = "aup-modal-overlay"
+    this.overlay.setAttribute("aria-hidden", "false")
 
     this.overlay.innerHTML = `
       <div
@@ -627,10 +627,10 @@ class AupModal {
           </button>
         </div>
       </div>
-    `;
+    `
 
-    document.body.appendChild(this.overlay);
-    this.attachEventListeners();
+    document.body.appendChild(this.overlay)
+    this.attachEventListeners()
   }
 
   /**
@@ -638,49 +638,49 @@ class AupModal {
    * CRITICAL-2 FIX: Store handlers for later removal in detachEventListeners().
    */
   private attachEventListeners(): void {
-    const checkbox = document.getElementById(IDS.CHECKBOX) as HTMLInputElement;
-    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
-    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+    const checkbox = document.getElementById(IDS.CHECKBOX) as HTMLInputElement
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN)
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN)
 
     // Checkbox change - store handler for cleanup
     // Story 9.3: Button enable announcement moved to updateButtons() to handle race conditions
     this.boundHandlers.checkboxChange = () => {
-      this.state.aupAccepted = checkbox.checked;
-      this.updateButtons();
+      this.state.aupAccepted = checkbox.checked
+      this.updateButtons()
 
       // Announce checkbox state change (button state announced by updateButtons if it changes)
       if (checkbox.checked) {
-        announce('Acceptable Use Policy accepted');
+        announce("Acceptable Use Policy accepted")
       } else {
-        announce('Acceptable Use Policy not accepted');
+        announce("Acceptable Use Policy not accepted")
       }
-    };
-    checkbox?.addEventListener('change', this.boundHandlers.checkboxChange);
+    }
+    checkbox?.addEventListener("change", this.boundHandlers.checkboxChange)
 
     // Continue button click - store handler for cleanup
     this.boundHandlers.continueClick = async () => {
-      if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return;
+      if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return
 
-      this.state.isLoading = true;
-      this.updateButtons();
-      announce('Requesting your sandbox...');
+      this.state.isLoading = true
+      this.updateButtons()
+      announce("Requesting your sandbox...")
 
       try {
-        await this.onAccept?.(this.state.tryId);
+        await this.onAccept?.(this.state.tryId)
         // Success - callback handles navigation
       } catch {
-        this.state.isLoading = false;
-        this.updateButtons();
+        this.state.isLoading = false
+        this.updateButtons()
         // Error handling is done by the callback
       }
-    };
-    continueBtn?.addEventListener('click', this.boundHandlers.continueClick);
+    }
+    continueBtn?.addEventListener("click", this.boundHandlers.continueClick)
 
     // Cancel button click - store handler for cleanup
     this.boundHandlers.cancelClick = () => {
-      this.close();
-    };
-    cancelBtn?.addEventListener('click', this.boundHandlers.cancelClick);
+      this.close()
+    }
+    cancelBtn?.addEventListener("click", this.boundHandlers.cancelClick)
   }
 
   /**
@@ -688,22 +688,22 @@ class AupModal {
    * CRITICAL-2 FIX: Prevents memory leaks when modal is closed.
    */
   private detachEventListeners(): void {
-    const checkbox = document.getElementById(IDS.CHECKBOX);
-    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
-    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+    const checkbox = document.getElementById(IDS.CHECKBOX)
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN)
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN)
 
     if (this.boundHandlers.checkboxChange && checkbox) {
-      checkbox.removeEventListener('change', this.boundHandlers.checkboxChange);
+      checkbox.removeEventListener("change", this.boundHandlers.checkboxChange)
     }
     if (this.boundHandlers.continueClick && continueBtn) {
-      continueBtn.removeEventListener('click', this.boundHandlers.continueClick);
+      continueBtn.removeEventListener("click", this.boundHandlers.continueClick)
     }
     if (this.boundHandlers.cancelClick && cancelBtn) {
-      cancelBtn.removeEventListener('click', this.boundHandlers.cancelClick);
+      cancelBtn.removeEventListener("click", this.boundHandlers.cancelClick)
     }
 
     // Clear handler references
-    this.boundHandlers = {};
+    this.boundHandlers = {}
   }
 
   /**
@@ -712,35 +712,35 @@ class AupModal {
    * and announces when button becomes enabled.
    */
   private updateButtons(): void {
-    const continueBtn = document.getElementById(IDS.CONTINUE_BTN) as HTMLButtonElement;
-    const cancelBtn = document.getElementById(IDS.CANCEL_BTN) as HTMLButtonElement;
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN) as HTMLButtonElement
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN) as HTMLButtonElement
 
     if (continueBtn) {
-      const wasDisabled = continueBtn.disabled;
+      const wasDisabled = continueBtn.disabled
 
       // Story 9.3: All-or-nothing logic - must be fully loaded, accepted, and not submitting
-      const shouldDisable = !this.isFullyLoaded || !this.state.aupAccepted || this.state.isLoading;
-      continueBtn.disabled = shouldDisable;
-      continueBtn.setAttribute('aria-disabled', String(shouldDisable));
+      const shouldDisable = !this.isFullyLoaded || !this.state.aupAccepted || this.state.isLoading
+      continueBtn.disabled = shouldDisable
+      continueBtn.setAttribute("aria-disabled", String(shouldDisable))
 
       // Story 9.3: Button text reflects current state
       if (this.state.isLoading) {
-        continueBtn.textContent = 'Requesting...';
+        continueBtn.textContent = "Requesting..."
       } else if (!this.isFullyLoaded) {
-        continueBtn.textContent = 'Loading...';
+        continueBtn.textContent = "Loading..."
       } else {
-        continueBtn.textContent = 'Continue';
+        continueBtn.textContent = "Continue"
       }
 
       // Story 9.3: Announce when button becomes enabled (AC-8)
       if (wasDisabled && !shouldDisable) {
-        announce('Continue button is now enabled');
+        announce("Continue button is now enabled")
       }
     }
 
     if (cancelBtn) {
-      cancelBtn.disabled = this.state.isLoading;
-      cancelBtn.setAttribute('aria-disabled', String(this.state.isLoading));
+      cancelBtn.disabled = this.state.isLoading
+      cancelBtn.setAttribute("aria-disabled", String(this.state.isLoading))
     }
   }
 
@@ -748,21 +748,21 @@ class AupModal {
    * Setup focus trap for the modal.
    */
   private setupFocusTrap(): void {
-    const modal = document.getElementById(IDS.MODAL);
-    if (!modal) return;
+    const modal = document.getElementById(IDS.MODAL)
+    if (!modal) return
 
     this.focusTrap = createFocusTrap(modal, {
       onEscape: () => this.close(),
       initialFocus: document.getElementById(IDS.CANCEL_BTN),
-    });
-    this.focusTrap.activate();
+    })
+    this.focusTrap.activate()
   }
 }
 
 /**
  * Singleton modal instance.
  */
-export const aupModal = new AupModal();
+export const aupModal = new AupModal()
 
 /**
  * Open the AUP modal for a specific try product.
@@ -777,12 +777,12 @@ export const aupModal = new AupModal();
  * });
  */
 export function openAupModal(tryId: string, onAccept: AupAcceptCallback): void {
-  aupModal.open(tryId, onAccept);
+  aupModal.open(tryId, onAccept)
 }
 
 /**
  * Close the AUP modal.
  */
 export function closeAupModal(): void {
-  aupModal.close();
+  aupModal.close()
 }

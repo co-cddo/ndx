@@ -491,11 +491,11 @@ Overall, the test demonstrates good structure and coverage of the login flow. Ho
 
 ```typescript
 // ❌ Bad (current)
-await page.waitForTimeout(2000);
-await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
+await page.waitForTimeout(2000)
+await expect(page.locator('[data-testid="user-menu"]')).toBeVisible()
 
 // ✅ Good (recommended)
-await expect(page.locator('[data-testid="user-menu"]')).toBeVisible({ timeout: 10000 });
+await expect(page.locator('[data-testid="user-menu"]')).toBeVisible({ timeout: 10000 })
 ```
 ````
 
@@ -510,10 +510,10 @@ await expect(page.locator('[data-testid="user-menu"]')).toBeVisible({ timeout: 1
 
 ```typescript
 // ✅ Good (recommended)
-import { createTestUser } from './factories/user-factory';
+import { createTestUser } from "./factories/user-factory"
 
-const testUser = createTestUser({ role: 'admin' });
-await loginPage.login(testUser.email, testUser.password);
+const testUser = createTestUser({ role: "admin" })
+await loginPage.login(testUser.email, testUser.password)
 ```
 
 ### 2. Extract Login Setup to Fixture (Lines 18-28)
@@ -527,15 +527,15 @@ await loginPage.login(testUser.email, testUser.password);
 // ✅ Good (recommended)
 const test = base.extend({
   authenticatedPage: async ({ page }, use) => {
-    const user = createTestUser();
-    await loginPage.login(user.email, user.password);
-    await use(page);
+    const user = createTestUser()
+    await loginPage.login(user.email, user.password)
+    await use(page)
   },
-});
+})
 
-test('user can access dashboard', async ({ authenticatedPage }) => {
+test("user can access dashboard", async ({ authenticatedPage }) => {
   // Test starts already logged in
-});
+})
 ```
 
 ## Quality Score Breakdown

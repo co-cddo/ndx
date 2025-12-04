@@ -45,6 +45,7 @@ The Try Before You Buy feature enables local UI development with real Innovation
 - **API routes** (`/api/*`) → CloudFront (`ndx.digital.cabinet-office.gov.uk` - real Innovation Sandbox backend)
 
 **Benefits:**
+
 - **Production Parity:** Real Innovation Sandbox API testing (authentication, leases, AUP)
 - **Fast Iteration:** Local UI changes hot-reload without rebuilding CloudFront distribution
 - **No Backend Mocking:** OAuth redirects, JWT tokens, API responses all production-authentic
@@ -58,20 +59,22 @@ The Innovation Sandbox CloudFront distribution cannot be modified (external syst
 
 ### Required Dependencies
 
-| Dependency | Version | Installation |
-|------------|---------|--------------|
-| **Python** | 3.8+ | [macOS](#macos) \| [Windows](#windows) \| [Linux](#linux) |
-| **mitmproxy** | 10.x+ (latest stable) | `pip install mitmproxy` |
-| **Node.js** | 20.17.0 | See [development-guide.md](../development-guide.md) |
-| **Yarn** | 4.5.0 | See [development-guide.md](../development-guide.md) |
+| Dependency    | Version               | Installation                                              |
+| ------------- | --------------------- | --------------------------------------------------------- |
+| **Python**    | 3.8+                  | [macOS](#macos) \| [Windows](#windows) \| [Linux](#linux) |
+| **mitmproxy** | 10.x+ (latest stable) | `pip install mitmproxy`                                   |
+| **Node.js**   | 20.17.0               | See [development-guide.md](../development-guide.md)       |
+| **Yarn**      | 4.5.0                 | See [development-guide.md](../development-guide.md)       |
 
 ### Port Availability
 
 Ensure these ports are available:
+
 - **Port 8080:** NDX Eleventy development server
 - **Port 8081:** mitmproxy listener
 
 **Check port availability:**
+
 ```bash
 # macOS/Linux
 lsof -Pi :8080
@@ -135,12 +138,14 @@ If ports are in use, see [Troubleshooting - Port Conflicts](#port-already-in-use
 Python 3 is pre-installed on macOS 10.15+ (Catalina and later).
 
 **Check Python version:**
+
 ```bash
 python3 --version
 # Expected: Python 3.8.0 or higher
 ```
 
 **If Python is missing or outdated, install via Homebrew:**
+
 ```bash
 # Install Homebrew (if not installed)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -169,9 +174,11 @@ mitmproxy --version
 #### Next Steps
 
 1. **Start mitmproxy:**
+
    ```bash
    yarn dev:proxy
    ```
+
    This starts mitmproxy on port 8081 with the addon script loaded. To stop the proxy, press `q` in the mitmproxy console.
 
 2. **Configure system proxy:** See [System Proxy Configuration](#system-proxy-configuration) for macOS proxy setup
@@ -191,6 +198,7 @@ mitmproxy --version
 4. Click "Install Now"
 
 **Verify installation:**
+
 ```powershell
 python --version
 # Expected: Python 3.8.0 or higher
@@ -213,9 +221,11 @@ mitmproxy --version
 #### Next Steps
 
 1. **Start mitmproxy:**
+
    ```powershell
    yarn dev:proxy
    ```
+
    This starts mitmproxy on port 8081 with the addon script loaded. To stop the proxy, press `q` in the mitmproxy console.
 
 2. **Configure system proxy:** See [System Proxy Configuration](#system-proxy-configuration) for Windows proxy setup
@@ -228,6 +238,7 @@ mitmproxy --version
 #### Step 1: Install Python 3.8+
 
 **Ubuntu/Debian:**
+
 ```bash
 # Update package list
 sudo apt update
@@ -237,18 +248,21 @@ sudo apt install python3 python3-pip
 ```
 
 **Fedora/RHEL:**
+
 ```bash
 # Install Python 3.8+
 sudo dnf install python3 python3-pip
 ```
 
 **Arch Linux:**
+
 ```bash
 # Install Python 3.8+
 sudo pacman -S python python-pip
 ```
 
 **Verify installation:**
+
 ```bash
 python3 --version
 # Expected: Python 3.8.0 or higher
@@ -278,9 +292,11 @@ mitmproxy --version
 #### Next Steps
 
 1. **Start mitmproxy:**
+
    ```bash
    yarn dev:proxy
    ```
+
    This starts mitmproxy on port 8081 with the addon script loaded. To stop the proxy, press `q` in the mitmproxy console.
 
 2. **Configure system proxy:** See [System Proxy Configuration](#system-proxy-configuration) for Linux system proxy configuration
@@ -541,17 +557,21 @@ FoxyProxy enables pattern-based proxy routing, so only CloudFront domain request
 **Step 5: Verify Configuration**
 
 Navigate to `https://ndx.digital.cabinet-office.gov.uk` in your browser. The FoxyProxy icon should show:
+
 - **Green:** Request routed through proxy (CloudFront domain matched)
 
 Navigate to any other site (e.g., `https://google.com`). The FoxyProxy icon should show:
+
 - **Gray/Black:** Request not proxied (no pattern match)
 
 **Benefits:**
+
 - **Isolated:** System proxy settings unaffected
 - **Pattern-Based:** Only CloudFront requests proxied
 - **Quick Toggle:** Easily enable/disable via extension icon
 
 **Limitations:**
+
 - **Browser-Only:** Each browser requires separate configuration
 - **Extension Dependency:** Requires installing FoxyProxy extension
 
@@ -739,6 +759,7 @@ certmgr.msc
 ```
 
 In Certificate Manager:
+
 1. Expand **Trusted Root Certification Authorities**
 2. Click **Certificates** folder
 3. Find **"mitmproxy"** in the list (certificates are sorted alphabetically)
@@ -1129,6 +1150,7 @@ Search for "mitmproxy" again - no results should appear in Authorities tab.
 **Check which process is using the port:**
 
 **macOS/Linux:**
+
 ```bash
 # Check port 8080
 lsof -Pi :8080
@@ -1138,6 +1160,7 @@ lsof -Pi :8081
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 # Check port 8080
 Get-NetTCPConnection -LocalPort 8080 | Select-Object -Property OwningProcess
@@ -1149,6 +1172,7 @@ Get-Process -Id <PID from previous command>
 **Resolution Options:**
 
 1. **Kill the process:**
+
    ```bash
    # macOS/Linux
    lsof -ti:8080 | xargs kill
@@ -1176,16 +1200,18 @@ Get-Process -Id <PID from previous command>
 **Resolution:**
 
 **macOS/Linux:**
+
 ```bash
 # Add Python user base binary directory to PATH
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # or ~/.zshrc
-source ~/.bashrc  # or source ~/.zshrc
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc # or ~/.zshrc
+source ~/.bashrc                                         # or source ~/.zshrc
 
 # Alternative: Use full path
 ~/.local/bin/mitmproxy --version
 ```
 
 **Windows:**
+
 ```powershell
 # Check Python scripts directory
 python -m site --user-site
@@ -1201,10 +1227,11 @@ setx PATH "%PATH%;C:\Users\<username>\AppData\Roaming\Python\Python3x\Scripts"
 **Virtual Environment Consideration:**
 
 If using a Python virtual environment:
+
 ```bash
 # Activate virtual environment first
-source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate  # Windows
+source venv/bin/activate # macOS/Linux
+venv\Scripts\activate    # Windows
 
 # Install mitmproxy in virtual environment
 pip install mitmproxy
@@ -1243,17 +1270,19 @@ The mitmproxy CA certificate must be installed and trusted:
 **Resolution:**
 
 1. **Verify mitmproxy is running:**
+
    ```bash
    # macOS/Linux
    lsof -Pi :8081
    # Expected: mitmproxy process listening
-
+   
    # Windows (PowerShell)
    Get-NetTCPConnection -LocalPort 8081
    # Expected: LISTENING state
    ```
 
 2. **Start mitmproxy if not running:**
+
    ```bash
    yarn dev:proxy
    # Wait for "Proxy server listening at *:8081" message
@@ -1280,6 +1309,7 @@ The mitmproxy CA certificate must be installed and trusted:
    - Linux: Settings → Network Proxy → Ignore Hosts should include `localhost, 127.0.0.1, *.local`
 
 2. **Test bypass list works:**
+
    ```bash
    # This should NOT appear in mitmproxy console logs
    curl http://localhost:8080
@@ -1320,9 +1350,10 @@ Use **Browser-Specific Proxy** instead of system proxy:
 **Diagnosis:**
 
 1. **Check if mitmproxy is running:**
+
    ```bash
-   lsof -Pi :8081  # macOS/Linux
-   Get-NetTCPConnection -LocalPort 8081  # Windows
+   lsof -Pi :8081                       # macOS/Linux
+   Get-NetTCPConnection -LocalPort 8081 # Windows
    ```
 
 2. **If mitmproxy not running and you're not developing Try features:**
@@ -1373,10 +1404,11 @@ $ curl -x http://localhost:8081 https://ndx.digital.cabinet-office.gov.uk
 **Diagnosis:**
 
 1. **Check mitmproxy is running:**
+
    ```bash
    # Should show mitmproxy listening on port 8081
-   lsof -Pi :8081  # macOS/Linux
-   Get-NetTCPConnection -LocalPort 8081  # Windows
+   lsof -Pi :8081                       # macOS/Linux
+   Get-NetTCPConnection -LocalPort 8081 # Windows
    ```
 
 2. **Check system proxy configuration:**
@@ -1389,6 +1421,7 @@ $ curl -x http://localhost:8081 https://ndx.digital.cabinet-office.gov.uk
    - See [Story 4.3](../../sprint-artifacts/stories/) for mitmproxy startup configuration
 
 **Resolution:**
+
 - Complete Stories 4.2 (addon script), 4.3 (npm script), and 4.4 (system proxy) before testing end-to-end workflow
 
 ---
@@ -1402,11 +1435,13 @@ $ curl -x http://localhost:8081 https://ndx.digital.cabinet-office.gov.uk
 **Explanation:**
 
 The mitmproxy addon script is designed to preserve the CloudFront domain for OAuth callbacks. The Innovation Sandbox OAuth provider expects callback URLs like:
+
 ```
 https://ndx.digital.cabinet-office.gov.uk/callback?token=...
 ```
 
 The addon script ensures:
+
 - **UI requests** to CloudFront domain are forwarded to `localhost:8080` (local UI)
 - **API requests** to `/api/*` pass through to CloudFront unchanged (real backend)
 - **OAuth callback URLs** remain on CloudFront domain (OAuth provider validation)
@@ -1434,20 +1469,22 @@ yarn validate-setup
 
 **Checks performed:**
 
-| Check | Type | Description |
-|-------|------|-------------|
-| **mitmproxy installed** | Critical | Verifies `mitmproxy --version` executes successfully |
-| **Addon script exists** | Critical | Checks `scripts/mitmproxy-addon.py` file exists |
-| **Port 8080 available** | Warning | Checks if NDX server port is in use |
-| **Port 8081 available** | Warning | Checks if mitmproxy port is in use |
-| **CA certificate generated** | Warning | Checks `~/.mitmproxy/mitmproxy-ca-cert.pem` exists |
+| Check                        | Type     | Description                                          |
+| ---------------------------- | -------- | ---------------------------------------------------- |
+| **mitmproxy installed**      | Critical | Verifies `mitmproxy --version` executes successfully |
+| **Addon script exists**      | Critical | Checks `scripts/mitmproxy-addon.py` file exists      |
+| **Port 8080 available**      | Warning  | Checks if NDX server port is in use                  |
+| **Port 8081 available**      | Warning  | Checks if mitmproxy port is in use                   |
+| **CA certificate generated** | Warning  | Checks `~/.mitmproxy/mitmproxy-ca-cert.pem` exists   |
 
 **Status Indicators:**
+
 - ✅ **Check passed** - Requirement satisfied
 - ❌ **Check failed (critical)** - Must fix before development
 - ⚠️ **Warning** - Not critical but may need attention
 
 **Example Output (All Checks Pass):**
+
 ```bash
 $ yarn validate-setup
 
@@ -1463,6 +1500,7 @@ Validating local development setup...
 ```
 
 **Exit Codes:**
+
 - **Exit 0:** All critical checks passed (ready for development)
 - **Exit 1:** One or more critical checks failed (fix errors and retry)
 
@@ -1552,6 +1590,7 @@ After generating the certificate, follow [Certificate Trust Setup](#certificate-
 ### Cross-Platform Compatibility
 
 The validation script works on:
+
 - **macOS:** Uses `lsof` for port checks
 - **Linux:** Uses `lsof` for port checks (with fallback to `netstat`)
 - **Windows (Git Bash):** Uses `netstat` for port checks
@@ -1609,6 +1648,7 @@ mitmproxy --version
 #### 2. Verify Port Availability
 
 **macOS/Linux:**
+
 ```bash
 # Check port 8080
 lsof -Pi :8080
@@ -1620,6 +1660,7 @@ lsof -Pi :8081
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 # Check port 8080
 Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue
@@ -1631,6 +1672,7 @@ Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue
 ```
 
 **Alternative port check (cross-platform):**
+
 ```bash
 # Try to bind to port (if succeeds, port is available)
 nc -z localhost 8080 && echo "Port 8080 in use" || echo "Port 8080 available"
@@ -1672,23 +1714,27 @@ yarn dev:proxy
 Once Stories 4.2 (addon script), 4.3 (npm script), 4.4 (system proxy), and 4.5 (certificate trust) are complete:
 
 **Terminal 1:**
+
 ```bash
 yarn dev:proxy
 # mitmproxy starts on port 8081
 ```
 
 **Terminal 2:**
+
 ```bash
 yarn start
 # NDX server starts on port 8080
 ```
 
 **Browser:**
+
 ```
 Navigate to: https://ndx.digital.cabinet-office.gov.uk
 ```
 
 **Expected behavior:**
+
 1. Browser uses system proxy (localhost:8081)
 2. mitmproxy intercepts request
 3. Addon routes UI request to localhost:8080
@@ -1696,6 +1742,7 @@ Navigate to: https://ndx.digital.cabinet-office.gov.uk
 5. No SSL certificate warnings (CA certificate trusted - see [Certificate Trust Setup](#certificate-trust-setup))
 
 **Verify in mitmproxy console:**
+
 - UI requests show `→ localhost:8080` destination
 - API requests (if any) show `→ ndx.digital.cabinet-office.gov.uk` passthrough
 

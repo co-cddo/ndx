@@ -15,6 +15,7 @@
 ### ✓ PASS - Story fields (asA/iWant/soThat) captured
 
 **Evidence:** Lines 13-15 of context file
+
 ```xml
 <asA>a developer</asA>
 <iWant>comprehensive documentation for setting up mitmproxy for local Try feature development</iWant>
@@ -36,6 +37,7 @@
 ### ✓ PASS - Tasks/subtasks captured as task list
 
 **Evidence:** Lines 16-45 of context file
+
 ```xml
 <tasks>
 - [ ] Task 1: Create `/docs/development/local-try-setup.md` file (AC: #1, #2)
@@ -54,6 +56,7 @@
 ### ✗ FAIL - Relevant docs (5-15) included with path and snippets
 
 **Evidence:** Line 121 of context file
+
 ```xml
 <docs>{{docs_artifacts}}</docs>
 ```
@@ -61,6 +64,7 @@
 **Analysis:** Template placeholder not replaced. Context file is missing documentation artifacts discovery.
 
 **Expected Content:**
+
 - PRD references (Feature 2: Try Before You Buy)
 - Tech Spec Epic 4 references (detailed design, NFR sections)
 - Architecture document references (ADR-017, ADR-018, ADR-020)
@@ -68,6 +72,7 @@
 - 5-15 relevant documentation entries with paths, titles, sections, and snippets
 
 **Impact:** Developer working on this story lacks critical context about:
+
 - PRD requirements that informed the story
 - Technical specifications for Epic 4
 - Architectural decisions affecting implementation
@@ -78,6 +83,7 @@
 ### ✗ FAIL - Relevant code references included with reason and line hints
 
 **Evidence:** Line 122 of context file
+
 ```xml
 <code>{{code_artifacts}}</code>
 ```
@@ -85,12 +91,14 @@
 **Analysis:** Template placeholder not replaced. Context file is missing code artifact discovery.
 
 **Expected Content:**
+
 - Existing documentation files to reference (docs/development-guide.md)
 - Project structure (package.json for port/script references)
 - Existing development scripts (yarn dev)
 - 0-10 code references (this is a documentation story, so may have fewer code references than implementation stories)
 
 **Impact:** Developer lacks awareness of:
+
 - Existing development guide to cross-reference
 - Current npm scripts to document
 - Project configuration affecting setup instructions
@@ -100,6 +108,7 @@
 ### ✗ FAIL - Interfaces/API contracts extracted if applicable
 
 **Evidence:** Line 127 of context file
+
 ```xml
 <interfaces>{{interfaces}}</interfaces>
 ```
@@ -107,6 +116,7 @@
 **Analysis:** Template placeholder not replaced. While this documentation story may not have traditional API interfaces, it should note N/A or provide any relevant interfaces (e.g., command-line interface patterns, script interface expectations).
 
 **Expected Content:**
+
 - N/A notation if no interfaces applicable
 - OR CLI interface patterns (mitmproxy commands, yarn scripts)
 - OR documentation structure/format requirements
@@ -118,6 +128,7 @@
 ### ✗ FAIL - Constraints include applicable dev rules and patterns
 
 **Evidence:** Line 126 of context file
+
 ```xml
 <constraints>{{constraints}}</constraints>
 ```
@@ -125,6 +136,7 @@
 **Analysis:** Template placeholder not replaced. Context file is missing development constraints.
 
 **Expected Content from Dev Notes:**
+
 - Documentation style: GOV.UK plain English guidelines
 - Use step-by-step numbered instructions
 - Include example commands with expected output
@@ -133,6 +145,7 @@
 - Scope: Epic 4 infrastructure only
 
 **Impact:** Developer lacks guidance on:
+
 - Documentation style requirements
 - Formatting standards
 - Audience considerations
@@ -143,6 +156,7 @@
 ### ✗ FAIL - Dependencies detected from manifests and frameworks
 
 **Evidence:** Line 123 of context file
+
 ```xml
 <dependencies>{{dependencies_artifacts}}</dependencies>
 ```
@@ -150,6 +164,7 @@
 **Analysis:** Template placeholder not replaced. Context file is missing dependencies discovery.
 
 **Expected Content:**
+
 - Node.js 20.17.0+ (from package.json or development-guide.md)
 - Yarn 4.5.0 (from package.json or development-guide.md)
 - Python 3.8+ (new requirement for mitmproxy)
@@ -157,6 +172,7 @@
 - Eleventy (existing framework referenced in story)
 
 **Impact:** Developer lacks awareness of:
+
 - Required dependencies to mention in documentation
 - Version requirements to document
 - Existing vs new dependencies
@@ -166,6 +182,7 @@
 ### ✗ FAIL - Testing standards and locations populated
 
 **Evidence:** Lines 129-131 of context file
+
 ```xml
 <standards>{{test_standards}}</standards>
 <locations>{{test_locations}}</locations>
@@ -175,6 +192,7 @@
 **Analysis:** Template placeholders not replaced. Context file is missing testing information.
 
 **Expected Content:**
+
 - **Standards:** Documentation testing via manual review and peer review (no unit tests for documentation - noted in Dev Notes line 209)
 - **Locations:** N/A for this documentation story (no code tests)
 - **Ideas:**
@@ -184,6 +202,7 @@
   - Acceptance criteria checklist verification
 
 **Impact:** Developer lacks guidance on:
+
 - How to validate the documentation
 - Testing approach for documentation stories
 - Acceptance testing requirements
@@ -237,6 +256,7 @@ The context file was **partially generated** - it successfully completed Step 1 
 ### Impact of Incomplete Context
 
 Without a complete context file:
+
 - Developer lacks critical architectural context
 - Documentation style/format guidance missing
 - Dependency awareness incomplete
@@ -246,12 +266,14 @@ Without a complete context file:
 ### Next Steps
 
 **Option 1: Regenerate (Recommended)**
+
 - Run story-context workflow again
 - Choose "replace" option
 - Allow workflow to complete all discovery steps
 - Verify all placeholders populated
 
 **Option 2: Manual Completion**
+
 - Keep existing partial context
 - Manually populate missing sections
 - Risk: may miss implicit dependencies or references

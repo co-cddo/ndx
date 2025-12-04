@@ -11,6 +11,7 @@ so that I can intercept HTTPS requests from the CloudFront domain without browse
 ## Acceptance Criteria
 
 **AC1: Documentation includes mitmproxy CA certificate location and generation**
+
 - **Given** mitmproxy has been run for the first time
 - **When** I navigate to the "Certificate Trust Setup" section in `/docs/development/local-try-setup.md`
 - **Then** it documents:
@@ -20,6 +21,7 @@ so that I can intercept HTTPS requests from the CloudFront domain without browse
 - **And** explains why certificate trust is required (CloudFront uses HTTPS, mitmproxy must decrypt to route)
 
 **AC2: Documentation includes platform-specific certificate trust steps**
+
 - **Given** developers use macOS, Windows, or Linux
 - **When** I read platform-specific trust instructions
 - **Then** it includes step-by-step guidance for:
@@ -30,6 +32,7 @@ so that I can intercept HTTPS requests from the CloudFront domain without browse
 - **And** instructions specify certificate file to trust: `~/.mitmproxy/mitmproxy-ca-cert.pem`
 
 **AC3: Documentation includes security warnings about certificate trust**
+
 - **Given** trusting CA certificates has security implications
 - **When** I read the "Security Considerations" section
 - **Then** it includes warnings:
@@ -40,6 +43,7 @@ so that I can intercept HTTPS requests from the CloudFront domain without browse
 - **And** includes instructions for removing certificate trust (revert steps)
 
 **AC4: Documentation includes validation steps to confirm certificate trust working**
+
 - **Given** certificate has been trusted
 - **When** I read the "Validation" section
 - **Then** it includes validation steps:
@@ -137,12 +141,14 @@ This story creates **certificate trust documentation** for Epic 4 (Local Develop
 **From Story 4.4 (System Proxy Configuration Instructions):**
 
 **New Documentation Created:**
+
 - System proxy configuration for macOS, Windows, Linux in `docs/development/local-try-setup.md`
 - FoxyProxy browser extension alternative for corporate proxy conflicts
 - Troubleshooting section with 5 common proxy issues and resolutions
 - Validation command: `curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net`
 
 **Key Insights:**
+
 - **Platform-specific instructions essential** - macOS, Windows, Linux each have different UI navigation paths for configuration
 - **Visual guides valuable** - ASCII diagrams help developers navigate system preferences without screenshots
 - **Troubleshooting prevents support burden** - Documented 5 common issues (infinite loops, VPN conflicts, site breakage)
@@ -150,23 +156,27 @@ This story creates **certificate trust documentation** for Epic 4 (Local Develop
 - **Security warnings needed** - Story 4.5 must emphasize certificate is for development only (never production)
 
 **Patterns to Reuse:**
+
 - Platform-specific sections with clear step-by-step instructions (same documentation style as Story 4.4)
 - "Security Considerations" section prominently placed (warns about certificate trust implications)
 - Validation section with numbered steps to verify setup working
 - Troubleshooting section for common certificate trust issues (browser restart, path verification)
 
 **Technical Context from Story 4.4:**
+
 - **mitmproxy runs on port 8081** - Certificate enables HTTPS interception for requests routed through this proxy
 - **System proxy configured** - Story 4.4 prerequisite ensures traffic routes to mitmproxy
 - **Bypass list prevents loops** - `localhost, 127.0.0.1, *.local` bypassed (certificate not needed for localhost traffic)
 - **CloudFront domain uses HTTPS** - `https://d7roov8fndsis.cloudfront.net` requires certificate trust to avoid warnings
 
 **Pending Review Items:**
+
 - Story 4.2 (addon script) status: "review" - awaiting SM review
 - Story 4.3 (run configuration) status: "review" - awaiting SM review
 - Story 4.4 (proxy configuration) status: "done" - approved, no blocking issues for Story 4.5
 
 **Files to Reference:**
+
 - Update `docs/development/local-try-setup.md` (add Certificate Trust Setup section after System Proxy Configuration)
 - Certificate file path: `~/.mitmproxy/mitmproxy-ca-cert.pem` (auto-generated on first mitmproxy run)
 - Reference Story 4.4 proxy configuration as prerequisite step in validation section
@@ -178,17 +188,20 @@ This story creates **certificate trust documentation** for Epic 4 (Local Develop
 ### Architecture References
 
 **From try-before-you-buy-architecture.md:**
+
 - **ADR-017**: Vanilla TypeScript (no framework) - certificate trust enables local HTTPS interception for TypeScript development
 - **ADR-020**: Progressive enhancement pattern - certificate allows local static HTML development with real API integration
 - **ADR-034**: Content Security Policy (CSP) headers - local development with HTTPS maintains CSP compatibility
 
 **From tech-spec-epic-4.md:**
+
 - **Detailed Design → Workflows**: Daily workflow requires certificate trust for HTTPS interception: Browser → mitmproxy (port 8081, HTTPS decrypt) → conditional routing
 - **Dependencies → mitmproxy CA Certificate**: Auto-generated on first run at `~/.mitmproxy/mitmproxy-ca-cert.pem`, must be trusted system-wide
 - **NFR → Security**: Certificate trust is development-only, never production (security warning mandatory in documentation)
 - **Risks → RISK-5**: Browser warnings without certificate trust → Developer productivity impact → Mitigation: Clear trust instructions per platform
 
 **From prd.md:**
+
 - **NFR-TRY-TEST-1**: E2E tests require HTTPS interception (foundation for future Playwright testing)
 - **Phase 1: mitmproxy Configuration**: Certificate trust essential for local development with CloudFront domain
 - **NFR-TRY-SEC-4**: API calls use HTTPS only - certificate trust enables interception without compromising security
@@ -196,15 +209,18 @@ This story creates **certificate trust documentation** for Epic 4 (Local Develop
 ### Project Structure Notes
 
 **Documentation File to Update:**
+
 - Path: `docs/development/local-try-setup.md`
 - New Section: "Certificate Trust Setup" (after System Proxy Configuration, before Validation)
 - Subsections: Platform-specific trust steps (macOS, Windows, Linux), Security Considerations, Removing Certificate Trust, Validation
 - Position: Follows Story 4.4 proxy configuration (logical setup sequence)
 
 **No New Code Files:**
+
 - Story 4.5 is documentation-only (certificate auto-generated by mitmproxy)
 
 **Platform Coverage:**
+
 - macOS: Keychain Access (Always Trust)
 - Windows: Certificate Manager (Trusted Root Certification Authorities)
 - Linux: ca-certificates (`sudo update-ca-certificates`)
@@ -213,6 +229,7 @@ This story creates **certificate trust documentation** for Epic 4 (Local Develop
 ### Implementation Guidance
 
 **macOS Certificate Trust:**
+
 ```
 Option A: Double-click certificate file
   ~/.mitmproxy/mitmproxy-ca-cert.pem
@@ -234,6 +251,7 @@ Trust Configuration:
 ```
 
 **Windows Certificate Trust:**
+
 ```
 File Explorer → Navigate to C:\Users\{username}\.mitmproxy
 → Double-click mitmproxy-ca-cert.pem
@@ -254,6 +272,7 @@ Verification:
 ```
 
 **Linux Certificate Trust (Ubuntu/Debian):**
+
 ```bash
 # Step 1: Copy certificate to ca-certificates directory
 sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/mitmproxy.crt
@@ -268,12 +287,14 @@ ls /etc/ssl/certs | grep mitmproxy
 ```
 
 **Linux Certificate Trust (Arch):**
+
 ```bash
 # Arch uses trust anchor system
 sudo trust anchor ~/.mitmproxy/mitmproxy-ca-cert.pem
 ```
 
 **Linux Certificate Trust (Fedora/RHEL):**
+
 ```bash
 # Fedora/RHEL use update-ca-trust
 sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /etc/pki/ca-trust/source/anchors/mitmproxy.crt
@@ -281,6 +302,7 @@ sudo update-ca-trust
 ```
 
 **Firefox-Specific (All Platforms):**
+
 ```
 Firefox maintains own certificate store (doesn't use system certificates)
 
@@ -294,6 +316,7 @@ Manual Import:
 ```
 
 **Certificate Removal (Security Best Practice):**
+
 ```
 macOS: Keychain Access → Search "mitmproxy" → Right-click → Delete
 
@@ -309,6 +332,7 @@ Firefox: Settings → Privacy & Security → Certificates → View Certificates
 ```
 
 **Validation Steps:**
+
 ```bash
 # Terminal 1: Start mitmproxy
 yarn dev:proxy
@@ -335,41 +359,48 @@ https://d7roov8fndsis.cloudfront.net
 ### Testing Strategy
 
 **Documentation Review:**
+
 - Manual review by developer following instructions on fresh machine (one platform)
 - Verify all steps clear and actionable
 - Test validation steps produce expected results (no SSL warnings)
 - Confirm security warnings prominent and understandable
 
 **Platform Testing:**
+
 - Test certificate trust on at least one platform (macOS, Windows, or Linux)
 - Verify browser accepts HTTPS connections to CloudFront domain without warnings
 - Test certificate removal restores SSL warnings (proves certificate was trusted)
 
 **Acceptance Criteria Validation:**
+
 - **AC1**: Review confirms certificate location and generation documented
 - **AC2**: All three platforms documented with clear trust steps
 - **AC3**: Security warnings section present and prominent
 - **AC4**: Validation steps present with 6-step verification process
 
 **No Automated Tests:**
+
 - Story 4.5 is documentation-only (certificate trust manual process)
 - Validation script (Story 4.6) will check if certificate trusted, but cannot automate trust itself
 
 ### Security Considerations
 
 **Certificate Trust Implications:**
+
 - **HTTPS Decryption**: mitmproxy CA certificate enables decryption of all HTTPS traffic routed through proxy
 - **Development Only**: Certificate must NEVER be trusted on production machines or shared
 - **Scope Limited**: Only CloudFront domain traffic decrypted (system proxy routes only specific domain)
 - **Reversible**: Certificate removal steps documented for when development complete
 
 **Security Warnings in Documentation:**
+
 1. **Prominent Warning Box**: "⚠️ Security Notice: Only trust this certificate on development machines. Never use in production."
 2. **Explanation**: "This certificate allows mitmproxy to decrypt HTTPS traffic. It is for local development only."
 3. **Scope Clarification**: "Only traffic routed through system proxy (CloudFront domain) is decrypted."
 4. **Removal Instructions**: "Remove certificate trust when finished with local Try development."
 
 **Best Practices:**
+
 - Keep certificate confined to development machine
 - Remove trust when switching to VPN or production work
 - Never commit certificate to version control (already in .gitignore)
@@ -443,6 +474,7 @@ None - documentation-only story with no code implementation.
 - AC4: Validation steps integrated into existing end-to-end validation section with 6-step verification process and troubleshooting
 
 **Testing Strategy:**
+
 - Documentation-only story - no automated tests required
 - Manual review confirms all sections present, clear platform-specific instructions, security warnings prominent
 - Validation steps reference existing Story 4.4 (system proxy) and provide complete end-to-end workflow
@@ -450,6 +482,7 @@ None - documentation-only story with no code implementation.
 ### File List
 
 **Modified:**
+
 - `/docs/development/local-try-setup.md` - Added complete Certificate Trust Setup section with platform-specific instructions, security warnings, removal steps, and validation guidance
 
 ---
@@ -473,27 +506,27 @@ The certificate trust documentation enables developers to configure their system
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| **AC1** | Documentation includes certificate location and generation | ✅ IMPLEMENTED | Story:440-441 - Completion Notes confirms certificate path (`~/.mitmproxy/mitmproxy-ca-cert.pem`), auto-generation, purpose, and why required documented |
-| **AC2** | Documentation includes platform-specific certificate trust steps | ✅ IMPLEMENTED | Story:411-416, 441-442 - Platform coverage complete: macOS (Keychain Access, 5 steps), Windows (Certificate Manager, 6 steps), Linux (Ubuntu/Debian, Fedora/RHEL, Arch), Firefox (separate cert store) |
-| **AC3** | Documentation includes security warnings about certificate trust | ✅ IMPLEMENTED | Story:418-420, 442-443 - Security Considerations section with 5 critical warnings, development-only emphasis, certificate removal instructions, warning box at top |
-| **AC4** | Documentation includes validation steps to confirm certificate trust working | ✅ IMPLEMENTED | Story:427-431, 443-444 - Validation integrated into end-to-end workflow with 6-step verification process, troubleshooting section updated, references to Story 4.4 proxy prerequisite |
+| AC#     | Description                                                                  | Status         | Evidence                                                                                                                                                                                               |
+| ------- | ---------------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **AC1** | Documentation includes certificate location and generation                   | ✅ IMPLEMENTED | Story:440-441 - Completion Notes confirms certificate path (`~/.mitmproxy/mitmproxy-ca-cert.pem`), auto-generation, purpose, and why required documented                                               |
+| **AC2** | Documentation includes platform-specific certificate trust steps             | ✅ IMPLEMENTED | Story:411-416, 441-442 - Platform coverage complete: macOS (Keychain Access, 5 steps), Windows (Certificate Manager, 6 steps), Linux (Ubuntu/Debian, Fedora/RHEL, Arch), Firefox (separate cert store) |
+| **AC3** | Documentation includes security warnings about certificate trust             | ✅ IMPLEMENTED | Story:418-420, 442-443 - Security Considerations section with 5 critical warnings, development-only emphasis, certificate removal instructions, warning box at top                                     |
+| **AC4** | Documentation includes validation steps to confirm certificate trust working | ✅ IMPLEMENTED | Story:427-431, 443-444 - Validation integrated into end-to-end workflow with 6-step verification process, troubleshooting section updated, references to Story 4.4 proxy prerequisite                  |
 
 **Summary:** 4 of 4 acceptance criteria fully implemented ✅
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Document certificate generation and location | ✅ Complete | ✅ VERIFIED | Story:440-441 - All 5 subtasks confirmed (auto-generation, path, purpose, why required) |
-| Task 2: Document macOS certificate trust steps | ✅ Complete | ✅ VERIFIED | Story:411-412, 215-234 - macOS platform coverage with Keychain Access workflow (5 steps), double-click import method documented |
-| Task 3: Document Windows certificate trust steps | ✅ Complete | ✅ VERIFIED | Story:413, 236-254 - Windows platform coverage with Certificate Manager workflow (6 steps), Trusted Root CA installation documented |
-| Task 4: Document Linux certificate trust steps | ✅ Complete | ✅ VERIFIED | Story:414, 256-281 - Linux coverage for Ubuntu/Debian, Fedora/RHEL, Arch; Firefox-specific note (lines 283-294) |
-| Task 5: Add security warnings section | ✅ Complete | ✅ VERIFIED | Story:418-420 - Security Considerations section with 5 warnings, warning box at top, development-only emphasis |
-| Task 6: Document certificate removal steps | ✅ Complete | ✅ VERIFIED | Story:422-425, 296-309 - Complete removal instructions for all platforms (macOS, Windows, Linux variants, Firefox) |
-| Task 7: Add validation steps and troubleshooting | ✅ Complete | ✅ VERIFIED | Story:427-431, 311-333 - Validation integrated into end-to-end workflow, 6-step process, troubleshooting for persistent SSL warnings |
-| Task 8: Validate documentation completeness | ✅ Complete | ✅ VERIFIED | Story:337-357 - Documentation Review and Testing Strategy sections confirm manual review, clarity verification, security warnings prominence |
+| Task                                                 | Marked As   | Verified As | Evidence                                                                                                                                     |
+| ---------------------------------------------------- | ----------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task 1: Document certificate generation and location | ✅ Complete | ✅ VERIFIED | Story:440-441 - All 5 subtasks confirmed (auto-generation, path, purpose, why required)                                                      |
+| Task 2: Document macOS certificate trust steps       | ✅ Complete | ✅ VERIFIED | Story:411-412, 215-234 - macOS platform coverage with Keychain Access workflow (5 steps), double-click import method documented              |
+| Task 3: Document Windows certificate trust steps     | ✅ Complete | ✅ VERIFIED | Story:413, 236-254 - Windows platform coverage with Certificate Manager workflow (6 steps), Trusted Root CA installation documented          |
+| Task 4: Document Linux certificate trust steps       | ✅ Complete | ✅ VERIFIED | Story:414, 256-281 - Linux coverage for Ubuntu/Debian, Fedora/RHEL, Arch; Firefox-specific note (lines 283-294)                              |
+| Task 5: Add security warnings section                | ✅ Complete | ✅ VERIFIED | Story:418-420 - Security Considerations section with 5 warnings, warning box at top, development-only emphasis                               |
+| Task 6: Document certificate removal steps           | ✅ Complete | ✅ VERIFIED | Story:422-425, 296-309 - Complete removal instructions for all platforms (macOS, Windows, Linux variants, Firefox)                           |
+| Task 7: Add validation steps and troubleshooting     | ✅ Complete | ✅ VERIFIED | Story:427-431, 311-333 - Validation integrated into end-to-end workflow, 6-step process, troubleshooting for persistent SSL warnings         |
+| Task 8: Validate documentation completeness          | ✅ Complete | ✅ VERIFIED | Story:337-357 - Documentation Review and Testing Strategy sections confirm manual review, clarity verification, security warnings prominence |
 
 **Summary:** 8 of 8 completed tasks verified, 0 questionable, 0 falsely marked complete ✅
 
@@ -514,6 +547,7 @@ Story 4.5 is documentation-only with no code implementation. Testing consists of
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✅ **Certificate Location:** `~/.mitmproxy/mitmproxy-ca-cert.pem` correctly documented (standard mitmproxy location)
 - ✅ **Auto-Generation:** First mitmproxy run auto-generates certificate (documented in Implementation Guidance)
 - ✅ **Platform Coverage:** macOS, Windows, Linux documented per Epic 4 guidance (Story:411-416)
@@ -522,6 +556,7 @@ Story 4.5 is documentation-only with no code implementation. Testing consists of
 - ✅ **Removal Steps:** Documented for security best practice (reversible trust, certificate cleanup)
 
 **Architecture Decision Adherence:**
+
 - ✅ **ADR-015 Compliance:** Epic-specific guidance followed (certificate trust documentation pattern)
 - ✅ **Security NFR Alignment:** Certificate trust development-only, never production (Story:418-420)
 - ✅ **RISK-5 Mitigation:** Clear trust instructions per platform prevent browser warning productivity impact
@@ -585,6 +620,7 @@ Story 4.5 documentation follows established best practices from Story 4.4:
 - ✅ **Firefox-Specific:** Separate certificate store documented for all platforms
 
 **Documentation References:**
+
 - [mitmproxy Certificate Documentation](https://docs.mitmproxy.org/stable/concepts-certificates/)
 
 ### Action Items
@@ -606,6 +642,7 @@ Story 4.5 delivers production-ready certificate trust setup documentation that f
 ✅ **Quality:** Clear UI navigation paths, implementation guidance, best practices documented
 
 Systematic validation confirms:
+
 - ✅ All acceptance criteria present with file:line evidence
 - ✅ All tasks marked complete have been verified
 - ✅ Zero defects, zero questionable completions, zero false task completions
@@ -617,6 +654,7 @@ Systematic validation confirms:
 ## Change Log
 
 ### Version 1.1 - 2025-11-23
+
 - Story implementation complete (DEV agent)
 - Certificate Trust Setup section added to local-try-setup.md
 - Platform-specific instructions documented (macOS, Windows, Linux, Firefox)
@@ -624,6 +662,7 @@ Systematic validation confirms:
 - Validation and troubleshooting integrated into end-to-end workflow
 
 ### Version 1.2 - 2025-11-23
+
 - Senior Developer Review notes appended (AI review by cns)
 - Status: review → done (approved)
 - Review outcome: APPROVE (all ACs verified, all tasks complete, zero defects, security documentation excellent)

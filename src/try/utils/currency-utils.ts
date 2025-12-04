@@ -20,12 +20,12 @@
  * formatUSD(12.3456, 4)  // "$12.3456"
  */
 export function formatUSD(amount: number, decimals: number = 2): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
-  }).format(amount);
+  }).format(amount)
 }
 
 /**
@@ -40,7 +40,7 @@ export function formatUSD(amount: number, decimals: number = 2): string {
  * formatBudget(12.3456, 50) // "$12.3456 / $50.00"
  */
 export function formatBudget(currentSpend: number, maxSpend: number): string {
-  return `${formatUSD(currentSpend, 4)} / ${formatUSD(maxSpend, 2)}`;
+  return `${formatUSD(currentSpend, 4)} / ${formatUSD(maxSpend, 2)}`
 }
 
 /**
@@ -54,8 +54,8 @@ export function formatBudget(currentSpend: number, maxSpend: number): string {
  * calculateBudgetPercentage(25, 50) // 50
  */
 export function calculateBudgetPercentage(currentSpend: number, maxSpend: number): number {
-  if (maxSpend === 0) return 0;
-  return Math.round((currentSpend / maxSpend) * 100);
+  if (maxSpend === 0) return 0
+  return Math.round((currentSpend / maxSpend) * 100)
 }
 
 /**
@@ -69,9 +69,9 @@ export function calculateBudgetPercentage(currentSpend: number, maxSpend: number
  * @param maxSpend - Maximum spend limit
  * @returns Status: 'low' (< 50%), 'medium' (50-80%), 'high' (> 80%)
  */
-export function getBudgetStatus(currentSpend: number, maxSpend: number): 'low' | 'medium' | 'high' {
-  const percentage = calculateBudgetPercentage(currentSpend, maxSpend);
-  if (percentage < 50) return 'low';
-  if (percentage < 80) return 'medium';
-  return 'high';
+export function getBudgetStatus(currentSpend: number, maxSpend: number): "low" | "medium" | "high" {
+  const percentage = calculateBudgetPercentage(currentSpend, maxSpend)
+  if (percentage < 50) return "low"
+  if (percentage < 80) return "medium"
+  return "high"
 }

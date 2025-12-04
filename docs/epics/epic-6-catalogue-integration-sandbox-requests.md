@@ -23,18 +23,21 @@ So that we validate user flows before development starts.
 **Then** the following UX elements are validated:
 
 **UX Element 1: "Try Before You Buy" Tag Placement**
+
 - Tag appears on product cards in catalogue listing
 - Tag appears on product detail pages
 - Tag uses GOV.UK Design System tag component
 - Tag color/styling clearly distinguishes from other tags
 
 **UX Element 2: "Try this now for 24 hours" Button**
+
 - Button placement on product detail page (below description? sidebar?)
 - Button uses GOV.UK Start Button (`isStartButton: true`)
 - Button disabled state if user already has max leases (discoverable in Story 6.8)
 - Button text clear and actionable
 
 **UX Element 3: Lease Request Modal Layout**
+
 - Modal overlay with AUP content
 - Scrollable AUP text (long content)
 - Checkbox: "I accept the Acceptable Use Policy"
@@ -42,11 +45,13 @@ So that we validate user flows before development starts.
 - Clear visual hierarchy (AUP → Checkbox → Buttons)
 
 **UX Element 4: Link from /try Page to Tryable Products**
+
 - Placement of link on /try page (empty state? always visible?)
 - Link text: "Browse tryable products in catalogue"
 - Filters catalogue to show only tryable products
 
 **And** UX review includes accessibility considerations:
+
 - Keyboard navigation flow through modal
 - Focus management (modal focus trap)
 - Screen reader experience (ARIA labels for tag, button, modal)
@@ -57,6 +62,7 @@ So that we validate user flows before development starts.
 **Prerequisites:** Epic 5 complete (Story 5.10)
 
 **Technical Notes:**
+
 - GATE story from Pre-mortem preventive measure #7 (user acceptance)
 - UX review prevents costly rework during implementation
 - Collaborative session: Product owner, UX designer, developers
@@ -64,6 +70,7 @@ So that we validate user flows before development starts.
 - Output: Documented UX decisions for Stories 6.1-6.11
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible modal pattern (CRITICAL - full spec needed before Story 6.6)
   - Focus trap implementation requirements
   - Keyboard navigation (Tab, Shift+Tab, Escape)
@@ -72,6 +79,7 @@ So that we validate user flows before development starts.
 - **ADR-032:** User-friendly error messages (review error templates for lease request failures)
 
 **UX Design Context:**
+
 - **Component Specs:** AUP Acceptance Modal (UX Section 6.2 Component 2) - MUST REVIEW
   - Modal anatomy: Summary box, scrollable AUP, checkbox, buttons
   - Desktop vs mobile layout (max-width 600px desktop, full-screen mobile)
@@ -104,10 +112,12 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Then** 11ty build process parses metadata:
+
 - `try` field (boolean): Indicates product is tryable
 - `try_id` field (UUID string): Lease template UUID for Innovation Sandbox API
 
 **And** parsed metadata available in Nunjucks templates:
+
 ```nunjucks
 {% if try %}
   <!-- Product is tryable -->
@@ -121,6 +131,7 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 **Prerequisites:** Story 6.0 (UX Review Checkpoint complete)
 
 **Technical Notes:**
+
 - FR-TRY-42, FR-TRY-43 covered
 - 11ty frontmatter parsing via `eleventy-plugin-syntaxhighlight` or custom plugin
 - UUID format validation: `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
@@ -128,6 +139,7 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 - Example tryable product: AWS Innovation Sandbox (sandbox environment for AWS services)
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint - no framework)
   - Frontmatter parsing uses 11ty's built-in gray-matter parser
   - Data available in Nunjucks templates via `page.data` object
@@ -135,6 +147,7 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 - **Data Flow:** YAML frontmatter → 11ty parser → Nunjucks template context → HTML output
 
 **UX Design Context:**
+
 - **Metadata:** `try: true` makes product discoverable via "Try Before You Buy" tag
 - **Metadata:** `try_id` (lease template UUID) required for API lease request
 - **User Discovery:** Products with `try: true` get green "Try Before You Buy" tag in catalogue
@@ -160,11 +173,13 @@ So that users can filter catalogue by tryable products.
 ```
 
 **And** tag appears in:
+
 - Product card in catalogue listing
 - Product detail page
 - Tag filter sidebar
 
 **And** tag uses GOV.UK Design System tag component:
+
 ```nunjucks
 {{ govukTag({
   text: "Try Before You Buy",
@@ -173,6 +188,7 @@ So that users can filter catalogue by tryable products.
 ```
 
 **And** tag styling:
+
 - Green background (govuk-tag--green)
 - Clear contrast with other tags (blue for product category tags)
 - Consistent placement across all product views
@@ -180,6 +196,7 @@ So that users can filter catalogue by tryable products.
 **Prerequisites:** Story 6.1 (Metadata parsing)
 
 **Technical Notes:**
+
 - FR-TRY-42, FR-TRY-44, FR-TRY-45 covered
 - GOV.UK Design System tag component already integrated
 - Green color chosen for positive action (tryable = good for users)
@@ -187,6 +204,7 @@ So that users can filter catalogue by tryable products.
 - Tag addition happens at build time (static site generation)
 
 **Architecture Context:**
+
 - **ADR-015:** Static site generation (build-time tag injection)
   - Tags generated during 11ty build, not at runtime
   - No client-side JavaScript needed for tag display
@@ -194,6 +212,7 @@ So that users can filter catalogue by tryable products.
 - **GOV.UK Component:** `govukTag` macro with `classes: "govuk-tag--green"`
 
 **UX Design Context:**
+
 - **Component:** Session Status Badge pattern (UX Section 6.2 Component 3) - adapted for product tags
 - **Color:** Green (`govuk-tag--green`) - positive action, tryable products (UX Section 3.1)
 - **Placement:** Product card (top-right) and product detail page (near title)
@@ -227,6 +246,7 @@ So that I can quickly find products I can try immediately.
 **Prerequisites:** Story 6.2 (Tag generation)
 
 **Technical Notes:**
+
 - FR-TRY-46 covered
 - Existing 11ty catalogue filtering logic handles this (no new code needed)
 - Tag slug: "try-before-you-buy" (URL-friendly)
@@ -234,6 +254,7 @@ So that I can quickly find products I can try immediately.
 - Accessibility: Filter controls keyboard navigable, screen reader accessible
 
 **Architecture Context:**
+
 - **Brownfield:** Existing catalogue filter system (no new filtering code)
   - Tag-based filtering already implemented in NDX catalogue
   - "Try Before You Buy" tag automatically appears in filter sidebar
@@ -241,6 +262,7 @@ So that I can quickly find products I can try immediately.
 - **URL State:** Filter persists via query param `?tags=try-before-you-buy`
 
 **UX Design Context:**
+
 - **User Discovery:** Primary way users find tryable products in catalogue
 - **Filter Sidebar:** "Try Before You Buy" tag with product count (e.g., "(3)")
 - **Persistence:** Filter state survives page refresh (URL query param)
@@ -259,12 +281,14 @@ So that I can quickly request sandbox access.
 **Given** I am on a product detail page with `try: true` metadata
 **When** the page renders
 **Then** I see "Try this now for 24 hours" button:
+
 - Placement: Below product description, above "Contact" section
 - Styling: GOV.UK Start Button (`govukButton` with `isStartButton: true`)
 - Text: "Try this now for 24 hours"
 - Icon: Arrow icon (→) indicating action
 
 **And** button includes:
+
 ```nunjucks
 {{ govukButton({
   text: "Try this now for 24 hours",
@@ -277,6 +301,7 @@ So that I can quickly request sandbox access.
 ```
 
 **And** button has data attributes:
+
 - `data-module="try-button"`: For JavaScript event handler
 - `data-try-id="{{ try_id }}"`: Lease template UUID for API call
 
@@ -285,6 +310,7 @@ So that I can quickly request sandbox access.
 **Prerequisites:** Story 6.3 (Tag filter)
 
 **Technical Notes:**
+
 - FR-TRY-47, FR-TRY-48 covered
 - GOV.UK Start Button: Green with arrow icon (prominent call-to-action)
 - data-try-id passed to JavaScript for lease request (Story 6.7)
@@ -292,6 +318,7 @@ So that I can quickly request sandbox access.
 - Accessibility: Button keyboard focusable, screen reader accessible
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla client-side JavaScript (no framework)
   - Event listener attached via `data-module="try-button"` pattern
   - GOV.UK Frontend JavaScript pattern (existing in NDX)
@@ -299,6 +326,7 @@ So that I can quickly request sandbox access.
 - **Data Attributes:** `data-try-id="{{ try_id }}"` - lease template UUID for API call
 
 **UX Design Context:**
+
 - **Component:** Try Button (UX Section 6.2 Component 4)
 - **Placement:** Below product description, above "Access" section (validated in UX review)
 - **Styling:** GOV.UK Start Button - green, arrow icon (→), prominent CTA
@@ -321,22 +349,22 @@ So that unauthenticated users are redirected to sign in first.
 **Then** client-side JavaScript checks authentication:
 
 ```javascript
-document.querySelectorAll('[data-module="try-button"]').forEach(button => {
-  button.addEventListener('click', async function(event) {
-    event.preventDefault();
+document.querySelectorAll('[data-module="try-button"]').forEach((button) => {
+  button.addEventListener("click", async function (event) {
+    event.preventDefault()
 
-    const tryId = this.getAttribute('data-try-id');
-    const token = sessionStorage.getItem('isb-jwt');
+    const tryId = this.getAttribute("data-try-id")
+    const token = sessionStorage.getItem("isb-jwt")
 
     if (!token) {
       // User not authenticated - redirect to sign in
-      window.location.href = '/api/auth/login';
+      window.location.href = "/api/auth/login"
     } else {
       // User authenticated - show lease request modal
-      showLeaseRequestModal(tryId);
+      showLeaseRequestModal(tryId)
     }
-  });
-});
+  })
+})
 ```
 
 **And** unauthenticated users redirected to `/api/auth/login`
@@ -346,17 +374,20 @@ document.querySelectorAll('[data-module="try-button"]').forEach(button => {
 **Prerequisites:** Story 6.4 (Try button rendered)
 
 **Technical Notes:**
+
 - FR-TRY-49, FR-TRY-50 covered
 - Reuse authentication check from Epic 5
 - OAuth callback returns to product page (preserves context)
 - Try button click initiates modal flow (Story 6.6-6.9)
 
 **Architecture Context:**
+
 - **ADR-024:** AuthState integration - check `AuthState.isAuthenticated()` before showing modal
 - **Module:** Reuse `src/try/auth/auth-provider.ts` - `isAuthenticated()` method
 - **OAuth Flow:** Unauthenticated users → `/api/auth/login` → Return to product page → Auto-show modal
 
 **UX Design Context:**
+
 - **User Journey:** Try Request Flow (UX Section 5.1 Journey 2, Steps 2-3)
 - **Branch A (Unauthenticated):** Redirect to OAuth → Return to product page → Open AUP modal
 - **Branch B (Authenticated):** Open AUP modal immediately
@@ -378,12 +409,14 @@ So that I can review AUP and request sandbox access.
 **Then** I see modal overlay with:
 
 **Modal Structure:**
+
 - Dark overlay background (semi-transparent black)
 - White modal box (centered on screen)
 - Modal header: "Request AWS Sandbox Access"
 - Close button (X) in top-right corner
 
 **Modal Content Sections:**
+
 1. **Lease Details:**
    - "Duration: 24 hours"
    - "Maximum Budget: $50"
@@ -402,6 +435,7 @@ So that I can review AUP and request sandbox access.
    - "Continue" button (primary style, disabled until checkbox checked)
 
 **And** modal uses GOV.UK Design System components:
+
 - Modal overlay: Custom (GOV.UK doesn't have modal component, use accessible pattern)
 - Buttons: `govukButton` macro
 - Checkbox: `govukCheckboxes` macro
@@ -409,6 +443,7 @@ So that I can review AUP and request sandbox access.
 **Prerequisites:** Story 6.5 (Auth check on Try button)
 
 **Technical Notes:**
+
 - FR-TRY-51, FR-TRY-52, FR-TRY-53, FR-TRY-56 covered
 - Modal HTML injected into page dynamically (JavaScript)
 - Accessibility: Focus trap (modal only), Escape key closes modal (Story 6.9)
@@ -416,6 +451,7 @@ So that I can review AUP and request sandbox access.
 - Checkbox state controls Continue button (Story 6.8)
 
 **Architecture Context:**
+
 - **ADR-026: CRITICAL - Accessible Modal Pattern (MUST IMPLEMENT FULLY)**
 
   **Focus Management:**
@@ -456,9 +492,11 @@ So that I can review AUP and request sandbox access.
 - **Module:** `src/try/ui/utils/aria-live.ts` - ARIA live region announcements
 
 **UX Design Context:**
+
 - **Component Spec:** AUP Acceptance Modal (UX Section 6.2 Component 2) - FULL IMPLEMENTATION
 
   **Modal Anatomy (Desktop):**
+
   ```
   ┌─────────────────────────────────────────────────────────────┐
   │ [X] Close                 (top-right, optional)             │
@@ -554,17 +592,17 @@ So that I understand terms before requesting sandbox access.
 ```javascript
 async function fetchAUP() {
   try {
-    const response = await callISBAPI('/api/configurations');
-    const config = await response.json();
-    return config.aup;
+    const response = await callISBAPI("/api/configurations")
+    const config = await response.json()
+    return config.aup
   } catch (error) {
-    console.error('Failed to fetch AUP:', error);
-    return 'Unable to load Acceptable Use Policy. Please try again later.';
+    console.error("Failed to fetch AUP:", error)
+    return "Unable to load Acceptable Use Policy. Please try again later."
   }
 }
 
 async function showLeaseRequestModal(tryId) {
-  const aup = await fetchAUP();
+  const aup = await fetchAUP()
 
   // Render modal with AUP text
   const modalHTML = `
@@ -576,15 +614,15 @@ async function showLeaseRequestModal(tryId) {
 
         <h3>Acceptable Use Policy</h3>
         <div class="aup-container" style="max-height: 400px; overflow-y: auto;">
-          ${aup.replace(/\n/g, '<br>')}
+          ${aup.replace(/\n/g, "<br>")}
         </div>
 
         <!-- Checkbox and buttons (Story 6.8) -->
       </div>
     </div>
-  `;
+  `
 
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.body.insertAdjacentHTML("beforeend", modalHTML)
 }
 ```
 
@@ -595,6 +633,7 @@ async function showLeaseRequestModal(tryId) {
 **Prerequisites:** Story 6.6 (Modal UI structure)
 
 **Technical Notes:**
+
 - FR-TRY-21, FR-TRY-54, FR-TRY-55 covered
 - AUP text returned as plain text with newlines (convert to <br> for HTML)
 - Scrollable container: `overflow-y: auto`, `max-height: 400px`
@@ -602,6 +641,7 @@ async function showLeaseRequestModal(tryId) {
 - Accessibility: AUP container focusable for keyboard scrolling
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client - Use `callISBAPI('/api/configurations')`
 - **API Endpoint:** `GET /api/configurations` (Innovation Sandbox backend)
 - **Response Type:** `{ aup: string; maxLeases: number; leaseDuration: number }`
@@ -611,6 +651,7 @@ async function showLeaseRequestModal(tryId) {
 - **Caching:** No caching - fetch fresh AUP each modal open (policy may update)
 
 **UX Design Context:**
+
 - **Component:** AUP modal scrollable container (UX Section 6.2 Component 2)
 - **Max Height:** 300px desktop (not 400px - UX spec is 300px), adaptive on mobile
 - **Scroll Indicator:** Visual cue if content exceeds visible area
@@ -642,23 +683,22 @@ So that I explicitly consent before requesting sandbox access.
 **And** JavaScript handles checkbox state:
 
 ```javascript
-const aupCheckbox = document.getElementById('aup-checkbox');
-const continueButton = document.getElementById('modal-continue-button');
+const aupCheckbox = document.getElementById("aup-checkbox")
+const continueButton = document.getElementById("modal-continue-button")
 
 // Initial state: Button disabled
-continueButton.disabled = true;
+continueButton.disabled = true
 
 // Listen for checkbox changes
-aupCheckbox.addEventListener('change', function() {
-  continueButton.disabled = !this.checked;
-});
+aupCheckbox.addEventListener("change", function () {
+  continueButton.disabled = !this.checked
+})
 ```
 
 **And** disabled button has accessible ARIA attributes:
+
 ```html
-<button id="modal-continue-button" disabled aria-disabled="true">
-  Continue
-</button>
+<button id="modal-continue-button" disabled aria-disabled="true">Continue</button>
 ```
 
 **And** clicking "Cancel" button closes modal without action
@@ -667,6 +707,7 @@ aupCheckbox.addEventListener('change', function() {
 **Prerequisites:** Story 6.7 (AUP fetched and displayed)
 
 **Technical Notes:**
+
 - FR-TRY-57, FR-TRY-58 covered
 - GOV.UK Design System disabled button styling
 - Accessibility: Disabled state announced to screen readers
@@ -674,6 +715,7 @@ aupCheckbox.addEventListener('change', function() {
 - Continue button triggers lease request (Story 6.9)
 
 **Architecture Context:**
+
 - **ADR-012:** Custom Element event handling - checkbox change triggers button state update
 - **Module:** `src/try/ui/components/aup-modal.ts` - Checkbox event listener in AUPModal class
 - **Reactive State:** Checkbox checked → Button enabled (no dark patterns - user must actively check)
@@ -681,6 +723,7 @@ aupCheckbox.addEventListener('change', function() {
   - `aria-live="polite"` region: "Continue button enabled" when checkbox checked
 
 **UX Design Context:**
+
 - **Component:** AUP Modal states (UX Section 6.2 Component 2 - Modal States)
 - **Default State:** Continue button disabled (grey), checkbox unchecked (UX Principle 3 - no dark patterns)
 - **Checked State:** Continue button enabled (green GOV.UK primary button)
@@ -705,48 +748,52 @@ So that I can receive AWS sandbox environment.
 
 ```javascript
 async function requestLease(tryId) {
-  const continueButton = document.getElementById('modal-continue-button');
+  const continueButton = document.getElementById("modal-continue-button")
 
   // Show loading state
-  continueButton.disabled = true;
-  continueButton.textContent = 'Requesting...';
+  continueButton.disabled = true
+  continueButton.textContent = "Requesting..."
 
   try {
-    const response = await callISBAPI('/api/leases', {
-      method: 'POST',
+    const response = await callISBAPI("/api/leases", {
+      method: "POST",
       body: JSON.stringify({
         leaseTemplateId: tryId,
-        acceptedAUP: true
-      })
-    });
+        acceptedAUP: true,
+      }),
+    })
 
     if (response.ok) {
       // Success: Navigate to /try page
-      window.location.href = '/try';
+      window.location.href = "/try"
     } else if (response.status === 409) {
       // Conflict: Max leases exceeded
-      alert('You have reached the maximum number of active sandbox leases (5). Please terminate an existing lease before requesting a new one.');
-      window.location.href = '/try';
+      alert(
+        "You have reached the maximum number of active sandbox leases (5). Please terminate an existing lease before requesting a new one.",
+      )
+      window.location.href = "/try"
     } else {
       // Other error
-      const error = await response.json();
-      alert(`Request failed: ${error.message || 'Unknown error'}`);
+      const error = await response.json()
+      alert(`Request failed: ${error.message || "Unknown error"}`)
     }
   } catch (error) {
-    console.error('Lease request error:', error);
-    alert('Failed to request sandbox access. Please try again later.');
+    console.error("Lease request error:", error)
+    alert("Failed to request sandbox access. Please try again later.")
   } finally {
     // Close modal
-    closeModal();
+    closeModal()
   }
 }
 ```
 
 **And** request includes:
+
 - `leaseTemplateId`: UUID from Try button `data-try-id`
 - `acceptedAUP`: true (user consent)
 
 **And** response handling:
+
 - **200 OK:** Navigate to `/try` page (shows new lease)
 - **409 Conflict:** Alert user "Max leases exceeded", redirect to `/try`
 - **Other errors:** Alert user with error message, close modal
@@ -757,6 +804,7 @@ async function requestLease(tryId) {
 **Prerequisites:** Story 6.8 (Checkbox state management)
 
 **Technical Notes:**
+
 - FR-TRY-22, FR-TRY-59, FR-TRY-60, FR-TRY-61, FR-TRY-62, FR-TRY-63, FR-TRY-64, FR-TRY-65 covered
 - POST /api/leases payload: `{ leaseTemplateId: string, acceptedAUP: boolean }`
 - 409 Conflict: Max leases = 5 (returned from API configuration)
@@ -764,6 +812,7 @@ async function requestLease(tryId) {
 - JavaScript alert for errors (acceptable for MVP, can improve UX later)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client `POST /api/leases`
 - **API Endpoint:** `POST /api/leases` - Create new lease
 - **Request Type:** `{ leaseTemplateId: string; acceptedAUP: boolean }`
@@ -778,6 +827,7 @@ async function requestLease(tryId) {
 - **Timeout:** NFR-TRY-PERF-2 - 10 second timeout for API call
 
 **UX Design Context:**
+
 - **User Journey:** Try Request Flow (UX Section 5.1 Journey 2, Steps 4-6)
 - **Step 4:** User clicks Continue → Show loading state
 - **Step 5:** Lease request submitted → API call in progress
@@ -803,6 +853,7 @@ So that new lease requests appear in /try page immediately.
 
 **Given** I am authenticated and on a tryable product page
 **When** I complete end-to-end Try flow:
+
 1. Click "Try this now for 24 hours" button
 2. Modal opens with AUP
 3. Check AUP checkbox
@@ -811,6 +862,7 @@ So that new lease requests appear in /try page immediately.
 6. Navigated to `/try` page
 
 **Then** I see my new lease in the sessions table:
+
 - Template Name: Product name
 - AWS Account ID: Assigned account ID
 - Expiry: 24 hours from now
@@ -819,6 +871,7 @@ So that new lease requests appear in /try page immediately.
 - Launch button: Visible if status "Active"
 
 **And** integration test validates:
+
 - Lease appears immediately (no page refresh needed)
 - Lease data matches expected format
 - Session table sorting works (newest first)
@@ -827,6 +880,7 @@ So that new lease requests appear in /try page immediately.
 **Prerequisites:** Story 6.9 (Lease request submission)
 
 **Technical Notes:**
+
 - Integration story from Pre-mortem preventive measure #4 (user acceptance)
 - Validates Epic 6 → Epic 7 handoff
 - End-to-end test: Catalogue → Modal → API → Dashboard
@@ -834,6 +888,7 @@ So that new lease requests appear in /try page immediately.
 - Validates data flow correctness (lease appears in /try page)
 
 **Architecture Context:**
+
 - **ADR-004:** Integration tests run before Pa11y tests (layered testing)
 - **Testing:** `test/integration/epic-6-7-handoff.test.ts` - End-to-end flow validation
 - **Test Stack:** Playwright for browser automation + real Innovation Sandbox API (staging environment)
@@ -848,6 +903,7 @@ So that new lease requests appear in /try page immediately.
 - **Cleanup:** Delete test lease after test completes (idempotent tests)
 
 **UX Design Context:**
+
 - **User Journey:** Complete Try Request Flow (UX Section 5.1 Journey 2 - all steps)
 - **Validation:** User completes entire flow < 30 seconds (UX Principle 2 - friction-free)
 - **Success Criteria:** New lease visible immediately without page refresh
@@ -868,12 +924,14 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 **Then** tests validate:
 
 **Test 1: Try Button Accessibility**
+
 - Button keyboard focusable
 - Button has accessible label
 - Start button icon has ARIA hidden (decorative)
 - Focus indicator visible
 
 **Test 2: Modal Accessibility**
+
 - Modal overlay has ARIA role="dialog"
 - Modal has accessible name (aria-labelledby)
 - Focus trap works (tab cycles within modal)
@@ -881,11 +939,13 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 - Close button (X) keyboard accessible
 
 **Test 3: AUP Checkbox**
+
 - Checkbox keyboard focusable
 - Label associated with checkbox (for attribute)
 - Checkbox state announced to screen readers
 
 **Test 4: Modal Buttons**
+
 - Cancel/Continue buttons keyboard accessible
 - Disabled state announced (aria-disabled)
 - Button purpose clear from labels
@@ -896,6 +956,7 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 **Prerequisites:** Story 6.10 (Integration testing complete)
 
 **Technical Notes:**
+
 - Accessibility testing per Pre-mortem preventive measure #3
 - Use axe-core for automated validation
 - Modal focus trap: FR-TRY-72, FR-TRY-73
@@ -903,6 +964,7 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 - Full manual accessibility audit in Epic 8
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (cannot merge PR without passing)
 - **ADR-004:** Pa11y integration for WCAG 2.2 AA validation
   - Zero violations allowed for AA compliance
@@ -918,6 +980,7 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 - **Failure Mode:** PR blocked if ANY WCAG 2.2 AA violations detected
 
 **UX Design Context:**
+
 - **WCAG 2.2 Compliance:** Section 8.1 - AA minimum for all Epic 6 components
 - **Keyboard Navigation:** All Try flow components keyboard accessible (UX Section 8.3)
 - **Screen Reader:** NVDA/VoiceOver can complete full flow (validated in Epic 8)

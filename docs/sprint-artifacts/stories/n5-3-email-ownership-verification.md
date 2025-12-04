@@ -34,7 +34,7 @@ so that **emails only go to the legitimate lease owner and prevent unauthorized 
 
 ### Domain Validation (MUST)
 
-17. AC-3.17: User email domain validation: must match ISB approved domains (*.gov.uk)
+17. AC-3.17: User email domain validation: must match ISB approved domains (\*.gov.uk)
 18. AC-3.18: Log and alarm on non-approved domain emails (e.g., @gmail.com)
 
 ### Security Hardening (SHOULD)
@@ -78,7 +78,7 @@ so that **emails only go to the legitimate lease owner and prevent unauthorized 
   - [x] Require BOTH lease and account email to match
 
 - [x] Task 6: Implement domain validation (AC: 3.17, 3.18, 3.22, 3.28)
-  - [x] Validate email domain matches *.gov.uk pattern
+  - [x] Validate email domain matches \*.gov.uk pattern
   - [x] Reject suspicious patterns (++, --, .., consecutive delimiters)
   - [x] Reject test addresses (@test.com, @localhost, @example.com)
   - [x] Emit alarm on non-approved domains
@@ -147,33 +147,35 @@ From tech spec (`tech-spec-epic-n5.md:361-389`):
 const leaseKey = {
   PK: event.leaseId.userEmail,
   SK: event.leaseId.uuid,
-};
+}
 
 // ConsistentRead for security-critical operation
-const result = await dynamoClient.send(new GetCommand({
-  TableName: process.env.LEASE_TABLE_NAME,
-  Key: leaseKey,
-  ConsistentRead: true,
-}));
+const result = await dynamoClient.send(
+  new GetCommand({
+    TableName: process.env.LEASE_TABLE_NAME,
+    Key: leaseKey,
+    ConsistentRead: true,
+  }),
+)
 ```
 
 ### Security Considerations
 
 1. **Case-insensitive comparison**: Emails like `User@Gov.UK` and `user@gov.uk` should match
-2. **Domain allowlist**: Only *.gov.uk domains allowed (PRE-MORTEM enhancement)
+2. **Domain allowlist**: Only \*.gov.uk domains allowed (PRE-MORTEM enhancement)
 3. **No bypass flag**: Verification MUST be mandatory - security > convenience
 4. **PII redaction**: Never log actual email addresses in error scenarios
 5. **Dual verification**: Check BOTH LeaseTable.userEmail AND SandboxAccountTable.email
 
 ### Error Classification
 
-| Verification Error | Error Type | Retry | DLQ |
-|-------------------|------------|-------|-----|
-| Email mismatch | SecurityError | No | Yes + security log |
-| Lease not found | PermanentError | No | Yes |
-| Account not found | PermanentError | No | Yes |
-| Domain validation failed | PermanentError | No | Yes |
-| DynamoDB error | RetriableError | Yes | After 3 attempts |
+| Verification Error       | Error Type     | Retry | DLQ                |
+| ------------------------ | -------------- | ----- | ------------------ |
+| Email mismatch           | SecurityError  | No    | Yes + security log |
+| Lease not found          | PermanentError | No    | Yes                |
+| Account not found        | PermanentError | No    | Yes                |
+| Domain validation failed | PermanentError | No    | Yes                |
+| DynamoDB error           | RetriableError | Yes   | After 3 attempts   |
 
 ### Project Structure Notes
 
@@ -227,16 +229,19 @@ Claude claude-opus-4-5-20251101
 **Verdict: APPROVED**
 
 **AC Coverage:**
+
 - All 17 MUST ACs implemented and tested
 - 53 unit tests with AC ID traceability
 - Security controls verified
 
 **Observations:**
+
 1. AUDIT_SECRET env var has fallback default - document for production
 2. SecurityError context could include hashed emails (current logging is acceptable)
 3. Ops events list may need extension for future event types
 
 **Deferred Items:**
+
 - AC-3.12: Integration test deferred to n5-8
 - AC-3.21: 90-day retention is CDK config
 - AC-3.19, 3.26, 3.27: Advanced features for future
@@ -248,7 +253,7 @@ Claude claude-opus-4-5-20251101
    - DynamoDB GetItem with ConsistentRead: true for lease lookup
    - Cross-verification with SandboxAccountTable when accountId present
    - Case-insensitive email comparison using toLowerCase()
-   - Domain validation for *.gov.uk only
+   - Domain validation for \*.gov.uk only
    - Suspicious pattern rejection (++, --, .., @test.com, @localhost, @example.com)
 
 2. **Security-first design patterns**:
@@ -273,10 +278,10 @@ Claude claude-opus-4-5-20251101
 
 ### File List
 
-| File | Action | Lines |
-|------|--------|-------|
-| `infra/lib/lambda/notification/ownership.ts` | Created | ~350 |
-| `infra/lib/lambda/notification/ownership.test.ts` | Created | ~700 |
-| `infra/lib/lambda/notification/errors.ts` | Modified | +SecurityError class |
-| `infra/package.json` | Modified | +aws-sdk-client-mock devDep |
-| `infra/test/__snapshots__/ndx-stack.test.ts.snap` | Updated | Snapshot refresh |
+| File                                              | Action   | Lines                       |
+| ------------------------------------------------- | -------- | --------------------------- |
+| `infra/lib/lambda/notification/ownership.ts`      | Created  | ~350                        |
+| `infra/lib/lambda/notification/ownership.test.ts` | Created  | ~700                        |
+| `infra/lib/lambda/notification/errors.ts`         | Modified | +SecurityError class        |
+| `infra/package.json`                              | Modified | +aws-sdk-client-mock devDep |
+| `infra/test/__snapshots__/ndx-stack.test.ts.snap` | Updated  | Snapshot refresh            |

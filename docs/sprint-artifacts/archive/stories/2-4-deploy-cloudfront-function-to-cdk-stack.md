@@ -15,24 +15,22 @@ So that the function is available for attachment to cache behaviors.
 **Then** the stack includes:
 
 ```typescript
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
+import * as fs from "fs"
+import * as path from "path"
 
-const functionCode = fs.readFileSync(
-  path.join(__dirname, 'functions/cookie-router.js'),
-  'utf8'
-);
+const functionCode = fs.readFileSync(path.join(__dirname, "functions/cookie-router.js"), "utf8")
 
-const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouterFunction', {
-  functionName: 'ndx-cookie-router',
+const cookieRouterFunction = new cloudfront.Function(this, "CookieRouterFunction", {
+  functionName: "ndx-cookie-router",
   code: cloudfront.FunctionCode.fromInline(functionCode),
-  comment: 'Routes requests based on NDX cookie value',
-  runtime: cloudfront.FunctionRuntime.JS_2_0
-});
+  comment: "Routes requests based on NDX cookie value",
+  runtime: cloudfront.FunctionRuntime.JS_2_0,
+})
 ```
 
 **And** function configuration specifies:
+
 - Function name: `ndx-cookie-router`
 - Runtime: JS_2_0 (CloudFront Functions JavaScript 2.0)
 - Code loaded from file system (not hardcoded inline)
@@ -44,14 +42,16 @@ const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouterFunction
 **And** running `cdk diff` shows new Function resource being added
 
 **And** output function ARN for reference:
+
 ```typescript
-new cdk.CfnOutput(this, 'CookieRouterFunctionArn', {
+new cdk.CfnOutput(this, "CookieRouterFunctionArn", {
   value: cookieRouterFunction.functionArn,
-  description: 'ARN of CloudFront cookie router function',
-});
+  description: "ARN of CloudFront cookie router function",
+})
 ```
 
 **And** deployment succeeds:
+
 ```bash
 cdk deploy --profile NDX/InnovationSandboxHub
 ```
@@ -96,6 +96,7 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ### CloudFront Functions Runtime
 
 **Runtime Version:** JS_2_0 (CloudFront Functions JavaScript 2.0)
+
 - Latest CloudFront Functions runtime as of 2025
 - ECMAScript 5.1 compatible
 - No Node.js APIs available
@@ -107,6 +108,7 @@ cdk deploy --profile NDX/InnovationSandboxHub
 **CDK Method:** `cloudfront.FunctionCode.fromInline(functionCode)`
 
 **Why fromInline:**
+
 - Embeds function code directly in CloudFormation template
 - No external file dependencies during deployment
 - Single deployment artifact (CloudFormation template)
@@ -117,15 +119,18 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ### Function Configuration
 
 **Function Name:** `ndx-cookie-router`
+
 - Must be unique within AWS account
 - Used to reference function in console and CLI
 - Lowercase with hyphens (AWS naming convention)
 
 **Comment:** "Routes requests based on NDX cookie value"
+
 - Displayed in CloudFront console
 - Helps identify function purpose
 
 **Code Size Limit:** 10KB maximum
+
 - Current code: ~1KB (well under limit)
 - Validated in Story 2.1
 
@@ -133,6 +138,7 @@ cdk deploy --profile NDX/InnovationSandboxHub
 
 **Purpose:** Export function ARN for reference
 **Use Cases:**
+
 - Manual function association to cache behaviors (if needed)
 - Cross-stack references (if splitting stacks)
 - Documentation and troubleshooting
@@ -144,12 +150,14 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ### Deployment Process
 
 **Expected Timeline:**
+
 - CDK synth: < 10 seconds
 - CloudFormation deployment: 1-2 minutes
 - CloudFront global propagation: 2-3 minutes
 - **Total:** ~3-5 minutes
 
 **Deployment Safety:**
+
 - Function not yet attached to cache behavior (Story 2.5)
 - No impact on production traffic
 - Function deployed but inactive
@@ -158,6 +166,7 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ### Architecture Patterns
 
 **From Architecture Document:**
+
 - **ADR-001:** CloudFront Functions for sub-millisecond execution
 - **NFR-PERF-6:** CloudFront function propagation < 15 minutes (expected 2-3 minutes)
 - **FR15-16:** Deploy CloudFront Function and define code in CDK
@@ -166,6 +175,7 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ### Project Structure
 
 **Before Story 2.4:**
+
 ```
 ndx/infra/
 ├── lib/
@@ -175,6 +185,7 @@ ndx/infra/
 ```
 
 **After Story 2.4:**
+
 ```
 ndx/infra/
 ├── lib/
@@ -186,17 +197,20 @@ ndx/infra/
 ### Learnings from Previous Stories
 
 **From Story 2.1 (CloudFront Function Created):**
+
 - Function file: `infra/lib/functions/cookie-router.js`
 - Function size: 1,018 bytes (< 1KB target achieved)
 - ECMAScript 5.1 compatible
 - OAC E3P8MA1G9Y5BYE configured in origin
 
 **From Story 2.2 (Unit Tests):**
+
 - All tests passing
 - Function validated for all routing scenarios
 - Cookie parsing edge cases handled
 
 **From Story 2.3 (Cache Policy):**
+
 - NOTE: Story 2.3 marked as "drafted" - manual configuration required
 - Cache policy configuration needs manual setup in CloudFront console
 - This story (2.4) proceeds independently - function deployment doesn't depend on cache policy
@@ -204,14 +218,17 @@ ndx/infra/
 ### References
 
 **Epic Context:**
+
 - [Source: docs/epics.md#Story-2.4]
 - [Source: docs/sprint-artifacts/tech-spec-epic-2.md#Story-2.4]
 
 **Architecture:**
+
 - [Source: docs/architecture.md#CloudFront-Function-Pattern]
 - [Source: docs/architecture.md#ADR-001-CloudFront-Functions-over-Lambda@Edge]
 
 **Requirements:**
+
 - Implements FR15 (Deploy CloudFront Function)
 - Implements FR16 (Define function code in CDK)
 - Implements FR18 (Function deployment in CDK update)
@@ -230,6 +247,7 @@ claude-sonnet-4-5-20250929
 ### Debug Log References
 
 **Implementation Plan:**
+
 1. Added `import * as fs from 'fs'` to ndx-stack.ts
 2. Loaded cookie-router.js function code using fs.readFileSync()
 3. Created CloudFront Function resource with JS_2_0 runtime
@@ -244,6 +262,7 @@ claude-sonnet-4-5-20250929
 ✅ **CloudFront Function Deployed Successfully**
 
 **Implementation Details:**
+
 - Modified `infra/lib/ndx-stack.ts` to include CloudFront Function resource
 - Function code loaded from `lib/functions/cookie-router.js` (1,179 bytes)
 - Function embedded inline in CloudFormation template
@@ -251,6 +270,7 @@ claude-sonnet-4-5-20250929
 - Function ARN: arn:aws:cloudfront::568672915267:function/ndx-cookie-router
 
 **Deployment Results:**
+
 - CloudFormation stack status: UPDATE_COMPLETE
 - Deployment time: 26.68 seconds
 - Function deployed to both DEVELOPMENT and LIVE stages
@@ -258,6 +278,7 @@ claude-sonnet-4-5-20250929
 - Function auto-published (AutoPublish: true in CloudFormation)
 
 **CDK Validation:**
+
 - `cdk synth` succeeded
 - `cdk diff` showed new CloudFront Function resource being added
 - New output: CookieRouterFunctionArn
@@ -265,12 +286,14 @@ claude-sonnet-4-5-20250929
 - All tests passed (18 tests, 1 snapshot)
 
 **AWS Verification:**
+
 - Function visible in CloudFront console
 - Function exists in both DEVELOPMENT and LIVE stages
 - Created time: 2025-11-20T17:54:53.745000+00:00
 - Last modified time: 2025-11-20T17:54:54.945000+00:00
 
 **Architecture Alignment:**
+
 - Follows ADR-001: CloudFront Functions for sub-millisecond execution
 - Implements FR15: Deploy CloudFront Function
 - Implements FR16: Define function code in CDK
@@ -278,6 +301,7 @@ claude-sonnet-4-5-20250929
 - Implements FR19: Propagate function globally
 
 **Next Steps:**
+
 - Story 2.5 will attach this function to the default cache behavior
 - Function will remain inactive until attached (no production impact)
 - Function ready for association with viewer-request event type
@@ -285,14 +309,17 @@ claude-sonnet-4-5-20250929
 ### File List
 
 **MODIFIED:**
+
 - `infra/lib/ndx-stack.ts` - Added CloudFront Function resource and output
 
 **NO NEW FILES:**
+
 - Function code already exists from Story 2.1 at `lib/functions/cookie-router.js`
 
 ---
 
 **Change Log:**
+
 - 2025-11-20: Story created from Epic 2, Story 2.4 (backlog → drafted)
 - 2025-11-20: Story marked ready for development (drafted → ready-for-dev)
 - 2025-11-20: Implementation complete, all acceptance criteria met (ready-for-dev → in-progress → review)
@@ -315,6 +342,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 **No blocking or medium severity issues found.**
 
 **Positive Observations:**
+
 - Clean CDK implementation following AWS best practices
 - Proper function code loading using fs.readFileSync()
 - Function ARN output added for operational reference
@@ -323,53 +351,53 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | CloudFront Function added to CDK stack | IMPLEMENTED | Lines 114-129 in ndx-stack.ts |
-| AC2 | Function code loaded from file system | IMPLEMENTED | Lines 116-119: fs.readFileSync() with path.join() |
-| AC3 | Function name: ndx-cookie-router | IMPLEMENTED | Line 125: functionName property |
-| AC4 | Runtime: JS_2_0 | IMPLEMENTED | Line 128: cloudfront.FunctionRuntime.JS_2_0 |
-| AC5 | Code embedded inline | IMPLEMENTED | Line 126: FunctionCode.fromInline(functionCode) |
-| AC6 | Comment describes purpose | IMPLEMENTED | Line 127: 'Routes requests based on NDX cookie value' |
-| AC7 | Function ARN output added | IMPLEMENTED | Lines 144-147: CookieRouterFunctionArn output |
-| AC8 | CDK synth succeeds | IMPLEMENTED | Verified in deployment logs |
-| AC9 | CloudFormation includes AWS::CloudFront::Function | IMPLEMENTED | Verified in synth output |
-| AC10 | CDK diff shows new Function resource | IMPLEMENTED | Verified in diff output |
-| AC11 | Deploy succeeds with UPDATE_COMPLETE | IMPLEMENTED | CloudFormation status confirmed |
-| AC12 | Function deployed globally | IMPLEMENTED | Function exists in DEVELOPMENT and LIVE stages |
-| AC13 | Function ARN output displayed | IMPLEMENTED | Output: arn:aws:cloudfront::568672915267:function/ndx-cookie-router |
+| AC#  | Description                                       | Status      | Evidence                                                            |
+| ---- | ------------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| AC1  | CloudFront Function added to CDK stack            | IMPLEMENTED | Lines 114-129 in ndx-stack.ts                                       |
+| AC2  | Function code loaded from file system             | IMPLEMENTED | Lines 116-119: fs.readFileSync() with path.join()                   |
+| AC3  | Function name: ndx-cookie-router                  | IMPLEMENTED | Line 125: functionName property                                     |
+| AC4  | Runtime: JS_2_0                                   | IMPLEMENTED | Line 128: cloudfront.FunctionRuntime.JS_2_0                         |
+| AC5  | Code embedded inline                              | IMPLEMENTED | Line 126: FunctionCode.fromInline(functionCode)                     |
+| AC6  | Comment describes purpose                         | IMPLEMENTED | Line 127: 'Routes requests based on NDX cookie value'               |
+| AC7  | Function ARN output added                         | IMPLEMENTED | Lines 144-147: CookieRouterFunctionArn output                       |
+| AC8  | CDK synth succeeds                                | IMPLEMENTED | Verified in deployment logs                                         |
+| AC9  | CloudFormation includes AWS::CloudFront::Function | IMPLEMENTED | Verified in synth output                                            |
+| AC10 | CDK diff shows new Function resource              | IMPLEMENTED | Verified in diff output                                             |
+| AC11 | Deploy succeeds with UPDATE_COMPLETE              | IMPLEMENTED | CloudFormation status confirmed                                     |
+| AC12 | Function deployed globally                        | IMPLEMENTED | Function exists in DEVELOPMENT and LIVE stages                      |
+| AC13 | Function ARN output displayed                     | IMPLEMENTED | Output: arn:aws:cloudfront::568672915267:function/ndx-cookie-router |
 
 **Summary:** 13 of 13 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Add CloudFront Function to CDK | Complete | VERIFIED | Lines 114-129 in ndx-stack.ts |
-| Task 1.1: Import fs module | Complete | VERIFIED | Line 10: import * as fs from 'fs' |
-| Task 1.2: Load function code with fs.readFileSync | Complete | VERIFIED | Lines 116-119: fs.readFileSync with utf8 encoding |
-| Task 1.3: Create CloudFront Function construct | Complete | VERIFIED | Lines 124-129: Complete function configuration |
-| Task 1.4: Add CfnOutput for ARN | Complete | VERIFIED | Lines 144-147: CookieRouterFunctionArn output |
-| Task 2: Validate CDK synthesis | Complete | VERIFIED | cdk synth succeeded, CloudFormation template generated |
-| Task 2.1: Run cdk synth | Complete | VERIFIED | Synthesis successful in deployment logs |
-| Task 2.2: Verify AWS::CloudFront::Function | Complete | VERIFIED | Resource present in CloudFormation template |
-| Task 2.3: Verify function code embedded | Complete | VERIFIED | Function code visible in template |
-| Task 2.4: Verify runtime cloudfront-js-2.0 | Complete | VERIFIED | Runtime confirmed in template and AWS |
-| Task 3: Preview deployment changes | Complete | VERIFIED | cdk diff showed new Function resource |
-| Task 3.1: Run cdk diff | Complete | VERIFIED | Diff output showed changes clearly |
-| Task 3.2: Verify new Function shown | Complete | VERIFIED | [+] AWS::CloudFront::Function CookieRouterFunction |
-| Task 3.3: Verify function name | Complete | VERIFIED | Function name: ndx-cookie-router |
-| Task 3.4: Verify no unintended changes | Complete | VERIFIED | Only Function and output added, no other changes |
-| Task 4: Deploy to AWS | Complete | VERIFIED | Deployment succeeded in 26.68 seconds |
-| Task 4.1: Run cdk deploy | Complete | VERIFIED | CloudFormation UPDATE_COMPLETE |
-| Task 4.2: Verify UPDATE_COMPLETE | Complete | VERIFIED | Stack status confirmed |
-| Task 4.3: Wait for propagation | Complete | VERIFIED | Function deployed to DEVELOPMENT and LIVE |
-| Task 4.4: Verify function exists | Complete | VERIFIED | Visible in CloudFront console and CLI |
-| Task 5: Validate deployment | Complete | VERIFIED | All post-deployment checks passed |
-| Task 5.1: Verify ARN output | Complete | VERIFIED | ARN displayed in CDK outputs |
-| Task 5.2: List functions via CLI | Complete | VERIFIED | aws cloudfront list-functions succeeded |
-| Task 5.3: Confirm function exists | Complete | VERIFIED | Function exists in both stages |
-| Task 5.4: Verify UNASSOCIATED status | Complete | VERIFIED | Function not attached to distribution yet |
+| Task                                              | Marked As | Verified As | Evidence                                               |
+| ------------------------------------------------- | --------- | ----------- | ------------------------------------------------------ |
+| Task 1: Add CloudFront Function to CDK            | Complete  | VERIFIED    | Lines 114-129 in ndx-stack.ts                          |
+| Task 1.1: Import fs module                        | Complete  | VERIFIED    | Line 10: import \* as fs from 'fs'                     |
+| Task 1.2: Load function code with fs.readFileSync | Complete  | VERIFIED    | Lines 116-119: fs.readFileSync with utf8 encoding      |
+| Task 1.3: Create CloudFront Function construct    | Complete  | VERIFIED    | Lines 124-129: Complete function configuration         |
+| Task 1.4: Add CfnOutput for ARN                   | Complete  | VERIFIED    | Lines 144-147: CookieRouterFunctionArn output          |
+| Task 2: Validate CDK synthesis                    | Complete  | VERIFIED    | cdk synth succeeded, CloudFormation template generated |
+| Task 2.1: Run cdk synth                           | Complete  | VERIFIED    | Synthesis successful in deployment logs                |
+| Task 2.2: Verify AWS::CloudFront::Function        | Complete  | VERIFIED    | Resource present in CloudFormation template            |
+| Task 2.3: Verify function code embedded           | Complete  | VERIFIED    | Function code visible in template                      |
+| Task 2.4: Verify runtime cloudfront-js-2.0        | Complete  | VERIFIED    | Runtime confirmed in template and AWS                  |
+| Task 3: Preview deployment changes                | Complete  | VERIFIED    | cdk diff showed new Function resource                  |
+| Task 3.1: Run cdk diff                            | Complete  | VERIFIED    | Diff output showed changes clearly                     |
+| Task 3.2: Verify new Function shown               | Complete  | VERIFIED    | [+] AWS::CloudFront::Function CookieRouterFunction     |
+| Task 3.3: Verify function name                    | Complete  | VERIFIED    | Function name: ndx-cookie-router                       |
+| Task 3.4: Verify no unintended changes            | Complete  | VERIFIED    | Only Function and output added, no other changes       |
+| Task 4: Deploy to AWS                             | Complete  | VERIFIED    | Deployment succeeded in 26.68 seconds                  |
+| Task 4.1: Run cdk deploy                          | Complete  | VERIFIED    | CloudFormation UPDATE_COMPLETE                         |
+| Task 4.2: Verify UPDATE_COMPLETE                  | Complete  | VERIFIED    | Stack status confirmed                                 |
+| Task 4.3: Wait for propagation                    | Complete  | VERIFIED    | Function deployed to DEVELOPMENT and LIVE              |
+| Task 4.4: Verify function exists                  | Complete  | VERIFIED    | Visible in CloudFront console and CLI                  |
+| Task 5: Validate deployment                       | Complete  | VERIFIED    | All post-deployment checks passed                      |
+| Task 5.1: Verify ARN output                       | Complete  | VERIFIED    | ARN displayed in CDK outputs                           |
+| Task 5.2: List functions via CLI                  | Complete  | VERIFIED    | aws cloudfront list-functions succeeded                |
+| Task 5.3: Confirm function exists                 | Complete  | VERIFIED    | Function exists in both stages                         |
+| Task 5.4: Verify UNASSOCIATED status              | Complete  | VERIFIED    | Function not attached to distribution yet              |
 
 **Summary:** 25 of 25 completed tasks verified ✓
 **Questionable:** 0
@@ -378,6 +406,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 ### Test Coverage and Gaps
 
 **Current Coverage:**
+
 - All existing tests pass (18 tests, 1 snapshot)
 - CDK stack test validates CloudFormation synthesis
 - Cookie router unit tests validate function logic
@@ -387,6 +416,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 ### Architectural Alignment
 
 **Tech Spec Compliance:** ✓
+
 - Follows tech-spec-epic-2.md Story 2.4 implementation guide exactly
 - Function name matches spec: ndx-cookie-router
 - Runtime matches spec: JS_2_0
@@ -394,6 +424,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 - ARN output added as specified
 
 **Architecture Document Compliance:** ✓
+
 - **ADR-001:** CloudFront Functions pattern correctly implemented
 - **FR15:** CloudFront Function deployed successfully
 - **FR16:** Function code defined in CDK (loaded from file)
@@ -402,6 +433,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 - **NFR-PERF-6:** Function propagation < 15 minutes (completed in ~2-3 minutes)
 
 **Code Quality:**
+
 - Clean, well-commented code
 - Proper use of path.join() for cross-platform compatibility
 - Function code loaded with utf8 encoding specified
@@ -414,6 +446,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 **No security concerns identified.**
 
 **Positive Security Observations:**
+
 - Function code loaded from local file system (trusted source)
 - No external dependencies or network calls
 - Function code validated in Story 2.1 (no console.log, no eval)
@@ -423,6 +456,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 ### Best Practices and References
 
 **CDK Best Practices:**
+
 - ✓ Function code loaded from external file (maintainability)
 - ✓ Clear comments explaining purpose and context
 - ✓ ARN exported as CloudFormation output (operational visibility)
@@ -430,11 +464,13 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 - ✓ Runtime version explicitly specified (not default)
 
 **CloudFront Function Best Practices:**
+
 - ✓ Function not yet attached to distribution (safe deployment)
 - ✓ Function auto-published (LIVE stage available)
 - ✓ Function name follows naming convention (lowercase, hyphens)
 
 **References:**
+
 - [CDK CloudFront Function Documentation](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront.Function.html)
 - [CloudFront Functions Runtime](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/functions-javascript-runtime-features.html)
 
@@ -443,6 +479,7 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 **No action items required** - Implementation is production-ready.
 
 **Next Steps:**
+
 - Story 2.5 will attach this function to the default cache behavior
 - Function will execute as viewer-request handler
 - Story 2.3 (cache policy configuration) may need completion before Story 2.5
@@ -450,18 +487,21 @@ Story 2.4 implementation is complete and meets all acceptance criteria. The Clou
 ### Additional Observations
 
 **Deployment Performance:**
+
 - Deployment time: 26.68 seconds (excellent)
 - CloudFormation changeset creation: ~3 seconds
 - Function creation: ~4 seconds
 - Global propagation: Immediate (DEVELOPMENT and LIVE stages)
 
 **Operational Readiness:**
+
 - Function ARN available for manual operations
 - Function visible in CloudFront console
 - Function ready for cache behavior association
 - No production impact (function not yet active)
 
 **Testing:**
+
 - All 18 tests pass
 - 1 snapshot test validates CloudFormation template
 - Cookie router unit tests validate function logic

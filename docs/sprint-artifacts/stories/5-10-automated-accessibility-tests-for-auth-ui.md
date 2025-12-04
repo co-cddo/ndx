@@ -91,71 +91,75 @@ So that authentication components meet WCAG 2.2 AA standards.
 ### Architecture Context
 
 **ADR-037: Mandatory accessibility testing gate**
+
 - Cannot merge PR without passing Pa11y/axe tests
 - Prevents accessibility regressions from Day 1
 
 **ADR-004: Pa11y/axe integration for automated WCAG 2.2 AA validation**
+
 - Zero violations allowed for AA compliance
 
 ### Technical Implementation
 
 ```typescript
 // tests/e2e/accessibility/auth-accessibility.spec.ts
-import { test, expect } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from "@playwright/test"
+import AxeBuilder from "@axe-core/playwright"
 
-test.describe('Auth UI Accessibility (Story 5.10)', () => {
-  test('AC #3, #4: Sign in button has no WCAG AA violations', async ({ page }) => {
-    await page.goto('/');
-
-    const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
-      .analyze();
-
-    expect(accessibilityScanResults.violations).toEqual([]);
-  });
-
-  test('AC #3, #4: /try empty state has no WCAG AA violations', async ({ page }) => {
-    await page.goto('/try');
+test.describe("Auth UI Accessibility (Story 5.10)", () => {
+  test("AC #3, #4: Sign in button has no WCAG AA violations", async ({ page }) => {
+    await page.goto("/")
 
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
-      .analyze();
+      .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
+      .analyze()
 
-    expect(accessibilityScanResults.violations).toEqual([]);
-  });
+    expect(accessibilityScanResults.violations).toEqual([])
+  })
 
-  test('AC #1: Keyboard navigation to sign in button', async ({ page }) => {
-    await page.goto('/');
+  test("AC #3, #4: /try empty state has no WCAG AA violations", async ({ page }) => {
+    await page.goto("/try")
+
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
+      .analyze()
+
+    expect(accessibilityScanResults.violations).toEqual([])
+  })
+
+  test("AC #1: Keyboard navigation to sign in button", async ({ page }) => {
+    await page.goto("/")
 
     // Tab to sign in button
-    await page.keyboard.press('Tab');
+    await page.keyboard.press("Tab")
     // ... verify focus is on sign in button
 
     // Enter activates button
-    await page.keyboard.press('Enter');
+    await page.keyboard.press("Enter")
     // ... verify action triggered
-  });
-});
+  })
+})
 ```
 
 ### Learnings from Previous Stories
 
 **From Story 5.9 (Status: done)**
+
 - /try page has empty state with sign in button
 - Uses GOV.UK Design System classes (inherently accessible)
 
 **From Story 5.1 (Status: done)**
+
 - Sign in/out buttons in header
-- Uses govuk-header__link class
+- Uses govuk-header\_\_link class
 
 ### Test Coverage Map
 
-| Component | Test File | AC Coverage |
-|-----------|-----------|-------------|
-| Sign in button (header) | auth-accessibility.spec.ts | #1, #2, #3, #4 |
+| Component                | Test File                  | AC Coverage    |
+| ------------------------ | -------------------------- | -------------- |
+| Sign in button (header)  | auth-accessibility.spec.ts | #1, #2, #3, #4 |
 | Sign out button (header) | auth-accessibility.spec.ts | #1, #2, #3, #4 |
-| /try empty state | auth-accessibility.spec.ts | #1, #2, #3, #4 |
+| /try empty state         | auth-accessibility.spec.ts | #1, #2, #3, #4 |
 
 ### References
 
@@ -221,31 +225,32 @@ One test had a flaky assertion (Enter key navigation test) which was fixed durin
 
 **Summary: 6 of 6 acceptance criteria fully implemented**
 
-| AC # | Description | Status | Evidence (file:line) |
-|------|-------------|--------|---------------------|
-| AC #1 | Keyboard Navigation Tests | ✅ IMPLEMENTED | auth-accessibility.spec.ts:163-266 (3 tests: Tab focus, focus visibility, Enter activation) |
-| AC #2 | Screen Reader Accessibility Tests | ✅ IMPLEMENTED | auth-accessibility.spec.ts:268-355 (4 tests: accessible name, heading level, role attribute, body text) |
-| AC #3 | Color Contrast Tests | ✅ IMPLEMENTED | auth-accessibility.spec.ts:24-161 (axe-core scans with wcag2a, wcag2aa, wcag22aa tags automatically check contrast) |
-| AC #4 | ARIA Compliance Tests | ✅ IMPLEMENTED | auth-accessibility.spec.ts:24-161 + 319-325 (axe-core scans + explicit role="button" test) |
-| AC #5 | CI Pipeline Integration | ✅ IMPLEMENTED | .github/workflows/test.yml:44-45 (dedicated accessibility test step runs after E2E tests) |
-| AC #6 | Test Framework Integration | ✅ IMPLEMENTED | package.json:38 (@axe-core/playwright v4.11.0) + 12 tests covering all auth components |
+| AC #  | Description                       | Status         | Evidence (file:line)                                                                                                |
+| ----- | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| AC #1 | Keyboard Navigation Tests         | ✅ IMPLEMENTED | auth-accessibility.spec.ts:163-266 (3 tests: Tab focus, focus visibility, Enter activation)                         |
+| AC #2 | Screen Reader Accessibility Tests | ✅ IMPLEMENTED | auth-accessibility.spec.ts:268-355 (4 tests: accessible name, heading level, role attribute, body text)             |
+| AC #3 | Color Contrast Tests              | ✅ IMPLEMENTED | auth-accessibility.spec.ts:24-161 (axe-core scans with wcag2a, wcag2aa, wcag22aa tags automatically check contrast) |
+| AC #4 | ARIA Compliance Tests             | ✅ IMPLEMENTED | auth-accessibility.spec.ts:24-161 + 319-325 (axe-core scans + explicit role="button" test)                          |
+| AC #5 | CI Pipeline Integration           | ✅ IMPLEMENTED | .github/workflows/test.yml:44-45 (dedicated accessibility test step runs after E2E tests)                           |
+| AC #6 | Test Framework Integration        | ✅ IMPLEMENTED | package.json:38 (@axe-core/playwright v4.11.0) + 12 tests covering all auth components                              |
 
 ### Task Completion Validation
 
 **Summary: 6 of 6 completed tasks verified**
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Install Accessibility Testing Dependencies | ✅ Complete | ✅ VERIFIED | package.json:38 (@axe-core/playwright v4.11.0 installed) |
-| Task 2: Keyboard Navigation Tests | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:163-266 (all 3 subtasks implemented and passing) |
-| Task 3: Screen Reader Accessibility Tests | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:268-355 (all 3 subtasks implemented and passing) |
-| Task 4: Axe-Core Automated Scanning | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:24-161 (all 4 subtasks: home/try/auth scans + zero violations assertion) |
-| Task 5: CI Pipeline Configuration | ✅ Complete | ✅ VERIFIED | .github/workflows/test.yml:44-45 (dedicated test step), package.json:19 (test:e2e:accessibility script) |
-| Task 6: Documentation | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:1-12 (JSDoc), package.json:19 (script documented) |
+| Task                                               | Marked As   | Verified As | Evidence                                                                                                |
+| -------------------------------------------------- | ----------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| Task 1: Install Accessibility Testing Dependencies | ✅ Complete | ✅ VERIFIED | package.json:38 (@axe-core/playwright v4.11.0 installed)                                                |
+| Task 2: Keyboard Navigation Tests                  | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:163-266 (all 3 subtasks implemented and passing)                             |
+| Task 3: Screen Reader Accessibility Tests          | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:268-355 (all 3 subtasks implemented and passing)                             |
+| Task 4: Axe-Core Automated Scanning                | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:24-161 (all 4 subtasks: home/try/auth scans + zero violations assertion)     |
+| Task 5: CI Pipeline Configuration                  | ✅ Complete | ✅ VERIFIED | .github/workflows/test.yml:44-45 (dedicated test step), package.json:19 (test:e2e:accessibility script) |
+| Task 6: Documentation                              | ✅ Complete | ✅ VERIFIED | auth-accessibility.spec.ts:1-12 (JSDoc), package.json:19 (script documented)                            |
 
 ### Test Coverage and Gaps
 
 **Test Coverage:**
+
 - ✅ 12 tests for Story 5.10 authentication UI accessibility
 - ✅ 4 axe-core WCAG 2.2 AA scans (home unauthenticated/authenticated, /try unauthenticated/authenticated, callback page)
 - ✅ 3 keyboard navigation tests (Tab focus, focus indicator, Enter key activation)
@@ -253,6 +258,7 @@ One test had a flaky assertion (Enter key navigation test) which was fixed durin
 - ✅ All tests pass (12/12 passing as of 2025-11-25)
 
 **Graceful Degradation:**
+
 - Tests correctly skip when Story 5.9 features not deployed (prevents false failures)
 - 5-second timeout for feature detection prevents test flakiness
 
@@ -261,11 +267,13 @@ One test had a flaky assertion (Enter key navigation test) which was fixed durin
 ### Architectural Alignment
 
 **Tech-Spec Compliance:**
+
 - ✅ Uses @axe-core/playwright as specified in AC #6
 - ✅ Tests cover all authentication UI components (sign in, sign out, /try empty state)
 - ✅ WCAG 2.2 AA compliance enforced via axe tags: `['wcag2a', 'wcag2aa', 'wcag22aa']`
 
 **Architecture Adherence:**
+
 - ✅ **ADR-004** compliance: Pa11y/axe integration for automated WCAG 2.2 AA validation
 - ✅ **ADR-037** compliance: Mandatory accessibility testing gate in CI pipeline
 - ✅ Zero violations policy enforced: `expect(violations).toEqual([])`
@@ -289,12 +297,13 @@ No security concerns identified. Tests run against localhost/staging environment
 None - all issues found were fixed during review
 
 **Advisory Notes:**
+
 - Note: When Story 5.9 is fully deployed, 7 currently-skipped tests will automatically activate (no code changes needed)
 - Note: Consider adding visual regression tests for focus indicators in future stories (not blocking for this story)
 
 ### Change Log
 
-| Date | Change | Author |
-|------|--------|--------|
-| 2025-11-24 | Implementation complete | Dev Agent |
-| 2025-11-25 | Senior Developer Review: APPROVED (1 test improvement applied) | cns |
+| Date       | Change                                                         | Author    |
+| ---------- | -------------------------------------------------------------- | --------- |
+| 2025-11-24 | Implementation complete                                        | Dev Agent |
+| 2025-11-25 | Senior Developer Review: APPROVED (1 test improvement applied) | cns       |

@@ -91,6 +91,7 @@ The purpose is to verify that the Custom Resource Lambda approach used in Story 
 Since the distribution is managed by AWS Solutions template (Innovation Sandbox) and modified via Custom Resource Lambda (not CDK-managed), we'll use AWS CLI to directly query the distribution configuration rather than relying solely on `cdk diff`.
 
 **Key Verification Points:**
+
 1. Distribution has exactly 3 origins (2 existing + 1 new)
 2. New origin `ndx-static-prod-origin` properly configured
 3. Existing S3Origin completely unchanged
@@ -100,6 +101,7 @@ Since the distribution is managed by AWS Solutions template (Innovation Sandbox)
 ### Architecture Patterns and Constraints
 
 **Critical Requirements:**
+
 - FR5: Preserve existing S3Origin completely unchanged (bucket, OAC, timeouts, protocol)
 - FR6: Preserve API Gateway origin completely unchanged (endpoint, path, protocol, timeouts)
 - NFR-COMP-2: Changes must be reviewed and approved before deployment (this validation provides approval basis)
@@ -107,6 +109,7 @@ Since the distribution is managed by AWS Solutions template (Innovation Sandbox)
 **Existing Origin Configuration (from PRD):**
 
 **S3Origin:**
+
 - Origin ID: `S3Origin`
 - Bucket: `ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky`
 - OAC: E3P8MA1G9Y5BYE
@@ -116,6 +119,7 @@ Since the distribution is managed by AWS Solutions template (Innovation Sandbox)
 - Protocol: HTTPS only
 
 **API Gateway Origin:**
+
 - Origin ID: `InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A`
 - Domain: `1ewlxhaey6.execute-api.us-west-2.amazonaws.com`
 - Path: `/prod`
@@ -125,6 +129,7 @@ Since the distribution is managed by AWS Solutions template (Innovation Sandbox)
 - Read timeout: 30 seconds
 
 **New Origin (added in Story 1.2):**
+
 - Origin ID: `ndx-static-prod-origin`
 - Domain: `ndx-static-prod.s3.us-west-2.amazonaws.com`
 - OAC: E3P8MA1G9Y5BYE (reused)
@@ -196,6 +201,7 @@ aws cloudfront get-distribution \
 ```
 
 **CDK Diff (Supplemental):**
+
 ```bash
 cd infra
 cdk diff --profile NDX/InnovationSandboxHub
@@ -205,6 +211,7 @@ cdk diff --profile NDX/InnovationSandboxHub
 ```
 
 **Success Criteria:**
+
 - Distribution has 3 origins total
 - New origin present with correct configuration
 - Both existing origins completely unchanged (verified via JSON comparison)
@@ -215,29 +222,34 @@ cdk diff --profile NDX/InnovationSandboxHub
 ### References
 
 **Technical Specification:**
+
 - [Source: docs/sprint-artifacts/tech-spec-epic-1.md#Story-1.3]
 - Lines 112-135: Validation story implementation guide
 - This is a validation-only story (no code changes)
 
 **Architecture:**
+
 - [Source: docs/architecture.md#Origin-Configuration]
 - Lines 186-196: Origin configuration requirements
 - [Source: docs/architecture.md#ADR-002]
 - Lines 638-657: OAC reuse decision
 
 **PRD Requirements:**
+
 - [Source: docs/prd.md#Infrastructure-Specific-Requirements]
 - Lines 169-178: Existing origins that must be preserved
 - FR5: System preserves existing S3Origin completely unchanged
 - FR6: System preserves API Gateway origin completely unchanged
 
 **Epic Context:**
+
 - [Source: docs/epics.md#Story-1.3]
 - Lines 200-239
 - Prerequisites: Story 1.2 complete (new origin added)
 - This story provides approval basis for Story 1.4 deployment
 
 **Previous Story Insights:**
+
 - [Source: stories/1-2-add-new-s3-origin-with-origin-access-control.md]
 - Custom Resource Lambda pattern successfully deployed
 - New origin added via CloudFront API
@@ -300,7 +312,7 @@ Used AWS CLI to directly query CloudFront distribution E3THG4UHYDHVWP configurat
 
 6. **Cache Behaviors Unchanged**:
    - Default cache behavior target: `S3Origin` ✓
-   - Cache behaviors count: 1 (for /prod/* API Gateway routes) ✓
+   - Cache behaviors count: 1 (for /prod/\* API Gateway routes) ✓
    - No modifications detected ✓
 
 7. **CDK Diff**:
@@ -308,6 +320,7 @@ Used AWS CLI to directly query CloudFront distribution E3THG4UHYDHVWP configurat
    - Stack is idempotent (Custom Resource Lambda manages origin via API) ✓
 
 **Compliance with Requirements:**
+
 - ✅ FR5: Existing S3Origin preserved completely unchanged
 - ✅ FR6: API Gateway origin preserved completely unchanged
 - ✅ NFR-COMP-2: Changes documented for approval review
@@ -344,6 +357,7 @@ Story 1.3 is a validation-only story that systematically verified the CloudFront
 **No findings** - This story was executed flawlessly.
 
 **Positive Observations:**
+
 - Excellent use of AWS CLI for direct CloudFront API queries
 - Comprehensive verification of all origin properties
 - Clear documentation with specific evidence (not just "looks good")
@@ -354,30 +368,30 @@ Story 1.3 is a validation-only story that systematically verified the CloudFront
 
 **Summary:** 9 of 9 acceptance criteria fully implemented ✅
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | `cdk diff` generates preview | ✅ IMPLEMENTED | Completion Notes: CDK diff executed, result: "no differences" (expected for Custom Resource pattern) |
-| AC2 | New origin `ndx-static-prod-origin` shown | ✅ IMPLEMENTED | Completion Notes line 277: Verified via AWS CLI - 3 origins total |
-| AC3 | Existing S3Origin unchanged | ✅ IMPLEMENTED | Completion Notes lines 284-290: All properties verified unchanged |
-| AC4 | API Gateway origin unchanged | ✅ IMPLEMENTED | Completion Notes lines 292-299: All properties verified unchanged |
-| AC5 | S3Origin details verified unchanged | ✅ IMPLEMENTED | Bucket, OAC E3P8MA1G9Y5BYE, connection attempts: 3, timeouts: 10s/30s all match |
-| AC6 | API Gateway details verified unchanged | ✅ IMPLEMENTED | Domain, path /prod, connection settings all match expected values |
-| AC7 | Cache behaviors unchanged | ✅ IMPLEMENTED | Completion Notes lines 301-304: Default targets S3Origin, 1 behavior exists |
-| AC8 | Viewer protocol policies unchanged | ✅ IMPLEMENTED | Included in cache behavior verification |
-| AC9 | Diff documented for approval | ✅ IMPLEMENTED | Comprehensive completion notes with all findings and evidence |
+| AC# | Description                               | Status         | Evidence                                                                                             |
+| --- | ----------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------- |
+| AC1 | `cdk diff` generates preview              | ✅ IMPLEMENTED | Completion Notes: CDK diff executed, result: "no differences" (expected for Custom Resource pattern) |
+| AC2 | New origin `ndx-static-prod-origin` shown | ✅ IMPLEMENTED | Completion Notes line 277: Verified via AWS CLI - 3 origins total                                    |
+| AC3 | Existing S3Origin unchanged               | ✅ IMPLEMENTED | Completion Notes lines 284-290: All properties verified unchanged                                    |
+| AC4 | API Gateway origin unchanged              | ✅ IMPLEMENTED | Completion Notes lines 292-299: All properties verified unchanged                                    |
+| AC5 | S3Origin details verified unchanged       | ✅ IMPLEMENTED | Bucket, OAC E3P8MA1G9Y5BYE, connection attempts: 3, timeouts: 10s/30s all match                      |
+| AC6 | API Gateway details verified unchanged    | ✅ IMPLEMENTED | Domain, path /prod, connection settings all match expected values                                    |
+| AC7 | Cache behaviors unchanged                 | ✅ IMPLEMENTED | Completion Notes lines 301-304: Default targets S3Origin, 1 behavior exists                          |
+| AC8 | Viewer protocol policies unchanged        | ✅ IMPLEMENTED | Included in cache behavior verification                                                              |
+| AC9 | Diff documented for approval              | ✅ IMPLEMENTED | Comprehensive completion notes with all findings and evidence                                        |
 
 ### Task Completion Validation
 
 **Summary:** 6 of 6 completed tasks verified ✅ | 0 questionable | 0 falsely marked complete ✅
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Generate CDK diff output | [x] Complete | ✅ VERIFIED | Completion Notes: CDK diff executed, output documented |
-| Verify new origin addition | [x] Complete | ✅ VERIFIED | Completion Notes: AWS CLI confirmed 3 origins, ndx-static-prod-origin present with correct config |
-| Validate existing S3Origin unchanged | [x] Complete | ✅ VERIFIED | Completion Notes lines 284-290: Complete property verification |
-| Validate API Gateway origin unchanged | [x] Complete | ✅ VERIFIED | Completion Notes lines 292-299: Complete property verification |
-| Verify cache behaviors unchanged | [x] Complete | ✅ VERIFIED | Completion Notes lines 301-304: Default behavior and count verified |
-| Document findings | [x] Complete | ✅ VERIFIED | Comprehensive completion notes with structured evidence |
+| Task                                  | Marked As    | Verified As | Evidence                                                                                          |
+| ------------------------------------- | ------------ | ----------- | ------------------------------------------------------------------------------------------------- |
+| Generate CDK diff output              | [x] Complete | ✅ VERIFIED | Completion Notes: CDK diff executed, output documented                                            |
+| Verify new origin addition            | [x] Complete | ✅ VERIFIED | Completion Notes: AWS CLI confirmed 3 origins, ndx-static-prod-origin present with correct config |
+| Validate existing S3Origin unchanged  | [x] Complete | ✅ VERIFIED | Completion Notes lines 284-290: Complete property verification                                    |
+| Validate API Gateway origin unchanged | [x] Complete | ✅ VERIFIED | Completion Notes lines 292-299: Complete property verification                                    |
+| Verify cache behaviors unchanged      | [x] Complete | ✅ VERIFIED | Completion Notes lines 301-304: Default behavior and count verified                               |
+| Document findings                     | [x] Complete | ✅ VERIFIED | Comprehensive completion notes with structured evidence                                           |
 
 **All subtasks (24 total) also verified complete with evidence in completion notes.**
 
@@ -401,12 +415,14 @@ No security concerns. This is a validation-only story with no code or configurat
 ### Best-Practices and References
 
 **Validation Approach:**
+
 - ✅ Used AWS CLI for direct CloudFront API queries (appropriate for Custom Resource pattern)
 - ✅ Verified all origin properties systematically
 - ✅ Documented evidence with specific values (not assumptions)
 - ✅ Understood idempotent nature of Custom Resource Lambda approach
 
 **References:**
+
 - [AWS CloudFront CLI Reference](https://docs.aws.amazon.com/cli/latest/reference/cloudfront/)
 - [AWS CloudFront Origins Documentation](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistS3AndCustomOrigins.html)
 
@@ -415,5 +431,6 @@ No security concerns. This is a validation-only story with no code or configurat
 **No action items required** - Story is complete and approved with no findings.
 
 **Advisory Notes:**
+
 - Note: Story provides approval basis for proceeding to Story 1.4 (deployment verification) and Epic 2 (cookie-based routing)
 - Note: Custom Resource Lambda pattern successfully validated - approach is sound for externally-managed CloudFront distributions

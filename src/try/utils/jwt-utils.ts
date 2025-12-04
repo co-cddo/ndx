@@ -13,21 +13,21 @@
  */
 export interface JWTPayload {
   /** Subject (typically user ID or email) */
-  sub?: string;
+  sub?: string
   /** Issued at timestamp (Unix seconds) */
-  iat?: number;
+  iat?: number
   /** Expiration timestamp (Unix seconds) */
-  exp?: number;
+  exp?: number
   /** Not before timestamp (Unix seconds) */
-  nbf?: number;
+  nbf?: number
   /** Issuer */
-  iss?: string;
+  iss?: string
   /** Audience */
-  aud?: string | string[];
+  aud?: string | string[]
   /** JWT ID */
-  jti?: string;
+  jti?: string
   /** Additional claims */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -48,27 +48,27 @@ export interface JWTPayload {
  * ```
  */
 export function parseJWT(token: string): JWTPayload | null {
-  if (!token || typeof token !== 'string') {
-    return null;
+  if (!token || typeof token !== "string") {
+    return null
   }
 
   try {
-    const parts = token.split('.');
+    const parts = token.split(".")
     if (parts.length !== 3) {
-      return null;
+      return null
     }
 
     // Decode the payload (second part)
-    const payload = parts[1];
+    const payload = parts[1]
 
     // Handle URL-safe base64
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/")
 
     // Decode and parse
-    const decoded = atob(base64);
-    return JSON.parse(decoded) as JWTPayload;
+    const decoded = atob(base64)
+    return JSON.parse(decoded) as JWTPayload
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -93,21 +93,21 @@ export function parseJWT(token: string): JWTPayload | null {
  * ```
  */
 export function isJWTExpired(token: string, bufferSeconds = 60): boolean {
-  const payload = parseJWT(token);
+  const payload = parseJWT(token)
 
   // Invalid tokens are considered expired
   if (!payload) {
-    return true;
+    return true
   }
 
   // If no exp claim, consider valid (some JWTs don't expire)
   if (!payload.exp) {
-    return false;
+    return false
   }
 
   // Compare with current time plus buffer
-  const now = Math.floor(Date.now() / 1000);
-  return payload.exp < now + bufferSeconds;
+  const now = Math.floor(Date.now() / 1000)
+  return payload.exp < now + bufferSeconds
 }
 
 /**
@@ -125,16 +125,16 @@ export function isJWTExpired(token: string, bufferSeconds = 60): boolean {
  * ```
  */
 export function getJWTTimeRemaining(token: string): number {
-  const payload = parseJWT(token);
+  const payload = parseJWT(token)
 
   if (!payload) {
-    return 0;
+    return 0
   }
 
   if (!payload.exp) {
-    return Infinity;
+    return Infinity
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  return Math.max(0, payload.exp - now);
+  const now = Math.floor(Date.now() / 1000)
+  return Math.max(0, payload.exp - now)
 }

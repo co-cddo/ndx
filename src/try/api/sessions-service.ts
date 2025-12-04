@@ -9,44 +9,44 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-021|ADR-021: Centralized API Client}
  */
 
-import { callISBAPI, checkAuthStatus } from './api-client';
-import { authState } from '../auth/auth-provider';
-import { config } from '../config';
-import { getHttpErrorMessage } from '../utils/error-utils';
-import { deduplicatedRequest } from '../utils/request-dedup';
+import { callISBAPI, checkAuthStatus } from "./api-client"
+import { authState } from "../auth/auth-provider"
+import { config } from "../config"
+import { getHttpErrorMessage } from "../utils/error-utils"
+import { deduplicatedRequest } from "../utils/request-dedup"
 
 /**
  * Lease status values.
  * API returns various status strings including 'ManuallyTerminated'.
  */
-export type LeaseStatus = 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'ManuallyTerminated' | 'Failed';
+export type LeaseStatus = "Pending" | "Active" | "Expired" | "Terminated" | "ManuallyTerminated" | "Failed"
 
 /**
  * Raw lease data from API response.
  * Matches the actual API structure from /api/leases endpoint.
  */
 interface RawLease {
-  leaseId: string;
-  uuid: string;
-  userEmail: string;
-  awsAccountId: string;
-  originalLeaseTemplateUuid: string;
-  originalLeaseTemplateName: string;
-  status: string;
-  startDate: string;
-  expirationDate: string;
-  endDate?: string;
-  maxSpend: number;
-  totalCostAccrued: number;
-  leaseDurationInHours: number;
-  comments?: string;
-  createdBy: string;
-  approvedBy: string;
+  leaseId: string
+  uuid: string
+  userEmail: string
+  awsAccountId: string
+  originalLeaseTemplateUuid: string
+  originalLeaseTemplateName: string
+  status: string
+  startDate: string
+  expirationDate: string
+  endDate?: string
+  maxSpend: number
+  totalCostAccrued: number
+  leaseDurationInHours: number
+  comments?: string
+  createdBy: string
+  approvedBy: string
   meta: {
-    createdTime: string;
-    lastEditTime: string;
-    schemaVersion: number;
-  };
+    createdTime: string
+    lastEditTime: string
+    schemaVersion: number
+  }
 }
 
 /**
@@ -54,25 +54,25 @@ interface RawLease {
  */
 export interface Lease {
   /** Unique lease identifier */
-  leaseId: string;
+  leaseId: string
   /** AWS account ID for the sandbox */
-  awsAccountId: string;
+  awsAccountId: string
   /** Lease template UUID (product try_id) */
-  leaseTemplateId: string;
+  leaseTemplateId: string
   /** Product/template display name */
-  leaseTemplateName: string;
+  leaseTemplateName: string
   /** Current lease status */
-  status: LeaseStatus;
+  status: LeaseStatus
   /** When lease was created (ISO 8601) */
-  createdAt: string;
+  createdAt: string
   /** When lease expires (ISO 8601) */
-  expiresAt: string;
+  expiresAt: string
   /** Maximum spend limit in USD */
-  maxSpend: number;
+  maxSpend: number
   /** Current spend in USD */
-  currentSpend: number;
+  currentSpend: number
   /** AWS SSO portal URL for console access */
-  awsSsoPortalUrl?: string;
+  awsSsoPortalUrl?: string
 }
 
 /**
@@ -80,17 +80,17 @@ export interface Lease {
  */
 export interface LeasesResult {
   /** Whether the fetch was successful */
-  success: boolean;
+  success: boolean
   /** Array of leases (only present if successful) */
-  leases?: Lease[];
+  leases?: Lease[]
   /** Error message (only present if failed) */
-  error?: string;
+  error?: string
 }
 
 /**
  * API endpoint for leases.
  */
-const LEASES_ENDPOINT = '/api/leases';
+const LEASES_ENDPOINT = "/api/leases"
 
 /**
  * Fetch user's leases from the Innovation Sandbox API.
@@ -109,101 +109,101 @@ const LEASES_ENDPOINT = '/api/leases';
  * }
  */
 export async function fetchUserLeases(): Promise<LeasesResult> {
-  return deduplicatedRequest('fetchUserLeases', async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+  return deduplicatedRequest("fetchUserLeases", async () => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout)
 
     try {
       // First, get user email from auth status API
-      const authStatus = await checkAuthStatus();
+      const authStatus = await checkAuthStatus()
       if (!authStatus.authenticated || !authStatus.user?.email) {
-        console.error('[sessions-service] User not authenticated or email not available');
+        console.error("[sessions-service] User not authenticated or email not available")
 
         // DEFECT FIX: Clear invalid token from sessionStorage and notify subscribers.
         // This handles the case where token exists locally but is invalid server-side
         // (e.g., API returns 200 with authenticated:false instead of 401).
         // Without this, UI shows "signed in" state but API calls fail.
-        authState.logout();
+        authState.logout()
 
         return {
           success: false,
-          error: 'Please sign in to view your sessions.',
-        };
+          error: "Please sign in to view your sessions.",
+        }
       }
 
-      const userEmail = encodeURIComponent(authStatus.user.email);
-      const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`;
+      const userEmail = encodeURIComponent(authStatus.user.email)
+      const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`
 
       const response = await callISBAPI(endpoint, {
-        method: 'GET',
+        method: "GET",
         signal: controller.signal,
         // Let 401 redirect happen naturally
-      });
+      })
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
-        console.error('[sessions-service] API error:', response.status, response.statusText);
+        console.error("[sessions-service] API error:", response.status, response.statusText)
         return {
           success: false,
-          error: getHttpErrorMessage(response.status, 'sessions'),
-        };
+          error: getHttpErrorMessage(response.status, "sessions"),
+        }
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       // API response structure: { status: "success", data: { result: [...], nextPageIdentifier: null } }
-      let rawLeases: RawLease[] = [];
+      let rawLeases: RawLease[] = []
 
-      if (data?.status === 'success' && Array.isArray(data?.data?.result)) {
-        rawLeases = data.data.result;
+      if (data?.status === "success" && Array.isArray(data?.data?.result)) {
+        rawLeases = data.data.result
       } else if (Array.isArray(data)) {
         // Fallback for direct array response
-        rawLeases = data;
+        rawLeases = data
       } else if (Array.isArray(data?.leases)) {
         // Legacy format fallback
-        rawLeases = data.leases;
+        rawLeases = data.leases
       }
 
       // Transform raw API leases to normalized Lease format
-      const leases: Lease[] = rawLeases.map(transformLease);
+      const leases: Lease[] = rawLeases.map(transformLease)
 
       // Sort by createdAt descending (newest first)
-      leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
       return {
         success: true,
         leases,
-      };
+      }
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.error('[sessions-service] Request timeout');
+        if (error.name === "AbortError") {
+          console.error("[sessions-service] Request timeout")
           return {
             success: false,
-            error: 'Request timed out. Please check your connection and try again.',
-          };
+            error: "Request timed out. Please check your connection and try again.",
+          }
         }
 
         // 401 redirect error from callISBAPI
-        if (error.message.includes('Unauthorized')) {
+        if (error.message.includes("Unauthorized")) {
           return {
             success: false,
-            error: 'Please sign in to view your sessions.',
-          };
+            error: "Please sign in to view your sessions.",
+          }
         }
 
-        console.error('[sessions-service] Fetch error:', error.message);
+        console.error("[sessions-service] Fetch error:", error.message)
       }
 
       return {
         success: false,
-        error: 'Unable to load your sessions. Please try again.',
-      };
+        error: "Unable to load your sessions. Please try again.",
+      }
     }
-  });
+  })
 }
 
 /**
@@ -214,26 +214,26 @@ export async function fetchUserLeases(): Promise<LeasesResult> {
  */
 function transformLease(raw: RawLease): Lease {
   // Normalize status string to our LeaseStatus type
-  let status: LeaseStatus = 'Expired';
+  let status: LeaseStatus = "Expired"
   switch (raw.status) {
-    case 'Active':
-      status = 'Active';
-      break;
-    case 'Pending':
-      status = 'Pending';
-      break;
-    case 'Expired':
-      status = 'Expired';
-      break;
-    case 'Terminated':
-      status = 'Terminated';
-      break;
-    case 'ManuallyTerminated':
-      status = 'ManuallyTerminated';
-      break;
-    case 'Failed':
-      status = 'Failed';
-      break;
+    case "Active":
+      status = "Active"
+      break
+    case "Pending":
+      status = "Pending"
+      break
+    case "Expired":
+      status = "Expired"
+      break
+    case "Terminated":
+      status = "Terminated"
+      break
+    case "ManuallyTerminated":
+      status = "ManuallyTerminated"
+      break
+    case "Failed":
+      status = "Failed"
+      break
   }
 
   return {
@@ -248,7 +248,7 @@ function transformLease(raw: RawLease): Lease {
     currentSpend: raw.totalCostAccrued,
     // SSO URL will be configured in config
     awsSsoPortalUrl: undefined,
-  };
+  }
 }
 
 /**
@@ -258,7 +258,7 @@ function transformLease(raw: RawLease): Lease {
  * @returns true if lease is active
  */
 export function isLeaseActive(lease: Lease): boolean {
-  return lease.status === 'Active';
+  return lease.status === "Active"
 }
 
 /**
@@ -268,7 +268,7 @@ export function isLeaseActive(lease: Lease): boolean {
  * @returns true if lease is pending
  */
 export function isLeasePending(lease: Lease): boolean {
-  return lease.status === 'Pending';
+  return lease.status === "Pending"
 }
 
 /**
@@ -285,13 +285,13 @@ export function isLeasePending(lease: Lease): boolean {
 export function getSsoUrl(lease: Lease): string {
   // If lease has a custom SSO URL, use it directly
   if (lease.awsSsoPortalUrl) {
-    return lease.awsSsoPortalUrl;
+    return lease.awsSsoPortalUrl
   }
 
   // Build URL with account_id and role_name parameters
-  const baseUrl = config.awsSsoPortalUrl;
-  const accountId = lease.awsAccountId;
-  const roleName = config.ssoRoleName;
+  const baseUrl = config.awsSsoPortalUrl
+  const accountId = lease.awsAccountId
+  const roleName = config.ssoRoleName
 
-  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`;
+  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`
 }

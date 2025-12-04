@@ -3,10 +3,12 @@
 ## Issue: Module Load Pre-warming Causing Test Failures
 
 ### Root Cause
+
 The `secrets.ts` module calls `initializePreWarm()` at module load time (line 142):
+
 ```typescript
 // Initialize pre-warming at module load time
-initializePreWarm();
+initializePreWarm()
 ```
 
 This pre-warming code attempts to fetch secrets from AWS Secrets Manager **before** test mocks can be set up, causing three test suites to fail:
@@ -16,6 +18,7 @@ This pre-warming code attempts to fetch secrets from AWS Secrets Manager **befor
 3. **slack-sender.test.ts** - `CredentialsProviderError: Could not load credentials from any providers`
 
 ### Solution
+
 Created a Jest setup file that sets `SKIP_SECRETS_PREWARM=true` before any modules are loaded.
 
 #### Files Modified
@@ -35,11 +38,13 @@ Created a Jest setup file that sets `SKIP_SECRETS_PREWARM=true` before any modul
 ### Results
 
 **Before Fix:**
+
 - 3 test suites failed to run
 - 1 test timed out
 - Test execution halted at module load
 
 **After Fix:**
+
 - All 13 test suites pass
 - 650 tests pass (6 skipped)
 - Pre-warming works correctly in production but is safely disabled in tests
@@ -59,12 +64,14 @@ yarn test lib/lambda/notification/slack-sender.test.ts
 ### Design Notes
 
 The pre-warming mechanism is a performance optimization for production:
+
 - **Production**: Pre-warming fetches secrets during Lambda cold start, reducing latency
 - **Tests**: Pre-warming is skipped to allow proper mock setup
 
 The `SKIP_SECRETS_PREWARM` environment variable provides a clean way to control this behavior without modifying the production code.
 
 ### Related Files
+
 - `/Users/cns/httpdocs/cddo/ndx/infra/lib/lambda/notification/secrets.ts` (contains pre-warming logic)
 - `/Users/cns/httpdocs/cddo/ndx/infra/jest.config.js` (Jest configuration)
 - `/Users/cns/httpdocs/cddo/ndx/infra/jest.setup.js` (Jest setup file)

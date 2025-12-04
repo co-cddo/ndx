@@ -9,6 +9,7 @@ Copy these into GOV.UK Notify. Each template uses `((fieldName))` placeholders.
 **Subject:** Your NDX:Try AWS Session request has been received
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -36,6 +37,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Great news! Your NDX:Try AWS Session is ready to use
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -83,6 +85,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Update on your NDX:Try AWS Session request
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -117,6 +120,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Your NDX:Try AWS Session has ended
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -157,6 +161,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Budget alert: Your NDX:Try session has used ((percentUsed)) of its budget
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -196,6 +201,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Reminder: Your NDX:Try session expires in ((hoursRemaining)) hours
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -236,6 +242,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Urgent: Your NDX:Try session will be terminated soon
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -270,6 +277,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Your NDX:Try session has been terminated - budget limit reached
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -309,6 +317,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Your NDX:Try AWS Session has expired
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -346,6 +355,7 @@ The National Digital Exchange Team, GDS
 **Subject:** Your NDX:Try AWS Session has been terminated
 
 **Body:**
+
 ```
 Hi ((userName)),
 
@@ -415,6 +425,7 @@ aws secretsmanager update-secret \
 The Lambda sends a flat payload to your workflow with all fields at the top level:
 
 **Lease lifecycle events** (include template info):
+
 ```json
 {
   "alertType": "LeaseRequested",
@@ -432,6 +443,7 @@ The Lambda sends a flat payload to your workflow with all fields at the top leve
 ```
 
 **Account-level events** (template fields are 'N/A'):
+
 ```json
 {
   "alertType": "AccountQuarantined",
@@ -451,16 +463,16 @@ The Lambda sends a flat payload to your workflow with all fields at the top leve
 
 All 8 event types trigger Slack notifications:
 
-| Event Type | Description | template/template_id |
-|------------|-------------|---------------------|
-| `LeaseRequested` | New lease request submitted | From event |
-| `LeaseApproved` | Lease approved | From event |
-| `LeaseDenied` | Lease denied | From event |
-| `LeaseTerminated` | Lease terminated | From event |
-| `LeaseFrozen` | Account frozen (budget/duration exceeded) | N/A |
-| `AccountQuarantined` | Account isolated due to security concern | N/A |
-| `AccountCleanupFailed` | Cleanup process failed, needs manual intervention | N/A |
-| `AccountDriftDetected` | Configuration drift detected | N/A |
+| Event Type             | Description                                       | template/template_id |
+| ---------------------- | ------------------------------------------------- | -------------------- |
+| `LeaseRequested`       | New lease request submitted                       | From event           |
+| `LeaseApproved`        | Lease approved                                    | From event           |
+| `LeaseDenied`          | Lease denied                                      | From event           |
+| `LeaseTerminated`      | Lease terminated                                  | From event           |
+| `LeaseFrozen`          | Account frozen (budget/duration exceeded)         | N/A                  |
+| `AccountQuarantined`   | Account isolated due to security concern          | N/A                  |
+| `AccountCleanupFailed` | Cleanup process failed, needs manual intervention | N/A                  |
+| `AccountDriftDetected` | Configuration drift detected                      | N/A                  |
 
 ---
 
@@ -468,13 +480,13 @@ All 8 event types trigger Slack notifications:
 
 All templates can use these enriched fields when available:
 
-| Field | Description |
-|-------|-------------|
-| `((userName))` | User's name (from email prefix) |
-| `((userEmail))` | Full email address |
-| `((accountId))` | AWS account ID |
-| `((maxSpend))` | Budget limit |
-| `((leaseDurationInHours))` | Session duration |
-| `((totalCostAccrued))` | Current spend |
-| `((expirationDate))` | When session expires |
-| `((keys))` | All available field names |
+| Field                      | Description                     |
+| -------------------------- | ------------------------------- |
+| `((userName))`             | User's name (from email prefix) |
+| `((userEmail))`            | Full email address              |
+| `((accountId))`            | AWS account ID                  |
+| `((maxSpend))`             | Budget limit                    |
+| `((leaseDurationInHours))` | Session duration                |
+| `((totalCostAccrued))`     | Current spend                   |
+| `((expirationDate))`       | When session expires            |
+| `((keys))`                 | All available field names       |

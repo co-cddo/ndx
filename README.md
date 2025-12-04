@@ -62,6 +62,7 @@ yarn test:watch
 ### End-to-End Tests (Playwright)
 
 **Prerequisites:**
+
 - mitmproxy installed and configured (see Epic 4 documentation)
 - Local app server running
 - Playwright browsers installed: `npx playwright install`
@@ -79,8 +80,8 @@ yarn start
 yarn test:e2e
 
 # Run specific test suites
-yarn test:e2e:auth           # Authentication tests
-yarn test:e2e:accessibility  # Accessibility tests
+yarn test:e2e:auth          # Authentication tests
+yarn test:e2e:accessibility # Accessibility tests
 
 # Debug mode (headed browser)
 yarn test:e2e --headed
@@ -109,11 +110,11 @@ The Try Before You Buy feature connects to Innovation Sandbox for AWS account pr
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable             | Description                           | Default                                  |
+| -------------------- | ------------------------------------- | ---------------------------------------- |
 | `AWS_SSO_PORTAL_URL` | AWS SSO portal URL for console access | `https://d-9267e1e371.awsapps.com/start` |
-| `API_BASE_URL` | Innovation Sandbox API base URL | `/api` |
-| `REQUEST_TIMEOUT` | API request timeout in milliseconds | `10000` |
+| `API_BASE_URL`       | Innovation Sandbox API base URL       | `/api`                                   |
+| `REQUEST_TIMEOUT`    | API request timeout in milliseconds   | `10000`                                  |
 
 ### Development
 

@@ -14,15 +14,15 @@
  */
 export interface TryConfig {
   /** AWS SSO Portal base URL for launching console sessions */
-  awsSsoPortalUrl: string;
+  awsSsoPortalUrl: string
   /** IAM role name for SSO console access */
-  ssoRoleName: string;
+  ssoRoleName: string
   /** API base URL for Innovation Sandbox */
-  apiBaseUrl: string;
+  apiBaseUrl: string
   /** Request timeout in milliseconds */
-  requestTimeout: number;
+  requestTimeout: number
   /** OAuth login URL */
-  oauthLoginUrl: string;
+  oauthLoginUrl: string
 }
 
 /**
@@ -31,22 +31,22 @@ export interface TryConfig {
  *
  * @see {@link https://docs.aws.amazon.com/singlesignon/latest/userguide/using-the-portal.html|AWS SSO User Portal}
  */
-const DEFAULT_AWS_SSO_PORTAL_URL = 'https://d-9267e1e371.awsapps.com/start';
+const DEFAULT_AWS_SSO_PORTAL_URL = "https://d-9267e1e371.awsapps.com/start"
 
 /**
  * Default IAM role name for SSO console access.
  */
-const DEFAULT_SSO_ROLE_NAME = 'ndx_IsbUsersPS';
+const DEFAULT_SSO_ROLE_NAME = "ndx_IsbUsersPS"
 
 /**
  * Default API base URL for Innovation Sandbox.
  */
-const DEFAULT_API_BASE_URL = '/api';
+const DEFAULT_API_BASE_URL = "/api"
 
 /**
  * Default request timeout (10 seconds).
  */
-const DEFAULT_REQUEST_TIMEOUT = 10000;
+const DEFAULT_REQUEST_TIMEOUT = 10000
 
 /**
  * Get configuration value from environment or use default.
@@ -61,20 +61,20 @@ const DEFAULT_REQUEST_TIMEOUT = 10000;
 function getConfigValue(key: string, defaultValue: string): string {
   // Check for globally injected config (from server-side rendering or build)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const globalConfig = (typeof window !== 'undefined' && (window as any).__TRY_CONFIG__) || {};
+  const globalConfig = (typeof window !== "undefined" && (window as any).__TRY_CONFIG__) || {}
 
   if (globalConfig[key]) {
-    return globalConfig[key];
+    return globalConfig[key]
   }
 
   // Check for process.env (build time injection via esbuild define)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (typeof process !== 'undefined' && (process as any).env?.[key]) {
+  if (typeof process !== "undefined" && (process as any).env?.[key]) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (process as any).env[key];
+    return (process as any).env[key]
   }
 
-  return defaultValue;
+  return defaultValue
 }
 
 /**
@@ -94,12 +94,12 @@ function getConfigValue(key: string, defaultValue: string): string {
  * ```
  */
 export const config: TryConfig = {
-  awsSsoPortalUrl: getConfigValue('AWS_SSO_PORTAL_URL', DEFAULT_AWS_SSO_PORTAL_URL),
-  ssoRoleName: getConfigValue('SSO_ROLE_NAME', DEFAULT_SSO_ROLE_NAME),
-  apiBaseUrl: getConfigValue('API_BASE_URL', DEFAULT_API_BASE_URL),
-  requestTimeout: parseInt(getConfigValue('REQUEST_TIMEOUT', String(DEFAULT_REQUEST_TIMEOUT)), 10),
-  oauthLoginUrl: getConfigValue('OAUTH_LOGIN_URL', '/api/auth/login'),
-};
+  awsSsoPortalUrl: getConfigValue("AWS_SSO_PORTAL_URL", DEFAULT_AWS_SSO_PORTAL_URL),
+  ssoRoleName: getConfigValue("SSO_ROLE_NAME", DEFAULT_SSO_ROLE_NAME),
+  apiBaseUrl: getConfigValue("API_BASE_URL", DEFAULT_API_BASE_URL),
+  requestTimeout: parseInt(getConfigValue("REQUEST_TIMEOUT", String(DEFAULT_REQUEST_TIMEOUT)), 10),
+  oauthLoginUrl: getConfigValue("OAUTH_LOGIN_URL", "/api/auth/login"),
+}
 
 /**
  * Get AWS SSO Portal URL.
@@ -109,5 +109,5 @@ export const config: TryConfig = {
  * @returns AWS SSO Portal URL
  */
 export function getAwsSsoPortalUrl(): string {
-  return config.awsSsoPortalUrl;
+  return config.awsSsoPortalUrl
 }

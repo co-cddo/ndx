@@ -19,7 +19,7 @@
  * - Runbook links validated at build time (AC-NEW-13)
  */
 
-import type { ActionLink } from './block-kit-builder';
+import type { ActionLink } from "./block-kit-builder"
 
 // =============================================================================
 // Types
@@ -40,30 +40,30 @@ import type { ActionLink } from './block-kit-builder';
  */
 export type SlackAlertType =
   // Ops alerts (critical)
-  | 'AccountQuarantined'
-  | 'AccountCleanupFailed'
-  | 'AccountDriftDetected'
+  | "AccountQuarantined"
+  | "AccountCleanupFailed"
+  | "AccountDriftDetected"
   // Lease lifecycle events (informational)
-  | 'LeaseRequested'
-  | 'LeaseApproved'
-  | 'LeaseDenied'
-  | 'LeaseTerminated'
-  | 'LeaseFrozen';
+  | "LeaseRequested"
+  | "LeaseApproved"
+  | "LeaseDenied"
+  | "LeaseTerminated"
+  | "LeaseFrozen"
 
 /**
  * Slack template configuration for each alert type
  */
 export interface SlackTemplateConfig {
   /** Display name for the alert header */
-  displayName: string;
+  displayName: string
   /** Priority determines color (critical = red, normal = yellow) */
-  priority: 'critical' | 'normal';
+  priority: "critical" | "normal"
   /** Action links to include in the message (AC-2.4, n6-8) */
-  actionLinks: ActionLink[];
+  actionLinks: ActionLink[]
   /** Whether to include @channel mention (AC-3.6) */
-  includeMention: boolean;
+  includeMention: boolean
   /** Escalation guidance text (AC-3.5) */
-  escalationGuidance: string;
+  escalationGuidance: string
 }
 
 // =============================================================================
@@ -74,12 +74,9 @@ export interface SlackTemplateConfig {
  * Base URLs for action links
  * These should come from environment variables in production
  */
-const AWS_CONSOLE_BASE_URL =
-  process.env.AWS_CONSOLE_URL || 'https://console.aws.amazon.com';
-const ISB_ADMIN_BASE_URL =
-  process.env.ISB_ADMIN_URL || 'https://isb-admin.example.gov.uk';
-const RUNBOOK_BASE_URL =
-  process.env.RUNBOOK_URL || 'https://wiki.example.gov.uk/runbooks';
+const AWS_CONSOLE_BASE_URL = process.env.AWS_CONSOLE_URL || "https://console.aws.amazon.com"
+const ISB_ADMIN_BASE_URL = process.env.ISB_ADMIN_URL || "https://isb-admin.example.gov.uk"
+const RUNBOOK_BASE_URL = process.env.RUNBOOK_URL || "https://wiki.example.gov.uk/runbooks"
 
 // =============================================================================
 // Template Registry (n6-3 through n6-6)
@@ -100,25 +97,25 @@ export const SLACK_TEMPLATES: Record<SlackAlertType, SlackTemplateConfig> = {
    * AC-3.6: @channel mention for critical alerts
    */
   AccountQuarantined: {
-    displayName: 'Account Quarantined',
-    priority: 'critical',
+    displayName: "Account Quarantined",
+    priority: "critical",
     actionLinks: [
       {
-        label: 'View in AWS Console',
+        label: "View in AWS Console",
         url: `${AWS_CONSOLE_BASE_URL}/organizations/v2/home/accounts`,
-        style: 'primary',
+        style: "primary",
       },
       {
-        label: 'Quarantine Runbook',
+        label: "Quarantine Runbook",
         url: `${RUNBOOK_BASE_URL}/account-quarantine`,
       },
       {
-        label: 'ISB Admin',
+        label: "ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/accounts/quarantined`,
       },
     ],
     includeMention: true,
-    escalationGuidance: 'Contact @ndx-ops for immediate assistance',
+    escalationGuidance: "Contact @ndx-ops for immediate assistance",
   },
 
   /**
@@ -128,20 +125,20 @@ export const SLACK_TEMPLATES: Record<SlackAlertType, SlackTemplateConfig> = {
    * Note: This is a dual-channel event (email to user, Slack to ops)
    */
   LeaseFrozen: {
-    displayName: 'Lease Frozen',
-    priority: 'normal',
+    displayName: "Lease Frozen",
+    priority: "normal",
     actionLinks: [
       {
-        label: 'View in ISB Admin',
+        label: "View in ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/leases/frozen`,
       },
       {
-        label: 'Freeze Runbook',
+        label: "Freeze Runbook",
         url: `${RUNBOOK_BASE_URL}/lease-frozen`,
       },
     ],
     includeMention: false,
-    escalationGuidance: 'Review frozen lease in ISB Admin dashboard',
+    escalationGuidance: "Review frozen lease in ISB Admin dashboard",
   },
 
   /**
@@ -151,26 +148,25 @@ export const SLACK_TEMPLATES: Record<SlackAlertType, SlackTemplateConfig> = {
    * AC-5.3: Includes Step Functions execution link
    */
   AccountCleanupFailed: {
-    displayName: 'Account Cleanup Failed',
-    priority: 'critical',
+    displayName: "Account Cleanup Failed",
+    priority: "critical",
     actionLinks: [
       {
-        label: 'View Step Functions',
+        label: "View Step Functions",
         url: `${AWS_CONSOLE_BASE_URL}/states/home`,
-        style: 'danger',
+        style: "danger",
       },
       {
-        label: 'Cleanup Failure Runbook',
+        label: "Cleanup Failure Runbook",
         url: `${RUNBOOK_BASE_URL}/cleanup-failure`,
       },
       {
-        label: 'ISB Admin',
+        label: "ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/accounts/cleanup`,
       },
     ],
     includeMention: true,
-    escalationGuidance:
-      'Manual cleanup required. Contact @ndx-ops immediately.',
+    escalationGuidance: "Manual cleanup required. Contact @ndx-ops immediately.",
   },
 
   /**
@@ -180,22 +176,21 @@ export const SLACK_TEMPLATES: Record<SlackAlertType, SlackTemplateConfig> = {
    * AC-6.4: Shows expected vs actual OU
    */
   AccountDriftDetected: {
-    displayName: 'Account Drift Detected',
-    priority: 'critical',
+    displayName: "Account Drift Detected",
+    priority: "critical",
     actionLinks: [
       {
-        label: 'View in AWS Organizations',
+        label: "View in AWS Organizations",
         url: `${AWS_CONSOLE_BASE_URL}/organizations/v2/home`,
-        style: 'danger',
+        style: "danger",
       },
       {
-        label: 'Drift Runbook',
+        label: "Drift Runbook",
         url: `${RUNBOOK_BASE_URL}/account-drift`,
       },
     ],
     includeMention: true,
-    escalationGuidance:
-      'Account is in unexpected OU. Review and remediate immediately.',
+    escalationGuidance: "Account is in unexpected OU. Review and remediate immediately.",
   },
 
   // =========================================================================
@@ -206,67 +201,67 @@ export const SLACK_TEMPLATES: Record<SlackAlertType, SlackTemplateConfig> = {
    * Lease Requested - New sandbox request submitted
    */
   LeaseRequested: {
-    displayName: 'Lease Requested',
-    priority: 'normal',
+    displayName: "Lease Requested",
+    priority: "normal",
     actionLinks: [
       {
-        label: 'View in ISB Admin',
+        label: "View in ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/leases/pending`,
-        style: 'primary',
+        style: "primary",
       },
     ],
     includeMention: false,
-    escalationGuidance: 'New lease request awaiting approval',
+    escalationGuidance: "New lease request awaiting approval",
   },
 
   /**
    * Lease Approved - Sandbox request approved
    */
   LeaseApproved: {
-    displayName: 'Lease Approved',
-    priority: 'normal',
+    displayName: "Lease Approved",
+    priority: "normal",
     actionLinks: [
       {
-        label: 'View in ISB Admin',
+        label: "View in ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/leases/active`,
       },
     ],
     includeMention: false,
-    escalationGuidance: 'Lease approved and account provisioned',
+    escalationGuidance: "Lease approved and account provisioned",
   },
 
   /**
    * Lease Denied - Sandbox request denied
    */
   LeaseDenied: {
-    displayName: 'Lease Denied',
-    priority: 'normal',
+    displayName: "Lease Denied",
+    priority: "normal",
     actionLinks: [
       {
-        label: 'View in ISB Admin',
+        label: "View in ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/leases/denied`,
       },
     ],
     includeMention: false,
-    escalationGuidance: 'Lease request was denied',
+    escalationGuidance: "Lease request was denied",
   },
 
   /**
    * Lease Terminated - Sandbox lease ended
    */
   LeaseTerminated: {
-    displayName: 'Lease Terminated',
-    priority: 'normal',
+    displayName: "Lease Terminated",
+    priority: "normal",
     actionLinks: [
       {
-        label: 'View in ISB Admin',
+        label: "View in ISB Admin",
         url: `${ISB_ADMIN_BASE_URL}/leases/terminated`,
       },
     ],
     includeMention: false,
-    escalationGuidance: 'Lease terminated and cleanup initiated',
+    escalationGuidance: "Lease terminated and cleanup initiated",
   },
-};
+}
 
 // =============================================================================
 // Template Lookup Functions
@@ -278,10 +273,8 @@ export const SLACK_TEMPLATES: Record<SlackAlertType, SlackTemplateConfig> = {
  * @param alertType - The type of Slack alert
  * @returns Template configuration or undefined if not found
  */
-export function getSlackTemplate(
-  alertType: SlackAlertType
-): SlackTemplateConfig | undefined {
-  return SLACK_TEMPLATES[alertType];
+export function getSlackTemplate(alertType: SlackAlertType): SlackTemplateConfig | undefined {
+  return SLACK_TEMPLATES[alertType]
 }
 
 /**
@@ -291,7 +284,7 @@ export function getSlackTemplate(
  * @returns true if this event type has a Slack template
  */
 export function isSlackAlertType(eventType: string): eventType is SlackAlertType {
-  return eventType in SLACK_TEMPLATES;
+  return eventType in SLACK_TEMPLATES
 }
 
 /**
@@ -300,5 +293,5 @@ export function isSlackAlertType(eventType: string): eventType is SlackAlertType
  * @returns Array of all configured Slack alert types
  */
 export function getSlackAlertTypes(): SlackAlertType[] {
-  return Object.keys(SLACK_TEMPLATES) as SlackAlertType[];
+  return Object.keys(SLACK_TEMPLATES) as SlackAlertType[]
 }

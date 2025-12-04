@@ -13,6 +13,7 @@
 Epic 2 successfully implemented cookie-based routing functionality for the NDX project, enabling testers with the `NDX=true` cookie to access the new UI from the `ndx-static-prod` S3 bucket. While all 6 stories were completed, we encountered critical bugs during Story 2.6 validation that revealed gaps in our AWS API research process. Post-epic, we discovered and integrated the AWS Knowledge MCP server, which would have prevented these issues entirely.
 
 **Key Metrics:**
+
 - 6 stories completed in ~1 day
 - 2 critical bugs discovered and fixed
 - 14 unit tests created with 100% statement coverage
@@ -28,12 +29,14 @@ Epic 2 successfully implemented cookie-based routing functionality for the NDX p
 **Story 2.6** was initially marked "done" and APPROVED by code review, but routing was completely non-functional.
 
 **Bug #1: Incorrect CloudFront Functions JavaScript API**
+
 - Used JavaScript 1.0 API syntax: `request.origin = {...}`
 - Included invalid fields: `authMethod` and `originAccessControlId`
 - These fields don't exist in CloudFront Functions runtime
 - **Root Cause:** Insufficient AWS API research before implementation
 
 **Bug #2: Missing S3 Bucket Policy**
+
 - The `ndx-static-prod` bucket had NO bucket policy
 - CloudFront couldn't access the bucket even with correct function code
 - Required explicit policy granting CloudFront service principal access
@@ -53,6 +56,7 @@ Epic 2 successfully implemented cookie-based routing functionality for the NDX p
 ### 1. Manual Configuration Initially Planned
 
 Stories 2.3 and 2.5 initially planned manual AWS Console steps:
+
 - Story 2.3: Manual cache policy creation via Console
 - Story 2.5: Manual function attachment via Console
 
@@ -63,6 +67,7 @@ Stories 2.3 and 2.5 initially planned manual AWS Console steps:
 ### 2. False Story Completion
 
 Story 2.6 was incorrectly marked complete:
+
 - Initial validation only checked HTTP 200 status
 - Didn't verify different content was served (ETag comparison)
 - Code review approved based on incomplete validation
@@ -77,6 +82,7 @@ Story 2.6 was incorrectly marked complete:
 ### 1. Custom Resource Lambda Pattern Success
 
 Extended the Custom Resource Lambda to handle:
+
 - Cache policy creation with NDX cookie allowlist (Story 2.3)
 - CloudFront Function attachment to default cache behavior (Story 2.5)
 - Eliminated manual Console steps
@@ -87,6 +93,7 @@ Extended the Custom Resource Lambda to handle:
 ### 2. Comprehensive Test Coverage
 
 Story 2.2 created 14 unit tests with excellent coverage:
+
 - 100% statement coverage
 - 91.66% branch coverage
 - All edge cases validated
@@ -97,6 +104,7 @@ Story 2.2 created 14 unit tests with excellent coverage:
 ### 3. Fail-Open Design Philosophy
 
 The cookie router was designed with graceful degradation:
+
 - Errors fall back to default origin
 - Malformed cookies handled safely
 - No disruption to users without NDX cookie
@@ -105,6 +113,7 @@ The cookie router was designed with graceful degradation:
 ### 4. User Caught Critical Issues
 
 The user personally validated routing with curl commands:
+
 - Discovered routing wasn't working despite "done" status
 - Tested with and without NDX cookie
 - Required cache invalidation and verified with ETag comparison
@@ -113,6 +122,7 @@ The user personally validated routing with curl commands:
 ### 5. Excellent Documentation Trail
 
 All bugs, fixes, and learnings were thoroughly documented in Story 2.6:
+
 - Bug descriptions with exact code comparisons
 - Step-by-step debugging process
 - AWS CLI commands for validation
@@ -123,18 +133,21 @@ All bugs, fixes, and learnings were thoroughly documented in Story 2.6:
 ### 6. AWS Knowledge MCP Server Discovery (Post-Epic)
 
 After completing Epic 2, we researched and integrated the **AWS Knowledge MCP server**:
+
 - Fully-managed remote MCP server hosted by AWS
 - Provides access to latest AWS docs, API references, code examples
 - URL: `https://knowledge-mcp.global.api.aws`
 - No authentication required, no AWS account needed
 
 **Validation Test:** We queried the MCP server with our exact Story 2.6 scenario:
+
 - Search query: "CloudFront Functions JavaScript API dynamic S3 origin Origin Access Control"
 - **Result:** Found the exact correct documentation in the first result
 - Provided complete working code example showing `cf.updateRequestOrigin()` with proper `originAccessControlConfig`
 - Would have completely prevented both Bug #1 and Bug #2
 
 **Time Impact:**
+
 - Without MCP: ~2-3 hours debugging and fixing
 - With MCP: ~5 minutes to implement correctly first time
 
@@ -149,6 +162,7 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 **Problem:** Used outdated/incorrect CloudFront Functions API syntax without consulting latest documentation
 
 **Solution:**
+
 - Query AWS Knowledge MCP server before implementing AWS API code
 - Review official AWS code examples, not just reference docs
 - Verify API compatibility with specific runtime versions (e.g., JavaScript 2.0)
@@ -160,6 +174,7 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 **Problem:** OAC works automatically for pre-configured origins, but dynamic origins created by CloudFront Functions need explicit bucket policies
 
 **Learning:**
+
 - Dynamic origins can't inherit bucket policies from distribution config
 - Must explicitly grant CloudFront service principal access
 - Scope policy to specific distribution ARN for security
@@ -170,6 +185,7 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 **Problem:** Fixed bugs weren't visible due to cached responses
 
 **Solution:**
+
 - Include cache invalidation in acceptance criteria for routing changes
 - Document cache invalidation commands in deployment procedures
 - Consider automated cache invalidation in CDK deployment scripts
@@ -179,6 +195,7 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 **Problem:** Initial validation only checked HTTP 200, didn't verify routing worked
 
 **Solution:**
+
 - Compare ETags between default and routed responses
 - Verify actual content differences, not just successful responses
 - Include negative tests (without cookie) and positive tests (with cookie)
@@ -189,6 +206,7 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 **Success:** Extended Custom Resource Lambda to eliminate 2 manual Console operations
 
 **Learning:**
+
 - Custom Resources can automate complex AWS Console workflows
 - More maintainable than manual procedures
 - Enables full IaC coverage for externally-managed resources
@@ -206,6 +224,7 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 - [ ] Train team on querying MCP server effectively
 
 **Acceptance Criteria for AWS API Stories:**
+
 - [ ] Query AWS Knowledge MCP server for API documentation before implementation
 - [ ] Review AWS code examples from MCP search results
 - [ ] Validate implementation matches current API specifications
@@ -239,17 +258,17 @@ After completing Epic 2, we researched and integrated the **AWS Knowledge MCP se
 
 ## Metrics Summary
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Stories Completed | 6/6 | All Epic 2 stories done |
-| Bugs Found | 2 critical | Both in Story 2.6 validation |
-| Bugs Fixed | 2/2 | CloudFront API + S3 bucket policy |
-| Unit Tests | 14 | 100% statement coverage |
-| Test Pass Rate | 100% | All tests passing after fixes |
-| Validation Tests | 7/7 passing | Final validation successful |
-| Manual Steps Eliminated | 2 | Stories 2.3 and 2.5 automated |
-| Time to Fix Bugs | ~2-3 hours | Could have been ~5 min with MCP |
-| Tooling Improvements | 1 | AWS Knowledge MCP server |
+| Metric                  | Value       | Notes                             |
+| ----------------------- | ----------- | --------------------------------- |
+| Stories Completed       | 6/6         | All Epic 2 stories done           |
+| Bugs Found              | 2 critical  | Both in Story 2.6 validation      |
+| Bugs Fixed              | 2/2         | CloudFront API + S3 bucket policy |
+| Unit Tests              | 14          | 100% statement coverage           |
+| Test Pass Rate          | 100%        | All tests passing after fixes     |
+| Validation Tests        | 7/7 passing | Final validation successful       |
+| Manual Steps Eliminated | 2           | Stories 2.3 and 2.5 automated     |
+| Time to Fix Bugs        | ~2-3 hours  | Could have been ~5 min with MCP   |
+| Tooling Improvements    | 1           | AWS Knowledge MCP server          |
 
 ---
 

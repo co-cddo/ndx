@@ -15,8 +15,10 @@ So that dashboard meets WCAG 2.2 AA standards.
 ## Acceptance Criteria
 
 ### AC1: Test 1 - Page Structure
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `tests/e2e/accessibility/dashboard-accessibility.spec.ts:22-86` - All 5 page structure tests passing
+
 ```typescript
 test.describe("Test 1: Page Structure", () => {
   test("Heading hierarchy is correct (h1 -> h2 -> h3)", async ({ page }) => { ... });
@@ -26,15 +28,19 @@ test.describe("Test 1: Page Structure", () => {
   test("No axe-core critical violations on page structure", async ({ page }) => { ... });
 });
 ```
+
 **Test Results:** 5/5 passing
+
 - ✅ Heading hierarchy correct (h1 → h2 → h3)
 - ✅ Landmark regions defined (main, navigation)
 - ✅ Skip to main content link present
 - ✅ No axe-core critical violations
 
 ### AC2: Test 2 - Sessions Table
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `tests/e2e/accessibility/dashboard-accessibility.spec.ts:88-163` - All 4 table tests passing
+
 ```typescript
 test.describe("Test 2: Sessions Table", () => {
   test("Table has accessible headers with scope attribute", async ({ page }) => { ... });
@@ -43,40 +49,50 @@ test.describe("Test 2: Sessions Table", () => {
   test("No axe-core table accessibility violations", async ({ page }) => { ... });
 });
 ```
+
 **Test Results:** 4/4 passing
+
 - ✅ Table has accessible headers (th scope)
 - ✅ Table caption present (visually hidden for screen readers)
 - ✅ Data cells associated with headers (thead/tbody structure)
 - ✅ No axe-core table violations
 
 **Implementation:** `src/try/ui/components/sessions-table.ts:56-74`
+
 - Table uses GOV.UK Design System classes
 - Caption: "Your sandbox sessions" (visually hidden)
 - All headers have `scope="col"` attribute
 - Proper thead/tbody structure
 
 ### AC3: Test 3 - Status Badges
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `tests/e2e/accessibility/dashboard-accessibility.spec.ts:165-213` - All 2 badge tests passing
+
 ```typescript
 test.describe("Test 3: Status Badges", () => {
   test("Status badges convey meaning through text, not color alone", async ({ page }) => { ... });
   test("Status badges have sufficient color contrast", async ({ page }) => { ... });
 });
 ```
+
 **Test Results:** 2/2 passing
+
 - ✅ Color contrast meets WCAG 2.2 AA (4.5:1) - validated via axe-core
 - ✅ Status conveyed by text (Active, Pending, Expired, Terminated, Failed)
 - ✅ ARIA labels implicit through semantic HTML
 
 **Implementation:** `src/try/ui/components/sessions-table.ts:21-40,102`
+
 - Status colors mapped to GOV.UK tag classes (blue, green, grey, red)
 - Text labels for all status types
 - GOV.UK Design System ensures WCAG AA contrast compliance
 
 ### AC4: Test 4 - Launch Button
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `tests/e2e/accessibility/dashboard-accessibility.spec.ts:215-309` - All 4 button tests passing
+
 ```typescript
 test.describe("Test 4: Launch Button", () => {
   test("Launch button is keyboard focusable", async ({ page }) => { ... });
@@ -85,13 +101,16 @@ test.describe("Test 4: Launch Button", () => {
   test("Focus indicator is visible", async ({ page }) => { ... });
 });
 ```
+
 **Test Results:** 4/4 passing
+
 - ✅ Button keyboard focusable (native anchor element)
 - ✅ Button has accessible label ("Launch AWS Console")
 - ✅ External link announced to screen readers (visually hidden "(opens in new tab)")
 - ✅ Focus indicator visible (GOV.UK yellow focus state)
 
 **Implementation:** `src/try/ui/components/sessions-table.ts:140-151`
+
 ```typescript
 <a
   href="${ssoUrl}"
@@ -106,8 +125,10 @@ test.describe("Test 4: Launch Button", () => {
 ```
 
 ### AC5: Test 5 - Empty State
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `tests/e2e/accessibility/dashboard-accessibility.spec.ts:311-372` - All 4 empty state tests passing
+
 ```typescript
 test.describe("Test 5: Empty State", () => {
   test("Guidance panel has clear heading", async ({ page }) => { ... });
@@ -116,38 +137,49 @@ test.describe("Test 5: Empty State", () => {
   test("No axe-core violations on empty state", async ({ page }) => { ... });
 });
 ```
+
 **Test Results:** 4/4 passing
+
 - ✅ Guidance panel has clear heading (h3: "New to Try Before You Buy?")
 - ✅ Links keyboard accessible (native anchor elements)
 - ✅ Content readable by screen readers (no aria-hidden on main)
 - ✅ No axe-core critical/serious violations
 
 **Implementation:** `src/try/ui/try-page.ts:215-231`
+
 - Inset text component with semantic heading structure
 - All links are native anchors (keyboard accessible by default)
 - Numbered list for step-by-step guidance
 
 ### AC6: Tests run in CI pipeline
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `.github/workflows/test.yml:44-45` - Accessibility tests run on every PR
+
 ```yaml
 - name: Run Accessibility tests (Story 5.10)
   run: yarn test:e2e:accessibility
 ```
+
 **Evidence:** `package.json` - Script targets all accessibility tests
+
 ```json
 "test:e2e:accessibility": "playwright test tests/e2e/accessibility"
 ```
+
 **CI Coverage:**
+
 - Runs on push to main and all PRs
 - Dashboard accessibility tests included (dashboard-accessibility.spec.ts)
 - Also covered by main E2E test suite (`yarn test:e2e`)
 
 ### AC7: Tests cover all Epic 7 UI components
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** Test suite comprehensively covers all Epic 7 components:
 
 **Components Tested:**
+
 1. **Try Page Layout** (Story 7.1):
    - ✅ Heading hierarchy (h1, h2, h3)
    - ✅ Main landmark region
@@ -222,6 +254,7 @@ test.describe("Test 5: Empty State", () => {
 ## Dev Agent Record
 
 ### Context Reference
+
 - Tech Spec: `/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/tech-spec-epic-7.md`
 - Epic: `/Users/cns/httpdocs/cddo/ndx/docs/epics/epic-7-try-sessions-dashboard.md`
 - Architecture: `/Users/cns/httpdocs/cddo/ndx/docs/architecture.md`
@@ -301,12 +334,15 @@ The implementation follows WCAG 2.2 AA standards and integrates with Epic 8 (Com
 ### File List
 
 **Created:**
+
 - `tests/e2e/accessibility/dashboard-accessibility.spec.ts` - Comprehensive accessibility test suite (21 tests, 410 lines)
 
 **Modified:**
+
 - `tests/e2e/accessibility/dashboard-accessibility.spec.ts` - Fixed navigation landmark test (line 62)
 
 **Referenced:**
+
 - `src/try/ui/try-page.ts` - Try page layout and empty state
 - `src/try/ui/components/sessions-table.ts` - Sessions table with ARIA labels
 - `.github/workflows/test.yml` - CI pipeline with accessibility tests
@@ -315,6 +351,7 @@ The implementation follows WCAG 2.2 AA standards and integrates with Epic 8 (Com
 ## Change Log
 
 ### 2025-11-25 - v1.0 - Story Implementation
+
 - Created comprehensive accessibility test suite
 - Implemented 21 automated tests for WCAG 2.2 AA compliance
 - All 5 acceptance criteria test groups implemented
@@ -322,6 +359,7 @@ The implementation follows WCAG 2.2 AA standards and integrates with Epic 8 (Com
 - Integrated with CI pipeline
 
 ### 2025-11-25 - v1.1 - Code Review Fix
+
 - Fixed navigation landmark test strict mode violation
 - Changed locator to use `.first()` for multiple nav elements
 - All 21 tests now passing (100% pass rate)
@@ -342,45 +380,47 @@ Story 7.13 implements comprehensive automated accessibility testing for the Try 
 ### Key Findings
 
 **LOW Severity Issues:**
+
 - ✅ FIXED: Navigation landmark test failing due to strict mode violation (2 nav elements on page)
 
 **No other issues identified.**
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | Test 1: Page Structure | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:22-86` - 5/5 tests passing |
-| AC2 | Test 2: Sessions Table | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:88-163` - 4/4 tests passing |
-| AC3 | Test 3: Status Badges | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:165-213` - 2/2 tests passing |
-| AC4 | Test 4: Launch Button | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:215-309` - 4/4 tests passing |
-| AC5 | Test 5: Empty State | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:311-372` - 4/4 tests passing |
-| AC6 | Tests run in CI pipeline | ✅ IMPLEMENTED | `.github/workflows/test.yml:44-45` - Runs on all PRs |
-| AC7 | Tests cover all Epic 7 UI components | ✅ IMPLEMENTED | All 7 stories (7.1-7.11) covered by test suite |
+| AC# | Description                          | Status         | Evidence                                                                              |
+| --- | ------------------------------------ | -------------- | ------------------------------------------------------------------------------------- |
+| AC1 | Test 1: Page Structure               | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:22-86` - 5/5 tests passing   |
+| AC2 | Test 2: Sessions Table               | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:88-163` - 4/4 tests passing  |
+| AC3 | Test 3: Status Badges                | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:165-213` - 2/2 tests passing |
+| AC4 | Test 4: Launch Button                | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:215-309` - 4/4 tests passing |
+| AC5 | Test 5: Empty State                  | ✅ IMPLEMENTED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts:311-372` - 4/4 tests passing |
+| AC6 | Tests run in CI pipeline             | ✅ IMPLEMENTED | `.github/workflows/test.yml:44-45` - Runs on all PRs                                  |
+| AC7 | Tests cover all Epic 7 UI components | ✅ IMPLEMENTED | All 7 stories (7.1-7.11) covered by test suite                                        |
 
 **Summary:** 7 of 7 acceptance criteria fully implemented
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Create E2E accessibility test file | [x] | ✅ VERIFIED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts` exists (410 lines) |
-| Set up Playwright with @axe-core/playwright | [x] | ✅ VERIFIED | Import at line 2, used throughout tests |
-| Implement Test 1: Page Structure (5 tests) | [x] | ✅ VERIFIED | Lines 22-86, all 5 tests passing |
-| Implement Test 2: Sessions Table (4 tests) | [x] | ✅ VERIFIED | Lines 88-163, all 4 tests passing |
-| Implement Test 3: Status Badges (2 tests) | [x] | ✅ VERIFIED | Lines 165-213, all 2 tests passing |
-| Implement Test 4: Launch Button (4 tests) | [x] | ✅ VERIFIED | Lines 215-309, all 4 tests passing |
-| Implement Test 5: Empty State (4 tests) | [x] | ✅ VERIFIED | Lines 311-372, all 4 tests passing |
-| Add full page accessibility scans (2 tests) | [x] | ✅ VERIFIED | Lines 374-408, both tests passing |
-| Verify tests run in CI pipeline | [x] | ✅ VERIFIED | `.github/workflows/test.yml:44-45` |
-| Fix strict mode violation | [x] | ✅ VERIFIED | Line 62 changed to use `.first()` |
-| Document test coverage | [x] | ✅ VERIFIED | Complete documentation in story file |
+| Task                                        | Marked As | Verified As | Evidence                                                                     |
+| ------------------------------------------- | --------- | ----------- | ---------------------------------------------------------------------------- |
+| Create E2E accessibility test file          | [x]       | ✅ VERIFIED | `tests/e2e/accessibility/dashboard-accessibility.spec.ts` exists (410 lines) |
+| Set up Playwright with @axe-core/playwright | [x]       | ✅ VERIFIED | Import at line 2, used throughout tests                                      |
+| Implement Test 1: Page Structure (5 tests)  | [x]       | ✅ VERIFIED | Lines 22-86, all 5 tests passing                                             |
+| Implement Test 2: Sessions Table (4 tests)  | [x]       | ✅ VERIFIED | Lines 88-163, all 4 tests passing                                            |
+| Implement Test 3: Status Badges (2 tests)   | [x]       | ✅ VERIFIED | Lines 165-213, all 2 tests passing                                           |
+| Implement Test 4: Launch Button (4 tests)   | [x]       | ✅ VERIFIED | Lines 215-309, all 4 tests passing                                           |
+| Implement Test 5: Empty State (4 tests)     | [x]       | ✅ VERIFIED | Lines 311-372, all 4 tests passing                                           |
+| Add full page accessibility scans (2 tests) | [x]       | ✅ VERIFIED | Lines 374-408, both tests passing                                            |
+| Verify tests run in CI pipeline             | [x]       | ✅ VERIFIED | `.github/workflows/test.yml:44-45`                                           |
+| Fix strict mode violation                   | [x]       | ✅ VERIFIED | Line 62 changed to use `.first()`                                            |
+| Document test coverage                      | [x]       | ✅ VERIFIED | Complete documentation in story file                                         |
 
 **Summary:** 11 of 11 completed tasks verified, 0 questionable, 0 falsely marked complete
 
 ### Test Coverage and Gaps
 
 **Test Coverage:**
+
 - ✅ Page structure (heading hierarchy, landmarks, skip link)
 - ✅ Sessions table accessibility (headers, caption, cell associations)
 - ✅ Status badge accessibility (color contrast, text alternatives)
@@ -390,23 +430,27 @@ Story 7.13 implements comprehensive automated accessibility testing for the Try 
 - ✅ Axe-core WCAG 2.2 AA validation
 
 **Test Quality:**
+
 - All 21 tests are deterministic and focused
 - Proper use of Playwright selectors and assertions
 - Good coverage of edge cases (empty table, no sessions, active sessions)
 - Tests validate both visual and screen reader accessibility
 
 **Gaps:**
+
 - None identified - comprehensive coverage of all Epic 7 components
 
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✅ Uses axe-core for automated WCAG validation (per tech spec line 180)
 - ✅ Tests cover table accessibility (FR-TRY-74, per tech spec line 919)
 - ✅ Tests cover color contrast (FR-TRY-76, per tech spec line 920)
 - ✅ Tests integrated with CI pipeline (per tech spec requirement)
 
 **Architecture Compliance:**
+
 - ✅ Follows GOV.UK Design System patterns
 - ✅ Tests validate ARIA labels and semantic HTML
 - ✅ No violations of architectural constraints
@@ -418,12 +462,14 @@ No security concerns identified. Tests use a test JWT token for authenticated st
 ### Best Practices and References
 
 **Tools and Standards:**
+
 - [Playwright Testing](https://playwright.dev/) - E2E testing framework
 - [@axe-core/playwright](https://github.com/dequelabs/axe-core-npm/tree/develop/packages/playwright) - WCAG validation
 - [WCAG 2.2 AA](https://www.w3.org/WAI/WCAG22/quickref/?versions=2.2&levels=aa) - Accessibility standard
 - [GOV.UK Design System](https://design-system.service.gov.uk/) - Component patterns
 
 **Best Practices Applied:**
+
 - ✅ Comprehensive test coverage across all UI components
 - ✅ Both automated (axe-core) and manual (Playwright) validation
 - ✅ Tests for both unauthenticated and authenticated states
@@ -436,6 +482,7 @@ No security concerns identified. Tests use a test JWT token for authenticated st
 None - all issues fixed during review.
 
 **Advisory Notes:**
+
 - Note: Epic 8 will provide comprehensive manual accessibility testing (screen readers, keyboard navigation, etc.)
 - Note: Consider adding tests for responsive/mobile accessibility in Epic 8
 - Note: Current tests focus on desktop viewport; mobile viewport tests could be added for completeness

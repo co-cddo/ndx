@@ -16,17 +16,17 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-023|ADR-023: OAuth Callback Page Pattern}
  */
 
-import { JWT_TOKEN_KEY, RETURN_URL_KEY, CALLBACK_PATH } from '../constants';
-import { sanitizeReturnUrl } from '../utils/url-validator';
+import { JWT_TOKEN_KEY, RETURN_URL_KEY, CALLBACK_PATH } from "../constants"
+import { sanitizeReturnUrl } from "../utils/url-validator"
 
 /**
  * OAuth error details structure.
  */
 export interface OAuthError {
   /** OAuth error code from URL query parameter */
-  code: string;
+  code: string
   /** User-friendly error message in plain language */
-  message: string;
+  message: string
 }
 
 /**
@@ -51,21 +51,21 @@ export interface OAuthError {
 export function storeReturnURL(): void {
   // Prevent callback page from being stored as return URL (infinite loop protection)
   if (window.location.pathname === CALLBACK_PATH || window.location.pathname === `${CALLBACK_PATH}.html`) {
-    return;
+    return
   }
 
   // Defensive programming: Check sessionStorage availability
-  if (typeof sessionStorage === 'undefined') {
-    console.warn('[oauth-flow] sessionStorage not available, return URL not stored');
-    return;
+  if (typeof sessionStorage === "undefined") {
+    console.warn("[oauth-flow] sessionStorage not available, return URL not stored")
+    return
   }
 
-  const returnURL = window.location.href;
+  const returnURL = window.location.href
 
   try {
-    sessionStorage.setItem(RETURN_URL_KEY, returnURL);
+    sessionStorage.setItem(RETURN_URL_KEY, returnURL)
   } catch (error) {
-    console.warn('[oauth-flow] Failed to store return URL:', error);
+    console.warn("[oauth-flow] Failed to store return URL:", error)
   }
 }
 
@@ -88,18 +88,18 @@ export function storeReturnURL(): void {
  */
 export function getReturnURL(): string {
   // Defensive programming: Check sessionStorage availability
-  if (typeof sessionStorage === 'undefined') {
-    console.warn('[oauth-flow] sessionStorage not available, returning home page');
-    return '/';
+  if (typeof sessionStorage === "undefined") {
+    console.warn("[oauth-flow] sessionStorage not available, returning home page")
+    return "/"
   }
 
   try {
-    const returnURL = sessionStorage.getItem(RETURN_URL_KEY);
+    const returnURL = sessionStorage.getItem(RETURN_URL_KEY)
     // SECURITY: Validate URL to prevent open redirect attacks (CRITICAL-1 fix)
-    return sanitizeReturnUrl(returnURL, '/');
+    return sanitizeReturnUrl(returnURL, "/")
   } catch (error) {
-    console.warn('[oauth-flow] Failed to retrieve return URL:', error);
-    return '/';
+    console.warn("[oauth-flow] Failed to retrieve return URL:", error)
+    return "/"
   }
 }
 
@@ -119,15 +119,15 @@ export function getReturnURL(): string {
  */
 export function clearReturnURL(): void {
   // Defensive programming: Check sessionStorage availability
-  if (typeof sessionStorage === 'undefined') {
-    console.warn('[oauth-flow] sessionStorage not available, cannot clear return URL');
-    return;
+  if (typeof sessionStorage === "undefined") {
+    console.warn("[oauth-flow] sessionStorage not available, cannot clear return URL")
+    return
   }
 
   try {
-    sessionStorage.removeItem(RETURN_URL_KEY);
+    sessionStorage.removeItem(RETURN_URL_KEY)
   } catch (error) {
-    console.warn('[oauth-flow] Failed to clear return URL:', error);
+    console.warn("[oauth-flow] Failed to clear return URL:", error)
   }
 }
 
@@ -159,11 +159,11 @@ export function clearReturnURL(): void {
  * ```
  */
 export function parseOAuthError(): OAuthError | null {
-  const urlParams = new URLSearchParams(window.location.search);
-  const errorCode = urlParams.get('error');
+  const urlParams = new URLSearchParams(window.location.search)
+  const errorCode = urlParams.get("error")
 
   if (!errorCode) {
-    return null;
+    return null
   }
 
   // Map OAuth error codes to user-friendly messages
@@ -172,19 +172,14 @@ export function parseOAuthError(): OAuthError | null {
   // - Clear action guidance
   // - Calm tone (don't alarm users)
   const errorMessages: Record<string, string> = {
-    access_denied:
-      'You cancelled the sign in process. Please try again if you want to access Try features.',
-    invalid_request:
-      'There was a problem with the sign in request. Please try again.',
-    server_error:
-      'The authentication service is temporarily unavailable. Please try again in a few minutes.',
-  };
+    access_denied: "You cancelled the sign in process. Please try again if you want to access Try features.",
+    invalid_request: "There was a problem with the sign in request. Please try again.",
+    server_error: "The authentication service is temporarily unavailable. Please try again in a few minutes.",
+  }
 
-  const message =
-    errorMessages[errorCode] ||
-    'An error occurred during sign in. Please try again.';
+  const message = errorMessages[errorCode] || "An error occurred during sign in. Please try again."
 
-  return { code: errorCode, message };
+  return { code: errorCode, message }
 }
 
 /**
@@ -213,25 +208,25 @@ export function parseOAuthError(): OAuthError | null {
  */
 export function extractTokenFromURL(): boolean {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get("token")
 
     // No token parameter or empty value
-    if (!token || token.trim() === '') {
-      return false;
+    if (!token || token.trim() === "") {
+      return false
     }
 
     // Store token in sessionStorage
     try {
-      sessionStorage.setItem(JWT_TOKEN_KEY, token);
-      return true;
+      sessionStorage.setItem(JWT_TOKEN_KEY, token)
+      return true
     } catch (storageError) {
-      console.warn('[oauth-flow] Failed to store JWT token in sessionStorage:', storageError);
-      return false;
+      console.warn("[oauth-flow] Failed to store JWT token in sessionStorage:", storageError)
+      return false
     }
   } catch (error) {
-    console.warn('[oauth-flow] Failed to extract token from URL:', error);
-    return false;
+    console.warn("[oauth-flow] Failed to extract token from URL:", error)
+    return false
   }
 }
 
@@ -259,15 +254,15 @@ export function cleanupURLAfterExtraction(): void {
   try {
     // Check if history API is available
     if (!window.history || !window.history.replaceState) {
-      console.warn('[oauth-flow] History API not available, skipping URL cleanup');
-      return;
+      console.warn("[oauth-flow] History API not available, skipping URL cleanup")
+      return
     }
 
     // Remove query parameters, preserve pathname
-    const cleanURL = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanURL);
+    const cleanURL = window.location.pathname
+    window.history.replaceState({}, document.title, cleanURL)
   } catch (error) {
-    console.warn('[oauth-flow] Failed to clean up URL after token extraction:', error);
+    console.warn("[oauth-flow] Failed to clean up URL after token extraction:", error)
     // Non-critical error, continue execution
   }
 }
@@ -300,29 +295,29 @@ export function cleanupURLAfterExtraction(): void {
  */
 export function handleOAuthCallback(): void {
   // Step 1: Extract token from URL
-  const tokenExtracted = extractTokenFromURL();
+  const tokenExtracted = extractTokenFromURL()
 
   if (!tokenExtracted) {
     // No token found (possibly OAuth error already handled by parseOAuthError)
     // Redirect to home page and clear return URL
-    clearReturnURL();
-    window.location.href = '/';
-    return;
+    clearReturnURL()
+    window.location.href = "/"
+    return
   }
 
   // Step 2: Clean up URL (remove token from address bar)
-  cleanupURLAfterExtraction();
+  cleanupURLAfterExtraction()
 
   // Step 3: Get return URL (original page before OAuth redirect)
   // SECURITY: URL is validated by sanitizeReturnUrl to prevent open redirects
-  const returnURL = getReturnURL();
+  const returnURL = getReturnURL()
 
   // Step 4: Clear return URL from sessionStorage
-  clearReturnURL();
+  clearReturnURL()
 
   // Step 5: Redirect to original page
   // Use setTimeout to ensure the redirect happens after current execution context completes
   setTimeout(() => {
-    window.location.href = returnURL;
-  }, 0);
+    window.location.href = returnURL
+  }, 0)
 }

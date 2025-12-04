@@ -12,17 +12,17 @@
  * Base error class for notification system
  */
 export abstract class NotificationError extends Error {
-  abstract readonly isRetriable: boolean;
-  abstract readonly severity: 'low' | 'medium' | 'high' | 'critical';
+  abstract readonly isRetriable: boolean
+  abstract readonly severity: "low" | "medium" | "high" | "critical"
 
   constructor(
     message: string,
-    public readonly cause?: Error
+    public readonly cause?: Error,
   ) {
-    super(message);
-    this.name = this.constructor.name;
+    super(message)
+    this.name = this.constructor.name
     // Maintains proper stack trace for where error was thrown
-    Error.captureStackTrace(this, this.constructor);
+    Error.captureStackTrace(this, this.constructor)
   }
 }
 
@@ -31,16 +31,13 @@ export abstract class NotificationError extends Error {
  * Examples: Rate limiting (429), server errors (5xx), network timeouts
  */
 export class RetriableError extends NotificationError {
-  readonly isRetriable = true;
-  readonly severity = 'medium' as const;
-  readonly retryAfterMs?: number;
+  readonly isRetriable = true
+  readonly severity = "medium" as const
+  readonly retryAfterMs?: number
 
-  constructor(
-    message: string,
-    options?: { cause?: Error; retryAfterMs?: number }
-  ) {
-    super(message, options?.cause);
-    this.retryAfterMs = options?.retryAfterMs;
+  constructor(message: string, options?: { cause?: Error; retryAfterMs?: number }) {
+    super(message, options?.cause)
+    this.retryAfterMs = options?.retryAfterMs
   }
 }
 
@@ -49,15 +46,15 @@ export class RetriableError extends NotificationError {
  * Examples: Validation failures, malformed events, missing required fields
  */
 export class PermanentError extends NotificationError {
-  readonly isRetriable = false;
-  readonly severity = 'low' as const;
+  readonly isRetriable = false
+  readonly severity = "low" as const
 
   constructor(
     message: string,
     public readonly validationDetails?: Record<string, unknown>,
-    cause?: Error
+    cause?: Error,
   ) {
-    super(message, cause);
+    super(message, cause)
   }
 }
 
@@ -66,15 +63,15 @@ export class PermanentError extends NotificationError {
  * Examples: API key invalid (401), permission denied (403)
  */
 export class CriticalError extends NotificationError {
-  readonly isRetriable = false;
-  readonly severity = 'critical' as const;
+  readonly isRetriable = false
+  readonly severity = "critical" as const
 
   constructor(
     message: string,
-    public readonly service: 'notify' | 'slack' | 'secrets',
-    cause?: Error
+    public readonly service: "notify" | "slack" | "secrets",
+    cause?: Error,
   ) {
-    super(message, cause);
+    super(message, cause)
   }
 }
 
@@ -83,50 +80,46 @@ export class CriticalError extends NotificationError {
  * Examples: Invalid event source, email doesn't match lease owner
  */
 export class SecurityError extends NotificationError {
-  readonly isRetriable = false;
-  readonly severity = 'high' as const;
+  readonly isRetriable = false
+  readonly severity = "high" as const
 
   constructor(
     message: string,
     public readonly securityContext: {
-      expectedSource?: string;
-      actualSource?: string;
-      eventId?: string;
+      expectedSource?: string
+      actualSource?: string
+      eventId?: string
     },
-    cause?: Error
+    cause?: Error,
   ) {
-    super(message, cause);
+    super(message, cause)
   }
 }
 
 /**
  * Classify HTTP status codes into appropriate error types
  */
-export function classifyHttpError(
-  statusCode: number,
-  message: string,
-  service: 'notify' | 'slack'
-): NotificationError {
+export function classifyHttpError(statusCode: number, message: string, service: "notify" | "slack"): NotificationError {
   if (statusCode === 429) {
     // AC-1.9: 429 errors use 1000ms retry delay for Notify
-    const retryDelay = service === 'notify' ? 1000 : 60000;
+    const retryDelay = service === "notify" ? 1000 : 60000
     return new RetriableError(`Rate limited by ${service}: ${message}`, {
       retryAfterMs: retryDelay,
-    });
+    })
   }
 
   if (statusCode >= 500) {
-    return new RetriableError(`${service} server error: ${message}`);
+    return new RetriableError(`${service} server error: ${message}`)
   }
 
   if (statusCode === 401 || statusCode === 403) {
-    return new CriticalError(`${service} auth failure: ${message}`, service);
+    return new CriticalError(`${service} auth failure: ${message}`, service)
   }
 
   if (statusCode >= 400) {
-    return new PermanentError(`${service} client error: ${message}`);
+    return new PermanentError(`${service} client error: ${message}`)
   }
 
   // Default to retriable for unknown errors
-  return new RetriableError(`Unknown ${service} error: ${message}`);
+  return new RetriableError(`Unknown ${service} error: ${message}`)
 }

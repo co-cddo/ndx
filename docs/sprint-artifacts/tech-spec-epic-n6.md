@@ -66,13 +66,13 @@ This epic depends on and aligns with:
 
 ### Services and Modules
 
-| Service | Responsibility | Input | Output | Owner |
-|---------|-----------------|-------|--------|-------|
-| **SlackSender** | Main module wrapping Slack webhook integration | Validated event + template config | HTTP 200 or throws RetriableError/PermanentError | cns (dev) |
-| **Block Kit Builder** | Formats messages using Slack Block Kit structure | Alert type + account context | JSON payload for webhook POST | cns (dev) |
-| **Error Classifier** | Maps HTTP errors to retry/DLQ decisions | HTTP status code + error message | RetriableError/PermanentError/CriticalError | cns (dev) |
+| Service               | Responsibility                                              | Input                                   | Output                                               | Owner     |
+| --------------------- | ----------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------- | --------- |
+| **SlackSender**       | Main module wrapping Slack webhook integration              | Validated event + template config       | HTTP 200 or throws RetriableError/PermanentError     | cns (dev) |
+| **Block Kit Builder** | Formats messages using Slack Block Kit structure            | Alert type + account context            | JSON payload for webhook POST                        | cns (dev) |
+| **Error Classifier**  | Maps HTTP errors to retry/DLQ decisions                     | HTTP status code + error message        | RetriableError/PermanentError/CriticalError          | cns (dev) |
 | **Template Registry** | Centralized config for Slack templates (shared with Notify) | Event type (e.g., 'AccountQuarantined') | TemplateConfig { priority, channel, requiredFields } | cns (dev) |
-| **Lambda Handler** | Event routing logic (shared across N-5) | EventBridge event | Routes to NotifySender or SlackSender | cns (dev) |
+| **Lambda Handler**    | Event routing logic (shared across N-5)                     | EventBridge event                       | Routes to NotifySender or SlackSender                | cns (dev) |
 
 ### Data Models and Contracts
 
@@ -82,15 +82,24 @@ This epic depends on and aligns with:
 // Base Slack message schema (shared across all alert types)
 {
   blocks: [
-    { type: 'header', text: { type: 'plain_text', text: '🔴 Account Quarantine Alert' } },
-    { type: 'section', fields: [
-      { type: 'mrkdwn', text: '*AWS Account:* 123456789012' },
-      { type: 'mrkdwn', text: '*Severity:* Critical' },
-      { type: 'mrkdwn', text: '*Reason:* Policy violation detected' },
-      { type: 'mrkdwn', text: '*Time:* 2025-11-27 14:32 UTC' },
-    ]},
-    { type: 'section', text: { type: 'mrkdwn', text: '<https://console.aws.amazon.com|View in AWS Console> | <https://isb-admin/quarantine|View in ISB Admin>' } },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: 'Event ID: evt-xyz-123 | Slack Alert v1' }] },
+    { type: "header", text: { type: "plain_text", text: "🔴 Account Quarantine Alert" } },
+    {
+      type: "section",
+      fields: [
+        { type: "mrkdwn", text: "*AWS Account:* 123456789012" },
+        { type: "mrkdwn", text: "*Severity:* Critical" },
+        { type: "mrkdwn", text: "*Reason:* Policy violation detected" },
+        { type: "mrkdwn", text: "*Time:* 2025-11-27 14:32 UTC" },
+      ],
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "<https://console.aws.amazon.com|View in AWS Console> | <https://isb-admin/quarantine|View in ISB Admin>",
+      },
+    },
+    { type: "context", elements: [{ type: "mrkdwn", text: "Event ID: evt-xyz-123 | Slack Alert v1" }] },
   ]
 }
 ```
@@ -320,16 +329,16 @@ Alarm: DLQ depth > 0
 
 ### AWS Service Integrations
 
-| Service | Purpose | Access Pattern | Identity |
-|---------|---------|-----------------|----------|
-| **Secrets Manager** | Retrieve webhook URL at runtime | GetSecretValue on `/ndx/notifications/credentials` | Lambda IAM role |
-| **CloudWatch Logs** | Structured logging (Powertools Logger) | PutLogEvents on `/aws/lambda/ndx-notification` | Lambda IAM role |
-| **CloudWatch Metrics** | Custom metrics (NotificationSuccess, NotificationFailure) | PutMetricData (Powertools) | Lambda IAM role |
-| **EventBridge** | Event source (read-only) | Rule trigger (no explicit API calls) | EventBridge rule target |
-| **SQS (DLQ)** | Failed message storage | SendMessage on `ndx-notification-dlq` | Lambda execution env |
-| **DynamoDB (Idempotency)** | Prevent duplicate Slack sends | GetItem, PutItem, UpdateItem, DeleteItem on `NdxIdempotency` | Lambda IAM role |
-| **DynamoDB (ISB)** | Enrich events with context (if needed) | GetItem, Query on LeaseTable, SandboxAccountTable, LeaseTemplateTable | Lambda IAM role |
-| **Slack Incoming Webhook** | POST alerts | HTTPS POST to webhook URL | Webhook URL as auth |
+| Service                    | Purpose                                                   | Access Pattern                                                        | Identity                |
+| -------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------- |
+| **Secrets Manager**        | Retrieve webhook URL at runtime                           | GetSecretValue on `/ndx/notifications/credentials`                    | Lambda IAM role         |
+| **CloudWatch Logs**        | Structured logging (Powertools Logger)                    | PutLogEvents on `/aws/lambda/ndx-notification`                        | Lambda IAM role         |
+| **CloudWatch Metrics**     | Custom metrics (NotificationSuccess, NotificationFailure) | PutMetricData (Powertools)                                            | Lambda IAM role         |
+| **EventBridge**            | Event source (read-only)                                  | Rule trigger (no explicit API calls)                                  | EventBridge rule target |
+| **SQS (DLQ)**              | Failed message storage                                    | SendMessage on `ndx-notification-dlq`                                 | Lambda execution env    |
+| **DynamoDB (Idempotency)** | Prevent duplicate Slack sends                             | GetItem, PutItem, UpdateItem, DeleteItem on `NdxIdempotency`          | Lambda IAM role         |
+| **DynamoDB (ISB)**         | Enrich events with context (if needed)                    | GetItem, Query on LeaseTable, SandboxAccountTable, LeaseTemplateTable | Lambda IAM role         |
+| **Slack Incoming Webhook** | POST alerts                                               | HTTPS POST to webhook URL                                             | Webhook URL as auth     |
 
 ### CloudFormation Imports
 
@@ -337,18 +346,18 @@ Epic N-4 CDK creates and exports these values; Epic N-6 Lambda uses them:
 
 ```typescript
 // notification-stack.ts (in Epic N-4)
-new CfnOutput(this, 'IdempotencyTableName', {
+new CfnOutput(this, "IdempotencyTableName", {
   value: idempotencyTable.tableName,
-  exportName: 'ndx-idempotency-table',
-});
+  exportName: "ndx-idempotency-table",
+})
 
-new CfnOutput(this, 'DLQUrl', {
+new CfnOutput(this, "DLQUrl", {
   value: dlq.queueUrl,
-  exportName: 'ndx-notification-dlq-url',
-});
+  exportName: "ndx-notification-dlq-url",
+})
 
 // Lambda environment references these
-process.env.IDEMPOTENCY_TABLE_NAME = Fn.importValue('ndx-idempotency-table');
+process.env.IDEMPOTENCY_TABLE_NAME = Fn.importValue("ndx-idempotency-table")
 ```
 
 ---
@@ -395,7 +404,7 @@ process.env.IDEMPOTENCY_TABLE_NAME = Fn.importValue('ndx-idempotency-table');
 
 **AC 3.2:** Given quarantine reason from event, when message is built, then reason is included in section field (e.g., "Policy violation detected")
 
-**AC 3.3:** Given AWS account ID from event, when message is built, then it appears as bold field "*AWS Account:* 123456789012"
+**AC 3.3:** Given AWS account ID from event, when message is built, then it appears as bold field "_AWS Account:_ 123456789012"
 
 **AC 3.4:** Given timestamp, when context block is added, then it includes current UTC time (from event.time or handler.now())
 
@@ -439,7 +448,7 @@ process.env.IDEMPOTENCY_TABLE_NAME = Fn.importValue('ndx-idempotency-table');
 
 **AC 6.1:** Given an AccountDriftDetectedEvent is received, when handler processes it, then SlackSender builds message with header "🔴 Account Drift Detection Alert"
 
-**AC 6.2:** Given expected OU vs actual OU, when message is built, then it displays: "*Expected OU:* Active | *Actual OU:* CleanUp"
+**AC 6.2:** Given expected OU vs actual OU, when message is built, then it displays: "_Expected OU:_ Active | _Actual OU:_ CleanUp"
 
 **AC 6.3:** Given account ID, when message is built, then it appears clearly for ops to identify drift
 
@@ -463,31 +472,31 @@ process.env.IDEMPOTENCY_TABLE_NAME = Fn.importValue('ndx-idempotency-table');
 
 ## Traceability Mapping
 
-| AC | Spec Section | Component(s) | Test Idea |
-|----|--------------|--------------|-----------|
-| AC 1.1 | APIs and Interfaces | SlackSender | Unit test: Mock fetch, verify POST with correct URL and headers |
-| AC 1.2 | Workflows and Sequencing | Error Classifier, RetryLogic | Unit test: Simulate 429, verify exponential backoff delays |
-| AC 1.3 | Workflows and Sequencing | EventBridge DLQ | Integration test: Send event that fails 3 times, verify DLQ receives it |
-| AC 1.4 | Error Handling (NFR) | CriticalError | Unit test: Simulate 401, verify throws CriticalError, logged at ERROR |
-| AC 1.5 | Workflows and Sequencing | Network Retry | Unit test: Mock socket error, verify retries with backoff |
-| AC 1.6 | Observability (NFR) | CloudWatch Logs, Metrics | Unit test: Successful send, verify INFO log and NotificationSuccess metric |
-| AC 1.7 | Security (NFR) | Powertools Logger | Unit test: Log entry contains webhook URL, verify it's redacted |
-| AC 1.8 | APIs and Interfaces | Webhook POST | Integration test: Verify webhook receives valid JSON |
-| AC 2.1 | Data Models | Block Kit Builder | Unit test: Generate message, verify blocks structure matches Block Kit schema |
-| AC 2.2 | Data Models | Block Kit Builder (critical) | Unit test: priority=critical, verify 🔴 color in attachment |
-| AC 2.3 | Data Models | Block Kit Builder (normal) | Unit test: priority=normal, verify yellow color in attachment |
-| AC 2.4 | Data Models | Block Kit Builder | Unit test: Critical alert has >= 2 action links |
-| AC 2.5 | Data Models | Context Block | Unit test: Verify context block includes eventId and version |
-| AC 2.6 | Data Models | Fallback Text | Unit test: JSON includes 'text' field with alert summary |
-| AC 2.7 | Data Models | Block Kit Validation | Integration test: Send message to Slack test endpoint, verify acceptance |
-| AC 3.1-3.7 | Account Quarantine Story | SlackSender, BlockKit | E2E test: Simulate AccountQuarantined event, verify Slack message format and latency |
-| AC 4.1-4.7 | Account Frozen Story | SlackSender, BlockKit (dual-channel) | E2E test: Simulate LeaseFrozen event with budget reason, verify both Notify and Slack sent |
-| AC 5.1-5.6 | Account Cleanup Story | SlackSender, BlockKit | E2E test: Simulate AccountCleanupFailed event, verify message includes execution link |
-| AC 6.1-6.6 | Account Drift Story | SlackSender, BlockKit | E2E test: Simulate AccountDriftDetected event, verify message explains OU mismatch |
-| AC-CROSS-1 | Templates.ts | Template Registry | Unit test: Template registry for all 4 types, verify requiredFields defined |
-| AC-CROSS-2 | Error Handling | Exception Messages | Unit test: Webhook error thrown, verify message doesn't contain URL |
-| AC-CROSS-3 | Daily DLQ Story 6-7 | Separate monitoring Lambda | Design doc (not implemented in N-6, deferred to post-MVP) |
-| AC-CROSS-4 | Runbook Links Story 6-8 | Block Kit Builder | Unit test: Message includes runbook link for alert type |
+| AC         | Spec Section             | Component(s)                         | Test Idea                                                                                  |
+| ---------- | ------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| AC 1.1     | APIs and Interfaces      | SlackSender                          | Unit test: Mock fetch, verify POST with correct URL and headers                            |
+| AC 1.2     | Workflows and Sequencing | Error Classifier, RetryLogic         | Unit test: Simulate 429, verify exponential backoff delays                                 |
+| AC 1.3     | Workflows and Sequencing | EventBridge DLQ                      | Integration test: Send event that fails 3 times, verify DLQ receives it                    |
+| AC 1.4     | Error Handling (NFR)     | CriticalError                        | Unit test: Simulate 401, verify throws CriticalError, logged at ERROR                      |
+| AC 1.5     | Workflows and Sequencing | Network Retry                        | Unit test: Mock socket error, verify retries with backoff                                  |
+| AC 1.6     | Observability (NFR)      | CloudWatch Logs, Metrics             | Unit test: Successful send, verify INFO log and NotificationSuccess metric                 |
+| AC 1.7     | Security (NFR)           | Powertools Logger                    | Unit test: Log entry contains webhook URL, verify it's redacted                            |
+| AC 1.8     | APIs and Interfaces      | Webhook POST                         | Integration test: Verify webhook receives valid JSON                                       |
+| AC 2.1     | Data Models              | Block Kit Builder                    | Unit test: Generate message, verify blocks structure matches Block Kit schema              |
+| AC 2.2     | Data Models              | Block Kit Builder (critical)         | Unit test: priority=critical, verify 🔴 color in attachment                                |
+| AC 2.3     | Data Models              | Block Kit Builder (normal)           | Unit test: priority=normal, verify yellow color in attachment                              |
+| AC 2.4     | Data Models              | Block Kit Builder                    | Unit test: Critical alert has >= 2 action links                                            |
+| AC 2.5     | Data Models              | Context Block                        | Unit test: Verify context block includes eventId and version                               |
+| AC 2.6     | Data Models              | Fallback Text                        | Unit test: JSON includes 'text' field with alert summary                                   |
+| AC 2.7     | Data Models              | Block Kit Validation                 | Integration test: Send message to Slack test endpoint, verify acceptance                   |
+| AC 3.1-3.7 | Account Quarantine Story | SlackSender, BlockKit                | E2E test: Simulate AccountQuarantined event, verify Slack message format and latency       |
+| AC 4.1-4.7 | Account Frozen Story     | SlackSender, BlockKit (dual-channel) | E2E test: Simulate LeaseFrozen event with budget reason, verify both Notify and Slack sent |
+| AC 5.1-5.6 | Account Cleanup Story    | SlackSender, BlockKit                | E2E test: Simulate AccountCleanupFailed event, verify message includes execution link      |
+| AC 6.1-6.6 | Account Drift Story      | SlackSender, BlockKit                | E2E test: Simulate AccountDriftDetected event, verify message explains OU mismatch         |
+| AC-CROSS-1 | Templates.ts             | Template Registry                    | Unit test: Template registry for all 4 types, verify requiredFields defined                |
+| AC-CROSS-2 | Error Handling           | Exception Messages                   | Unit test: Webhook error thrown, verify message doesn't contain URL                        |
+| AC-CROSS-3 | Daily DLQ Story 6-7      | Separate monitoring Lambda           | Design doc (not implemented in N-6, deferred to post-MVP)                                  |
+| AC-CROSS-4 | Runbook Links Story 6-8  | Block Kit Builder                    | Unit test: Message includes runbook link for alert type                                    |
 
 ---
 
@@ -530,109 +539,129 @@ process.env.IDEMPOTENCY_TABLE_NAME = Fn.importValue('ndx-idempotency-table');
 The following failure scenarios were identified through pre-mortem analysis elicitation:
 
 #### Failure Scenario 1: Silent Webhook Failure
+
 **Scenario:** Slack rotates the webhook or workspace admin revokes it. Lambda returns 401/403 but CloudWatch alarm hasn't fired yet. Ops has no idea alerts aren't arriving.
 
 **Contributing Factors:**
+
 - No proactive health check - we only know webhook is dead when a real alert fails
 - CloudWatch alarm delay (5-minute evaluation period)
 - No backup notification path
 
 **Warning Signs:**
+
 - Sudden drop in `SlackMessagesSent` metric to zero
 - Increase in `WebhookAuthError` count
 
 **Preventive Measures:**
+
 - **AC-NEW-1:** Daily synthetic "heartbeat" test message to verify webhook health
 - **AC-NEW-2:** Secondary alerting path (email or PagerDuty) for webhook failures
 - **AC-NEW-3:** Runbook for webhook rotation with Secrets Manager update procedure
 
 #### Failure Scenario 2: Alert Fatigue Tsunami
+
 **Scenario:** ISB batch job triggers 50 cleanup failures in 10 minutes. Ops gets 50 nearly identical Slack messages. Team mutes channel. Real critical alert next day is ignored.
 
 **Contributing Factors:**
+
 - No aggregation for repeated events
 - All alerts in single channel regardless of severity
 - No rate limiting on outbound messages
 
 **Warning Signs:**
+
 - Burst of > 10 alerts within 5 minutes
 - Ops feedback about "too many alerts"
 
 **Preventive Measures:**
+
 - **AC-NEW-4:** Aggregate repeated alerts for same account within 5-minute window
 - **AC-NEW-5:** Separate Slack channels for critical vs informational alerts
 - **AC-NEW-6:** Circuit breaker: switch to digest mode after 10 alerts/minute
 
 #### Failure Scenario 3: Drift Detection False Positive
+
 **Scenario:** Ops investigates "Account Drift" alert only to find it was triggered by planned maintenance. 30 minutes wasted. Team starts ignoring drift alerts.
 
 **Contributing Factors:**
+
 - No context about recent admin actions
 - No maintenance window awareness
 - No feedback loop to mark false positives
 
 **Warning Signs:**
+
 - Drift alerts during scheduled maintenance windows
 - Ops manually marking alerts as "not actionable"
 
 **Preventive Measures:**
+
 - **AC-NEW-7:** Include "last admin action" context in drift alerts
 - **AC-NEW-8:** Maintenance window awareness (suppress or tag alerts during windows)
 - **AC-NEW-9:** Ops can mark alerts as false positive (feedback to improve rules)
 
 #### Failure Scenario 4: Enrichment Timeout Cascade
+
 **Scenario:** DynamoDB throttling causes enrichment to timeout. Lambda retries 3x, exhausts timeout. Alert never sent. Ops unaware of real issue.
 
 **Contributing Factors:**
+
 - Enrichment blocking critical path
 - No partial-data fallback
 - Timeout budget consumed by retries
 
 **Warning Signs:**
+
 - Increase in Lambda timeout errors
 - Enrichment latency > 500ms (p95)
 
 **Preventive Measures:**
+
 - **AC-NEW-10:** Enrichment is best-effort: send alert with partial data rather than fail
 - **AC-NEW-11:** Separate enrichment timeout (5s max) vs Lambda timeout (30s)
 - **AC-NEW-12:** CloudWatch alarm on enrichment failure rate > 5%
 
 #### Failure Scenario 5: Runbook Not Found
+
 **Scenario:** Alert includes link to runbook that doesn't exist or is outdated. Ops clicks link, gets 404 or stale instructions. Real incident escalates while searching for correct docs.
 
 **Contributing Factors:**
+
 - Runbook links hardcoded, not validated
 - Documentation drift after system changes
 - No testing of runbook links in CI
 
 **Warning Signs:**
+
 - Runbook link returns 404
 - Ops feedback about outdated instructions
 
 **Preventive Measures:**
+
 - **AC-NEW-13:** Pre-deployment validation of runbook link availability
 - **AC-NEW-14:** Critical alerts include escalation path (who to call if runbook fails)
 - **AC-NEW-15:** Quarterly runbook review cadence documented
 
 ### New Acceptance Criteria from Pre-mortem
 
-| ID | Category | Description | Story |
-|----|----------|-------------|-------|
-| AC-NEW-1 | Reliability | Daily synthetic heartbeat alert to verify webhook | n6-1 |
-| AC-NEW-2 | Reliability | Backup alerting path (email/PagerDuty) for webhook failures | n6-1 |
-| AC-NEW-3 | Operations | Runbook for webhook rotation with Secrets Manager update | n6-8 |
-| AC-NEW-4 | Alert Quality | Aggregate repeated alerts for same account (5-min window) | n6-7 |
-| AC-NEW-5 | Alert Quality | Separate channels for critical vs informational alerts | Future |
-| AC-NEW-6 | Rate Limiting | Circuit breaker: digest mode after 10 alerts/min | n6-2 |
-| AC-NEW-7 | Context | Include "last admin action" in drift alerts | n6-6 |
-| AC-NEW-8 | Context | Maintenance window awareness for alert suppression | Future |
-| AC-NEW-9 | Feedback | Ops can mark alerts as false positive | Future |
-| AC-NEW-10 | Resilience | Enrichment best-effort (send with partial data) | n6-2 |
-| AC-NEW-11 | Resilience | Separate enrichment timeout (5s cap) | n6-2 |
-| AC-NEW-12 | Observability | Alarm on enrichment failure rate > 5% | n6-2 |
-| AC-NEW-13 | Operations | Runbook links validated before deployment | n6-8 |
-| AC-NEW-14 | Escalation | Critical alerts include escalation path | n6-3, n6-5, n6-6 |
-| AC-NEW-15 | Training | On-call drill requirement for quarantine response | n6-3 |
+| ID        | Category      | Description                                                 | Story            |
+| --------- | ------------- | ----------------------------------------------------------- | ---------------- |
+| AC-NEW-1  | Reliability   | Daily synthetic heartbeat alert to verify webhook           | n6-1             |
+| AC-NEW-2  | Reliability   | Backup alerting path (email/PagerDuty) for webhook failures | n6-1             |
+| AC-NEW-3  | Operations    | Runbook for webhook rotation with Secrets Manager update    | n6-8             |
+| AC-NEW-4  | Alert Quality | Aggregate repeated alerts for same account (5-min window)   | n6-7             |
+| AC-NEW-5  | Alert Quality | Separate channels for critical vs informational alerts      | Future           |
+| AC-NEW-6  | Rate Limiting | Circuit breaker: digest mode after 10 alerts/min            | n6-2             |
+| AC-NEW-7  | Context       | Include "last admin action" in drift alerts                 | n6-6             |
+| AC-NEW-8  | Context       | Maintenance window awareness for alert suppression          | Future           |
+| AC-NEW-9  | Feedback      | Ops can mark alerts as false positive                       | Future           |
+| AC-NEW-10 | Resilience    | Enrichment best-effort (send with partial data)             | n6-2             |
+| AC-NEW-11 | Resilience    | Separate enrichment timeout (5s cap)                        | n6-2             |
+| AC-NEW-12 | Observability | Alarm on enrichment failure rate > 5%                       | n6-2             |
+| AC-NEW-13 | Operations    | Runbook links validated before deployment                   | n6-8             |
+| AC-NEW-14 | Escalation    | Critical alerts include escalation path                     | n6-3, n6-5, n6-6 |
+| AC-NEW-15 | Training      | On-call drill requirement for quarantine response           | n6-3             |
 
 ### Edge Case Discovery Findings (2025-11-28)
 
@@ -640,56 +669,56 @@ Systematic identification of boundary conditions, error states, and exceptional 
 
 #### Interface: Slack Webhook HTTP
 
-| Edge Case | Scenario | Gap Identified |
-|-----------|----------|----------------|
-| EC-1.1 | Webhook URL is empty string in Secrets Manager | Need validation before send |
-| EC-1.2 | Webhook returns HTTP 500 (Slack internal error) | Need explicit error classification |
-| EC-1.3 | Webhook returns HTTP 301/302 redirect | May expose URL in redirect logs |
-| EC-1.4 | Connection timeout (Slack unreachable) | Need separate connect timeout |
-| EC-1.5 | Response body is not JSON | Need graceful parse handling |
-| EC-1.6 | Webhook returns 200 but `{"ok": false}` | Need response validation |
+| Edge Case | Scenario                                        | Gap Identified                     |
+| --------- | ----------------------------------------------- | ---------------------------------- |
+| EC-1.1    | Webhook URL is empty string in Secrets Manager  | Need validation before send        |
+| EC-1.2    | Webhook returns HTTP 500 (Slack internal error) | Need explicit error classification |
+| EC-1.3    | Webhook returns HTTP 301/302 redirect           | May expose URL in redirect logs    |
+| EC-1.4    | Connection timeout (Slack unreachable)          | Need separate connect timeout      |
+| EC-1.5    | Response body is not JSON                       | Need graceful parse handling       |
+| EC-1.6    | Webhook returns 200 but `{"ok": false}`         | Need response validation           |
 
 #### Interface: Block Kit Message Formatting
 
-| Edge Case | Scenario | Gap Identified |
-|-----------|----------|----------------|
-| EC-2.1 | Account ID contains special characters | Potential mrkdwn injection |
-| EC-2.2 | Reason text exceeds Slack 3000 char limit | Need truncation logic |
-| EC-2.3 | Runbook URL contains query params with `&` | May break mrkdwn link syntax |
-| EC-2.4 | Timestamp is invalid/unparseable | Need fallback formatting |
-| EC-2.5 | Event has no `reason` field (optional) | Need placeholder text |
+| Edge Case | Scenario                                   | Gap Identified               |
+| --------- | ------------------------------------------ | ---------------------------- |
+| EC-2.1    | Account ID contains special characters     | Potential mrkdwn injection   |
+| EC-2.2    | Reason text exceeds Slack 3000 char limit  | Need truncation logic        |
+| EC-2.3    | Runbook URL contains query params with `&` | May break mrkdwn link syntax |
+| EC-2.4    | Timestamp is invalid/unparseable           | Need fallback formatting     |
+| EC-2.5    | Event has no `reason` field (optional)     | Need placeholder text        |
 
 #### Interface: Event Routing & Dual-Channel
 
-| Edge Case | Scenario | Gap Identified |
-|-----------|----------|----------------|
-| EC-3.2 | Same event arrives twice within 1 second | Verify Slack has separate idempotency key |
-| EC-3.3 | LeaseFrozen: Slack fails, Notify succeeds | Need independent channel handling |
+| Edge Case | Scenario                                  | Gap Identified                            |
+| --------- | ----------------------------------------- | ----------------------------------------- |
+| EC-3.2    | Same event arrives twice within 1 second  | Verify Slack has separate idempotency key |
+| EC-3.3    | LeaseFrozen: Slack fails, Notify succeeds | Need independent channel handling         |
 
 #### Interface: Secrets Manager
 
-| Edge Case | Scenario | Gap Identified |
-|-----------|----------|----------------|
-| EC-4.1 | Secret doesn't exist (deleted) | Need graceful error message |
-| EC-4.2 | Secret exists but value is malformed JSON | Need validation before use |
-| EC-4.4 | Secret rotation in progress | Need explicit AWSCURRENT version |
+| Edge Case | Scenario                                  | Gap Identified                   |
+| --------- | ----------------------------------------- | -------------------------------- |
+| EC-4.1    | Secret doesn't exist (deleted)            | Need graceful error message      |
+| EC-4.2    | Secret exists but value is malformed JSON | Need validation before use       |
+| EC-4.4    | Secret rotation in progress               | Need explicit AWSCURRENT version |
 
 ### New Acceptance Criteria from Edge Case Discovery
 
-| ID | Category | Description | Severity | Story |
-|----|----------|-------------|----------|-------|
-| EC-AC-1 | Validation | Validate webhook URL is non-empty before first send | High | n6-1 |
-| EC-AC-2 | Error Handling | HTTP 500 from Slack = RetriableError (not permanent) | Medium | n6-2 |
-| EC-AC-3 | Security | Disable HTTP redirects on webhook fetch (prevent URL leak) | High | n6-1 |
-| EC-AC-4 | Resilience | Separate connect timeout (5s) from response timeout (10s) | Medium | n6-2 |
-| EC-AC-5 | Validation | Verify response `{"ok": true}` before marking success | High | n6-1 |
-| EC-AC-6 | Security | Escape special chars in account ID for mrkdwn | Medium | n6-2 |
-| EC-AC-7 | Formatting | Truncate reason text to 2500 chars with "..." indicator | Low | n6-2 |
-| EC-AC-8 | Formatting | URL-encode runbook links in Block Kit | Medium | n6-8 |
-| EC-AC-9 | Formatting | Use "N/A" placeholder when optional fields missing | Low | n6-2 |
-| EC-AC-10 | Idempotency | Slack idempotency key: `ndx-slack:{eventId}` (separate namespace) | High | n6-2 |
-| EC-AC-11 | Dual-Channel | LeaseFrozen: if one channel fails, other still attempts | Medium | n6-4 |
-| EC-AC-12 | Secrets | Explicitly request AWSCURRENT version from Secrets Manager | Low | n6-1 |
+| ID       | Category       | Description                                                       | Severity | Story |
+| -------- | -------------- | ----------------------------------------------------------------- | -------- | ----- |
+| EC-AC-1  | Validation     | Validate webhook URL is non-empty before first send               | High     | n6-1  |
+| EC-AC-2  | Error Handling | HTTP 500 from Slack = RetriableError (not permanent)              | Medium   | n6-2  |
+| EC-AC-3  | Security       | Disable HTTP redirects on webhook fetch (prevent URL leak)        | High     | n6-1  |
+| EC-AC-4  | Resilience     | Separate connect timeout (5s) from response timeout (10s)         | Medium   | n6-2  |
+| EC-AC-5  | Validation     | Verify response `{"ok": true}` before marking success             | High     | n6-1  |
+| EC-AC-6  | Security       | Escape special chars in account ID for mrkdwn                     | Medium   | n6-2  |
+| EC-AC-7  | Formatting     | Truncate reason text to 2500 chars with "..." indicator           | Low      | n6-2  |
+| EC-AC-8  | Formatting     | URL-encode runbook links in Block Kit                             | Medium   | n6-8  |
+| EC-AC-9  | Formatting     | Use "N/A" placeholder when optional fields missing                | Low      | n6-2  |
+| EC-AC-10 | Idempotency    | Slack idempotency key: `ndx-slack:{eventId}` (separate namespace) | High     | n6-2  |
+| EC-AC-11 | Dual-Channel   | LeaseFrozen: if one channel fails, other still attempts           | Medium   | n6-4  |
+| EC-AC-12 | Secrets        | Explicitly request AWSCURRENT version from Secrets Manager        | Low      | n6-1  |
 
 ### User Journey Walking Findings (2025-11-28)
 
@@ -697,54 +726,54 @@ Step-by-step workflow analysis from the ops team perspective.
 
 #### Journey 1: Responding to Account Quarantine Alert
 
-| Step | Action | Gap Identified |
-|------|--------|----------------|
-| 4 | Ops clicks "View in AWS Console" link | Link may require SSO login first |
-| 6 | Ops wants to mark alert as handled | No resolution tracking |
-| 7 | Ops wants to know if user was also notified | No cross-channel visibility |
+| Step | Action                                      | Gap Identified                   |
+| ---- | ------------------------------------------- | -------------------------------- |
+| 4    | Ops clicks "View in AWS Console" link       | Link may require SSO login first |
+| 6    | Ops wants to mark alert as handled          | No resolution tracking           |
+| 7    | Ops wants to know if user was also notified | No cross-channel visibility      |
 
 #### Journey 2: Investigating Cleanup Failure Alert
 
-| Step | Action | Gap Identified |
-|------|--------|----------------|
-| 5 | Ops needs to retry cleanup manually | No retry action in alert |
-| 6 | Ops wants to see previous failures for same account | No historical context |
+| Step | Action                                              | Gap Identified           |
+| ---- | --------------------------------------------------- | ------------------------ |
+| 5    | Ops needs to retry cleanup manually                 | No retry action in alert |
+| 6    | Ops wants to see previous failures for same account | No historical context    |
 
 #### Journey 3: Handling Alert Burst During Incident
 
-| Step | Action | Gap Identified |
-|------|--------|----------------|
-| 2-3 | 20 similar events flood channel | No aggregation (AC-NEW-4 addresses) |
-| 4 | Ops tries to understand scope | No incident grouping |
-| 5 | Ops mutes channel, misses next critical alert | Critical alerts buried |
+| Step | Action                                        | Gap Identified                      |
+| ---- | --------------------------------------------- | ----------------------------------- |
+| 2-3  | 20 similar events flood channel               | No aggregation (AC-NEW-4 addresses) |
+| 4    | Ops tries to understand scope                 | No incident grouping                |
+| 5    | Ops mutes channel, misses next critical alert | Critical alerts buried              |
 
 #### Journey 4: Webhook Rotation
 
-| Step | Action | Gap Identified |
-|------|--------|----------------|
-| 3 | Ops Admin needs to update Secrets Manager | No documented procedure |
-| 4 | Updates secret, when does Lambda pick up? | Cache behavior undocumented |
-| 5 | Wants to verify new webhook works | No test mechanism |
+| Step | Action                                    | Gap Identified              |
+| ---- | ----------------------------------------- | --------------------------- |
+| 3    | Ops Admin needs to update Secrets Manager | No documented procedure     |
+| 4    | Updates secret, when does Lambda pick up? | Cache behavior undocumented |
+| 5    | Wants to verify new webhook works         | No test mechanism           |
 
 #### Journey 5: Daily DLQ Review
 
-| Step | Action | Gap Identified |
-|------|--------|----------------|
-| 3 | Ops clicks to view DLQ details | No direct link to DLQ |
-| 4-5 | Ops wants to replay/delete message | Multi-step manual process |
+| Step | Action                             | Gap Identified            |
+| ---- | ---------------------------------- | ------------------------- |
+| 3    | Ops clicks to view DLQ details     | No direct link to DLQ     |
+| 4-5  | Ops wants to replay/delete message | Multi-step manual process |
 
 ### New Acceptance Criteria from User Journey Walking
 
-| ID | Journey | Description | Priority | Story |
-|----|---------|-------------|----------|-------|
-| UJ-AC-1 | J1 | Console links include "(SSO login may be required)" note | Low | n6-3 |
-| UJ-AC-2 | J1 | Dual-channel alerts include "User notified via email" indicator | Medium | n6-4 |
-| UJ-AC-3 | J3 | Burst detection: summary message after 5+ similar alerts in 5 min | Medium | n6-7 |
-| UJ-AC-4 | J3 | Critical alerts use @here mention to break through mute | Low | Future |
-| UJ-AC-5 | J4 | Document Lambda secret cache behavior (TTL, refresh) | Medium | n6-1 |
-| UJ-AC-6 | J4 | Provide CLI command or test endpoint to verify webhook | Low | n6-8 |
-| UJ-AC-7 | J5 | DLQ digest includes direct link to SQS queue in Console | Medium | n6-7 |
-| UJ-AC-8 | J5 | DLQ digest shows preview of top 3 error types | Low | n6-7 |
+| ID      | Journey | Description                                                       | Priority | Story  |
+| ------- | ------- | ----------------------------------------------------------------- | -------- | ------ |
+| UJ-AC-1 | J1      | Console links include "(SSO login may be required)" note          | Low      | n6-3   |
+| UJ-AC-2 | J1      | Dual-channel alerts include "User notified via email" indicator   | Medium   | n6-4   |
+| UJ-AC-3 | J3      | Burst detection: summary message after 5+ similar alerts in 5 min | Medium   | n6-7   |
+| UJ-AC-4 | J3      | Critical alerts use @here mention to break through mute           | Low      | Future |
+| UJ-AC-5 | J4      | Document Lambda secret cache behavior (TTL, refresh)              | Medium   | n6-1   |
+| UJ-AC-6 | J4      | Provide CLI command or test endpoint to verify webhook            | Low      | n6-8   |
+| UJ-AC-7 | J5      | DLQ digest includes direct link to SQS queue in Console           | Medium   | n6-7   |
+| UJ-AC-8 | J5      | DLQ digest shows preview of top 3 error types                     | Low      | n6-7   |
 
 ### Stakeholder Mapping Findings (2025-11-28)
 
@@ -752,67 +781,67 @@ Analysis of stakeholder-specific requirements and concerns.
 
 #### Stakeholder: Operations Team (Primary User)
 
-| Requirement | Status | Gap |
-|-------------|--------|-----|
-| Real-time critical alerts | ✅ Addressed | - |
-| Clear severity indicators | ✅ Addressed | - |
-| Action links (Console, ISB Admin) | ✅ Addressed | - |
-| Acknowledge/resolve workflow | ❌ Gap | Thread-based resolution tracking (Future) |
-| Shift handoff context | ❌ Gap | Daily summary of open incidents (Future) |
+| Requirement                       | Status       | Gap                                       |
+| --------------------------------- | ------------ | ----------------------------------------- |
+| Real-time critical alerts         | ✅ Addressed | -                                         |
+| Clear severity indicators         | ✅ Addressed | -                                         |
+| Action links (Console, ISB Admin) | ✅ Addressed | -                                         |
+| Acknowledge/resolve workflow      | ❌ Gap       | Thread-based resolution tracking (Future) |
+| Shift handoff context             | ❌ Gap       | Daily summary of open incidents (Future)  |
 
 #### Stakeholder: ISB Development Team (Event Producer)
 
-| Requirement | Status | Gap |
-|-------------|--------|-----|
-| Documented event schemas | ✅ Addressed | - |
-| Schema versioning support | ✅ Addressed | - |
-| Test events for development | ❌ Gap | Test event type bypasses prod alerts |
-| Breaking change notification | ⚠️ Partial | Alert on schema validation failures |
+| Requirement                  | Status       | Gap                                  |
+| ---------------------------- | ------------ | ------------------------------------ |
+| Documented event schemas     | ✅ Addressed | -                                    |
+| Schema versioning support    | ✅ Addressed | -                                    |
+| Test events for development  | ❌ Gap       | Test event type bypasses prod alerts |
+| Breaking change notification | ⚠️ Partial   | Alert on schema validation failures  |
 
 #### Stakeholder: Security & Compliance
 
-| Requirement | Status | Gap |
-|-------------|--------|-----|
-| No PII in Slack messages | ✅ Addressed | - |
-| Webhook URL never logged | ✅ Addressed | - |
-| Audit trail for all alerts | ⚠️ Partial | Structured audit log needed |
-| Incident correlation ID | ⚠️ Partial | Correlation ID linking all channels |
-| Retention compliance | ❌ Gap | Document Slack retention policy |
+| Requirement                | Status       | Gap                                 |
+| -------------------------- | ------------ | ----------------------------------- |
+| No PII in Slack messages   | ✅ Addressed | -                                   |
+| Webhook URL never logged   | ✅ Addressed | -                                   |
+| Audit trail for all alerts | ⚠️ Partial   | Structured audit log needed         |
+| Incident correlation ID    | ⚠️ Partial   | Correlation ID linking all channels |
+| Retention compliance       | ❌ Gap       | Document Slack retention policy     |
 
 #### Stakeholder: Platform/SRE Team
 
-| Requirement | Status | Gap |
-|-------------|--------|-----|
-| CloudWatch metrics | ✅ Addressed | - |
-| CloudWatch alarms | ✅ Addressed | - |
-| X-Ray tracing | ❌ Gap | Enable for end-to-end tracing |
-| Cost visibility | ❌ Gap | Add cost allocation tags |
-| Capacity limits documented | ⚠️ Partial | Document Lambda concurrency limits |
+| Requirement                | Status       | Gap                                |
+| -------------------------- | ------------ | ---------------------------------- |
+| CloudWatch metrics         | ✅ Addressed | -                                  |
+| CloudWatch alarms          | ✅ Addressed | -                                  |
+| X-Ray tracing              | ❌ Gap       | Enable for end-to-end tracing      |
+| Cost visibility            | ❌ Gap       | Add cost allocation tags           |
+| Capacity limits documented | ⚠️ Partial   | Document Lambda concurrency limits |
 
 #### Stakeholder: Management/Leadership
 
-| Requirement | Status | Gap |
-|-------------|--------|-----|
-| Weekly incident summary | ❌ Gap | Future phase |
-| Trend analysis | ❌ Gap | CloudWatch dashboard (Future) |
-| SLA tracking | ❌ Gap | Track alert delivery latency |
+| Requirement             | Status | Gap                           |
+| ----------------------- | ------ | ----------------------------- |
+| Weekly incident summary | ❌ Gap | Future phase                  |
+| Trend analysis          | ❌ Gap | CloudWatch dashboard (Future) |
+| SLA tracking            | ❌ Gap | Track alert delivery latency  |
 
 ### New Acceptance Criteria from Stakeholder Mapping
 
-| ID | Stakeholder | Description | Priority | Story |
-|----|-------------|-------------|----------|-------|
-| SM-AC-1 | Ops | Thread-based resolution tracking (reply to mark resolved) | Low | Future |
-| SM-AC-2 | Ops | Daily summary of open/unresolved incidents | Low | Future |
-| SM-AC-3 | ISB Dev | Test event type (`source: innovation-sandbox-test`) bypasses prod | Medium | n6-2 |
-| SM-AC-4 | ISB Dev | Alert on schema validation failure rate > 10% | Medium | n6-2 |
-| SM-AC-5 | Security | Structured audit log entry for each alert sent | Medium | n6-2 |
-| SM-AC-6 | Security | Correlation ID in logs links Slack, email, and DLQ entries | High | n6-2 |
-| SM-AC-7 | Security | Document Slack workspace message retention policy | Low | n6-8 |
-| SM-AC-8 | Platform | Enable X-Ray tracing for notification Lambda | Medium | n6-1 |
-| SM-AC-9 | Platform | Add cost allocation tags to Lambda resources | Low | n6-1 |
-| SM-AC-10 | Platform | Document Lambda concurrency limits and scaling behavior | Medium | n6-1 |
-| SM-AC-11 | Mgmt | CloudWatch dashboard for weekly alert volume trends | Low | Future |
-| SM-AC-12 | Mgmt | Track and log alert delivery latency (event time → Slack post) | Medium | n6-2 |
+| ID       | Stakeholder | Description                                                       | Priority | Story  |
+| -------- | ----------- | ----------------------------------------------------------------- | -------- | ------ |
+| SM-AC-1  | Ops         | Thread-based resolution tracking (reply to mark resolved)         | Low      | Future |
+| SM-AC-2  | Ops         | Daily summary of open/unresolved incidents                        | Low      | Future |
+| SM-AC-3  | ISB Dev     | Test event type (`source: innovation-sandbox-test`) bypasses prod | Medium   | n6-2   |
+| SM-AC-4  | ISB Dev     | Alert on schema validation failure rate > 10%                     | Medium   | n6-2   |
+| SM-AC-5  | Security    | Structured audit log entry for each alert sent                    | Medium   | n6-2   |
+| SM-AC-6  | Security    | Correlation ID in logs links Slack, email, and DLQ entries        | High     | n6-2   |
+| SM-AC-7  | Security    | Document Slack workspace message retention policy                 | Low      | n6-8   |
+| SM-AC-8  | Platform    | Enable X-Ray tracing for notification Lambda                      | Medium   | n6-1   |
+| SM-AC-9  | Platform    | Add cost allocation tags to Lambda resources                      | Low      | n6-1   |
+| SM-AC-10 | Platform    | Document Lambda concurrency limits and scaling behavior           | Medium   | n6-1   |
+| SM-AC-11 | Mgmt        | CloudWatch dashboard for weekly alert volume trends               | Low      | Future |
+| SM-AC-12 | Mgmt        | Track and log alert delivery latency (event time → Slack post)    | Medium   | n6-2   |
 
 ### Constraint Analysis Findings (2025-11-28)
 
@@ -820,59 +849,59 @@ Systematic identification of technical, business, and operational constraints.
 
 #### Technical Constraints
 
-| ID | Constraint | Limit | Mitigation |
-|----|------------|-------|------------|
-| TC-1 | Slack webhook rate limit | ~1 msg/sec | Exponential backoff + DLQ |
-| TC-2 | Slack message size limit | 40KB | Truncation |
-| TC-3 | Slack Block Kit blocks limit | 50 blocks max | Keep under 10 blocks |
-| TC-4 | Lambda timeout | 30s configured | Separate timeouts |
-| TC-5 | Lambda memory | 256MB configured | Increase to 512MB |
-| TC-6 | Lambda concurrency | 1000 default/region | Reserved concurrency |
-| TC-9 | EventBridge delivery | At-least-once | Idempotency required |
+| ID   | Constraint                   | Limit               | Mitigation                |
+| ---- | ---------------------------- | ------------------- | ------------------------- |
+| TC-1 | Slack webhook rate limit     | ~1 msg/sec          | Exponential backoff + DLQ |
+| TC-2 | Slack message size limit     | 40KB                | Truncation                |
+| TC-3 | Slack Block Kit blocks limit | 50 blocks max       | Keep under 10 blocks      |
+| TC-4 | Lambda timeout               | 30s configured      | Separate timeouts         |
+| TC-5 | Lambda memory                | 256MB configured    | Increase to 512MB         |
+| TC-6 | Lambda concurrency           | 1000 default/region | Reserved concurrency      |
+| TC-9 | EventBridge delivery         | At-least-once       | Idempotency required      |
 
 #### Business Constraints
 
-| ID | Constraint | Requirement | Status |
-|----|------------|-------------|--------|
-| BC-1 | No PII in Slack | GDPR/compliance | ✅ Addressed |
-| BC-2 | Audit trail required | Compliance | ✅ Structured logging |
-| BC-3 | Webhook URL is secret | Security policy | ✅ Never in logs |
-| BC-5 | MVP timeline | Sprint deadline | Core 4 alert types only |
-| BC-6 | GDS service standard | UK Gov compliance | Block Kit accessibility |
+| ID   | Constraint            | Requirement       | Status                  |
+| ---- | --------------------- | ----------------- | ----------------------- |
+| BC-1 | No PII in Slack       | GDPR/compliance   | ✅ Addressed            |
+| BC-2 | Audit trail required  | Compliance        | ✅ Structured logging   |
+| BC-3 | Webhook URL is secret | Security policy   | ✅ Never in logs        |
+| BC-5 | MVP timeline          | Sprint deadline   | Core 4 alert types only |
+| BC-6 | GDS service standard  | UK Gov compliance | Block Kit accessibility |
 
 #### Integration Constraints
 
-| ID | Constraint | Dependency | Status |
-|----|------------|------------|--------|
-| IC-1 | N-4 must be deployed first | EventBridge, DLQ, Lambda | ✅ Complete |
-| IC-2 | N-5 patterns available | Error classes, validation | ✅ Complete |
-| IC-3 | ISB event schema stability | Event format | Zod + DLQ preservation |
-| IC-4 | Slack workspace access | Webhook URL | Mock dev, real staging |
-| IC-5 | Secrets Manager secret exists | Pre-provisioned | CDK creates placeholder |
+| ID   | Constraint                    | Dependency                | Status                  |
+| ---- | ----------------------------- | ------------------------- | ----------------------- |
+| IC-1 | N-4 must be deployed first    | EventBridge, DLQ, Lambda  | ✅ Complete             |
+| IC-2 | N-5 patterns available        | Error classes, validation | ✅ Complete             |
+| IC-3 | ISB event schema stability    | Event format              | Zod + DLQ preservation  |
+| IC-4 | Slack workspace access        | Webhook URL               | Mock dev, real staging  |
+| IC-5 | Secrets Manager secret exists | Pre-provisioned           | CDK creates placeholder |
 
 #### Operational Constraints
 
-| ID | Constraint | Reality | Mitigation |
-|----|------------|---------|------------|
-| OC-1 | Small ops team | <10 people | Aggregation, severity tiers |
-| OC-2 | No 24/7 on-call | Business hours | Action timeline in alerts |
-| OC-3 | Single Slack channel | #ndx-ops-alerts | No separation (MVP) |
-| OC-4 | Manual DLQ replay | No automation | Daily digest (n6-7) |
+| ID   | Constraint           | Reality         | Mitigation                  |
+| ---- | -------------------- | --------------- | --------------------------- |
+| OC-1 | Small ops team       | <10 people      | Aggregation, severity tiers |
+| OC-2 | No 24/7 on-call      | Business hours  | Action timeline in alerts   |
+| OC-3 | Single Slack channel | #ndx-ops-alerts | No separation (MVP)         |
+| OC-4 | Manual DLQ replay    | No automation   | Daily digest (n6-7)         |
 
 ### New Acceptance Criteria from Constraint Analysis
 
-| ID | Category | Description | Priority | Story |
-|----|----------|-------------|----------|-------|
-| TC-AC-1 | Technical | Block Kit messages use ≤10 blocks (well under 50-block limit) | Medium | n6-2 |
-| TC-AC-2 | Technical | Lambda memory set to 512MB for enrichment headroom | Low | n6-1 |
-| TC-AC-3 | Technical | Reserved concurrency of 10 for notification Lambda | Medium | n6-1 |
-| BC-AC-1 | Business | Lambda cost estimate documented (<$5/month expected) | Low | n6-1 |
-| BC-AC-2 | Business | Block Kit messages tested for screen reader compatibility | Medium | n6-2 |
-| IC-AC-1 | Integration | CDK creates Secrets Manager secret with placeholder if not exists | High | n6-1 |
-| IC-AC-2 | Integration | Staging environment uses separate Slack webhook (test channel) | Medium | n6-1 |
-| IC-AC-3 | Integration | ISB team notified 1 sprint before N-6 deployment | Medium | n6-1 |
-| OC-AC-1 | Operational | After-hours critical alerts include action timeline | Low | n6-3 |
-| OC-AC-2 | Operational | Weekend/holiday alerts tagged with next-action expectation | Low | n6-2 |
+| ID      | Category    | Description                                                       | Priority | Story |
+| ------- | ----------- | ----------------------------------------------------------------- | -------- | ----- |
+| TC-AC-1 | Technical   | Block Kit messages use ≤10 blocks (well under 50-block limit)     | Medium   | n6-2  |
+| TC-AC-2 | Technical   | Lambda memory set to 512MB for enrichment headroom                | Low      | n6-1  |
+| TC-AC-3 | Technical   | Reserved concurrency of 10 for notification Lambda                | Medium   | n6-1  |
+| BC-AC-1 | Business    | Lambda cost estimate documented (<$5/month expected)              | Low      | n6-1  |
+| BC-AC-2 | Business    | Block Kit messages tested for screen reader compatibility         | Medium   | n6-2  |
+| IC-AC-1 | Integration | CDK creates Secrets Manager secret with placeholder if not exists | High     | n6-1  |
+| IC-AC-2 | Integration | Staging environment uses separate Slack webhook (test channel)    | Medium   | n6-1  |
+| IC-AC-3 | Integration | ISB team notified 1 sprint before N-6 deployment                  | Medium   | n6-1  |
+| OC-AC-1 | Operational | After-hours critical alerts include action timeline               | Low      | n6-3  |
+| OC-AC-2 | Operational | Weekend/holiday alerts tagged with next-action expectation        | Low      | n6-2  |
 
 ### Assumptions
 

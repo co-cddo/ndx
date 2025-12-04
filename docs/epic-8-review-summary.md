@@ -35,12 +35,14 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Implementation Verified:**
+
 - Playwright configuration file exists: `/Users/cns/httpdocs/cddo/ndx/playwright.config.ts`
 - CI workflow configured: `.github/workflows/test.yml`
 - Test directory structured: `tests/e2e/`
 - Test scripts in package.json: `test:e2e`, `test:e2e:headed`, `test:e2e:debug`
 
 **Test Results:**
+
 - 147 E2E tests total
 - 146 passing, 1 skipped
 - Coverage: accessibility, auth, catalogue, smoke tests, user journey
@@ -54,6 +56,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE (Already Done)
 
 **Documentation:**
+
 - Audit report: `/Users/cns/httpdocs/cddo/ndx/docs/accessibility-audit.md`
 - Status: WCAG 2.2 Level A (Pass), Level AA (Pass), Level AAA (Partial - 22/28)
 
@@ -66,12 +69,14 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Implementation Verified:**
+
 - CI workflow: `.github/workflows/accessibility.yml`
 - pa11y configuration: `.pa11yci.json` (6 URLs tested)
 - Lighthouse configuration: `.lighthouserc.json`
 - Both automated and Lighthouse jobs configured
 
 **Test Coverage:**
+
 - Homepage, catalogue, product pages, /try page, callback page
 - WCAG2AA standard enforced
 - Minimum accessibility score: 0.9
@@ -85,6 +90,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Documentation:**
+
 - Compliance report: `/Users/cns/httpdocs/cddo/ndx/docs/wcag-compliance-report.md`
 - All 30 Level A criteria: PASS
 - All 20 Level AA criteria: PASS
@@ -99,9 +105,11 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Documentation:**
+
 - Audit report: `/Users/cns/httpdocs/cddo/ndx/docs/govuk-component-audit.md`
 
 **Components Verified:**
+
 - govukButton macro used correctly
 - govukTag macro for status badges
 - govukTable macro for sessions table
@@ -117,14 +125,17 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Documentation:**
+
 - Validation report: `/Users/cns/httpdocs/cddo/ndx/docs/responsive-design-validation.md`
 
 **Breakpoints Tested:**
+
 - Mobile: 320px - 767px
 - Tablet: 768px - 1023px
 - Desktop: 1024px+
 
 **Components Validated:**
+
 - Sign in/out buttons (mobile navigation)
 - Try button (full-width on mobile)
 - Modal (adapts to mobile viewport)
@@ -139,14 +150,17 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Documentation:**
+
 - Audit report: `/Users/cns/httpdocs/cddo/ndx/docs/performance-security-audit.md`
 
 **Lighthouse Validation:**
+
 - Performance score target: ≥90
 - First Contentful Paint: <1.5s
 - Time to Interactive: <3s
 
 **Security Checks:**
+
 - JWT tokens not logged to console ✓
 - JWT tokens not exposed in URLs ✓
 - sessionStorage used correctly ✓
@@ -161,6 +175,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **E2E Tests:**
+
 - Location: `tests/e2e/accessibility/keyboard-navigation.spec.ts`
 - Tests: 26 passing
 - Coverage:
@@ -179,10 +194,12 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Documentation:**
+
 - Screen reader testing results in WCAG compliance report
 - ARIA labels verified in code
 
 **Components Tested:**
+
 - Sign in/out buttons (role + label)
 - Try button (start button icon decorative)
 - Modal (role="dialog", aria-labelledby, aria-modal)
@@ -198,6 +215,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **E2E Tests:**
+
 - Location: `tests/e2e/accessibility/focus-management.spec.ts`
 - Tests: 14 passing
 - Coverage:
@@ -207,6 +225,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
   - Focus not obscured by sticky header
 
 **GOV.UK Focus Indicator Verified:**
+
 - Yellow outline (#ffdd00)
 - Black shadow for contrast
 - 3px thickness (exceeds WCAG 2.2 AAA 2px minimum)
@@ -220,6 +239,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **E2E Tests:**
+
 - Location: `tests/e2e/accessibility/error-messaging.spec.ts`
 - Tests: 13 passing
 - Coverage:
@@ -232,6 +252,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
   - axe-core validation
 
 **Issues Fixed:**
+
 1. **Sensitive information exposure test** - Fixed to properly check for tokens/paths in visible text only
 2. **axe-core validation** - Fixed to handle pages without error elements
 
@@ -244,16 +265,19 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 **Status:** ✅ COMPLETE
 
 **Deliverables:**
+
 1. ✅ Accessibility statement published: `/Users/cns/httpdocs/cddo/ndx/src/accessibility.md`
 2. ✅ Compliance documentation complete (Stories 8.1-8.10)
 3. ✅ All WCAG 2.2 AA criteria verified
 
 **Compliance Status:**
+
 - WCAG 2.2 Level A: ALL 30 criteria PASS
 - WCAG 2.2 Level AA: ALL 20 criteria PASS
 - WCAG 2.2 Level AAA: 22/28 criteria PASS (where feasible)
 
 **Public Accessibility Statement:**
+
 - Route: `/accessibility` (via Eleventy build)
 - Includes: Compliance status, testing methodology, feedback contact
 - Follows GOV.UK accessibility statement template
@@ -265,6 +289,7 @@ This document summarizes the comprehensive review of all Epic 8 stories (8-0, 8-
 ## Test Results Summary
 
 ### Unit Tests
+
 ```
 Test Suites: 15 passed, 15 total
 Tests:       421 passed, 421 total
@@ -272,6 +297,7 @@ Time:        3.774 s
 ```
 
 ### E2E Tests
+
 ```
 Total:     147 tests
 Passed:    146 tests
@@ -281,6 +307,7 @@ Time:      25.8 s
 ```
 
 **Test Coverage by Category:**
+
 - Accessibility tests: 67 tests (auth, catalogue, dashboard, keyboard, focus, error messaging)
 - Authentication tests: 24 tests
 - Catalogue integration: 10 tests
@@ -293,18 +320,24 @@ Time:      25.8 s
 ## Infrastructure Verification
 
 ### CI/CD Pipeline
+
 ✅ GitHub Actions workflows configured:
+
 - `.github/workflows/test.yml` - Unit + E2E tests
 - `.github/workflows/accessibility.yml` - pa11y + Lighthouse
 
 ### Configuration Files
+
 ✅ All required configs present:
+
 - `playwright.config.ts` - E2E test configuration
 - `.pa11yci.json` - WCAG 2.2 AA automated testing
 - `.lighthouserc.json` - Lighthouse accessibility audit
 
 ### Documentation Files
+
 ✅ All audit documents complete:
+
 - `docs/accessibility-audit.md` (Story 8.1)
 - `docs/wcag-compliance-report.md` (Story 8.3)
 - `docs/govuk-component-audit.md` (Story 8.4)
@@ -317,6 +350,7 @@ Time:      25.8 s
 ## Issues Summary
 
 ### Issues Found During Review
+
 1. **Error messaging test - sensitive info** (Story 8.10)
    - **Severity:** MEDIUM
    - **Status:** FIXED
@@ -328,6 +362,7 @@ Time:      25.8 s
    - **Fix:** Added conditional logic to handle pages without error elements
 
 ### Total Issues
+
 - **Found:** 2
 - **Fixed:** 2
 - **Remaining:** 0
@@ -364,6 +399,7 @@ epic-8: done
 **Certified:** ✅ YES
 
 **Evidence:**
+
 1. ✅ Automated testing (pa11y-ci + axe-core) - 0 violations
 2. ✅ Manual testing (keyboard navigation) - All user flows accessible
 3. ✅ Screen reader testing (NVDA, JAWS, VoiceOver) - All components accessible
@@ -376,6 +412,7 @@ epic-8: done
 ### Continuous Compliance
 
 CI pipeline configured to block PRs with accessibility violations:
+
 - pa11y-ci runs on every PR (WCAG2AA standard)
 - Lighthouse accessibility score minimum 0.9
 - axe-core tests in E2E suite
@@ -385,11 +422,13 @@ CI pipeline configured to block PRs with accessibility violations:
 ## Recommendations
 
 ### Maintenance
+
 1. ✅ CI pipeline prevents regression (automated accessibility tests)
 2. ✅ Documentation complete for future reference
 3. ✅ E2E tests provide comprehensive coverage
 
 ### Future Enhancements (Optional)
+
 1. Consider WCAG 2.2 AAA compliance for remaining 6/28 criteria
 2. Add visual regression testing for focus indicators
 3. Expand screen reader testing to include ChromeVox

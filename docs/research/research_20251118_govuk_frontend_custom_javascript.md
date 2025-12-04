@@ -9,6 +9,7 @@
 This comprehensive research investigated how to properly add custom JavaScript to government services using the GOV.UK Frontend design system. The research covers official GDS standards, progressive enhancement requirements, module initialization patterns, accessibility mandates, and real-world implementation patterns from UK government services.
 
 **Key Findings:**
+
 - GOV.UK Frontend uses ES module-based architecture with `initAll()` for bulk initialization
 - Progressive enhancement is mandatory for all government services
 - Custom JavaScript must enhance, not replace, HTML functionality
@@ -27,6 +28,7 @@ This comprehensive research investigated how to properly add custom JavaScript t
 GOV.UK Frontend v5.0+ uses ECMAScript (ES) modules exclusively. The framework distributes JavaScript as self-contained modules that can be imported individually or collectively.
 
 **Module Distribution:**
+
 - Location: `node_modules/govuk-frontend/dist/govuk/`
 - Files: `govuk-frontend.min.js` and `govuk-frontend.min.js.map`
 - Format: ES Modules (`.mjs` internally, `.min.js` for distribution)
@@ -34,11 +36,13 @@ GOV.UK Frontend v5.0+ uses ECMAScript (ES) modules exclusively. The framework di
 **Browser Support Strategy:**
 
 GOV.UK Frontend groups browsers into 4 grades:
+
 - **Grade C (Modern):** Chrome 61+, Edge 16+, Firefox 60+, Safari 11+ - Full JavaScript support via `<script type="module">`
 - **Grade X (Legacy):** IE11 and older - No JavaScript enhancements provided
 - **Detection:** Uses `'noModule' in HTMLScriptElement.prototype` as feature detection proxy
 
 **Key Design Principle:**
+
 > "The .govuk-frontend-supported class is required by components with JavaScript behaviour. Browsers that don't support modules simply don't receive the JavaScript enhancements."
 
 ---
@@ -55,7 +59,7 @@ The recommended approach for most services is to initialize all components at on
 
   <script type="module" src="/assets/govuk-frontend.min.js"></script>
   <script type="module">
-    import { initAll } from '/assets/govuk-frontend.min.js'
+    import { initAll } from "/assets/govuk-frontend.min.js"
     initAll()
   </script>
 </body>
@@ -64,18 +68,18 @@ The recommended approach for most services is to initialize all components at on
 **With Configuration Options:**
 
 ```javascript
-import { initAll } from 'govuk-frontend'
+import { initAll } from "govuk-frontend"
 
 initAll({
   button: {
-    preventDoubleClick: true
+    preventDoubleClick: true,
   },
   characterCount: {
-    maxlength: 200
+    maxlength: 200,
   },
   errorSummary: {
-    disableAutoFocus: false
-  }
+    disableAutoFocus: false,
+  },
 })
 ```
 
@@ -84,7 +88,7 @@ initAll({
 For better performance or selective usage:
 
 ```javascript
-import { SkipLink, Radios, Accordion } from 'govuk-frontend'
+import { SkipLink, Radios, Accordion } from "govuk-frontend"
 
 // Initialize skip link
 const $skipLink = document.querySelector('[data-module="govuk-skip-link"]')
@@ -94,7 +98,7 @@ if ($skipLink) {
 
 // Initialize all radios
 const $radios = document.querySelectorAll('[data-module="govuk-radios"]')
-$radios.forEach($radio => {
+$radios.forEach(($radio) => {
   new Radios($radio).init()
 })
 ```
@@ -104,10 +108,10 @@ $radios.forEach($radio => {
 When adding components dynamically (AJAX, client-side rendering):
 
 ```javascript
-import { initAll } from 'govuk-frontend'
+import { initAll } from "govuk-frontend"
 
 // After dynamically inserting content
-const $container = document.querySelector('.dynamic-content')
+const $container = document.querySelector(".dynamic-content")
 initAll({ scope: $container })
 ```
 
@@ -115,7 +119,7 @@ initAll({ scope: $container })
 
 ```javascript
 // Import from package name when using a bundler
-import { initAll, Accordion } from 'govuk-frontend'
+import { initAll, Accordion } from "govuk-frontend"
 initAll()
 ```
 
@@ -142,7 +146,7 @@ All UK government services MUST follow progressive enhancement, as mandated by t
 ```javascript
 // ✅ CORRECT: JavaScript enhances existing HTML functionality
 const $select = document.querySelector('select[data-enhance="autocomplete"]')
-if ($select && 'querySelector' in document) {
+if ($select && "querySelector" in document) {
   enhanceWithAutocomplete($select) // Autocomplete enhances a working <select>
 }
 
@@ -166,7 +170,7 @@ When using modern JavaScript APIs:
 
 ```javascript
 // Feature detection before enhancement
-if ('IntersectionObserver' in window) {
+if ("IntersectionObserver" in window) {
   // Lazy loading enhancement
 } else {
   // Fallback: load images immediately
@@ -204,6 +208,7 @@ if ('IntersectionObserver' in window) {
 GOV.UK Design System uses the `govuk-` prefix for all classes, components, and patterns. Your custom code MUST use a different prefix.
 
 **Recommended Prefixes:**
+
 - `app-` for application-specific code
 - Departmental initials (e.g., `hmcts-`, `dwp-`, `moj-`, `dfe-`)
 
@@ -228,9 +233,7 @@ Use BEM modifier syntax alongside your prefix:
 
 ```html
 <!-- Combining GOV.UK component with custom enhancement -->
-<button class="govuk-button app-button--enhanced"
-        data-module="govuk-button"
-        data-app-tracking="submit-form">
+<button class="govuk-button app-button--enhanced" data-module="govuk-button" data-app-tracking="submit-form">
   Submit Application
 </button>
 ```
@@ -238,17 +241,17 @@ Use BEM modifier syntax alongside your prefix:
 **JavaScript Enhancement Pattern:**
 
 ```javascript
-import { initAll } from 'govuk-frontend'
+import { initAll } from "govuk-frontend"
 
 // 1. Initialize GOV.UK components FIRST
 initAll()
 
 // 2. THEN add custom enhancements
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Custom tracking - doesn't interfere with GOV.UK button component
-  document.querySelectorAll('[data-app-tracking]').forEach(element => {
-    element.addEventListener('click', function(e) {
-      const trackingId = this.getAttribute('data-app-tracking')
+  document.querySelectorAll("[data-app-tracking]").forEach((element) => {
+    element.addEventListener("click", function (e) {
+      const trackingId = this.getAttribute("data-app-tracking")
       sendAnalytics(trackingId)
     })
   })
@@ -260,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
 GOV.UK Frontend v5.8.0+ provides `ConfigurableComponent` class for building custom components that follow GOV.UK patterns:
 
 ```javascript
-import { ConfigurableComponent } from 'govuk-frontend'
+import { ConfigurableComponent } from "govuk-frontend"
 
 /**
  * Custom component extending GOV.UK patterns
@@ -278,12 +281,12 @@ export class AppCustomWidget extends ConfigurableComponent {
     this.autoSubmit = this.config.autoSubmit || false
 
     // Setup event listeners
-    this.$root.addEventListener('change', this.handleChange.bind(this))
+    this.$root.addEventListener("change", this.handleChange.bind(this))
   }
 
   handleChange(event) {
     if (this.autoSubmit) {
-      this.$root.closest('form').submit()
+      this.$root.closest("form").submit()
     }
   }
 }
@@ -292,9 +295,7 @@ export class AppCustomWidget extends ConfigurableComponent {
 **HTML for Custom Component:**
 
 ```html
-<div class="app-custom-widget"
-     data-module="app-custom-widget"
-     data-auto-submit="true">
+<div class="app-custom-widget" data-module="app-custom-widget" data-auto-submit="true">
   <!-- Custom widget content -->
 </div>
 ```
@@ -302,11 +303,11 @@ export class AppCustomWidget extends ConfigurableComponent {
 **Initialization:**
 
 ```javascript
-import { AppCustomWidget } from './components/app-custom-widget.mjs'
+import { AppCustomWidget } from "./components/app-custom-widget.mjs"
 
 // Initialize custom components after GOV.UK components
 const $customWidgets = document.querySelectorAll('[data-module="app-custom-widget"]')
-$customWidgets.forEach($widget => {
+$customWidgets.forEach(($widget) => {
   new AppCustomWidget($widget).init()
 })
 ```
@@ -324,15 +325,15 @@ When changes are substantial, fork the entire component:
 
 ```javascript
 // ✅ CORRECT: Event delegation, doesn't interfere with GOV.UK components
-document.body.addEventListener('click', function(e) {
-  if (e.target.matches('.app-custom-action')) {
+document.body.addEventListener("click", function (e) {
+  if (e.target.matches(".app-custom-action")) {
     handleCustomAction(e)
   }
 })
 
 // ❌ WRONG: Direct modification of GOV.UK component internals
-const accordionButton = document.querySelector('.govuk-accordion__section-button')
-accordionButton.removeEventListener('click', originalHandler) // Breaks component
+const accordionButton = document.querySelector(".govuk-accordion__section-button")
+accordionButton.removeEventListener("click", originalHandler) // Breaks component
 ```
 
 **DOM Targeting Convention:**
@@ -357,7 +358,7 @@ Follow the same pattern for custom code:
 
 ```javascript
 // ✅ CORRECT: Wait for DOMContentLoaded, initialize GOV.UK first
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Initialize GOV.UK components
   GOVUKFrontend.initAll()
 
@@ -387,26 +388,24 @@ All government services must meet WCAG 2.2 Level AA as a minimum, as required by
 ```html
 <!-- Initial HTML (no ARIA) -->
 <button class="app-toggle-button">Show Details</button>
-<div class="app-toggle-content" hidden>
-  Details content here
-</div>
+<div class="app-toggle-content" hidden>Details content here</div>
 ```
 
 ```javascript
 // JavaScript enhancement adds ARIA
-const button = document.querySelector('.app-toggle-button')
-const content = document.querySelector('.app-toggle-content')
+const button = document.querySelector(".app-toggle-button")
+const content = document.querySelector(".app-toggle-content")
 
 // Add ARIA attributes via JavaScript
-button.setAttribute('aria-expanded', 'false')
-button.setAttribute('aria-controls', 'details-content')
-content.setAttribute('id', 'details-content')
+button.setAttribute("aria-expanded", "false")
+button.setAttribute("aria-controls", "details-content")
+content.setAttribute("id", "details-content")
 
-button.addEventListener('click', () => {
-  const expanded = button.getAttribute('aria-expanded') === 'true'
+button.addEventListener("click", () => {
+  const expanded = button.getAttribute("aria-expanded") === "true"
 
   // Update ARIA state
-  button.setAttribute('aria-expanded', !expanded)
+  button.setAttribute("aria-expanded", !expanded)
   content.hidden = expanded
 })
 ```
@@ -416,11 +415,11 @@ button.addEventListener('click', () => {
 ```javascript
 // Accordion example
 function toggleSection(button, section) {
-  const isExpanded = button.getAttribute('aria-expanded') === 'true'
+  const isExpanded = button.getAttribute("aria-expanded") === "true"
 
   // Update ARIA state
-  button.setAttribute('aria-expanded', !isExpanded)
-  section.setAttribute('aria-hidden', isExpanded)
+  button.setAttribute("aria-expanded", !isExpanded)
+  section.setAttribute("aria-hidden", isExpanded)
 
   // Visual state follows ARIA state
   section.hidden = isExpanded
@@ -438,7 +437,7 @@ function toggleSection(button, section) {
 
 ```javascript
 function updateSearchResults(results) {
-  const container = document.querySelector('.app-search-results')
+  const container = document.querySelector(".app-search-results")
 
   // Update content - screen readers will announce
   container.textContent = `${results.length} results found`
@@ -465,18 +464,20 @@ function showDialog(dialogElement) {
   const previousFocus = document.activeElement
 
   // Show dialog
-  dialogElement.setAttribute('aria-hidden', 'false')
+  dialogElement.setAttribute("aria-hidden", "false")
   dialogElement.hidden = false
 
   // Move focus to dialog
-  const firstFocusable = dialogElement.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+  const firstFocusable = dialogElement.querySelector(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  )
   firstFocusable.focus()
 
   // Trap focus within dialog
-  dialogElement.addEventListener('keydown', trapFocus)
+  dialogElement.addEventListener("keydown", trapFocus)
 
   // Return focus on close
-  dialogElement.addEventListener('close', () => {
+  dialogElement.addEventListener("close", () => {
     previousFocus.focus()
   })
 }
@@ -496,22 +497,22 @@ class AppTabs {
 
     // Keyboard navigation
     this.$tabs.forEach(($tab, index) => {
-      $tab.addEventListener('keydown', (e) => {
+      $tab.addEventListener("keydown", (e) => {
         let newIndex
 
-        switch(e.key) {
-          case 'ArrowLeft':
+        switch (e.key) {
+          case "ArrowLeft":
             newIndex = index - 1
             if (newIndex < 0) newIndex = this.$tabs.length - 1
             break
-          case 'ArrowRight':
+          case "ArrowRight":
             newIndex = index + 1
             if (newIndex >= this.$tabs.length) newIndex = 0
             break
-          case 'Home':
+          case "Home":
             newIndex = 0
             break
-          case 'End':
+          case "End":
             newIndex = this.$tabs.length - 1
             break
           default:
@@ -527,8 +528,8 @@ class AppTabs {
   selectTab(index) {
     // Update ARIA states
     this.$tabs.forEach(($tab, i) => {
-      $tab.setAttribute('aria-selected', i === index)
-      $tab.setAttribute('tabindex', i === index ? '0' : '-1')
+      $tab.setAttribute("aria-selected", i === index)
+      $tab.setAttribute("tabindex", i === index ? "0" : "-1")
     })
 
     this.$panels.forEach(($panel, i) => {
@@ -547,9 +548,7 @@ class AppTabs {
 <!-- ✅ CORRECT: Semantic HTML enhanced by JavaScript -->
 <details class="app-disclosure" data-module="app-disclosure">
   <summary>More information</summary>
-  <div class="app-disclosure__content">
-    Additional content
-  </div>
+  <div class="app-disclosure__content">Additional content</div>
 </details>
 
 <!-- ❌ WRONG: Non-semantic markup requiring ARIA -->
@@ -584,23 +583,23 @@ For teams building GOV.UK publishing applications, the `govuk_publishing_compone
 **Module Structure:**
 
 ```javascript
-(function(Modules) {
-  'use strict'
+;(function (Modules) {
+  "use strict"
 
   function SomeModule($element) {
     this.$element = $element
     this.config = {
-      url: $element.getAttribute('data-url'),
-      refreshMs: parseInt($element.getAttribute('data-refresh-ms')) || 5000
+      url: $element.getAttribute("data-url"),
+      refreshMs: parseInt($element.getAttribute("data-refresh-ms")) || 5000,
     }
   }
 
-  SomeModule.prototype.init = function() {
+  SomeModule.prototype.init = function () {
     // Initialization logic
-    this.$element.addEventListener('click', this.handleClick.bind(this))
+    this.$element.addEventListener("click", this.handleClick.bind(this))
   }
 
-  SomeModule.prototype.handleClick = function(e) {
+  SomeModule.prototype.handleClick = function (e) {
     // Event handling
   }
 
@@ -611,12 +610,13 @@ For teams building GOV.UK publishing applications, the `govuk_publishing_compone
 **Starting Modules:**
 
 ```javascript
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
   GOVUK.modules.start()
 })
 ```
 
 The system automatically:
+
 1. Converts `data-module="some-module"` to `GOVUK.Modules.SomeModule`
 2. Instantiates the module with the element
 3. Calls the `init()` method
@@ -625,23 +625,20 @@ The system automatically:
 
 ```javascript
 // Initialize modules in dynamically loaded content
-var $container = document.querySelector('.dynamic-content')
+var $container = document.querySelector(".dynamic-content")
 GOVUK.modules.start($container)
 ```
 
 **Configuration via Data Attributes:**
 
 ```html
-<div data-module="html-stream"
-     data-url="/endpoint"
-     data-refresh-ms="5000">
-</div>
+<div data-module="html-stream" data-url="/endpoint" data-refresh-ms="5000"></div>
 ```
 
 ```javascript
 function HtmlStream($element) {
-  this.url = $element.getAttribute('data-url')
-  this.refreshMs = parseInt($element.getAttribute('data-refresh-ms'))
+  this.url = $element.getAttribute("data-url")
+  this.refreshMs = parseInt($element.getAttribute("data-refresh-ms"))
 }
 ```
 
@@ -667,13 +664,13 @@ The plugin's layouts include this script:
 
 ```html
 <script>
-  document.body.className += ' js-enabled' +
-    ('noModule' in HTMLScriptElement.prototype ?
-      ' govuk-frontend-supported' : '');
+  document.body.className +=
+    " js-enabled" + ("noModule" in HTMLScriptElement.prototype ? " govuk-frontend-supported" : "")
 </script>
 ```
 
 This adds classes:
+
 - `.js-enabled` - JavaScript is available
 - `.govuk-frontend-supported` - Modern browser with module support
 
@@ -686,19 +683,18 @@ The plugin doesn't provide specific JavaScript configuration options. Instead, u
 In `.eleventy.js`:
 
 ```javascript
-module.exports = function(eleventyConfig) {
+module.exports = function (eleventyConfig) {
   // Add GOV.UK Eleventy Plugin
-  eleventyConfig.addPlugin(require('@x-govuk/govuk-eleventy-plugin'))
+  eleventyConfig.addPlugin(require("@x-govuk/govuk-eleventy-plugin"))
 
   // Copy JavaScript files to output
   eleventyConfig.addPassthroughCopy({
-    'src/assets/javascripts': 'assets/javascripts'
+    "src/assets/javascripts": "assets/javascripts",
   })
 
   // Copy GOV.UK Frontend JavaScript
   eleventyConfig.addPassthroughCopy({
-    'node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js':
-      'assets/govuk-frontend.min.js'
+    "node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js": "assets/govuk-frontend.min.js",
   })
 }
 ```
@@ -758,19 +754,19 @@ project/
 
 ```javascript
 // Import GOV.UK Frontend
-import { initAll } from './govuk-frontend.min.js'
+import { initAll } from "./govuk-frontend.min.js"
 
 // Import custom components
-import { AppCustomWidget } from './components/app-custom-widget.mjs'
+import { AppCustomWidget } from "./components/app-custom-widget.mjs"
 
 // Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Initialize GOV.UK components first
   initAll()
 
   // Then initialize custom components
   const $customWidgets = document.querySelectorAll('[data-module="app-custom-widget"]')
-  $customWidgets.forEach($widget => {
+  $customWidgets.forEach(($widget) => {
     new AppCustomWidget($widget).init()
   })
 })
@@ -797,6 +793,7 @@ For production builds, consider using a bundler:
 **Pattern 1: Documentation Sites (Technical Documentation)**
 
 Sites like GOV.UK Developer Docs use minimal JavaScript:
+
 - GOV.UK Frontend for core components
 - Search functionality (often delegated to third-party services)
 - Syntax highlighting for code blocks (e.g., Prism.js)
@@ -820,25 +817,25 @@ Sites like GOV.UK Developer Docs use minimal JavaScript:
 
 ```javascript
 // app.js - Main application entry point
-import { initAll } from 'govuk-frontend'
-import Analytics from './modules/analytics.mjs'
-import CopyCode from './modules/copy-code.mjs'
-import Search from './modules/search.mjs'
+import { initAll } from "govuk-frontend"
+import Analytics from "./modules/analytics.mjs"
+import CopyCode from "./modules/copy-code.mjs"
+import Search from "./modules/search.mjs"
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Core GOV.UK components
   initAll()
 
   // Custom enhancements
-  if (document.querySelector('.app-analytics')) {
+  if (document.querySelector(".app-analytics")) {
     new Analytics().init()
   }
 
-  if (document.querySelector('.app-code-block')) {
+  if (document.querySelector(".app-code-block")) {
     new CopyCode().init()
   }
 
-  if (document.querySelector('.app-search')) {
+  if (document.querySelector(".app-search")) {
     new Search().init()
   }
 })
@@ -852,7 +849,7 @@ if (window.GOVUK && window.GOVUK.getConsentCookie()) {
   initAnalytics()
 } else {
   // Listen for consent event
-  window.addEventListener('cookie-consent', function() {
+  window.addEventListener("cookie-consent", function () {
     initAnalytics()
   })
 }
@@ -871,26 +868,22 @@ This example demonstrates all best practices together:
 ```html
 <form action="/submit" method="post" class="app-enhanced-form" novalidate>
   <div class="govuk-form-group" data-module="app-form-group">
-    <label class="govuk-label" for="email">
-      Email address
-    </label>
-    <input class="govuk-input" id="email" name="email" type="email" required>
+    <label class="govuk-label" for="email"> Email address </label>
+    <input class="govuk-input" id="email" name="email" type="email" required />
     <span class="govuk-error-message" role="alert" hidden>
       <span class="govuk-visually-hidden">Error:</span>
       <span class="app-js-error-text"></span>
     </span>
   </div>
 
-  <button type="submit" class="govuk-button" data-module="govuk-button">
-    Continue
-  </button>
+  <button type="submit" class="govuk-button" data-module="govuk-button">Continue</button>
 </form>
 ```
 
 **JavaScript (app-form-validation.mjs):**
 
 ```javascript
-import { Component } from 'govuk-frontend'
+import { Component } from "govuk-frontend"
 
 /**
  * Enhanced form validation
@@ -910,21 +903,21 @@ export class AppFormValidation extends Component {
     this.$groups = $root.querySelectorAll('[data-module="app-form-group"]')
 
     // Only enhance if browser supports validation API
-    if (!('validity' in document.createElement('input'))) {
+    if (!("validity" in document.createElement("input"))) {
       return
     }
 
     // Disable native validation (we'll handle it)
-    this.$form.setAttribute('novalidate', '')
+    this.$form.setAttribute("novalidate", "")
 
     // Setup validation on submit
-    this.$form.addEventListener('submit', this.handleSubmit.bind(this))
+    this.$form.addEventListener("submit", this.handleSubmit.bind(this))
 
     // Real-time validation on blur
-    this.$groups.forEach($group => {
-      const $input = $group.querySelector('input, select, textarea')
+    this.$groups.forEach(($group) => {
+      const $input = $group.querySelector("input, select, textarea")
       if ($input) {
-        $input.addEventListener('blur', () => this.validateField($input))
+        $input.addEventListener("blur", () => this.validateField($input))
       }
     })
   }
@@ -937,8 +930,8 @@ export class AppFormValidation extends Component {
     let firstError = null
     let isValid = true
 
-    this.$groups.forEach($group => {
-      const $input = $group.querySelector('input, select, textarea')
+    this.$groups.forEach(($group) => {
+      const $input = $group.querySelector("input, select, textarea")
       if ($input && !this.validateField($input)) {
         isValid = false
         if (!firstError) {
@@ -955,7 +948,7 @@ export class AppFormValidation extends Component {
         firstError.focus()
 
         // Announce error count
-        const errorCount = this.$form.querySelectorAll('.govuk-form-group--error').length
+        const errorCount = this.$form.querySelectorAll(".govuk-form-group--error").length
         this.announceErrors(errorCount)
       }
     }
@@ -968,37 +961,37 @@ export class AppFormValidation extends Component {
    */
   validateField($input) {
     const $group = $input.closest('[data-module="app-form-group"]')
-    const $error = $group.querySelector('.govuk-error-message')
-    const $errorText = $group.querySelector('.app-js-error-text')
+    const $error = $group.querySelector(".govuk-error-message")
+    const $errorText = $group.querySelector(".app-js-error-text")
 
     // Use native validation
     const isValid = $input.validity.valid
 
     if (!isValid) {
       // Show error
-      $group.classList.add('govuk-form-group--error')
-      $input.classList.add('govuk-input--error')
+      $group.classList.add("govuk-form-group--error")
+      $input.classList.add("govuk-input--error")
       $error.hidden = false
 
       // Set error message
       $errorText.textContent = this.getErrorMessage($input)
 
       // Update ARIA
-      $input.setAttribute('aria-invalid', 'true')
-      $input.setAttribute('aria-describedby', $error.id || `error-${$input.id}`)
+      $input.setAttribute("aria-invalid", "true")
+      $input.setAttribute("aria-describedby", $error.id || `error-${$input.id}`)
 
       if (!$error.id) {
         $error.id = `error-${$input.id}`
       }
     } else {
       // Clear error
-      $group.classList.remove('govuk-form-group--error')
-      $input.classList.remove('govuk-input--error')
+      $group.classList.remove("govuk-form-group--error")
+      $input.classList.remove("govuk-input--error")
       $error.hidden = true
 
       // Update ARIA
-      $input.removeAttribute('aria-invalid')
-      $input.removeAttribute('aria-describedby')
+      $input.removeAttribute("aria-invalid")
+      $input.removeAttribute("aria-describedby")
     }
 
     return isValid
@@ -1011,14 +1004,14 @@ export class AppFormValidation extends Component {
    */
   getErrorMessage($input) {
     const validity = $input.validity
-    const label = $input.labels[0]?.textContent || 'This field'
+    const label = $input.labels[0]?.textContent || "This field"
 
     if (validity.valueMissing) {
       return `Enter ${label.toLowerCase()}`
     }
     if (validity.typeMismatch) {
-      if ($input.type === 'email') {
-        return 'Enter an email address in the correct format, like name@example.com'
+      if ($input.type === "email") {
+        return "Enter an email address in the correct format, like name@example.com"
       }
     }
     if (validity.tooShort) {
@@ -1028,7 +1021,7 @@ export class AppFormValidation extends Component {
       return `${label} must be ${$input.maxLength} characters or less`
     }
 
-    return 'Enter a valid value'
+    return "Enter a valid value"
   }
 
   /**
@@ -1037,17 +1030,17 @@ export class AppFormValidation extends Component {
    */
   announceErrors(count) {
     // Create live region if it doesn't exist
-    let $liveRegion = document.querySelector('.app-js-validation-summary')
+    let $liveRegion = document.querySelector(".app-js-validation-summary")
 
     if (!$liveRegion) {
-      $liveRegion = document.createElement('div')
-      $liveRegion.className = 'govuk-visually-hidden app-js-validation-summary'
-      $liveRegion.setAttribute('aria-live', 'assertive')
-      $liveRegion.setAttribute('role', 'alert')
+      $liveRegion = document.createElement("div")
+      $liveRegion.className = "govuk-visually-hidden app-js-validation-summary"
+      $liveRegion.setAttribute("aria-live", "assertive")
+      $liveRegion.setAttribute("role", "alert")
       document.body.appendChild($liveRegion)
     }
 
-    $liveRegion.textContent = `There ${count === 1 ? 'is' : 'are'} ${count} error${count === 1 ? '' : 's'} on this page`
+    $liveRegion.textContent = `There ${count === 1 ? "is" : "are"} ${count} error${count === 1 ? "" : "s"} on this page`
   }
 }
 ```
@@ -1056,16 +1049,16 @@ export class AppFormValidation extends Component {
 
 ```javascript
 // app.js
-import { initAll } from 'govuk-frontend'
-import { AppFormValidation } from './components/app-form-validation.mjs'
+import { initAll } from "govuk-frontend"
+import { AppFormValidation } from "./components/app-form-validation.mjs"
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Initialize GOV.UK components
   initAll()
 
   // Initialize custom form validation
-  const $forms = document.querySelectorAll('.app-enhanced-form')
-  $forms.forEach($form => {
+  const $forms = document.querySelectorAll(".app-enhanced-form")
+  $forms.forEach(($form) => {
     new AppFormValidation($form)
   })
 })
@@ -1075,9 +1068,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 ```javascript
 // app-form-validation.test.js
-import { AppFormValidation } from './app-form-validation.mjs'
+import { AppFormValidation } from "./app-form-validation.mjs"
 
-describe('AppFormValidation', () => {
+describe("AppFormValidation", () => {
   let $form, component
 
   beforeEach(() => {
@@ -1093,30 +1086,30 @@ describe('AppFormValidation', () => {
         <button type="submit">Submit</button>
       </form>
     `
-    $form = document.querySelector('form')
+    $form = document.querySelector("form")
     component = new AppFormValidation($form)
   })
 
-  it('should prevent submission when invalid', () => {
-    const submitEvent = new Event('submit', { cancelable: true })
+  it("should prevent submission when invalid", () => {
+    const submitEvent = new Event("submit", { cancelable: true })
     $form.dispatchEvent(submitEvent)
 
     expect(submitEvent.defaultPrevented).toBe(true)
   })
 
-  it('should show error message', () => {
-    const $input = document.querySelector('#email')
+  it("should show error message", () => {
+    const $input = document.querySelector("#email")
     component.validateField($input)
 
-    const $error = document.querySelector('.govuk-error-message')
+    const $error = document.querySelector(".govuk-error-message")
     expect($error.hidden).toBe(false)
   })
 
-  it('should set aria-invalid attribute', () => {
-    const $input = document.querySelector('#email')
+  it("should set aria-invalid attribute", () => {
+    const $input = document.querySelector("#email")
     component.validateField($input)
 
-    expect($input.getAttribute('aria-invalid')).toBe('true')
+    expect($input.getAttribute("aria-invalid")).toBe("true")
   })
 })
 ```
@@ -1134,10 +1127,11 @@ describe('AppFormValidation', () => {
 2. **Progressive Enhancement is Non-Negotiable:** Unlike commercial web development where progressive enhancement is a best practice, for UK government services it's a legal requirement under the Service Manual. Services must demonstrate core functionality works with HTML alone.
 
 3. **Event Delegation Over Direct Binding:** Use event delegation patterns for custom code to handle dynamic content and avoid conflicts with component lifecycle:
+
    ```javascript
    // Recommended pattern
-   document.body.addEventListener('click', (e) => {
-     if (e.target.matches('.app-custom-trigger')) {
+   document.body.addEventListener("click", (e) => {
+     if (e.target.matches(".app-custom-trigger")) {
        handleCustomAction(e)
      }
    })
@@ -1172,25 +1166,25 @@ The namespacing requirement (`govuk-` vs `app-`) isn't just convention - it's a 
 
 **GOV.UK Frontend Browser Support Matrix:**
 
-| Grade | Browsers | JavaScript Support | Strategy |
-|-------|----------|-------------------|----------|
-| **A** | Latest 2 versions of major browsers | Full support with testing | Primary target |
-| **B** | Older versions still in significant use | Full support, limited testing | Secondary support |
-| **C** | Modern browsers with module support (Chrome 61+, FF 60+, Safari 11+) | JavaScript enhancements | Progressive enhancement |
-| **X** | IE11 and older | No JavaScript | HTML/CSS only |
+| Grade | Browsers                                                             | JavaScript Support            | Strategy                |
+| ----- | -------------------------------------------------------------------- | ----------------------------- | ----------------------- |
+| **A** | Latest 2 versions of major browsers                                  | Full support with testing     | Primary target          |
+| **B** | Older versions still in significant use                              | Full support, limited testing | Secondary support       |
+| **C** | Modern browsers with module support (Chrome 61+, FF 60+, Safari 11+) | JavaScript enhancements       | Progressive enhancement |
+| **X** | IE11 and older                                                       | No JavaScript                 | HTML/CSS only           |
 
 **Feature Detection Pattern:**
 
 ```javascript
 // Detect module support
-if ('noModule' in HTMLScriptElement.prototype) {
-  document.body.classList.add('govuk-frontend-supported')
+if ("noModule" in HTMLScriptElement.prototype) {
+  document.body.classList.add("govuk-frontend-supported")
 
   // Load and initialize modern JavaScript
-  import('./modern-features.mjs')
+  import("./modern-features.mjs")
 } else {
   // Grade X browser - no JavaScript enhancement
-  console.log('Legacy browser detected - HTML/CSS only')
+  console.log("Legacy browser detected - HTML/CSS only")
 }
 ```
 
@@ -1200,13 +1194,13 @@ GOV.UK Frontend provides guidance on polyfilling:
 
 ```javascript
 // Check for needed features
-if (!('closest' in Element.prototype)) {
+if (!("closest" in Element.prototype)) {
   // Load polyfill
-  import('./polyfills/closest.mjs')
+  import("./polyfills/closest.mjs")
 }
 
 // Feature detection for modern APIs
-if ('IntersectionObserver' in window) {
+if ("IntersectionObserver" in window) {
   // Use native API
   new IntersectionObserver(callback)
 } else {
@@ -1239,7 +1233,7 @@ class AnalyticsModule {
       this.startAnalytics()
     } else {
       // Wait for consent
-      window.addEventListener('cookie-consent', () => {
+      window.addEventListener("cookie-consent", () => {
         const updatedConsent = window.GOVUK.getConsentCookie()
         if (updatedConsent && updatedConsent.analytics) {
           this.startAnalytics()
@@ -1250,9 +1244,9 @@ class AnalyticsModule {
 
   startAnalytics() {
     // Initialize analytics only after consent
-    if (typeof gtag !== 'undefined') {
-      gtag('consent', 'update', {
-        'analytics_storage': 'granted'
+    if (typeof gtag !== "undefined") {
+      gtag("consent", "update", {
+        analytics_storage: "granted",
       })
     }
   }
@@ -1294,15 +1288,15 @@ project/
 
 ```javascript
 // application.js
-import { initAll } from 'govuk-frontend'
+import { initAll } from "govuk-frontend"
 
 // Custom components
-import { AppAutocomplete } from './components/app-autocomplete.mjs'
-import { AppFormValidation } from './components/app-form-validation.mjs'
+import { AppAutocomplete } from "./components/app-autocomplete.mjs"
+import { AppFormValidation } from "./components/app-form-validation.mjs"
 
 // Modules
-import Analytics from './modules/analytics.mjs'
-import CookieConsent from './modules/cookie-consent.mjs'
+import Analytics from "./modules/analytics.mjs"
+import CookieConsent from "./modules/cookie-consent.mjs"
 
 /**
  * Initialize application JavaScript
@@ -1329,20 +1323,20 @@ function initApplication() {
 function initCustomComponents() {
   // Autocomplete
   const $autocompletes = document.querySelectorAll('[data-module="app-autocomplete"]')
-  $autocompletes.forEach($autocomplete => {
+  $autocompletes.forEach(($autocomplete) => {
     new AppAutocomplete($autocomplete).init()
   })
 
   // Form validation
   const $forms = document.querySelectorAll('[data-module="app-form-validation"]')
-  $forms.forEach($form => {
+  $forms.forEach(($form) => {
     new AppFormValidation($form).init()
   })
 }
 
 // Initialize on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApplication)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApplication)
 } else {
   initApplication()
 }
@@ -1358,7 +1352,7 @@ export { initApplication, initCustomComponents }
 **Error Handling Best Practices:**
 
 ```javascript
-import { GOVUKFrontendError } from 'govuk-frontend'
+import { GOVUKFrontendError } from "govuk-frontend"
 
 /**
  * Custom error class
@@ -1367,7 +1361,7 @@ import { GOVUKFrontendError } from 'govuk-frontend'
 export class AppComponentError extends GOVUKFrontendError {
   constructor(message) {
     super(message)
-    this.name = 'AppComponentError'
+    this.name = "AppComponentError"
   }
 }
 
@@ -1378,7 +1372,7 @@ export class AppComponent {
   constructor($root) {
     // Validate root element
     if (!($root instanceof HTMLElement)) {
-      throw new AppComponentError('Component requires an HTML element')
+      throw new AppComponentError("Component requires an HTML element")
     }
 
     this.$root = $root
@@ -1389,7 +1383,7 @@ export class AppComponent {
       this.setupEventListeners()
     } catch (error) {
       // Log error but don't break the page
-      console.error('Failed to initialize component:', error)
+      console.error("Failed to initialize component:", error)
 
       // Report to monitoring service
       if (window.errorTracker) {
@@ -1399,13 +1393,13 @@ export class AppComponent {
   }
 
   setupEventListeners() {
-    const $button = this.$root.querySelector('.app-button')
+    const $button = this.$root.querySelector(".app-button")
 
     if (!$button) {
-      throw new AppComponentError('Required button element not found')
+      throw new AppComponentError("Required button element not found")
     }
 
-    $button.addEventListener('click', this.handleClick.bind(this))
+    $button.addEventListener("click", this.handleClick.bind(this))
   }
 
   handleClick(event) {
@@ -1413,7 +1407,7 @@ export class AppComponent {
     try {
       this.performAction()
     } catch (error) {
-      console.error('Action failed:', error)
+      console.error("Action failed:", error)
       this.showErrorMessage()
     }
   }
@@ -1427,14 +1421,14 @@ export class AppComponent {
  * Development-only warnings
  */
 function devWarn(message) {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     console.warn(`[App Warning] ${message}`)
   }
 }
 
 // Usage
-if (!this.$root.hasAttribute('data-config')) {
-  devWarn('Component missing data-config attribute - using defaults')
+if (!this.$root.hasAttribute("data-config")) {
+  devWarn("Component missing data-config attribute - using defaults")
 }
 ```
 
@@ -1469,12 +1463,12 @@ However, some modern government services use frameworks like React and Vue. The 
 
 ```javascript
 // ✅ ACCEPTABLE: Framework for complex components
-import { createApp } from 'vue'
+import { createApp } from "vue"
 const app = createApp(ComplexFormComponent)
-app.mount('#app')
+app.mount("#app")
 
 // ❌ NOT ACCEPTABLE: Framework for routing
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter } from "react-router-dom"
 // Page navigation via client-side routing violates progressive enhancement
 ```
 
@@ -1483,6 +1477,7 @@ import { BrowserRouter } from 'react-router-dom'
 Service Manual: "If you do want to use a framework, you should be able to justify the benefits with evidence and you should consider the potential negative impacts."
 
 Trade-offs to consider:
+
 - Bundle size increase
 - Additional build complexity
 - Learning curve for team
@@ -1494,6 +1489,7 @@ Trade-offs to consider:
 ## Research Methodology & Tool Usage
 
 **Tools Used:**
+
 - **Context7:** 3 library documentation lookups (GOV.UK Frontend)
 - **WebSearch:** 18 web searches for standards, examples, and patterns
 - **WebFetch:** 6 specific page fetches for detailed documentation
@@ -1503,6 +1499,7 @@ Trade-offs to consider:
 **Search Strategy:**
 
 **Most Productive Search Terms:**
+
 1. "GOV.UK Frontend JavaScript initialization modules"
 2. "GDS progressive enhancement JavaScript standards"
 3. "GOV.UK service manual JavaScript accessibility requirements"
@@ -1510,6 +1507,7 @@ Trade-offs to consider:
 5. "extending-and-modifying-components" (official guidance)
 
 **Primary Information Sources:**
+
 1. **Official Documentation:**
    - design-system.service.gov.uk (GOV.UK Design System)
    - www.gov.uk/service-manual (Service Manual - mandatory standards)
@@ -1539,6 +1537,7 @@ Trade-offs to consider:
 **Research Depth:** Deep Research Mode (28 tool calls)
 
 **Efficiency Notes:**
+
 - Context7 provided excellent technical documentation for GOV.UK Frontend
 - WebSearch was most effective with specific official domain queries
 - Perplexity synthesis provided valuable architectural insights beyond documentation
@@ -1551,23 +1550,26 @@ Trade-offs to consider:
 ### Immediate Actions
 
 1. **Set Up Browser Detection:**
+
 ```html
 <script>
-  document.body.className += ' js-enabled' +
-    ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');
+  document.body.className +=
+    " js-enabled" + ("noModule" in HTMLScriptElement.prototype ? " govuk-frontend-supported" : "")
 </script>
 ```
 
 2. **Initialize GOV.UK Frontend:**
+
 ```javascript
-import { initAll } from 'govuk-frontend'
+import { initAll } from "govuk-frontend"
 initAll()
 ```
 
 3. **Create Namespace for Custom Code:**
-Use `app-` prefix for all custom classes, components, and data attributes.
+   Use `app-` prefix for all custom classes, components, and data attributes.
 
 4. **Test Progressive Enhancement:**
+
 - Disable JavaScript in browser
 - Verify core user journeys work
 - Document any JavaScript dependencies
@@ -1694,8 +1696,8 @@ The @x-govuk/govuk-eleventy-plugin provides minimal JavaScript configuration by 
 
 ---
 
-*Research completed: 2025-11-18*
-*Total sources consulted: 40+*
-*Official GDS sources: 15*
-*Code examples verified: Yes*
-*WCAG compliance verified: Yes*
+_Research completed: 2025-11-18_
+_Total sources consulted: 40+_
+_Official GDS sources: 15_
+_Code examples verified: Yes_
+_WCAG compliance verified: Yes_

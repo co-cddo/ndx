@@ -7,7 +7,7 @@
  * @module fetch-with-timeout
  */
 
-import { config } from '../config';
+import { config } from "../config"
 
 /**
  * Execute a fetch request with timeout protection.
@@ -45,15 +45,15 @@ import { config } from '../config';
  */
 export async function fetchWithTimeout<T>(
   requestFn: (signal: AbortSignal) => Promise<T>,
-  timeout: number = config.requestTimeout
+  timeout: number = config.requestTimeout,
 ): Promise<T> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
 
   try {
-    return await requestFn(controller.signal);
+    return await requestFn(controller.signal)
   } finally {
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId)
   }
 }
 
@@ -76,5 +76,5 @@ export async function fetchWithTimeout<T>(
  * ```
  */
 export function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
+  return error instanceof Error && error.name === "AbortError"
 }

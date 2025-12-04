@@ -58,6 +58,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 ### Epic Impact
 
 #### Epic 5: Authentication Foundation (DONE - Story 5.4 in review)
+
 - **Status:** Can be completed as originally planned with one addition
 - **Impact:** Missing automated E2E tests for authentication flows
 - **Stories Affected:**
@@ -66,18 +67,21 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 - **Required Change:** Add Story 5.11 "Authentication E2E Test Suite" to validate completed work
 
 #### Epic 6: Catalogue Integration & Sandbox Requests (Backlog)
+
 - **Impact:** Medium
 - **Stories Affected:**
   - Story 6.10: "Epic 6-7 Integration Testing" **BLOCKED** by missing Playwright
 - **Required Change:** Ensure Playwright infrastructure complete before Epic 6.10
 
 #### Epic 7: Try Sessions Dashboard (Backlog)
+
 - **Impact:** Medium
 - **Stories Affected:**
   - Story 7.12: "End-to-End User Journey Validation" **BLOCKED** by missing Playwright
 - **Required Change:** Ensure Playwright infrastructure complete before Epic 7.12
 
 #### Epic 8: Accessible & Mobile-Friendly Experience (Backlog)
+
 - **Impact:** **HIGH - BLOCKING**
 - **Status:** **CANNOT BEGIN** without testing infrastructure
 - **Stories Affected:**
@@ -90,6 +94,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 ### Artifact Conflicts
 
 #### PRD (docs/prd.md)
+
 - **Conflict Type:** Implementation gap vs documented requirements
 - **Details:**
   - PRD lists Playwright as Phase 2-3 MVP requirement
@@ -98,6 +103,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 - **Required Change:** No content changes needed; document acknowledges Playwright as deferred MVP infrastructure debt to be resolved before Epic 8
 
 #### Architecture Document (docs/architecture.md)
+
 - **Conflict Type:** Missing testing architecture section
 - **Details:**
   - Current architecture covers CloudFront routing only (Feature 1)
@@ -108,6 +114,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
   - Document integration with mitmproxy (Epic 4)
 
 #### CI/CD Pipeline
+
 - **Conflict Type:** No automated testing pipeline exists
 - **Details:**
   - No .github/workflows/test.yml found
@@ -118,6 +125,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
   - Set up mitmproxy as CI service
 
 #### Documentation (README.md)
+
 - **Conflict Type:** Missing test execution instructions
 - **Details:**
   - No documentation for running E2E tests
@@ -130,12 +138,14 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 ### Technical Impact
 
 **No Impact On:**
+
 - Existing infrastructure (CDK, CloudFront, S3)
 - Completed features (Epics 1-4, Stories 5.1-5.4)
 - Deployment processes
 - Production environment
 
 **Positive Impact:**
+
 - Enables regression testing for authentication
 - Unblocks accessibility compliance (WCAG 2.2)
 - Establishes testing pattern for future features
@@ -150,6 +160,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 **Strategy:** Treat Playwright as infrastructure prerequisite (Story 8.0) while adding authentication test suite (Story 5.11)
 
 **Rationale:**
+
 - **Strategic:** Acknowledges infrastructure debt, positions testing as Epic 8 prerequisite
 - **Practical:** Infrastructure benefits all future epics immediately
 - **Clear Dependencies:** Story 8.0 → Stories 5.11, 5.10, 8.2+
@@ -157,12 +168,14 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 ### Implementation Plan
 
 #### Story 8.0: E2E Testing Infrastructure Setup (Playwright + CI)
+
 **Epic:** Epic 8
 **Position:** First story in Epic 8 (prerequisite for all accessibility work)
 **Effort:** 1-2 days
 **Priority:** Critical
 
 **Scope:**
+
 1. Install @playwright/test dependency
 2. Create playwright.config.ts with mitmproxy proxy integration
 3. Write sample E2E test validating proxy setup
@@ -170,12 +183,14 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 5. Document test execution in README
 
 **Acceptance Criteria:**
+
 - Playwright installed and configured
 - Proxy integration working (connects via port 8081)
 - Sample test passing locally and in CI
 - Documentation complete
 
 **Deliverables:**
+
 - package.json updated with @playwright/test
 - playwright.config.ts configuration file
 - .github/workflows/test.yml CI pipeline
@@ -183,6 +198,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 - Sample test: tests/e2e/smoke/home-page.spec.ts
 
 #### Story 5.11: Authentication E2E Test Suite
+
 **Epic:** Epic 5
 **Position:** After Story 5.10 or alongside (flexible)
 **Effort:** 1-2 days
@@ -190,6 +206,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 **Dependencies:** Story 8.0 complete
 
 **Scope:**
+
 1. Write E2E tests for Stories 5.1-5.4 authentication flows
 2. Test scenarios: sign in, sign out, token persistence, cross-tab sync, browser restart
 3. Validate sessionStorage behavior automated
@@ -197,6 +214,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 5. **Resolve Known Defect #1:** OAuth callback redirect tests failing in Playwright (2/11 tests timing out)
 
 **Acceptance Criteria:**
+
 - 5 E2E tests written and passing
 - Tests validate all Epic 5 authentication acceptance criteria
 - Tests run locally and in CI
@@ -204,6 +222,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 - **Defect #1 resolved:** oauth-callback-flow.spec.ts achieving 100% pass rate (11/11 tests)
 
 **Deliverables:**
+
 - tests/e2e/auth/sign-in.spec.ts
 - tests/e2e/auth/sign-out.spec.ts
 - tests/e2e/auth/token-persistence.spec.ts
@@ -211,6 +230,7 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 - tests/e2e/auth/browser-restart.spec.ts
 
 **Known Defects Addressed:**
+
 - **Defect #1:** OAuth Callback Redirect Not Completing in E2E Tests (identified 2025-11-24)
   - Current status: 9/11 tests passing in oauth-callback-flow.spec.ts
   - Issue: Redirect tests timeout despite successful redirect execution (confirmed via console logs)
@@ -219,59 +239,69 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
   - Reference: Story 5.3 Known Defects section (lines 1163-1233)
 
 #### Sprint Status Updates
+
 **File:** docs/sprint-artifacts/sprint-status.yaml
 
 **Changes:**
+
 1. Add `8-0-e2e-testing-infrastructure-setup-playwright-ci: backlog` under Epic 8
 2. Add `5-11-authentication-e2e-test-suite: backlog` under Epic 5
 
 #### Architecture Documentation Updates
+
 **File:** docs/architecture.md
 
 **Changes:**
+
 1. Add "Testing Architecture" section (see Change Proposal 4)
 2. Add "ADR-006: Playwright for E2E Testing" decision record
 3. Document Playwright/mitmproxy integration
 4. Document test organization patterns
 
 #### README Updates
+
 **File:** README.md
 
 **Changes:**
+
 1. Add "Running Tests" section with E2E instructions
 2. Document prerequisites (mitmproxy, Playwright browsers)
 3. Include troubleshooting guide
 
 ### Effort Estimates
 
-| Item | Effort | Risk |
-|------|--------|------|
-| Story 8.0: Playwright Infrastructure | 1-2 days | Low |
-| Story 5.11: Auth E2E Tests + Defect Resolution | 1-2 days | Low |
-| Architecture Documentation | 2 hours | Low |
-| README Updates | 1 hour | Low |
-| **Total** | **2-4 days** | **Low** |
+| Item                                           | Effort       | Risk    |
+| ---------------------------------------------- | ------------ | ------- |
+| Story 8.0: Playwright Infrastructure           | 1-2 days     | Low     |
+| Story 5.11: Auth E2E Tests + Defect Resolution | 1-2 days     | Low     |
+| Architecture Documentation                     | 2 hours      | Low     |
+| README Updates                                 | 1 hour       | Low     |
+| **Total**                                      | **2-4 days** | **Low** |
 
 ### Risk Assessment
 
 **Technical Risk: Low**
+
 - Playwright mature, well-documented framework
 - Proxy configuration already exists (playwright-config.json)
 - mitmproxy infrastructure complete (Epic 4)
 - Authentication implementation stable (Stories 5.1-5.4 validated)
 
 **Timeline Risk: Low**
+
 - Adds 2-3 days total
 - Epic 8 already in backlog (no immediate pressure)
 - Epic 5 can proceed to retrospective while 8.0 proceeds
 - No impact on Epics 6-7 timelines
 
 **Team Momentum Risk: Low**
+
 - Clear path forward
 - Infrastructure benefits all future work
 - Unblocks critical accessibility epic
 
 **Compliance Risk: Eliminated**
+
 - Resolves blocker for WCAG 2.2 validation (Epic 8)
 - Enables automated accessibility testing
 - Critical for GovTech compliance
@@ -279,11 +309,13 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 ### Timeline Impact
 
 **Current Sprint:**
+
 - Epic 5: Story 5.4 in review → Can complete Epic 5 retrospective
 - Epic 8: Story 8.0 becomes first active story (1-2 days)
 - Epic 5: Story 5.11 follows (1-2 days, after 8.0) - includes OAuth redirect defect resolution
 
 **Future Sprints:**
+
 - Epic 8: Can proceed after Story 8.0 complete
 - Epics 6-7: Testing infrastructure ready when needed (Stories 6.10, 7.12)
 
@@ -324,35 +356,39 @@ During implementation of Epic 5 (Authentication Foundation), Playwright end-to-e
 **Section 1: Epic 8 development_status**
 
 OLD:
+
 ```yaml
-  # Epic 8: Accessible & Mobile-Friendly Experience + Brownfield Audit
-  epic-8: backlog
-  8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: backlog
+# Epic 8: Accessible & Mobile-Friendly Experience + Brownfield Audit
+epic-8: backlog
+8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: backlog
 ```
 
 NEW:
+
 ```yaml
-  # Epic 8: Accessible & Mobile-Friendly Experience + Brownfield Audit
-  epic-8: backlog
-  8-0-e2e-testing-infrastructure-setup-playwright-ci: backlog  # NEW: Infrastructure prerequisite
-  8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: backlog
+# Epic 8: Accessible & Mobile-Friendly Experience + Brownfield Audit
+epic-8: backlog
+8-0-e2e-testing-infrastructure-setup-playwright-ci: backlog # NEW: Infrastructure prerequisite
+8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: backlog
 ```
 
 **Section 2: Epic 5 development_status**
 
 OLD:
+
 ```yaml
-  5-9-empty-state-ui-for-unauthenticated-try-page: backlog
-  5-10-automated-accessibility-tests-for-auth-ui: backlog
-  epic-5-retrospective: optional
+5-9-empty-state-ui-for-unauthenticated-try-page: backlog
+5-10-automated-accessibility-tests-for-auth-ui: backlog
+epic-5-retrospective: optional
 ```
 
 NEW:
+
 ```yaml
-  5-9-empty-state-ui-for-unauthenticated-try-page: backlog
-  5-10-automated-accessibility-tests-for-auth-ui: backlog
-  5-11-authentication-e2e-test-suite: backlog  # NEW: E2E tests for auth flows
-  epic-5-retrospective: optional
+5-9-empty-state-ui-for-unauthenticated-try-page: backlog
+5-10-automated-accessibility-tests-for-auth-ui: backlog
+5-11-authentication-e2e-test-suite: backlog # NEW: E2E tests for auth flows
+epic-5-retrospective: optional
 ```
 
 **Rationale:** Adds new stories to sprint tracking, maintaining sequential story numbering within epics.
@@ -390,6 +426,7 @@ NEW:
 **Scope:** **Minor** (Infrastructure addition with clear implementation path)
 
 **Rationale:**
+
 - Two well-defined stories with clear acceptance criteria
 - No existing code modification required
 - Additive changes only (no feature removal or refactoring)
@@ -401,6 +438,7 @@ NEW:
 **Primary:** Development team (dev agent)
 
 **Responsibilities:**
+
 1. **Story 8.0 Implementation:**
    - Install @playwright/test dependency
    - Create playwright.config.ts configuration
@@ -421,6 +459,7 @@ NEW:
 ### Success Criteria
 
 **Story 8.0 Complete When:**
+
 - [ ] Playwright installed and configured
 - [ ] Sample test passing locally
 - [ ] CI workflow running tests automatically on PR/push
@@ -428,6 +467,7 @@ NEW:
 - [ ] Architecture document includes testing section + ADR-006
 
 **Story 5.11 Complete When:**
+
 - [ ] 5 authentication E2E tests written
 - [ ] All tests passing locally
 - [ ] All tests passing in CI
@@ -435,6 +475,7 @@ NEW:
 - [ ] Test code documented with clear comments
 
 **Overall Success:**
+
 - [ ] Epic 8 unblocked (can begin Story 8.1 after 8.0)
 - [ ] Epic 5 authentication work protected by automated tests
 - [ ] PRD NFR-TRY-TEST-1 through NFR-TRY-TEST-7 achievable
@@ -442,7 +483,7 @@ NEW:
 
 ### Next Steps After Approval
 
-1. **Immediate:** Create story files (8-0-*.md, 5-11-*.md) in docs/sprint-artifacts/
+1. **Immediate:** Create story files (8-0-_.md, 5-11-_.md) in docs/sprint-artifacts/
 2. **Update tracking:** Modify sprint-status.yaml to reflect new stories
 3. **Begin implementation:** Start Story 8.0 (Playwright infrastructure)
 4. **Sequential:** Complete Story 5.11 after Story 8.0 done
@@ -456,6 +497,7 @@ NEW:
 ### What We're Asking
 
 **Approval to proceed with:**
+
 1. Creating Story 8.0 (E2E Testing Infrastructure Setup) as first story in Epic 8
 2. Creating Story 5.11 (Authentication E2E Test Suite) in Epic 5
 3. Updating sprint-status.yaml with new story tracking
@@ -465,11 +507,13 @@ NEW:
 ### What This Accomplishes
 
 **Immediate:**
+
 - Resolves infrastructure debt (Playwright deferred from PRD Phase 2-3)
 - Unblocks Epic 8 (Accessibility & Compliance)
 - Provides regression testing for Epic 5 authentication work
 
 **Long-Term:**
+
 - Establishes E2E testing pattern for all future features
 - Enables automated accessibility compliance validation (WCAG 2.2)
 - Reduces manual testing burden
@@ -478,16 +522,19 @@ NEW:
 ### Why This Approach
 
 **Strategic:**
+
 - Acknowledges infrastructure debt explicitly (Story 8.0 as Epic 8 prerequisite)
 - Positions testing as foundation for compliance work
 - Minimal disruption to sprint flow (2-3 days total)
 
 **Practical:**
+
 - Infrastructure benefits immediately (Epic 5 auth tests)
 - Clear dependencies (Story 8.0 → dependent stories)
 - Low risk, high value
 
 **Compliant:**
+
 - Resolves PRD requirement gap
 - Enables WCAG 2.2 validation (critical for GovTech)
 - Provides audit trail for testing approach (ADR-006)
@@ -501,10 +548,11 @@ NEW:
 **Awaiting approval from:** cns
 
 **Options:**
+
 - **[a] Approve** - Proceed with implementation
 - **[e] Edit** - Request changes to proposal
 - **[r] Reject** - Do not proceed, provide alternative approach
 
 ---
 
-*This Sprint Change Proposal was generated by the BMad Method correct-course workflow. It follows the systematic change navigation checklist to analyze impact, evaluate options, and provide actionable recommendations for sprint adjustments.*
+_This Sprint Change Proposal was generated by the BMad Method correct-course workflow. It follows the systematic change navigation checklist to analyze impact, evaluate options, and provide actionable recommendations for sprint adjustments._

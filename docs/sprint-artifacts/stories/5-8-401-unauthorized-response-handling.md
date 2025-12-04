@@ -75,66 +75,70 @@ So that I can re-authenticate without manual intervention.
 ### Architecture Context
 
 **ADR-021: Centralized 401 handling in API client**
+
 - All API calls automatically handle 401 responses
 - Clear invalid token -> Redirect to OAuth -> Return to original page
 - Prevents scattered 401 handling logic across codebase
 
 **ADR-024: AuthState notifies subscribers of auth state change on 401**
+
 - Nav links update to "Sign in"
 - Try buttons disabled (if visible mid-redirect)
 - Seamless user experience (no stale UI)
 
 **Module Location:**
+
 - `src/try/api/api-client.ts` - Extend callISBAPI() function
 
 **Technical Implementation:**
+
 ```typescript
 // Option A: Modify callISBAPI to handle 401
-export async function callISBAPI(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function callISBAPI(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...extractHeaders(options.headers),
-  };
+  }
 
-  const token = getToken();
+  const token = getToken()
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   const response = await fetch(endpoint, {
     ...options,
     headers,
-  });
+  })
 
   // Handle 401 Unauthorized - automatic re-authentication
   if (response.status === 401) {
     // Clear invalid token
-    sessionStorage.removeItem(JWT_TOKEN_KEY);
+    sessionStorage.removeItem(JWT_TOKEN_KEY)
     // Redirect to OAuth login
-    window.location.href = '/api/auth/login';
+    window.location.href = "/api/auth/login"
     // Throw to stop promise chain (redirect will navigate away)
-    throw new Error('Unauthorized - redirecting to login');
+    throw new Error("Unauthorized - redirecting to login")
   }
 
-  return response;
+  return response
 }
 ```
 
 **Important Consideration:**
+
 - `checkAuthStatus()` should NOT trigger redirect on 401 (it's checking auth status)
 - Need to add option to skip 401 redirect or refactor
 
 ### Learnings from Previous Stories
 
 **From Story 5.7 (Status: done)**
+
 - checkAuthStatus() handles 401 gracefully (returns {authenticated: false})
 - Need to ensure 401 in checkAuthStatus does NOT trigger redirect
 - Consider adding `skipAuthRedirect` option to callISBAPI
 
 **From Story 5.6 (Status: done)**
+
 - callISBAPI() function structure is established
 - Test patterns with mockFetch are working
 - jsdom environment has sessionStorage
@@ -142,12 +146,14 @@ export async function callISBAPI(
 ### Project Structure Notes
 
 **Files to Modify:**
+
 - `src/try/api/api-client.ts` - Add 401 handling
 - `src/try/api/api-client.test.ts` - Add 401 handling tests
 
 ### Testing Strategy
 
 **Unit Tests:**
+
 - Mock fetch to return 401 response
 - Verify sessionStorage.removeItem() called
 - Verify window.location.href assignment (may need mock)
@@ -155,6 +161,7 @@ export async function callISBAPI(
 - Ensure non-401 responses pass through unchanged
 
 **Browser Testing:**
+
 - Manually test with expired token
 - Verify redirect to OAuth works
 - Verify return to original page after re-auth
@@ -213,26 +220,26 @@ All acceptance criteria are fully implemented. Story 5.8 adds automatic 401 hand
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| 1 | Automatic 401 Detection | ✅ IMPLEMENTED | `api-client.ts:139-146` |
-| 2 | Automatic Redirect to OAuth | ✅ IMPLEMENTED | `api-client.ts:142-143` |
-| 3 | Return to Original Page | ✅ IMPLEMENTED | Leverages OAuth callback flow |
-| 4 | No Infinite Loops | ✅ IMPLEMENTED | `clearToken()` before redirect |
-| 5 | Integration with Existing API Client | ✅ IMPLEMENTED | 44 tests passing |
+| AC# | Description                          | Status         | Evidence                       |
+| --- | ------------------------------------ | -------------- | ------------------------------ |
+| 1   | Automatic 401 Detection              | ✅ IMPLEMENTED | `api-client.ts:139-146`        |
+| 2   | Automatic Redirect to OAuth          | ✅ IMPLEMENTED | `api-client.ts:142-143`        |
+| 3   | Return to Original Page              | ✅ IMPLEMENTED | Leverages OAuth callback flow  |
+| 4   | No Infinite Loops                    | ✅ IMPLEMENTED | `clearToken()` before redirect |
+| 5   | Integration with Existing API Client | ✅ IMPLEMENTED | 44 tests passing               |
 
 **Summary: 5 of 5 acceptance criteria fully implemented**
 
 ### Task Completion Validation
 
-| Task | Verified | Evidence |
-|------|----------|----------|
-| 1.1-1.4 Add 401 Handler | ✅ | `api-client.ts:137-146` |
-| 2.1-2.3 Return URL | ✅ | OAuth flow handles |
-| 3.1-3.3 skipAuthRedirect | ✅ | `api-client.ts:66-71,211` |
-| 4.1-4.5 Unit Tests | ✅ | 11 new tests |
-| 5.1-5.2 Docs & Build | ✅ | JSDoc, bundle rebuilt |
-| 5.3 Manual Test | Deferred | Requires running server |
+| Task                     | Verified | Evidence                  |
+| ------------------------ | -------- | ------------------------- |
+| 1.1-1.4 Add 401 Handler  | ✅       | `api-client.ts:137-146`   |
+| 2.1-2.3 Return URL       | ✅       | OAuth flow handles        |
+| 3.1-3.3 skipAuthRedirect | ✅       | `api-client.ts:66-71,211` |
+| 4.1-4.5 Unit Tests       | ✅       | 11 new tests              |
+| 5.1-5.2 Docs & Build     | ✅       | JSDoc, bundle rebuilt     |
+| 5.3 Manual Test          | Deferred | Requires running server   |
 
 **Summary: 16 of 17 tasks verified (1 deferred appropriately)**
 
@@ -262,7 +269,7 @@ None - story approved for completion.
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-11-24 | 1.0 | Story implemented with 401 handling |
-| 2025-11-24 | 1.1 | Senior Developer Review - APPROVED |
+| Date       | Version | Description                         |
+| ---------- | ------- | ----------------------------------- |
+| 2025-11-24 | 1.0     | Story implemented with 401 handling |
+| 2025-11-24 | 1.1     | Senior Developer Review - APPROVED  |

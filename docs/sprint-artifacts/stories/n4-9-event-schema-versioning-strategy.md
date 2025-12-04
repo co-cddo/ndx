@@ -13,6 +13,7 @@ So that I can handle ISB event format changes without system failures.
 **This story is on the SWOT Critical Path but requires external ISB team coordination.**
 
 Per SWOT analysis in tech-spec-epic-n4.md:
+
 - ISB schema changes are the highest-probability threat
 - Requires establishing regular sync cadence with ISB team
 - Requires governance approval for data sharing
@@ -21,6 +22,7 @@ Per SWOT analysis in tech-spec-epic-n4.md:
 ## Acceptance Criteria
 
 **AC-9.1: Regular sync cadence established with ISB team**
+
 - **Given** the ISB team manages the EventBridge source
 - **When** schema changes are planned
 - **Then** NDX team receives 2-week advance notice
@@ -28,24 +30,28 @@ Per SWOT analysis in tech-spec-epic-n4.md:
 - **Verification:** Meeting notes
 
 **AC-9.2: Schema change notification process documented**
+
 - **Given** ISB plans a schema change
 - **When** the change is communicated
 - **Then** documented process for handling exists
 - **Verification:** Documentation review
 
 **AC-9.3: Backwards-compatible handling strategy documented**
+
 - **Given** Zod schema validation in n5-2
 - **When** new fields are added by ISB
 - **Then** `.passthrough()` pattern allows forward compatibility
 - **Verification:** Code review
 
 **AC-9.4: Staging EventBridge setup documented**
+
 - **Given** developers working on N-5/N-6
 - **When** they need to test with real events
 - **Then** staging EventBridge configuration is documented
 - **Verification:** Documentation review + Journey Mapping
 
 **AC-9.5: ISB data sharing governance approval obtained**
+
 - **Given** GDPR and data governance requirements
 - **When** ISB events contain user data
 - **Then** governance approval is documented
@@ -53,6 +59,7 @@ Per SWOT analysis in tech-spec-epic-n4.md:
 - **Verification:** Governance sign-off + PESTLE
 
 **AC-9.6: ISB cost allocation agreement confirmed**
+
 - **Given** EventBridge cross-account events incur costs
 - **When** events flow from ISB to NDX
 - **Then** cost allocation is agreed and documented
@@ -98,6 +105,7 @@ The following schema handling is already implemented:
 ## Schema Versioning Strategy (Pre-documented)
 
 ### Handling Unknown Fields
+
 ```typescript
 // n5-2 will implement Zod with passthrough for forward compatibility
 const eventSchema = z.object({
@@ -112,20 +120,22 @@ const eventSchema = z.object({
 ```
 
 ### Breaking Change Protocol
+
 1. ISB notifies NDX team 2 weeks before breaking change
 2. NDX updates schema validation in staging
 3. Testing verifies new schema handling
 4. Coordinated deployment with ISB release
 
 ### Staging Environment
+
 - Staging EventBridge subscription to ISB staging bus
 - Documented in deployment guide for N-5/N-6 developers
 
 ## Risk Matrix Reference
 
-| ID | Risk | Probability | Impact | Mitigation |
-|----|------|-------------|--------|------------|
-| R-1 | ISB EventBridge schema changes without notice | HIGH | CRITICAL | 2-week deprecation notice in SLA; Regular sync cadence |
+| ID  | Risk                                          | Probability | Impact   | Mitigation                                             |
+| --- | --------------------------------------------- | ----------- | -------- | ------------------------------------------------------ |
+| R-1 | ISB EventBridge schema changes without notice | HIGH        | CRITICAL | 2-week deprecation notice in SLA; Regular sync cadence |
 
 ## Dev Notes
 

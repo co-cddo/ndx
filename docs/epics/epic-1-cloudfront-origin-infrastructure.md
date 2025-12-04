@@ -19,13 +19,14 @@ So that we can modify its configuration without recreating the distribution or d
 **Given** the CDK stack `NdxStaticStack` exists in `infra/lib/ndx-stack.ts`
 **When** I add code to import the CloudFront distribution
 **Then** the stack includes:
-```typescript
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 
-const distribution = cloudfront.Distribution.fromDistributionAttributes(this, 'ImportedDistribution', {
-  distributionId: 'E3THG4UHYDHVWP',
-  domainName: 'd7roov8fndsis.cloudfront.net'
-});
+```typescript
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
+
+const distribution = cloudfront.Distribution.fromDistributionAttributes(this, "ImportedDistribution", {
+  distributionId: "E3THG4UHYDHVWP",
+  domainName: "d7roov8fndsis.cloudfront.net",
+})
 ```
 
 **And** running `cdk synth --profile NDX/InnovationSandboxHub` generates valid CloudFormation
@@ -36,6 +37,7 @@ const distribution = cloudfront.Distribution.fromDistributionAttributes(this, 'I
 **Prerequisites:** None (first story in epic)
 
 **Technical Notes:**
+
 - Use `Distribution.fromDistributionAttributes()` for importing (Architecture ADR-003)
 - Distribution ID: E3THG4UHYDHVWP (from PRD Infrastructure section)
 - Domain: d7roov8fndsis.cloudfront.net (from PRD Infrastructure section)
@@ -57,22 +59,24 @@ So that CloudFront can fetch content from this bucket for testers using cookie-b
 **Given** the CloudFront distribution is imported in CDK
 **When** I add the new S3 origin configuration
 **Then** the CDK stack includes:
-```typescript
-import * as s3 from 'aws-cdk-lib/aws-s3';
 
-const newOriginBucket = s3.Bucket.fromBucketName(this, 'NewOriginBucket', 'ndx-static-prod');
+```typescript
+import * as s3 from "aws-cdk-lib/aws-s3"
+
+const newOriginBucket = s3.Bucket.fromBucketName(this, "NewOriginBucket", "ndx-static-prod")
 
 const newOrigin = new origins.S3Origin(newOriginBucket, {
-  originId: 'ndx-static-prod-origin',
-  originAccessControlId: 'E3P8MA1G9Y5BYE',  // Reuse existing OAC
+  originId: "ndx-static-prod-origin",
+  originAccessControlId: "E3P8MA1G9Y5BYE", // Reuse existing OAC
   connectionAttempts: 3,
   connectionTimeout: cdk.Duration.seconds(10),
   readTimeout: cdk.Duration.seconds(30),
-  customHeaders: {}
-});
+  customHeaders: {},
+})
 ```
 
 **And** origin configuration matches existing S3Origin settings:
+
 - Connection attempts: 3
 - Connection timeout: 10 seconds
 - Read timeout: 30 seconds
@@ -87,6 +91,7 @@ const newOrigin = new origins.S3Origin(newOriginBucket, {
 **Prerequisites:** Story 1.1 (CloudFront distribution imported)
 
 **Technical Notes:**
+
 - Reuse existing OAC E3P8MA1G9Y5BYE for security consistency (Architecture ADR-002)
 - Origin ID naming: `ndx-static-prod-origin` (Architecture naming conventions)
 - S3 bucket `ndx-static-prod` already exists (deployed in Phase 1)
@@ -107,17 +112,20 @@ So that production traffic and API functionality remain completely unaffected.
 **Given** the new S3 origin has been added to CDK stack
 **When** I run `cdk diff --profile NDX/InnovationSandboxHub`
 **Then** the diff output shows:
+
 - New origin: `ndx-static-prod-origin` (addition)
 - Existing S3Origin: No changes
 - Existing API Gateway origin: No changes
 
 **And** existing S3Origin configuration is verified as unchanged:
+
 - Origin ID: `S3Origin`
 - Bucket: `ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky`
 - OAC: E3P8MA1G9Y5BYE
 - All timeout and connection settings identical
 
 **And** existing API Gateway origin is verified as unchanged:
+
 - Origin ID: `InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A`
 - Domain: `1ewlxhaey6.execute-api.us-west-2.amazonaws.com`
 - Path: `/prod`
@@ -129,6 +137,7 @@ So that production traffic and API functionality remain completely unaffected.
 **Prerequisites:** Story 1.2 (New S3 origin added)
 
 **Technical Notes:**
+
 - This is a VALIDATION story - no code changes, just verification
 - Critical for government service - FR5 and FR6 mandate existing origins unchanged
 - Use `cdk diff` to generate change preview before deployment
@@ -149,11 +158,13 @@ So that the new S3 origin exists in the distribution and is ready for routing co
 **Given** CDK diff shows only new origin addition (existing origins unchanged)
 **When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
 **Then** CloudFormation deployment succeeds with:
+
 - Stack status: UPDATE_COMPLETE
 - New origin added to distribution E3THG4UHYDHVWP
 - CloudFront propagates changes to all edge locations (~10-15 minutes)
 
 **And** post-deployment verification confirms:
+
 ```bash
 # Verify distribution status
 aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
@@ -172,6 +183,7 @@ aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSand
 **Prerequisites:** Story 1.3 (Existing origins verified unchanged)
 
 **Technical Notes:**
+
 - Zero-downtime deployment (NFR-REL-1) - CloudFront handles updates gracefully
 - CloudFormation automatically rolls back on failure (NFR-REL-2)
 - Propagation time: 10-15 minutes for global edge locations (NFR-PERF-6)

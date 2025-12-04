@@ -113,44 +113,45 @@ NotificationHandler (N-4)
 
 From tech spec (`tech-spec-epic-n5.md:841-862`):
 
-| Event Type | Env Var | Required Fields | Optional Fields |
-|------------|---------|-----------------|-----------------|
-| LeaseBudgetThresholdAlert | `NOTIFY_TEMPLATE_BUDGET_THRESHOLD` | userName, currentSpend, budgetLimit, percentUsed | - |
-| LeaseDurationThresholdAlert | `NOTIFY_TEMPLATE_DURATION_THRESHOLD` | userName, hoursRemaining, expiryDate, timezone | - |
-| LeaseFreezingThresholdAlert | `NOTIFY_TEMPLATE_FREEZING_THRESHOLD` | userName, reason, freezeTime | - |
-| LeaseBudgetExceeded | `NOTIFY_TEMPLATE_BUDGET_EXCEEDED` | userName, finalSpend, budgetLimit | - |
-| LeaseExpired | `NOTIFY_TEMPLATE_LEASE_EXPIRED` | userName, accountId, expiryTime | - |
-| LeaseFrozen | `NOTIFY_TEMPLATE_LEASE_FROZEN` | userName, accountId, reason, resumeInstructions | - |
+| Event Type                  | Env Var                              | Required Fields                                  | Optional Fields |
+| --------------------------- | ------------------------------------ | ------------------------------------------------ | --------------- |
+| LeaseBudgetThresholdAlert   | `NOTIFY_TEMPLATE_BUDGET_THRESHOLD`   | userName, currentSpend, budgetLimit, percentUsed | -               |
+| LeaseDurationThresholdAlert | `NOTIFY_TEMPLATE_DURATION_THRESHOLD` | userName, hoursRemaining, expiryDate, timezone   | -               |
+| LeaseFreezingThresholdAlert | `NOTIFY_TEMPLATE_FREEZING_THRESHOLD` | userName, reason, freezeTime                     | -               |
+| LeaseBudgetExceeded         | `NOTIFY_TEMPLATE_BUDGET_EXCEEDED`    | userName, finalSpend, budgetLimit                | -               |
+| LeaseExpired                | `NOTIFY_TEMPLATE_LEASE_EXPIRED`      | userName, accountId, expiryTime                  | -               |
+| LeaseFrozen                 | `NOTIFY_TEMPLATE_LEASE_FROZEN`       | userName, accountId, reason, resumeInstructions  | -               |
 
 ### Formatting Requirements
 
 ```typescript
 // Currency formatting (GBP)
 formatCurrency(123.45) // "£123.45"
-formatCurrency(0.99)   // "£0.99"
-formatCurrency(1000)   // "£1,000.00"
+formatCurrency(0.99) // "£0.99"
+formatCurrency(1000) // "£1,000.00"
 
 // UK date formatting
-formatUKDate('2024-03-15T14:30:00Z', 'Europe/London') // "15 Mar 2024, 14:30"
+formatUKDate("2024-03-15T14:30:00Z", "Europe/London") // "15 Mar 2024, 14:30"
 
 // Percentage formatting
 formatPercentage(75.5) // "75.5%"
-formatPercentage(100)  // "100%"
+formatPercentage(100) // "100%"
 ```
 
 ### Enrichment Conflict Handling
 
 From tech spec - critical security requirements:
+
 - AC-5.13: Never use enriched.status that contradicts event type
 - AC-5.14: Event data always takes precedence
 - AC-5.15: Never display enriched.status in templates
 
 ```typescript
 // WRONG - using enriched status
-personalisation.status = enrichedData.status; // NEVER DO THIS
+personalisation.status = enrichedData.status // NEVER DO THIS
 
 // CORRECT - only use event type
-personalisation.status = eventTypeToHumanReadable(event.type);
+personalisation.status = eventTypeToHumanReadable(event.type)
 ```
 
 ### Key Dependencies
@@ -237,27 +238,28 @@ claude-opus-4-5-20251101
 
 ### Acceptance Criteria Validation
 
-| AC ID | Requirement | Status | Evidence |
-|-------|------------|--------|----------|
-| AC-5.1 | LeaseBudgetThresholdAlert includes required fields | ✅ | templates.ts:126-130, 796-837 |
-| AC-5.2 | LeaseDurationThresholdAlert includes required fields | ✅ | templates.ts:136-141, 844-879 |
-| AC-5.3 | Timezone defaults to Europe/London | ✅ | templates.ts:211, 860 |
-| AC-5.4 | LeaseFreezingThresholdAlert includes required fields | ✅ | templates.ts:146-151, 885-918 |
-| AC-5.5 | LeaseBudgetExceeded includes required fields | ✅ | templates.ts:156-161, 925-958 |
-| AC-5.6 | LeaseExpired includes required fields | ✅ | templates.ts:166-171, 964-997 |
-| AC-5.7 | LeaseFrozen includes required fields with resumeInstructions | ✅ | templates.ts:176-181, 1003-1036, 313-351 |
-| AC-5.8 | Budget amounts formatted with GBP £ | ✅ | templates.ts:220-227 (Intl.NumberFormat) |
-| AC-5.9 | Dates formatted in UK format | ✅ | templates.ts:235-255 (Intl.DateTimeFormat) |
-| AC-5.10 | Percentages formatted with % symbol | ✅ | templates.ts:263-267 |
-| AC-5.11 | Budget emails include both values if different | ✅ | templates.ts:425-439, 823-826 |
-| AC-5.12 | Budget disclaimer with timestamp | ✅ | templates.ts:272-275, 819, 946 |
-| AC-5.13 | Never use enriched data contradicting event | ✅ | templates.ts:386-419 (detectEnrichmentConflict) |
-| AC-5.14 | Event data precedence over enriched | ✅ | Builders use event data; enriched only for non-status |
-| AC-5.15 | Never display enriched.status | ✅ | templates.ts:377 (_internalStatus marked @internal) |
+| AC ID   | Requirement                                                  | Status | Evidence                                              |
+| ------- | ------------------------------------------------------------ | ------ | ----------------------------------------------------- |
+| AC-5.1  | LeaseBudgetThresholdAlert includes required fields           | ✅     | templates.ts:126-130, 796-837                         |
+| AC-5.2  | LeaseDurationThresholdAlert includes required fields         | ✅     | templates.ts:136-141, 844-879                         |
+| AC-5.3  | Timezone defaults to Europe/London                           | ✅     | templates.ts:211, 860                                 |
+| AC-5.4  | LeaseFreezingThresholdAlert includes required fields         | ✅     | templates.ts:146-151, 885-918                         |
+| AC-5.5  | LeaseBudgetExceeded includes required fields                 | ✅     | templates.ts:156-161, 925-958                         |
+| AC-5.6  | LeaseExpired includes required fields                        | ✅     | templates.ts:166-171, 964-997                         |
+| AC-5.7  | LeaseFrozen includes required fields with resumeInstructions | ✅     | templates.ts:176-181, 1003-1036, 313-351              |
+| AC-5.8  | Budget amounts formatted with GBP £                          | ✅     | templates.ts:220-227 (Intl.NumberFormat)              |
+| AC-5.9  | Dates formatted in UK format                                 | ✅     | templates.ts:235-255 (Intl.DateTimeFormat)            |
+| AC-5.10 | Percentages formatted with % symbol                          | ✅     | templates.ts:263-267                                  |
+| AC-5.11 | Budget emails include both values if different               | ✅     | templates.ts:425-439, 823-826                         |
+| AC-5.12 | Budget disclaimer with timestamp                             | ✅     | templates.ts:272-275, 819, 946                        |
+| AC-5.13 | Never use enriched data contradicting event                  | ✅     | templates.ts:386-419 (detectEnrichmentConflict)       |
+| AC-5.14 | Event data precedence over enriched                          | ✅     | Builders use event data; enriched only for non-status |
+| AC-5.15 | Never display enriched.status                                | ✅     | templates.ts:377 (\_internalStatus marked @internal)  |
 
 ### Task Completion Validation
 
 All 8 tasks completed:
+
 - ✅ Task 1: 6 monitoring templates added to registry
 - ✅ Task 2: Budget threshold personalisation with GBP/% formatting
 - ✅ Task 3: Duration threshold personalisation with timezone default
@@ -270,13 +272,15 @@ All 8 tasks completed:
 ### Code Quality Assessment
 
 **Strengths**:
+
 1. Consistent pattern extension - follows N5.4 template registry pattern exactly
-2. Security-first design - _internalStatus marked @internal, never exposed in output
+2. Security-first design - \_internalStatus marked @internal, never exposed in output
 3. Comprehensive test coverage - all ACs have explicit tests with AC ID references
 4. Locale-aware formatting - uses Intl.NumberFormat/DateTimeFormat for i18n safety
 5. Clear documentation - JSDoc comments reference ACs and story numbers
 
 **No Issues Found**:
+
 - No blocking issues
 - No security concerns
 - No missing functionality

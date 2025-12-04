@@ -40,12 +40,12 @@ This epic introduces a new API service to fetch lease template details from the 
 
 ### Architecture Decisions Referenced
 
-| ADR | Decision | Relevance to Epic 9 |
-|-----|----------|---------------------|
-| ADR-021 | Centralized API Client | Use `callISBAPI()` wrapper for lease template fetch |
-| ADR-022 | Type-Safe API Response Models | Define `LeaseTemplateResult` interface |
-| ADR-026 | Accessible Modal Pattern | Maintain WCAG 2.2 AA compliance during loading states |
-| ADR-028 | Request Deduplication | Wrap fetch in `deduplicatedRequest()` |
+| ADR     | Decision                      | Relevance to Epic 9                                   |
+| ------- | ----------------------------- | ----------------------------------------------------- |
+| ADR-021 | Centralized API Client        | Use `callISBAPI()` wrapper for lease template fetch   |
+| ADR-022 | Type-Safe API Response Models | Define `LeaseTemplateResult` interface                |
+| ADR-026 | Accessible Modal Pattern      | Maintain WCAG 2.2 AA compliance during loading states |
+| ADR-028 | Request Deduplication         | Wrap fetch in `deduplicatedRequest()`                 |
 
 ### Module Context
 
@@ -71,11 +71,11 @@ src/try/
 
 ### Services and Modules
 
-| Module | Responsibility | Inputs | Outputs |
-|--------|----------------|--------|---------|
-| `lease-templates-service.ts` | Fetch lease template details from ISB API | `tryId: string` (UUID) | `LeaseTemplateResult` |
-| `aup-modal.ts` (modified) | Display dynamic values, gate Continue button | `tryId`, template data | Rendered modal with real values |
-| `request-dedup.ts` (existing) | Prevent duplicate concurrent API calls | Request key | Deduplicated promise |
+| Module                        | Responsibility                               | Inputs                 | Outputs                         |
+| ----------------------------- | -------------------------------------------- | ---------------------- | ------------------------------- |
+| `lease-templates-service.ts`  | Fetch lease template details from ISB API    | `tryId: string` (UUID) | `LeaseTemplateResult`           |
+| `aup-modal.ts` (modified)     | Display dynamic values, gate Continue button | `tryId`, template data | Rendered modal with real values |
+| `request-dedup.ts` (existing) | Prevent duplicate concurrent API calls       | Request key            | Deduplicated promise            |
 
 ### Data Models and Contracts
 
@@ -85,24 +85,24 @@ src/try/
 // ISB API Response: GET /api/leaseTemplates/{id}
 // JSend format: { status: "success", data: LeaseTemplate }
 interface LeaseTemplateAPIResponse {
-  status: "success" | "fail" | "error";
+  status: "success" | "fail" | "error"
   data?: {
-    uuid: string;                      // Lease template UUID
-    name: string;                      // Template name (required)
-    description?: string;              // Optional description
-    requiresApproval: boolean;         // Whether approval needed
-    createdBy: string;                 // Creator email
-    maxSpend?: number;                 // Maximum budget in USD (OPTIONAL)
-    leaseDurationInHours?: number;     // Duration in hours (OPTIONAL)
-    budgetThresholds?: BudgetThreshold[];
-    durationThresholds?: DurationThreshold[];
+    uuid: string // Lease template UUID
+    name: string // Template name (required)
+    description?: string // Optional description
+    requiresApproval: boolean // Whether approval needed
+    createdBy: string // Creator email
+    maxSpend?: number // Maximum budget in USD (OPTIONAL)
+    leaseDurationInHours?: number // Duration in hours (OPTIONAL)
+    budgetThresholds?: BudgetThreshold[]
+    durationThresholds?: DurationThreshold[]
     meta?: {
-      createdTime: string;
-      lastEditTime: string;
-      schemaVersion: number;
-    };
-  };
-  message?: string;                    // Error message (if status: "error")
+      createdTime: string
+      lastEditTime: string
+      schemaVersion: number
+    }
+  }
+  message?: string // Error message (if status: "error")
 }
 ```
 
@@ -114,14 +114,14 @@ interface LeaseTemplateAPIResponse {
  * Follows pattern from ConfigurationsResult in configurations-service.ts
  */
 export interface LeaseTemplateResult {
-  success: boolean;
+  success: boolean
   data?: {
-    leaseDurationInHours: number;  // Defaults to 24 if not in response
-    maxSpend: number;              // Defaults to 50 if not in response
-    name?: string;                 // Optional template name
-  };
-  error?: string;
-  errorCode?: 'NOT_FOUND' | 'UNAUTHORIZED' | 'TIMEOUT' | 'SERVER_ERROR' | 'NETWORK_ERROR';
+    leaseDurationInHours: number // Defaults to 24 if not in response
+    maxSpend: number // Defaults to 50 if not in response
+    name?: string // Optional template name
+  }
+  error?: string
+  errorCode?: "NOT_FOUND" | "UNAUTHORIZED" | "TIMEOUT" | "SERVER_ERROR" | "NETWORK_ERROR"
 }
 ```
 
@@ -169,22 +169,22 @@ get isFullyLoaded(): boolean {
  *   console.log(`Budget: $${result.data.maxSpend}`);
  * }
  */
-export async function fetchLeaseTemplate(tryId: string): Promise<LeaseTemplateResult>;
+export async function fetchLeaseTemplate(tryId: string): Promise<LeaseTemplateResult>
 ```
 
 **API Endpoint Details:**
 
-| Property | Value |
-|----------|-------|
-| Method | GET |
-| Path | `/api/leaseTemplates/{tryId}` |
-| Auth | Bearer JWT (same as other ISB endpoints) |
-| Timeout | 5000ms (config.requestTimeout) |
-| Response | JSend format `{ status, data }` |
-| Error 400 | Invalid UUID format |
-| Error 401 | Unauthorized - redirect to sign-in |
-| Error 404 | Template not found |
-| Error 500+ | Server error |
+| Property   | Value                                    |
+| ---------- | ---------------------------------------- |
+| Method     | GET                                      |
+| Path       | `/api/leaseTemplates/{tryId}`            |
+| Auth       | Bearer JWT (same as other ISB endpoints) |
+| Timeout    | 5000ms (config.requestTimeout)           |
+| Response   | JSend format `{ status, data }`          |
+| Error 400  | Invalid UUID format                      |
+| Error 401  | Unauthorized - redirect to sign-in       |
+| Error 404  | Template not found                       |
+| Error 500+ | Server error                             |
 
 ### Workflows and Sequencing
 
@@ -253,51 +253,52 @@ private updateButtons(): void {
 
 ### Performance
 
-| Requirement | Target | Measurement |
-|-------------|--------|-------------|
-| Modal interactive time | < 3 seconds on 3G | Time from button click to checkbox enabled |
-| API timeout | 5000ms | Abort controller timeout |
-| Parallel fetch benefit | 30-50% faster than sequential | Total load time vs individual times |
-| Skeleton load flash prevention | Min 100ms display | Prevent jarring flash for fast responses |
+| Requirement                    | Target                        | Measurement                                |
+| ------------------------------ | ----------------------------- | ------------------------------------------ |
+| Modal interactive time         | < 3 seconds on 3G             | Time from button click to checkbox enabled |
+| API timeout                    | 5000ms                        | Abort controller timeout                   |
+| Parallel fetch benefit         | 30-50% faster than sequential | Total load time vs individual times        |
+| Skeleton load flash prevention | Min 100ms display             | Prevent jarring flash for fast responses   |
 
 **Implementation Notes:**
+
 - Both API calls (AUP + lease template) made in parallel via `Promise.all`
 - Skeleton animation visible during load (CSS, not blocking render)
 - Timeout ensures user isn't stuck indefinitely
 
 ### Security
 
-| Requirement | Implementation |
-|-------------|----------------|
-| JWT Authentication | Use existing `callISBAPI()` which injects Bearer token |
-| 401 Handling | Redirect to sign-in (existing behavior in api-client.ts) |
-| Input Validation | UUID format validation before API call (fail fast) |
-| XSS Prevention | Use `textContent` for dynamic values, never `innerHTML` |
-| HTTPS Only | Enforced by existing infrastructure |
+| Requirement        | Implementation                                           |
+| ------------------ | -------------------------------------------------------- |
+| JWT Authentication | Use existing `callISBAPI()` which injects Bearer token   |
+| 401 Handling       | Redirect to sign-in (existing behavior in api-client.ts) |
+| Input Validation   | UUID format validation before API call (fail fast)       |
+| XSS Prevention     | Use `textContent` for dynamic values, never `innerHTML`  |
+| HTTPS Only         | Enforced by existing infrastructure                      |
 
 **No new security surface introduced** - uses existing authenticated API client pattern.
 
 ### Reliability/Availability
 
-| Scenario | Behavior |
-|----------|----------|
-| API timeout | Show error "Unable to load session details", Continue disabled |
-| API 404 | Show "This sandbox is currently unavailable", suggest alternatives |
-| API 500 | Show error, log details, Continue disabled |
-| Network failure | Show network error message, Continue disabled |
-| Partial success (AUP ok, template fail) | Continue disabled, show template error |
-| Partial success (template ok, AUP fail) | Continue disabled, show AUP error |
+| Scenario                                | Behavior                                                           |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| API timeout                             | Show error "Unable to load session details", Continue disabled     |
+| API 404                                 | Show "This sandbox is currently unavailable", suggest alternatives |
+| API 500                                 | Show error, log details, Continue disabled                         |
+| Network failure                         | Show network error message, Continue disabled                      |
+| Partial success (AUP ok, template fail) | Continue disabled, show template error                             |
+| Partial success (template ok, AUP fail) | Continue disabled, show AUP error                                  |
 
 **All-or-nothing approach:** User cannot proceed without seeing accurate terms.
 
 ### Observability
 
-| Signal | Implementation |
-|--------|----------------|
-| API call logging | `console.log('[lease-templates-service] Fetching template: {tryId}')` |
-| Error logging | `console.error('[lease-templates-service] Error:', errorCode, message)` |
-| Schema mismatch warning | `console.warn('[lease-templates-service] Missing expected fields')` |
-| Timing metrics | `console.log('[lease-templates-service] Fetch completed in {ms}ms')` |
+| Signal                  | Implementation                                                          |
+| ----------------------- | ----------------------------------------------------------------------- |
+| API call logging        | `console.log('[lease-templates-service] Fetching template: {tryId}')`   |
+| Error logging           | `console.error('[lease-templates-service] Error:', errorCode, message)` |
+| Schema mismatch warning | `console.warn('[lease-templates-service] Missing expected fields')`     |
+| Timing metrics          | `console.log('[lease-templates-service] Fetch completed in {ms}ms')`    |
 
 **Future enhancement:** CloudWatch metrics via existing monitoring infrastructure.
 
@@ -307,30 +308,30 @@ private updateButtons(): void {
 
 ### External Dependencies
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| Innovation Sandbox API | v1.0.4 | Lease template endpoint |
-| GOV.UK Design System | v5.x | Modal styling, checkboxes |
-| TypeScript | 5.x | Type-safe development |
-| Jest | 29.x | Unit testing |
+| Dependency             | Version | Purpose                   |
+| ---------------------- | ------- | ------------------------- |
+| Innovation Sandbox API | v1.0.4  | Lease template endpoint   |
+| GOV.UK Design System   | v5.x    | Modal styling, checkboxes |
+| TypeScript             | 5.x     | Type-safe development     |
+| Jest                   | 29.x    | Unit testing              |
 
 ### Internal Dependencies
 
-| Module | Usage |
-|--------|-------|
-| `src/try/api/api-client.ts` | `callISBAPI()` for authenticated requests |
+| Module                           | Usage                                                  |
+| -------------------------------- | ------------------------------------------------------ |
+| `src/try/api/api-client.ts`      | `callISBAPI()` for authenticated requests              |
 | `src/try/utils/request-dedup.ts` | `deduplicatedRequest()` for concurrent call prevention |
-| `src/try/utils/error-utils.ts` | `getHttpErrorMessage()` for user-friendly errors |
-| `src/try/config.ts` | `config.requestTimeout` (5000ms) |
-| `src/try/ui/utils/aria-live.ts` | `announce()` for screen reader announcements |
+| `src/try/utils/error-utils.ts`   | `getHttpErrorMessage()` for user-friendly errors       |
+| `src/try/config.ts`              | `config.requestTimeout` (5000ms)                       |
+| `src/try/ui/utils/aria-live.ts`  | `announce()` for screen reader announcements           |
 
 ### Integration Points
 
-| System | Integration |
-|--------|-------------|
+| System                 | Integration                                             |
+| ---------------------- | ------------------------------------------------------- |
 | Innovation Sandbox API | `GET /api/leaseTemplates/{id}` - fetch template details |
-| AUP Modal | Modified to call new service and display dynamic values |
-| Try Button | Passes `tryId` to modal (existing behavior) |
+| AUP Modal              | Modified to call new service and display dynamic values |
+| Try Button             | Passes `tryId` to modal (existing behavior)             |
 
 ---
 
@@ -338,79 +339,79 @@ private updateButtons(): void {
 
 ### Story 9.1: Create Lease Template Service
 
-| ID | Criterion | Testable |
-|----|-----------|----------|
-| AC-9.1.1 | `fetchLeaseTemplate(tryId)` calls `GET /api/leaseTemplates/{tryId}` endpoint | ✓ Mock API test |
-| AC-9.1.2 | Response parsed for `leaseDurationInHours` and `maxSpend` fields | ✓ Parse test |
-| AC-9.1.3 | Returns typed `LeaseTemplateResult` with success/data or error/errorCode | ✓ Type test |
-| AC-9.1.4 | 404 response returns `errorCode: 'NOT_FOUND'` | ✓ Error code test |
-| AC-9.1.5 | 401 response triggers auth redirect via callISBAPI | ✓ Redirect test |
-| AC-9.1.6 | 500+ response returns `errorCode: 'SERVER_ERROR'` | ✓ Error code test |
-| AC-9.1.7 | Network timeout (>5s) returns `errorCode: 'TIMEOUT'` | ✓ Timeout test |
-| AC-9.1.8 | Invalid UUID rejected before API call | ✓ Validation test |
-| AC-9.1.9 | Concurrent calls deduplicated (single network request) | ✓ Dedup test |
-| AC-9.1.10 | Malformed API response (missing required fields) logged as warning | ✓ Logging test |
+| ID        | Criterion                                                                    | Testable          |
+| --------- | ---------------------------------------------------------------------------- | ----------------- |
+| AC-9.1.1  | `fetchLeaseTemplate(tryId)` calls `GET /api/leaseTemplates/{tryId}` endpoint | ✓ Mock API test   |
+| AC-9.1.2  | Response parsed for `leaseDurationInHours` and `maxSpend` fields             | ✓ Parse test      |
+| AC-9.1.3  | Returns typed `LeaseTemplateResult` with success/data or error/errorCode     | ✓ Type test       |
+| AC-9.1.4  | 404 response returns `errorCode: 'NOT_FOUND'`                                | ✓ Error code test |
+| AC-9.1.5  | 401 response triggers auth redirect via callISBAPI                           | ✓ Redirect test   |
+| AC-9.1.6  | 500+ response returns `errorCode: 'SERVER_ERROR'`                            | ✓ Error code test |
+| AC-9.1.7  | Network timeout (>5s) returns `errorCode: 'TIMEOUT'`                         | ✓ Timeout test    |
+| AC-9.1.8  | Invalid UUID rejected before API call                                        | ✓ Validation test |
+| AC-9.1.9  | Concurrent calls deduplicated (single network request)                       | ✓ Dedup test      |
+| AC-9.1.10 | Malformed API response (missing required fields) logged as warning           | ✓ Logging test    |
 
 ### Story 9.2: Display Dynamic Lease Details in Modal
 
-| ID | Criterion | Testable |
-|----|-----------|----------|
-| AC-9.2.1 | Single combined loading skeleton shown initially | ✓ DOM test |
-| AC-9.2.2 | Checkbox disabled with tooltip during loading | ✓ Attribute test |
-| AC-9.2.3 | Duration displays as "Session duration: {hours} hours" from API | ✓ Content test |
-| AC-9.2.4 | Budget displays as "Maximum spend: ${amount} USD (limits sandbox costs)" | ✓ Content test |
-| AC-9.2.5 | Error state shows "Unknown" for duration/budget | ✓ Error display test |
-| AC-9.2.6 | ARIA announces "Loading session terms" on modal open | ✓ A11y test |
-| AC-9.2.7 | ARIA announces loaded values on success | ✓ A11y test |
-| AC-9.2.8 | ARIA announces error state on failure | ✓ A11y test |
-| AC-9.2.9 | Focus remains trapped in modal during state changes | ✓ Focus test |
-| AC-9.2.10 | Modal interactive within 3s on 3G connection | ✓ Performance test |
+| ID        | Criterion                                                                | Testable             |
+| --------- | ------------------------------------------------------------------------ | -------------------- |
+| AC-9.2.1  | Single combined loading skeleton shown initially                         | ✓ DOM test           |
+| AC-9.2.2  | Checkbox disabled with tooltip during loading                            | ✓ Attribute test     |
+| AC-9.2.3  | Duration displays as "Session duration: {hours} hours" from API          | ✓ Content test       |
+| AC-9.2.4  | Budget displays as "Maximum spend: ${amount} USD (limits sandbox costs)" | ✓ Content test       |
+| AC-9.2.5  | Error state shows "Unknown" for duration/budget                          | ✓ Error display test |
+| AC-9.2.6  | ARIA announces "Loading session terms" on modal open                     | ✓ A11y test          |
+| AC-9.2.7  | ARIA announces loaded values on success                                  | ✓ A11y test          |
+| AC-9.2.8  | ARIA announces error state on failure                                    | ✓ A11y test          |
+| AC-9.2.9  | Focus remains trapped in modal during state changes                      | ✓ Focus test         |
+| AC-9.2.10 | Modal interactive within 3s on 3G connection                             | ✓ Performance test   |
 
 ### Story 9.3: Gate Continue Button on All Data Loaded
 
-| ID | Criterion | Testable |
-|----|-----------|----------|
-| AC-9.3.1 | Button disabled when AUP loading | ✓ State test |
-| AC-9.3.2 | Button disabled when lease template loading | ✓ State test |
-| AC-9.3.3 | Button disabled when AUP failed (fallback shown) | ✓ State test |
-| AC-9.3.4 | Button disabled when lease template failed | ✓ State test |
-| AC-9.3.5 | Button disabled when checkbox unchecked | ✓ State test |
-| AC-9.3.6 | Button enabled only when all three conditions met | ✓ State test |
-| AC-9.3.7 | Button re-disables if user unchecks checkbox | ✓ Interaction test |
-| AC-9.3.8 | Screen reader announces button state changes | ✓ A11y test |
-| AC-9.3.9 | Race: checkbox checked while loading → button stays disabled | ✓ Race test |
-| AC-9.3.10 | Race: template loads while checkbox checked → button enables | ✓ Race test |
+| ID        | Criterion                                                    | Testable           |
+| --------- | ------------------------------------------------------------ | ------------------ |
+| AC-9.3.1  | Button disabled when AUP loading                             | ✓ State test       |
+| AC-9.3.2  | Button disabled when lease template loading                  | ✓ State test       |
+| AC-9.3.3  | Button disabled when AUP failed (fallback shown)             | ✓ State test       |
+| AC-9.3.4  | Button disabled when lease template failed                   | ✓ State test       |
+| AC-9.3.5  | Button disabled when checkbox unchecked                      | ✓ State test       |
+| AC-9.3.6  | Button enabled only when all three conditions met            | ✓ State test       |
+| AC-9.3.7  | Button re-disables if user unchecks checkbox                 | ✓ Interaction test |
+| AC-9.3.8  | Screen reader announces button state changes                 | ✓ A11y test        |
+| AC-9.3.9  | Race: checkbox checked while loading → button stays disabled | ✓ Race test        |
+| AC-9.3.10 | Race: template loads while checkbox checked → button enables | ✓ Race test        |
 
 ### Story 9.4: Clear Error States for Failed Loads
 
-| ID | Criterion | Testable |
-|----|-----------|----------|
-| AC-9.4.1 | API error displays "Unable to load session details" | ✓ Error message test |
-| AC-9.4.2 | 404 displays "This sandbox is currently unavailable" | ✓ 404 message test |
-| AC-9.4.3 | Continue button remains disabled on error | ✓ Button state test |
-| AC-9.4.4 | Cancel button works normally on error | ✓ Cancel test |
-| AC-9.4.5 | Error logging captures template ID and error code | ✓ Logging test |
+| ID       | Criterion                                            | Testable             |
+| -------- | ---------------------------------------------------- | -------------------- |
+| AC-9.4.1 | API error displays "Unable to load session details"  | ✓ Error message test |
+| AC-9.4.2 | 404 displays "This sandbox is currently unavailable" | ✓ 404 message test   |
+| AC-9.4.3 | Continue button remains disabled on error            | ✓ Button state test  |
+| AC-9.4.4 | Cancel button works normally on error                | ✓ Cancel test        |
+| AC-9.4.5 | Error logging captures template ID and error code    | ✓ Logging test       |
 
 ---
 
 ## Traceability Mapping
 
-| AC ID | Spec Section | Component/API | Test Approach |
-|-------|--------------|---------------|---------------|
-| AC-9.1.1 | APIs and Interfaces | `fetchLeaseTemplate()` | Unit: mock fetch |
-| AC-9.1.2 | Data Models | `LeaseTemplateResult` | Unit: parse response |
-| AC-9.1.3 | Data Models | `LeaseTemplateResult` | Unit: type validation |
-| AC-9.1.4-7 | Error Handling | `errorCode` enum | Unit: each error code |
-| AC-9.1.8 | Input Validation | UUID regex | Unit: invalid input |
-| AC-9.1.9 | Request Dedup | `deduplicatedRequest()` | Unit: concurrent calls |
-| AC-9.1.10 | Observability | `console.warn` | Unit: verify logging |
-| AC-9.2.1-2 | Workflows | `aup-modal.ts` render | DOM: loading state |
-| AC-9.2.3-5 | Workflows | Display logic | DOM: content verification |
-| AC-9.2.6-8 | Accessibility | ARIA live regions | A11y: screen reader |
-| AC-9.2.9 | Accessibility | Focus trap | A11y: focus management |
-| AC-9.2.10 | Performance | Modal load time | Performance: timing |
-| AC-9.3.1-10 | Button State Logic | `updateButtons()` | Unit: state machine |
-| AC-9.4.1-5 | Error States | Error display | Integration: error flows |
+| AC ID       | Spec Section        | Component/API           | Test Approach             |
+| ----------- | ------------------- | ----------------------- | ------------------------- |
+| AC-9.1.1    | APIs and Interfaces | `fetchLeaseTemplate()`  | Unit: mock fetch          |
+| AC-9.1.2    | Data Models         | `LeaseTemplateResult`   | Unit: parse response      |
+| AC-9.1.3    | Data Models         | `LeaseTemplateResult`   | Unit: type validation     |
+| AC-9.1.4-7  | Error Handling      | `errorCode` enum        | Unit: each error code     |
+| AC-9.1.8    | Input Validation    | UUID regex              | Unit: invalid input       |
+| AC-9.1.9    | Request Dedup       | `deduplicatedRequest()` | Unit: concurrent calls    |
+| AC-9.1.10   | Observability       | `console.warn`          | Unit: verify logging      |
+| AC-9.2.1-2  | Workflows           | `aup-modal.ts` render   | DOM: loading state        |
+| AC-9.2.3-5  | Workflows           | Display logic           | DOM: content verification |
+| AC-9.2.6-8  | Accessibility       | ARIA live regions       | A11y: screen reader       |
+| AC-9.2.9    | Accessibility       | Focus trap              | A11y: focus management    |
+| AC-9.2.10   | Performance         | Modal load time         | Performance: timing       |
+| AC-9.3.1-10 | Button State Logic  | `updateButtons()`       | Unit: state machine       |
+| AC-9.4.1-5  | Error States        | Error display           | Integration: error flows  |
 
 ---
 
@@ -418,31 +419,31 @@ private updateButtons(): void {
 
 ### Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| API schema changes break parsing | Low | High | Defensive parsing, log mismatches, fallback to defaults |
-| Slow API causes UX friction | Medium | Medium | 5s timeout, skeleton loading, parallel fetch |
-| Race condition on button state | Medium | Critical | Explicit `isFullyLoaded` computed state |
-| A11y regression in loading states | Medium | High | Screen reader testing in DoD, ARIA live regions |
-| Missing `maxSpend`/`leaseDurationInHours` in response | Low | Medium | Use sensible defaults (24h, $50), log warning |
+| Risk                                                  | Likelihood | Impact   | Mitigation                                              |
+| ----------------------------------------------------- | ---------- | -------- | ------------------------------------------------------- |
+| API schema changes break parsing                      | Low        | High     | Defensive parsing, log mismatches, fallback to defaults |
+| Slow API causes UX friction                           | Medium     | Medium   | 5s timeout, skeleton loading, parallel fetch            |
+| Race condition on button state                        | Medium     | Critical | Explicit `isFullyLoaded` computed state                 |
+| A11y regression in loading states                     | Medium     | High     | Screen reader testing in DoD, ARIA live regions         |
+| Missing `maxSpend`/`leaseDurationInHours` in response | Low        | Medium   | Use sensible defaults (24h, $50), log warning           |
 
 ### Assumptions
 
-| Assumption | Validation |
-|------------|------------|
-| ISB API endpoint exists at `/api/leaseTemplates/{id}` | ✓ Verified in ISB OpenAPI spec |
+| Assumption                                                     | Validation                                      |
+| -------------------------------------------------------------- | ----------------------------------------------- |
+| ISB API endpoint exists at `/api/leaseTemplates/{id}`          | ✓ Verified in ISB OpenAPI spec                  |
 | Response includes `leaseDurationInHours` and `maxSpend` fields | ✓ Verified (optional fields, may need defaults) |
-| Auth uses same JWT flow as other endpoints | ✓ Uses `callISBAPI()` wrapper |
-| `tryId` from product frontmatter is valid UUID | Validate at service layer before API call |
-| Modal `tryId` is passed from Try button | ✓ Existing behavior in try-button.ts |
+| Auth uses same JWT flow as other endpoints                     | ✓ Uses `callISBAPI()` wrapper                   |
+| `tryId` from product frontmatter is valid UUID                 | Validate at service layer before API call       |
+| Modal `tryId` is passed from Try button                        | ✓ Existing behavior in try-button.ts            |
 
 ### Open Questions
 
-| Question | Owner | Status |
-|----------|-------|--------|
-| What defaults if `maxSpend`/`leaseDurationInHours` missing? | Architect | **Resolved:** Use 24h/$50 defaults, log warning |
-| Should we cache template data? | Architect | **Resolved:** No cache (templates may change, modal short-lived) |
-| Retry button needed? | User | **Resolved:** No - user can close and click Try again |
+| Question                                                    | Owner     | Status                                                           |
+| ----------------------------------------------------------- | --------- | ---------------------------------------------------------------- |
+| What defaults if `maxSpend`/`leaseDurationInHours` missing? | Architect | **Resolved:** Use 24h/$50 defaults, log warning                  |
+| Should we cache template data?                              | Architect | **Resolved:** No cache (templates may change, modal short-lived) |
+| Retry button needed?                                        | User      | **Resolved:** No - user can close and click Try again            |
 
 ---
 
@@ -450,21 +451,21 @@ private updateButtons(): void {
 
 ### Test Levels
 
-| Level | Coverage | Framework |
-|-------|----------|-----------|
-| Unit Tests | lease-templates-service.ts (10 test cases) | Jest |
-| Unit Tests | aup-modal.ts state changes (12 test cases) | Jest |
-| Integration Tests | Modal with mocked API | Jest + DOM testing |
-| E2E Tests | Full try flow with loading states | Playwright |
-| Accessibility Tests | Screen reader, keyboard navigation | axe-core, manual NVDA/VoiceOver |
+| Level               | Coverage                                   | Framework                       |
+| ------------------- | ------------------------------------------ | ------------------------------- |
+| Unit Tests          | lease-templates-service.ts (10 test cases) | Jest                            |
+| Unit Tests          | aup-modal.ts state changes (12 test cases) | Jest                            |
+| Integration Tests   | Modal with mocked API                      | Jest + DOM testing              |
+| E2E Tests           | Full try flow with loading states          | Playwright                      |
+| Accessibility Tests | Screen reader, keyboard navigation         | axe-core, manual NVDA/VoiceOver |
 
 ### Test Files
 
-| File | Purpose |
-|------|---------|
-| `src/try/api/lease-templates-service.test.ts` | NEW - Service unit tests |
-| `src/try/ui/components/aup-modal.test.ts` | UPDATED - Modal behavior tests |
-| `test/e2e/try-modal-loading.spec.ts` | NEW - E2E loading state tests |
+| File                                          | Purpose                        |
+| --------------------------------------------- | ------------------------------ |
+| `src/try/api/lease-templates-service.test.ts` | NEW - Service unit tests       |
+| `src/try/ui/components/aup-modal.test.ts`     | UPDATED - Modal behavior tests |
+| `test/e2e/try-modal-loading.spec.ts`          | NEW - E2E loading state tests  |
 
 ### Key Test Scenarios
 
@@ -477,8 +478,8 @@ private updateButtons(): void {
 
 ### Coverage Targets
 
-| Metric | Target |
-|--------|--------|
-| Line coverage | 90%+ for new code |
+| Metric          | Target               |
+| --------------- | -------------------- |
+| Line coverage   | 90%+ for new code    |
 | Branch coverage | 85%+ for state logic |
-| A11y violations | 0 critical/serious |
+| A11y violations | 0 critical/serious   |

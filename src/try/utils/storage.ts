@@ -25,16 +25,16 @@ class SafeStorage {
    */
   isAvailable(): boolean {
     try {
-      if (typeof sessionStorage === 'undefined') {
-        return false;
+      if (typeof sessionStorage === "undefined") {
+        return false
       }
       // Test actual functionality with a test key
-      const testKey = '__storage_test__';
-      sessionStorage.setItem(testKey, 'test');
-      sessionStorage.removeItem(testKey);
-      return true;
+      const testKey = "__storage_test__"
+      sessionStorage.setItem(testKey, "test")
+      sessionStorage.removeItem(testKey)
+      return true
     } catch {
-      return false;
+      return false
     }
   }
 
@@ -46,13 +46,13 @@ class SafeStorage {
    */
   getItem(key: string): string | null {
     try {
-      if (typeof sessionStorage === 'undefined') {
-        return null;
+      if (typeof sessionStorage === "undefined") {
+        return null
       }
-      return sessionStorage.getItem(key);
+      return sessionStorage.getItem(key)
     } catch (error) {
-      console.warn(`[SafeStorage] Failed to get item '${key}':`, error);
-      return null;
+      console.warn(`[SafeStorage] Failed to get item '${key}':`, error)
+      return null
     }
   }
 
@@ -65,16 +65,16 @@ class SafeStorage {
    */
   setItem(key: string, value: string): boolean {
     try {
-      if (typeof sessionStorage === 'undefined') {
-        console.warn('[SafeStorage] sessionStorage unavailable');
-        return false;
+      if (typeof sessionStorage === "undefined") {
+        console.warn("[SafeStorage] sessionStorage unavailable")
+        return false
       }
-      sessionStorage.setItem(key, value);
-      return true;
+      sessionStorage.setItem(key, value)
+      return true
     } catch (error) {
       // QuotaExceededError in private browsing or SecurityError
-      console.warn(`[SafeStorage] Failed to set item '${key}':`, error);
-      return false;
+      console.warn(`[SafeStorage] Failed to set item '${key}':`, error)
+      return false
     }
   }
 
@@ -85,12 +85,12 @@ class SafeStorage {
    */
   removeItem(key: string): void {
     try {
-      if (typeof sessionStorage === 'undefined') {
-        return;
+      if (typeof sessionStorage === "undefined") {
+        return
       }
-      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(key)
     } catch (error) {
-      console.warn(`[SafeStorage] Failed to remove item '${key}':`, error);
+      console.warn(`[SafeStorage] Failed to remove item '${key}':`, error)
     }
   }
 
@@ -99,12 +99,12 @@ class SafeStorage {
    */
   clear(): void {
     try {
-      if (typeof sessionStorage === 'undefined') {
-        return;
+      if (typeof sessionStorage === "undefined") {
+        return
       }
-      sessionStorage.clear();
+      sessionStorage.clear()
     } catch (error) {
-      console.warn('[SafeStorage] Failed to clear storage:', error);
+      console.warn("[SafeStorage] Failed to clear storage:", error)
     }
   }
 }
@@ -135,4 +135,4 @@ class SafeStorage {
  * }
  * ```
  */
-export const safeSessionStorage = new SafeStorage();
+export const safeSessionStorage = new SafeStorage()

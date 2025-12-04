@@ -224,7 +224,7 @@ This phase focuses on mapping requirements to tests, analyzing coverage, and ide
 
    ```yaml
    traceability:
-     story_id: '1.3'
+     story_id: "1.3"
      coverage:
        overall: 85%
        p0: 100%
@@ -234,7 +234,7 @@ This phase focuses on mapping requirements to tests, analyzing coverage, and ide
        critical: 0
        high: 1
        medium: 2
-     status: 'PASS' # or "FAIL" if P0 < 100%
+     status: "PASS" # or "FAIL" if P0 < 100%
    ```
 
 3. Create coverage badge/metric (if enabled):
@@ -916,7 +916,7 @@ Use selective testing principles from `selective-testing.md`:
 
 ```yaml
 traceability:
-  story_id: '1.3'
+  story_id: "1.3"
   coverage:
     overall: 79%
     p0: 100%
@@ -928,11 +928,11 @@ traceability:
     high: 1
     medium: 1
     low: 1
-  status: 'WARN' # P1 coverage below 90% threshold
+  status: "WARN" # P1 coverage below 90% threshold
   recommendations:
-    - 'Add 1.3-API-001 for email service integration'
-    - 'Add 1.3-E2E-004 for password reset error paths'
-    - 'Optimize 1.3-E2E-001 performance (145s → <90s)'
+    - "Add 1.3-API-001 for email service integration"
+    - "Add 1.3-E2E-004 for password reset error paths"
+    - "Optimize 1.3-E2E-001 performance (145s → <90s)"
 ```
 ````
 

@@ -28,6 +28,7 @@ So that I can authenticate to access Try features.
 **And** the button has accessible text: "Sign out"
 
 **And** sign in/out buttons are:
+
 - Keyboard navigable (tab index)
 - Screen reader accessible (ARIA labels)
 - Responsive on mobile (visible in mobile nav)
@@ -36,6 +37,7 @@ So that I can authenticate to access Try features.
 **Prerequisites:** Epic 4 complete (local dev environment ready)
 
 **Technical Notes:**
+
 - Check sessionStorage client-side: `sessionStorage.getItem('isb-jwt')`
 - Use GOV.UK Design System button macro (already integrated in NDX)
 - Nunjucks template: Check JWT existence in layout template
@@ -43,6 +45,7 @@ So that I can authenticate to access Try features.
 - Accessibility: FR-TRY-70, FR-TRY-71 (keyboard navigation, focus indicators)
 
 **Architecture Context:**
+
 - **ADR-024:** Authentication state management using event-driven pattern
   - Implement `AuthState` class with subscribe/notify pattern
   - Multiple components react to auth state changes (nav links, try buttons, /try page)
@@ -51,6 +54,7 @@ So that I can authenticate to access Try features.
 - **Module:** `src/try/auth/session-storage.ts` - JWT token storage utilities
 
 **UX Design Context:**
+
 - **Component:** Authentication State Indicator (UX Section 6.2 Component 5)
 - **Placement:** Top-right navigation in GOV.UK header (consistent across all pages)
 - **Signed Out:** "Sign in" link visible (blue underlined link, GOV.UK standard)
@@ -76,6 +80,7 @@ So that I can authenticate using AWS credentials.
 **And** after successful AWS authentication, I am redirected back to NDX with JWT token in URL query parameter
 
 **And** the redirect flow preserves:
+
 - Original page context (return URL if needed)
 - HTTPS security
 - No errors logged in console
@@ -83,6 +88,7 @@ So that I can authenticate using AWS credentials.
 **Prerequisites:** Story 5.1 (Sign in button exists)
 
 **Technical Notes:**
+
 - Sign in button href: `/api/auth/login`
 - Innovation Sandbox OAuth endpoint handles redirect automatically
 - OAuth redirects to callback URL with token
@@ -91,6 +97,7 @@ So that I can authenticate using AWS credentials.
 - OAuth flow is external to NDX (handled by Innovation Sandbox backend)
 
 **Architecture Context:**
+
 - **ADR-023:** OAuth callback page pattern
   - Dedicated `/callback` page handles OAuth redirect (not home page)
   - Callback page extracts token, stores in sessionStorage, then redirects to intended destination
@@ -101,6 +108,7 @@ So that I can authenticate using AWS credentials.
   - Production cross-gov SSO maintains OAuth 2.0 compatibility (no code changes)
 
 **UX Design Context:**
+
 - **User Journey:** Authentication Sign In (UX Section 5.1 Journey 1, Steps 1-2)
 - **Step 1:** User clicks "Sign in" → Redirect to `/api/auth/login`
 - **Step 2:** OAuth redirect to Innovation Sandbox login page (external to NDX)
@@ -123,25 +131,25 @@ So that I can store the token for authenticated API calls.
 
 ```javascript
 function extractTokenFromURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  const urlParams = new URLSearchParams(window.location.search)
+  const token = urlParams.get("token")
 
   if (token) {
     // Store token in sessionStorage
-    sessionStorage.setItem('isb-jwt', token);
+    sessionStorage.setItem("isb-jwt", token)
 
     // Clean up URL (remove token from query params)
-    const cleanURL = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanURL);
+    const cleanURL = window.location.pathname
+    window.history.replaceState({}, document.title, cleanURL)
 
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 // Run on page load
-document.addEventListener('DOMContentLoaded', extractTokenFromURL);
+document.addEventListener("DOMContentLoaded", extractTokenFromURL)
 ```
 
 **And** token extraction runs on every page load
@@ -153,6 +161,7 @@ document.addEventListener('DOMContentLoaded', extractTokenFromURL);
 **Prerequisites:** Story 5.2 (OAuth redirect flow)
 
 **Technical Notes:**
+
 - URLSearchParams API for query parameter parsing
 - `window.history.replaceState()` removes token from URL without reload
 - sessionStorage vs localStorage: sessionStorage preferred (FR-TRY-8, FR-TRY-9)
@@ -160,6 +169,7 @@ document.addEventListener('DOMContentLoaded', extractTokenFromURL);
 - Token cleanup prevents token exposure in browser history
 
 **Architecture Context:**
+
 - **ADR-023:** OAuth callback page pattern implementation
   - `/callback` page dedicated to token extraction (not mixed with main page logic)
   - Extract token → Store in sessionStorage → Clean URL → Redirect to original destination
@@ -173,6 +183,7 @@ document.addEventListener('DOMContentLoaded', extractTokenFromURL);
   - Token never logged to console or analytics
 
 **UX Design Context:**
+
 - **User Journey:** Authentication Sign In (UX Section 5.1 Journey 1, Step 3)
 - **Token extraction:** Brief loading indicator "Signing you in..."
 - **URL cleanup:** Token removed from address bar before user sees final page
@@ -203,6 +214,7 @@ So that I don't need to sign in again when opening NDX in a new tab.
 **Prerequisites:** Story 5.3 (Token extraction implemented)
 
 **Technical Notes:**
+
 - sessionStorage behavior: persists across tabs, NOT across browser restarts
 - This is DESIRED behavior per PRD (temporary authentication)
 - Production cross-gov SSO may have different session persistence (handled at SSO layer)
@@ -211,6 +223,7 @@ So that I don't need to sign in again when opening NDX in a new tab.
 - Validate behavior in browser DevTools → Application → Session Storage
 
 **Architecture Context:**
+
 - **ADR-024:** Authentication state management with event-driven pattern
   - AuthState notifies all subscribers when auth status changes (login, logout, token refresh)
   - Components subscribe to auth state changes: nav links, try buttons, /try page
@@ -221,6 +234,7 @@ So that I don't need to sign in again when opening NDX in a new tab.
   - No server-side session needed: Stateless JWT approach (scalability)
 
 **UX Design Context:**
+
 - **Pattern:** sessionStorage for JWT token (UX Section 7.1 Authentication State Management)
 - **User Expectation:** "Sign in once, use across tabs" (multi-tab workflow support)
 - **Security Consideration:** Browser close = automatic sign out (government shared devices)
@@ -243,14 +257,14 @@ So that I can end my session and clear my authentication.
 ```javascript
 function signOut() {
   // Clear JWT token
-  sessionStorage.removeItem('isb-jwt');
+  sessionStorage.removeItem("isb-jwt")
 
   // Redirect to home page
-  window.location.href = '/';
+  window.location.href = "/"
 }
 
 // Attach to sign out button
-document.getElementById('sign-out-button').addEventListener('click', signOut);
+document.getElementById("sign-out-button").addEventListener("click", signOut)
 ```
 
 **And** I am redirected to home page (`/`)
@@ -261,6 +275,7 @@ document.getElementById('sign-out-button').addEventListener('click', signOut);
 **Prerequisites:** Story 5.4 (sessionStorage persistence validated)
 
 **Technical Notes:**
+
 - `sessionStorage.removeItem('isb-jwt')` clears token
 - Redirect to home prevents user confusion (clear state transition)
 - FR-TRY-7, FR-TRY-14 covered
@@ -268,6 +283,7 @@ document.getElementById('sign-out-button').addEventListener('click', signOut);
 - Production SSO may require SSO logout endpoint call (handle in future iteration)
 
 **Architecture Context:**
+
 - **ADR-024:** Authentication state management with event-driven notifications
   - Sign out triggers AuthState.notify() to all subscribers
   - Nav links, try buttons, /try page react to sign out event
@@ -279,6 +295,7 @@ document.getElementById('sign-out-button').addEventListener('click', signOut);
 - **Future:** ADR-017 Production cross-gov SSO logout endpoint (abstracted in auth-provider interface)
 
 **UX Design Context:**
+
 - **User Journey:** Authentication Sign Out (UX Section 5.1 Journey 1 - Sign Out Flow)
 - **Step 1:** User clicks "Sign out" link
 - **Step 2:** Clear JWT from sessionStorage
@@ -303,30 +320,31 @@ So that backend can authenticate requests and return user-specific data.
 
 ```javascript
 function callISBAPI(endpoint, options = {}) {
-  const token = sessionStorage.getItem('isb-jwt');
+  const token = sessionStorage.getItem("isb-jwt")
 
   const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers
-  };
+    "Content-Type": "application/json",
+    ...options.headers,
+  }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   return fetch(endpoint, {
     ...options,
-    headers
-  });
+    headers,
+  })
 }
 
 // Example usage
-callISBAPI('/api/leases?userEmail=user@example.com')
-  .then(response => response.json())
-  .then(data => console.log(data));
+callISBAPI("/api/leases?userEmail=user@example.com")
+  .then((response) => response.json())
+  .then((data) => console.log(data))
 ```
 
 **And** API helper function handles:
+
 - Adding Authorization header when token exists
 - NOT adding header when token missing (unauthenticated requests)
 - Preserving other headers passed in options
@@ -338,6 +356,7 @@ callISBAPI('/api/leases?userEmail=user@example.com')
 **Prerequisites:** Story 5.5 (Sign out functionality)
 
 **Technical Notes:**
+
 - Bearer token format per OAuth 2.0 standard
 - FR-TRY-6, FR-TRY-10 covered
 - Centralized helper function prevents duplication
@@ -345,6 +364,7 @@ callISBAPI('/api/leases?userEmail=user@example.com')
 - Story 5.8 will handle 401 responses (automatic re-authentication)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client with authentication interceptor
   - Single `api-client.ts` module handles all Innovation Sandbox API calls
   - Automatic Authorization header injection (DRY principle)
@@ -355,6 +375,7 @@ callISBAPI('/api/leases?userEmail=user@example.com')
 - **Security:** NFR-TRY-SEC-2 (HTTPS only), NFR-TRY-SEC-6 (secure token transmission)
 
 **UX Design Context:**
+
 - **Pattern:** All API calls use centralized client (prevents authorization bugs)
 - **Security:** Bearer token never logged to console or exposed in UI (UX Section 7.1)
 - **Error Handling:** 401 responses trigger automatic re-authentication (seamless UX)
@@ -387,29 +408,30 @@ So that I can verify token validity and retrieve user session data.
 ```javascript
 async function checkAuthStatus() {
   try {
-    const response = await callISBAPI('/api/auth/login/status');
+    const response = await callISBAPI("/api/auth/login/status")
 
     if (response.ok) {
-      const userData = await response.json();
+      const userData = await response.json()
       return {
         authenticated: true,
-        user: userData
-      };
+        user: userData,
+      }
     } else if (response.status === 401) {
       // Token invalid or expired
-      return { authenticated: false };
+      return { authenticated: false }
     } else {
-      console.error('Auth status check failed:', response.status);
-      return { authenticated: false };
+      console.error("Auth status check failed:", response.status)
+      return { authenticated: false }
     }
   } catch (error) {
-    console.error('Auth status check error:', error);
-    return { authenticated: false };
+    console.error("Auth status check error:", error)
+    return { authenticated: false }
   }
 }
 ```
 
 **And** function returns object with:
+
 - `authenticated: true/false`
 - `user: { email, displayName, userName, roles }` (if authenticated)
 
@@ -419,12 +441,14 @@ async function checkAuthStatus() {
 **Prerequisites:** Story 5.6 (Authorization header injection)
 
 **Technical Notes:**
+
 - FR-TRY-16, FR-TRY-17 covered
 - Use this to validate token before showing authenticated UI
 - Response data used for personalization (display name in UI)
 - 401 handling preparation for Story 5.8 (automatic re-authentication)
 
 **Architecture Context:**
+
 - **ADR-021:** API client `checkAuthStatus()` method
   - Returns typed response: `{ authenticated: boolean; user?: UserData }`
   - Used by AuthState to validate token on page load
@@ -433,6 +457,7 @@ async function checkAuthStatus() {
 - **API Endpoint:** `GET /api/auth/login/status` (Innovation Sandbox backend)
 
 **UX Design Context:**
+
 - **Usage:** Validate token before showing authenticated UI (prevents flash of wrong state)
 - **User Data:** Display user email/name in navigation (optional - UX Section 6.2 Component 5)
 - **Graceful Failure:** Network errors don't break page - show unauthenticated state
@@ -450,35 +475,35 @@ So that I can re-authenticate without manual intervention.
 **Given** I have expired or invalid JWT token in sessionStorage
 **When** I make API request that returns 401 Unauthorized
 **Then** client-side code:
+
 1. Clears sessionStorage (remove invalid token)
 2. Redirects to `/api/auth/login` (OAuth flow)
 
 ```javascript
 function callISBAPI(endpoint, options = {}) {
-  const token = sessionStorage.getItem('isb-jwt');
+  const token = sessionStorage.getItem("isb-jwt")
 
   const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers
-  };
+    "Content-Type": "application/json",
+    ...options.headers,
+  }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   return fetch(endpoint, {
     ...options,
-    headers
-  })
-  .then(response => {
+    headers,
+  }).then((response) => {
     // Handle 401 Unauthorized
     if (response.status === 401) {
-      sessionStorage.removeItem('isb-jwt');
-      window.location.href = '/api/auth/login';
-      throw new Error('Unauthorized - redirecting to login');
+      sessionStorage.removeItem("isb-jwt")
+      window.location.href = "/api/auth/login"
+      throw new Error("Unauthorized - redirecting to login")
     }
-    return response;
-  });
+    return response
+  })
 }
 ```
 
@@ -490,6 +515,7 @@ function callISBAPI(endpoint, options = {}) {
 **Prerequisites:** Story 5.7 (Auth status check API)
 
 **Technical Notes:**
+
 - FR-TRY-23, FR-TRY-24 covered
 - Global 401 handler in API helper function (DRY)
 - Clear invalid token prevents infinite loops
@@ -498,6 +524,7 @@ function callISBAPI(endpoint, options = {}) {
 - Session continuity: User doesn't lose context (same page reload)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized 401 handling in API client
   - All API calls automatically handle 401 responses
   - Clear invalid token → Redirect to OAuth → Return to original page
@@ -508,6 +535,7 @@ function callISBAPI(endpoint, options = {}) {
   - Seamless user experience (no stale UI)
 
 **UX Design Context:**
+
 - **User Journey:** Error Handling Flow #2 (UX Section 5.1 Journey 5)
 - **Automatic Re-authentication:** "Your session has expired. Signing you in again..."
 - **No User Action Required:** Seamless redirect → re-auth → return to original page
@@ -527,6 +555,7 @@ So that I know I need to sign in to access Try features.
 **Given** I am NOT authenticated (no JWT in sessionStorage)
 **When** I navigate to `/try` page
 **Then** I see empty state message:
+
 - Heading: "Sign in to view your try sessions"
 - Body text: "You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments."
 - "Sign in" button (GOV.UK Design System)
@@ -536,6 +565,7 @@ So that I know I need to sign in to access Try features.
 **And** I see my try sessions (not empty state)
 
 **And** empty state uses GOV.UK Design System components:
+
 - Heading: `govukHeading` (size: l)
 - Body text: `govukBody`
 - Button: `govukButton` (isStartButton: true)
@@ -543,6 +573,7 @@ So that I know I need to sign in to access Try features.
 **Prerequisites:** Story 5.8 (401 handling implemented)
 
 **Technical Notes:**
+
 - FR-TRY-26, FR-TRY-27 covered
 - Template logic: Check sessionStorage in client-side JavaScript or server-side (if rendering)
 - Empty state UX best practice: Clear call-to-action
@@ -550,6 +581,7 @@ So that I know I need to sign in to access Try features.
 - Return URL preservation: OAuth callback returns to `/try` page
 
 **Architecture Context:**
+
 - **Module:** `src/try/pages/try-page.ts` - /try page component
   - Checks AuthState on page load
   - Renders empty state if unauthenticated
@@ -559,6 +591,7 @@ So that I know I need to sign in to access Try features.
   - Automatically updates when user signs in (no manual reload needed)
 
 **UX Design Context:**
+
 - **User Journey:** Try Sessions Dashboard (UX Section 5.1 Journey 3 - Branch A: User NOT authenticated)
 - **Empty State:** "Sign in to view your try sessions" (UX Section 5.1 Journey 3, Step 1)
 - **CTA Button:** "Sign in" button (GOV.UK start button, green)
@@ -580,21 +613,25 @@ So that authentication components meet WCAG 2.2 AA standards.
 **Then** tests validate:
 
 **Test 1: Keyboard Navigation**
+
 - Sign in/out buttons focusable via Tab key
 - Enter key activates buttons
 - Focus indicators visible (WCAG 2.2 AA contrast ratio)
 
 **Test 2: Screen Reader Accessibility**
+
 - Buttons have accessible labels
 - Empty state heading announced correctly
 - Button purpose clear from label alone
 
 **Test 3: Color Contrast**
+
 - Button text meets WCAG 2.2 AA contrast ratio (4.5:1)
 - Focus indicators meet contrast requirements
 - Empty state text readable
 
 **Test 4: ARIA Compliance**
+
 - Buttons have appropriate roles
 - No ARIA violations detected
 
@@ -605,6 +642,7 @@ So that authentication components meet WCAG 2.2 AA standards.
 **Prerequisites:** Story 5.9 (Empty state UI complete)
 
 **Technical Notes:**
+
 - Automated testing per Pre-mortem preventive measure #3 (user acceptance)
 - Use axe-core for automated WCAG validation
 - CI integration prevents accessibility regressions
@@ -613,6 +651,7 @@ So that authentication components meet WCAG 2.2 AA standards.
 - Epic 8 will provide comprehensive accessibility audit
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (enforced in Epic 8, started in Epic 5)
   - Cannot merge PR without passing Pa11y tests
   - Prevents accessibility regressions from Day 1
@@ -622,6 +661,7 @@ So that authentication components meet WCAG 2.2 AA standards.
 - **Testing:** `test/accessibility/auth-a11y.test.ts` - Auth component accessibility tests
 
 **UX Design Context:**
+
 - **WCAG 2.2 Compliance:** Section 8.1 - Target AA minimum, AAA where feasible
 - **Keyboard Navigation:** All auth components keyboard accessible (UX Section 8.3)
 - **Screen Reader:** ARIA labels, focus management, accessible names (UX Principle 6)

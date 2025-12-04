@@ -1,44 +1,39 @@
-import * as cdk from 'aws-cdk-lib';
-import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
-import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
-import * as events from 'aws-cdk-lib/aws-events';
-import * as targets from 'aws-cdk-lib/aws-events-targets';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
-import * as logs from 'aws-cdk-lib/aws-logs';
-import * as sns from 'aws-cdk-lib/aws-sns';
-import * as sqs from 'aws-cdk-lib/aws-sqs';
-import { Construct } from 'constructs';
-import * as path from 'path';
-import {
-  getISBConfig,
-  getISBEventBusArn,
-  ISB_EVENT_TYPES,
-  NOTIFY_TEMPLATE_IDS,
-} from './config';
+import * as cdk from "aws-cdk-lib"
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch"
+import * as cloudwatchActions from "aws-cdk-lib/aws-cloudwatch-actions"
+import * as events from "aws-cdk-lib/aws-events"
+import * as targets from "aws-cdk-lib/aws-events-targets"
+import * as iam from "aws-cdk-lib/aws-iam"
+import * as lambda from "aws-cdk-lib/aws-lambda"
+import * as lambdaNodejs from "aws-cdk-lib/aws-lambda-nodejs"
+import * as logs from "aws-cdk-lib/aws-logs"
+import * as sns from "aws-cdk-lib/aws-sns"
+import * as sqs from "aws-cdk-lib/aws-sqs"
+import { Construct } from "constructs"
+import * as path from "path"
+import { getISBConfig, getISBEventBusArn, ISB_EVENT_TYPES, NOTIFY_TEMPLATE_IDS } from "./config"
 
 // Configuration constants
-const LAMBDA_TIMEOUT_SECONDS = 30;
-const LAMBDA_MEMORY_MB = 512; // TC-AC-2: Increased from 256MB for Slack webhook integration
-const DLQ_RETENTION_DAYS = 14;
-const DLQ_VISIBILITY_TIMEOUT_SECONDS = 300;
-const SECRETS_PATH = '/ndx/notifications/credentials';
-const SLACK_WEBHOOK_SECRET_PATH = '/ndx/notifications/slack-webhook'; // IC-AC-1: Separate Slack webhook secret
+const LAMBDA_TIMEOUT_SECONDS = 30
+const LAMBDA_MEMORY_MB = 512 // TC-AC-2: Increased from 256MB for Slack webhook integration
+const DLQ_RETENTION_DAYS = 14
+const DLQ_VISIBILITY_TIMEOUT_SECONDS = 300
+const SECRETS_PATH = "/ndx/notifications/credentials"
+const SLACK_WEBHOOK_SECRET_PATH = "/ndx/notifications/slack-webhook" // IC-AC-1: Separate Slack webhook secret
 
 // Alarm thresholds (n4-6)
-const ALARM_DLQ_RATE_THRESHOLD = 50; // Messages per 5 minutes
-const ALARM_LAMBDA_ERRORS_THRESHOLD = 5; // Errors per 5 minutes
-const ALARM_ERROR_RATE_THRESHOLD = 10; // Percentage
-const ALARM_SECRET_AGE_DAYS = 335; // 30 days before 1-year rotation
+const ALARM_DLQ_RATE_THRESHOLD = 50 // Messages per 5 minutes
+const ALARM_LAMBDA_ERRORS_THRESHOLD = 5 // Errors per 5 minutes
+const ALARM_ERROR_RATE_THRESHOLD = 10 // Percentage
+const ALARM_SECRET_AGE_DAYS = 335 // 30 days before 1-year rotation
 
 // Deliverability thresholds (n5-4)
-const ALARM_COMPLAINT_RATE_THRESHOLD = 0.1; // Percentage (AC-4.21)
-const ALARM_BOUNCE_RATE_THRESHOLD = 1; // Percentage (AC-4.22)
-const ALARM_UNSUBSCRIBE_RATE_THRESHOLD = 5; // Percentage per month (AC-4.24)
+const ALARM_COMPLAINT_RATE_THRESHOLD = 0.1 // Percentage (AC-4.21)
+const ALARM_BOUNCE_RATE_THRESHOLD = 1 // Percentage (AC-4.22)
+const ALARM_UNSUBSCRIBE_RATE_THRESHOLD = 5 // Percentage per month (AC-4.24)
 
 // Runbook URLs for ops remediation (AC-6.14)
-const RUNBOOK_BASE_URL = 'https://github.com/cddo/ndx/wiki/runbooks';
+const RUNBOOK_BASE_URL = "https://github.com/cddo/ndx/wiki/runbooks"
 const RUNBOOK_URLS = {
   dlqDepth: `${RUNBOOK_BASE_URL}/dlq-depth-alarm`,
   dlqRate: `${RUNBOOK_BASE_URL}/dlq-rate-alarm`,
@@ -52,7 +47,7 @@ const RUNBOOK_URLS = {
   complaintRate: `${RUNBOOK_BASE_URL}/complaint-rate-alarm`,
   bounceRate: `${RUNBOOK_BASE_URL}/bounce-rate-alarm`,
   unsubscribeRate: `${RUNBOOK_BASE_URL}/unsubscribe-rate-alarm`,
-};
+}
 
 /**
  * NDX Notification Stack - Infrastructure for notification system
@@ -76,30 +71,30 @@ const RUNBOOK_URLS = {
  */
 export class NdxNotificationStack extends cdk.Stack {
   /** The notification handler Lambda function */
-  public readonly notificationHandler: lambdaNodejs.NodejsFunction;
+  public readonly notificationHandler: lambdaNodejs.NodejsFunction
 
   /** The Dead Letter Queue for failed notification events */
-  public readonly deadLetterQueue: sqs.Queue;
+  public readonly deadLetterQueue: sqs.Queue
 
   /** SNS topic for alarm notifications (n4-6) */
-  public readonly alarmTopic: sns.Topic;
+  public readonly alarmTopic: sns.Topic
 
   /** CloudWatch dashboard for unified health visibility (n4-6) */
-  public readonly dashboard: cloudwatch.Dashboard;
+  public readonly dashboard: cloudwatch.Dashboard
 
   /** DLQ Digest Lambda for daily summaries (n6-7) */
-  public readonly dlqDigestHandler: lambdaNodejs.NodejsFunction;
+  public readonly dlqDigestHandler: lambdaNodejs.NodejsFunction
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+    super(scope, id, props)
 
     // Read environment context for multi-environment support
-    const env = (this.node.tryGetContext('env') as string | undefined) || 'prod';
+    const env = (this.node.tryGetContext("env") as string | undefined) || "prod"
 
     // Get ISB configuration for the current environment (moved earlier for use in Lambda env)
-    const isbConfig = getISBConfig(env);
-    const isbEventBusArn = getISBEventBusArn(isbConfig);
-    const { dynamoDbTables } = isbConfig;
+    const isbConfig = getISBConfig(env)
+    const isbEventBusArn = getISBEventBusArn(isbConfig)
+    const { dynamoDbTables } = isbConfig
 
     // =========================================================================
     // Dead Letter Queue (n4-4)
@@ -108,73 +103,69 @@ export class NdxNotificationStack extends cdk.Stack {
     // 14-day retention gives ops team ample time to investigate issues.
     // @see docs/notification-architecture.md#Error-Handling
 
-    this.deadLetterQueue = new sqs.Queue(this, 'NotificationDLQ', {
-      queueName: 'ndx-notification-dlq',
+    this.deadLetterQueue = new sqs.Queue(this, "NotificationDLQ", {
+      queueName: "ndx-notification-dlq",
       retentionPeriod: cdk.Duration.days(DLQ_RETENTION_DAYS),
       // SQS_MANAGED encryption is sufficient for notification events
       encryption: sqs.QueueEncryption.SQS_MANAGED,
       // Visibility timeout allows time for manual replay processing
       visibilityTimeout: cdk.Duration.seconds(DLQ_VISIBILITY_TIMEOUT_SECONDS),
-    });
+    })
 
     // Tag the DLQ for governance
-    cdk.Tags.of(this.deadLetterQueue).add('project', 'ndx');
-    cdk.Tags.of(this.deadLetterQueue).add('environment', env);
-    cdk.Tags.of(this.deadLetterQueue).add('managedby', 'cdk');
-    cdk.Tags.of(this.deadLetterQueue).add('component', 'notifications');
+    cdk.Tags.of(this.deadLetterQueue).add("project", "ndx")
+    cdk.Tags.of(this.deadLetterQueue).add("environment", env)
+    cdk.Tags.of(this.deadLetterQueue).add("managedby", "cdk")
+    cdk.Tags.of(this.deadLetterQueue).add("component", "notifications")
 
     // Lambda function for notification processing
     // Uses NodejsFunction for automatic TypeScript bundling with esbuild
-    this.notificationHandler = new lambdaNodejs.NodejsFunction(
-      this,
-      'NotificationHandler',
-      {
-        runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler',
-        entry: path.join(__dirname, 'lambda/notification/handler.ts'),
-        timeout: cdk.Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
-        memorySize: LAMBDA_MEMORY_MB,
-        description: 'NDX Notification Handler - processes ISB events and sends notifications',
-        functionName: 'ndx-notification-handler',
-        // Reserved concurrency = 10 for blast radius limiting (AC-3.6)
-        // Calculation from Devil's Advocate: Notify rate limit (3000/min) ÷ Lambda duration (500ms) × safety factor (0.4) = 10
-        reservedConcurrentExecutions: 10,
-        // AC-1.30: 90-day log retention for compliance audit trail
-        logRetention: logs.RetentionDays.THREE_MONTHS,
-        // SM-AC-8: Enable X-Ray tracing for distributed tracing
-        tracing: lambda.Tracing.ACTIVE,
-        bundling: {
-          minify: true,
-          sourceMap: true,
-          target: 'node20',
-          // External modules that should not be bundled
-          externalModules: [],
-        },
-        environment: {
-          NODE_OPTIONS: '--enable-source-maps',
-          ENVIRONMENT: env,
-          LOG_LEVEL: env === 'prod' ? 'INFO' : 'DEBUG',
-          // Secrets Manager path for API credentials (n4-5)
-          SECRETS_PATH: SECRETS_PATH,
-          // GOV.UK Notify template IDs (n5-4, n5-5)
-          NOTIFY_TEMPLATE_LEASE_REQUESTED: NOTIFY_TEMPLATE_IDS.LEASE_REQUESTED,
-          NOTIFY_TEMPLATE_LEASE_APPROVED: NOTIFY_TEMPLATE_IDS.LEASE_APPROVED,
-          NOTIFY_TEMPLATE_LEASE_DENIED: NOTIFY_TEMPLATE_IDS.LEASE_DENIED,
-          NOTIFY_TEMPLATE_LEASE_TERMINATED: NOTIFY_TEMPLATE_IDS.LEASE_TERMINATED,
-          NOTIFY_TEMPLATE_BUDGET_THRESHOLD: NOTIFY_TEMPLATE_IDS.BUDGET_THRESHOLD,
-          NOTIFY_TEMPLATE_DURATION_THRESHOLD: NOTIFY_TEMPLATE_IDS.DURATION_THRESHOLD,
-          NOTIFY_TEMPLATE_FREEZING_THRESHOLD: NOTIFY_TEMPLATE_IDS.FREEZING_THRESHOLD,
-          NOTIFY_TEMPLATE_BUDGET_EXCEEDED: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
-          NOTIFY_TEMPLATE_LEASE_EXPIRED: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
-          NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
-          // DynamoDB table names for enrichment (n7-1)
-          // AC-3: Table names from config, not hardcoded
-          LEASE_TABLE_NAME: dynamoDbTables.leaseTable,
-          SANDBOX_ACCOUNT_TABLE_NAME: dynamoDbTables.sandboxAccountTable,
-          LEASE_TEMPLATE_TABLE_NAME: dynamoDbTables.leaseTemplateTable,
-        },
-      }
-    );
+    this.notificationHandler = new lambdaNodejs.NodejsFunction(this, "NotificationHandler", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "handler",
+      entry: path.join(__dirname, "lambda/notification/handler.ts"),
+      timeout: cdk.Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
+      memorySize: LAMBDA_MEMORY_MB,
+      description: "NDX Notification Handler - processes ISB events and sends notifications",
+      functionName: "ndx-notification-handler",
+      // Reserved concurrency = 10 for blast radius limiting (AC-3.6)
+      // Calculation from Devil's Advocate: Notify rate limit (3000/min) ÷ Lambda duration (500ms) × safety factor (0.4) = 10
+      reservedConcurrentExecutions: 10,
+      // AC-1.30: 90-day log retention for compliance audit trail
+      logRetention: logs.RetentionDays.THREE_MONTHS,
+      // SM-AC-8: Enable X-Ray tracing for distributed tracing
+      tracing: lambda.Tracing.ACTIVE,
+      bundling: {
+        minify: true,
+        sourceMap: true,
+        target: "node20",
+        // External modules that should not be bundled
+        externalModules: [],
+      },
+      environment: {
+        NODE_OPTIONS: "--enable-source-maps",
+        ENVIRONMENT: env,
+        LOG_LEVEL: env === "prod" ? "INFO" : "DEBUG",
+        // Secrets Manager path for API credentials (n4-5)
+        SECRETS_PATH: SECRETS_PATH,
+        // GOV.UK Notify template IDs (n5-4, n5-5)
+        NOTIFY_TEMPLATE_LEASE_REQUESTED: NOTIFY_TEMPLATE_IDS.LEASE_REQUESTED,
+        NOTIFY_TEMPLATE_LEASE_APPROVED: NOTIFY_TEMPLATE_IDS.LEASE_APPROVED,
+        NOTIFY_TEMPLATE_LEASE_DENIED: NOTIFY_TEMPLATE_IDS.LEASE_DENIED,
+        NOTIFY_TEMPLATE_LEASE_TERMINATED: NOTIFY_TEMPLATE_IDS.LEASE_TERMINATED,
+        NOTIFY_TEMPLATE_BUDGET_THRESHOLD: NOTIFY_TEMPLATE_IDS.BUDGET_THRESHOLD,
+        NOTIFY_TEMPLATE_DURATION_THRESHOLD: NOTIFY_TEMPLATE_IDS.DURATION_THRESHOLD,
+        NOTIFY_TEMPLATE_FREEZING_THRESHOLD: NOTIFY_TEMPLATE_IDS.FREEZING_THRESHOLD,
+        NOTIFY_TEMPLATE_BUDGET_EXCEEDED: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
+        NOTIFY_TEMPLATE_LEASE_EXPIRED: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
+        NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
+        // DynamoDB table names for enrichment (n7-1)
+        // AC-3: Table names from config, not hardcoded
+        LEASE_TABLE_NAME: dynamoDbTables.leaseTable,
+        SANDBOX_ACCOUNT_TABLE_NAME: dynamoDbTables.sandboxAccountTable,
+        LEASE_TEMPLATE_TABLE_NAME: dynamoDbTables.leaseTemplateTable,
+      },
+    })
 
     // =========================================================================
     // Secrets Manager IAM Permissions (n4-5, IC-AC-1)
@@ -186,15 +177,15 @@ export class NdxNotificationStack extends cdk.Stack {
     this.notificationHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['secretsmanager:GetSecretValue'],
+        actions: ["secretsmanager:GetSecretValue"],
         // Restrict to specific secret ARN patterns for security
         // IC-AC-1: Added separate Slack webhook secret path
         resources: [
           `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SECRETS_PATH}*`,
           `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SLACK_WEBHOOK_SECRET_PATH}*`,
         ],
-      })
-    );
+      }),
+    )
 
     // =========================================================================
     // EventBridge Subscription to ISB Event Bus
@@ -213,33 +204,29 @@ export class NdxNotificationStack extends cdk.Stack {
       `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.leaseTable}`,
       `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.leaseTemplateTable}`,
       `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.sandboxAccountTable}`,
-    ];
+    ]
 
     this.notificationHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+        actions: ["dynamodb:GetItem", "dynamodb:Query"],
         resources: [
           ...tableArns,
           // Include index ARNs for querying by secondary indexes
           ...tableArns.map((arn) => `${arn}/index/*`),
         ],
-      })
-    );
+      }),
+    )
 
     // Reference the ISB EventBridge bus (cross-account)
     // Note: ISB team must add resource policy allowing NDX account to subscribe
-    const isbEventBus = events.EventBus.fromEventBusArn(
-      this,
-      'ISBEventBus',
-      isbEventBusArn
-    );
+    const isbEventBus = events.EventBus.fromEventBusArn(this, "ISBEventBus", isbEventBusArn)
 
     // EventBridge rule to filter and route ISB events to notification Lambda
     // Rule name: ndx-notification-rule (per AC-2.6)
-    const notificationRule = new events.Rule(this, 'NotificationRule', {
-      ruleName: 'ndx-notification-rule',
-      description: 'Routes ISB notification events to NDX notification handler',
+    const notificationRule = new events.Rule(this, "NotificationRule", {
+      ruleName: "ndx-notification-rule",
+      description: "Routes ISB notification events to NDX notification handler",
       eventBus: isbEventBus,
       eventPattern: {
         // Account filter: Security control to prevent cross-account event injection
@@ -260,25 +247,25 @@ export class NdxNotificationStack extends cdk.Stack {
           maxEventAge: cdk.Duration.hours(1),
         }),
       ],
-    });
+    })
 
     // Tag the EventBridge rule for governance
-    cdk.Tags.of(notificationRule).add('project', 'ndx');
-    cdk.Tags.of(notificationRule).add('environment', env);
-    cdk.Tags.of(notificationRule).add('managedby', 'cdk');
-    cdk.Tags.of(notificationRule).add('component', 'notifications');
+    cdk.Tags.of(notificationRule).add("project", "ndx")
+    cdk.Tags.of(notificationRule).add("environment", env)
+    cdk.Tags.of(notificationRule).add("managedby", "cdk")
+    cdk.Tags.of(notificationRule).add("component", "notifications")
 
     // Governance: Resource tags for organization and cost tracking
     // All tags lowercase per architecture standards
-    cdk.Tags.of(this.notificationHandler).add('project', 'ndx');
-    cdk.Tags.of(this.notificationHandler).add('environment', env);
-    cdk.Tags.of(this.notificationHandler).add('managedby', 'cdk');
-    cdk.Tags.of(this.notificationHandler).add('component', 'notifications');
+    cdk.Tags.of(this.notificationHandler).add("project", "ndx")
+    cdk.Tags.of(this.notificationHandler).add("environment", env)
+    cdk.Tags.of(this.notificationHandler).add("managedby", "cdk")
+    cdk.Tags.of(this.notificationHandler).add("component", "notifications")
 
     // Stack-level tags
-    cdk.Tags.of(this).add('project', 'ndx');
-    cdk.Tags.of(this).add('environment', env);
-    cdk.Tags.of(this).add('managedby', 'cdk');
+    cdk.Tags.of(this).add("project", "ndx")
+    cdk.Tags.of(this).add("environment", env)
+    cdk.Tags.of(this).add("managedby", "cdk")
 
     // =========================================================================
     // CloudWatch Monitoring and Alarms (n4-6)
@@ -289,91 +276,91 @@ export class NdxNotificationStack extends cdk.Stack {
 
     // SNS Topic for alarm notifications (AC-6.9)
     // AWS Chatbot subscribes to this topic for Slack delivery
-    this.alarmTopic = new sns.Topic(this, 'NotificationAlarmTopic', {
-      topicName: 'ndx-notification-alarms',
-      displayName: 'NDX Notification System Alarms',
-    });
+    this.alarmTopic = new sns.Topic(this, "NotificationAlarmTopic", {
+      topicName: "ndx-notification-alarms",
+      displayName: "NDX Notification System Alarms",
+    })
 
-    cdk.Tags.of(this.alarmTopic).add('project', 'ndx');
-    cdk.Tags.of(this.alarmTopic).add('environment', env);
-    cdk.Tags.of(this.alarmTopic).add('managedby', 'cdk');
-    cdk.Tags.of(this.alarmTopic).add('component', 'notifications');
+    cdk.Tags.of(this.alarmTopic).add("project", "ndx")
+    cdk.Tags.of(this.alarmTopic).add("environment", env)
+    cdk.Tags.of(this.alarmTopic).add("managedby", "cdk")
+    cdk.Tags.of(this.alarmTopic).add("component", "notifications")
 
     // Create SNS action for all alarms
-    const alarmAction = new cloudwatchActions.SnsAction(this.alarmTopic);
+    const alarmAction = new cloudwatchActions.SnsAction(this.alarmTopic)
 
     // -------------------------------------------------------------------------
     // Alarm 1: DLQ Depth > 0 (AC-6.1)
     // -------------------------------------------------------------------------
     // Detects current failures - any message in DLQ needs investigation
-    const dlqDepthAlarm = new cloudwatch.Alarm(this, 'DLQDepthAlarm', {
-      alarmName: 'ndx-notification-dlq-depth',
+    const dlqDepthAlarm = new cloudwatch.Alarm(this, "DLQDepthAlarm", {
+      alarmName: "ndx-notification-dlq-depth",
       alarmDescription: `DLQ has messages requiring investigation. Runbook: ${RUNBOOK_URLS.dlqDepth}`,
       metric: this.deadLetterQueue.metricApproximateNumberOfMessagesVisible({
         period: cdk.Duration.minutes(5),
-        statistic: 'Maximum',
+        statistic: "Maximum",
       }),
       threshold: 0,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    dlqDepthAlarm.addAlarmAction(alarmAction);
+    })
+    dlqDepthAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 2: Lambda Errors > 5/5min (AC-6.2)
     // -------------------------------------------------------------------------
     // Detects code bugs or transient issues
-    const lambdaErrorsAlarm = new cloudwatch.Alarm(this, 'LambdaErrorsAlarm', {
-      alarmName: 'ndx-notification-errors',
+    const lambdaErrorsAlarm = new cloudwatch.Alarm(this, "LambdaErrorsAlarm", {
+      alarmName: "ndx-notification-errors",
       alarmDescription: `Lambda errors exceeded threshold. Runbook: ${RUNBOOK_URLS.lambdaErrors}`,
       metric: this.notificationHandler.metricErrors({
         period: cdk.Duration.minutes(5),
-        statistic: 'Sum',
+        statistic: "Sum",
       }),
       threshold: ALARM_LAMBDA_ERRORS_THRESHOLD,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    lambdaErrorsAlarm.addAlarmAction(alarmAction);
+    })
+    lambdaErrorsAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 3: Zero Invocations 24h - Canary (AC-6.3)
     // -------------------------------------------------------------------------
     // Detects "silent death" - Lambda not receiving events from ISB
     // Pre-mortem: This catches scenario where EventBridge subscription fails silently
-    const canaryAlarm = new cloudwatch.Alarm(this, 'CanaryAlarm', {
-      alarmName: 'ndx-notification-canary',
+    const canaryAlarm = new cloudwatch.Alarm(this, "CanaryAlarm", {
+      alarmName: "ndx-notification-canary",
       alarmDescription: `No Lambda invocations in 24 hours - possible silent death. Runbook: ${RUNBOOK_URLS.canary}`,
       metric: this.notificationHandler.metricInvocations({
         period: cdk.Duration.hours(24),
-        statistic: 'Sum',
+        statistic: "Sum",
       }),
       threshold: 1,
       comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.BREACHING,
-    });
-    canaryAlarm.addAlarmAction(alarmAction);
+    })
+    canaryAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 4: DLQ Rate > 50/5min (AC-6.4)
     // -------------------------------------------------------------------------
     // Detects flooding attacks or bulk failure scenarios (Red Team)
-    const dlqRateAlarm = new cloudwatch.Alarm(this, 'DLQRateAlarm', {
-      alarmName: 'ndx-notification-dlq-rate',
+    const dlqRateAlarm = new cloudwatch.Alarm(this, "DLQRateAlarm", {
+      alarmName: "ndx-notification-dlq-rate",
       alarmDescription: `DLQ rate exceeds threshold - possible flooding. Runbook: ${RUNBOOK_URLS.dlqRate}`,
       metric: this.deadLetterQueue.metricNumberOfMessagesSent({
         period: cdk.Duration.minutes(5),
-        statistic: 'Sum',
+        statistic: "Sum",
       }),
       threshold: ALARM_DLQ_RATE_THRESHOLD,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    dlqRateAlarm.addAlarmAction(alarmAction);
+    })
+    dlqRateAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 5: Auth Failures - CRITICAL (AC-6.5)
@@ -381,39 +368,39 @@ export class NdxNotificationStack extends cdk.Stack {
     // Pre-mortem: Auth failures (401/403) indicate credential issues
     // Separate from code bugs - requires different response (check secrets)
     // Uses custom metric published by Lambda handler
-    const authFailureAlarm = new cloudwatch.Alarm(this, 'AuthFailureAlarm', {
-      alarmName: 'ndx-notification-auth-failure',
+    const authFailureAlarm = new cloudwatch.Alarm(this, "AuthFailureAlarm", {
+      alarmName: "ndx-notification-auth-failure",
       alarmDescription: `CRITICAL: Authentication failure detected - check secrets. Runbook: ${RUNBOOK_URLS.authFailure}`,
       metric: new cloudwatch.Metric({
-        namespace: 'NDX/Notifications',
-        metricName: 'AuthFailure',
+        namespace: "NDX/Notifications",
+        metricName: "AuthFailure",
         period: cdk.Duration.minutes(1),
-        statistic: 'Sum',
+        statistic: "Sum",
       }),
       threshold: 0,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    authFailureAlarm.addAlarmAction(alarmAction);
+    })
+    authFailureAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 6: Error Rate > 10% (AC-6.6)
     // -------------------------------------------------------------------------
     // Risk Matrix: Detects slow ramp of errors (percentage-based)
-    const errorRateAlarm = new cloudwatch.Alarm(this, 'ErrorRateAlarm', {
-      alarmName: 'ndx-notification-error-rate',
+    const errorRateAlarm = new cloudwatch.Alarm(this, "ErrorRateAlarm", {
+      alarmName: "ndx-notification-error-rate",
       alarmDescription: `Error rate exceeds ${ALARM_ERROR_RATE_THRESHOLD}%. Runbook: ${RUNBOOK_URLS.errorRate}`,
       metric: new cloudwatch.MathExpression({
-        expression: '(errors / invocations) * 100',
+        expression: "(errors / invocations) * 100",
         usingMetrics: {
           errors: this.notificationHandler.metricErrors({
             period: cdk.Duration.minutes(5),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
           invocations: this.notificationHandler.metricInvocations({
             period: cdk.Duration.minutes(5),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
         },
         period: cdk.Duration.minutes(5),
@@ -422,48 +409,48 @@ export class NdxNotificationStack extends cdk.Stack {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    errorRateAlarm.addAlarmAction(alarmAction);
+    })
+    errorRateAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 7: DLQ Stale > 24h (AC-6.7)
     // -------------------------------------------------------------------------
     // Risk Matrix: Messages stuck in DLQ without processing
-    const dlqStaleAlarm = new cloudwatch.Alarm(this, 'DLQStaleAlarm', {
-      alarmName: 'ndx-notification-dlq-stale',
+    const dlqStaleAlarm = new cloudwatch.Alarm(this, "DLQStaleAlarm", {
+      alarmName: "ndx-notification-dlq-stale",
       alarmDescription: `DLQ has unprocessed messages for 24+ hours. Runbook: ${RUNBOOK_URLS.dlqStale}`,
       metric: this.deadLetterQueue.metricApproximateAgeOfOldestMessage({
         period: cdk.Duration.hours(1),
-        statistic: 'Maximum',
+        statistic: "Maximum",
       }),
       // 24 hours in seconds
       threshold: 86400,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    dlqStaleAlarm.addAlarmAction(alarmAction);
+    })
+    dlqStaleAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 8: Secret Age > 335 days (AC-6.8)
     // -------------------------------------------------------------------------
     // Risk Matrix: Proactive warning 30 days before 1-year rotation
     // Note: This uses Secrets Manager metrics published by AWS
-    const secretsExpiryAlarm = new cloudwatch.Alarm(this, 'SecretsExpiryAlarm', {
-      alarmName: 'ndx-notification-secrets-expiry',
+    const secretsExpiryAlarm = new cloudwatch.Alarm(this, "SecretsExpiryAlarm", {
+      alarmName: "ndx-notification-secrets-expiry",
       alarmDescription: `Secrets approaching expiry (${ALARM_SECRET_AGE_DAYS}+ days old). Runbook: ${RUNBOOK_URLS.secretsExpiry}`,
       metric: new cloudwatch.Metric({
-        namespace: 'NDX/Notifications',
-        metricName: 'SecretAgeDays',
+        namespace: "NDX/Notifications",
+        metricName: "SecretAgeDays",
         period: cdk.Duration.hours(24),
-        statistic: 'Maximum',
+        statistic: "Maximum",
       }),
       threshold: ALARM_SECRET_AGE_DAYS,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    secretsExpiryAlarm.addAlarmAction(alarmAction);
+    })
+    secretsExpiryAlarm.addAlarmAction(alarmAction)
 
     // =========================================================================
     // Email Deliverability Alarms (n5-4)
@@ -475,23 +462,23 @@ export class NdxNotificationStack extends cdk.Stack {
     // Alarm 9: Complaint Rate > 0.1% (AC-4.21)
     // -------------------------------------------------------------------------
     // High complaint rates trigger ISP penalties - contact Notify support if exceeded
-    const complaintRateAlarm = new cloudwatch.Alarm(this, 'ComplaintRateAlarm', {
-      alarmName: 'ndx-notification-complaint-rate',
+    const complaintRateAlarm = new cloudwatch.Alarm(this, "ComplaintRateAlarm", {
+      alarmName: "ndx-notification-complaint-rate",
       alarmDescription: `Email complaint rate > ${ALARM_COMPLAINT_RATE_THRESHOLD}% - contact GOV.UK Notify support. Runbook: ${RUNBOOK_URLS.complaintRate}`,
       metric: new cloudwatch.MathExpression({
-        expression: '(complaints / sent) * 100',
+        expression: "(complaints / sent) * 100",
         usingMetrics: {
           complaints: new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'EmailComplaints',
+            namespace: "NDX/Notifications",
+            metricName: "EmailComplaints",
             period: cdk.Duration.hours(24),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
           sent: new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'EmailsSent',
+            namespace: "NDX/Notifications",
+            metricName: "EmailsSent",
             period: cdk.Duration.hours(24),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
         },
         period: cdk.Duration.hours(24),
@@ -500,30 +487,30 @@ export class NdxNotificationStack extends cdk.Stack {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    complaintRateAlarm.addAlarmAction(alarmAction);
+    })
+    complaintRateAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 10: Bounce Rate > 1% (AC-4.22)
     // -------------------------------------------------------------------------
     // High bounce rates indicate invalid email addresses - investigate list hygiene
-    const bounceRateAlarm = new cloudwatch.Alarm(this, 'BounceRateAlarm', {
-      alarmName: 'ndx-notification-bounce-rate',
+    const bounceRateAlarm = new cloudwatch.Alarm(this, "BounceRateAlarm", {
+      alarmName: "ndx-notification-bounce-rate",
       alarmDescription: `Email bounce rate > ${ALARM_BOUNCE_RATE_THRESHOLD}% - investigate invalid email lists. Runbook: ${RUNBOOK_URLS.bounceRate}`,
       metric: new cloudwatch.MathExpression({
-        expression: '(bounces / sent) * 100',
+        expression: "(bounces / sent) * 100",
         usingMetrics: {
           bounces: new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'EmailBounces',
+            namespace: "NDX/Notifications",
+            metricName: "EmailBounces",
             period: cdk.Duration.hours(24),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
           sent: new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'EmailsSent',
+            namespace: "NDX/Notifications",
+            metricName: "EmailsSent",
             period: cdk.Duration.hours(24),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
         },
         period: cdk.Duration.hours(24),
@@ -532,8 +519,8 @@ export class NdxNotificationStack extends cdk.Stack {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    bounceRateAlarm.addAlarmAction(alarmAction);
+    })
+    bounceRateAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 11: Unsubscribe Rate > 5% (AC-4.24)
@@ -541,23 +528,23 @@ export class NdxNotificationStack extends cdk.Stack {
     // High opt-out rates may indicate email content issues - review email templates
     // Note: CloudWatch limits evaluation to max 7 days for periods >= 1 hour
     // We use 7-day rolling window as proxy for monthly trends
-    const unsubscribeRateAlarm = new cloudwatch.Alarm(this, 'UnsubscribeRateAlarm', {
-      alarmName: 'ndx-notification-unsubscribe-rate',
+    const unsubscribeRateAlarm = new cloudwatch.Alarm(this, "UnsubscribeRateAlarm", {
+      alarmName: "ndx-notification-unsubscribe-rate",
       alarmDescription: `Email unsubscribe rate > ${ALARM_UNSUBSCRIBE_RATE_THRESHOLD}% (7-day rolling) - review email templates. Runbook: ${RUNBOOK_URLS.unsubscribeRate}`,
       metric: new cloudwatch.MathExpression({
-        expression: '(unsubscribes / sent) * 100',
+        expression: "(unsubscribes / sent) * 100",
         usingMetrics: {
           unsubscribes: new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'EmailUnsubscribes',
+            namespace: "NDX/Notifications",
+            metricName: "EmailUnsubscribes",
             period: cdk.Duration.days(7),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
           sent: new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'EmailsSent',
+            namespace: "NDX/Notifications",
+            metricName: "EmailsSent",
             period: cdk.Duration.days(7),
-            statistic: 'Sum',
+            statistic: "Sum",
           }),
         },
         period: cdk.Duration.days(7),
@@ -566,31 +553,31 @@ export class NdxNotificationStack extends cdk.Stack {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    unsubscribeRateAlarm.addAlarmAction(alarmAction);
+    })
+    unsubscribeRateAlarm.addAlarmAction(alarmAction)
 
     // -------------------------------------------------------------------------
     // Alarm 12: Slack Message Failures (AC-NEW-1, AC-NEW-2)
     // -------------------------------------------------------------------------
     // Detects Slack webhook integration issues - backup alerting via SNS
-    const slackFailureAlarm = new cloudwatch.Alarm(this, 'SlackFailureAlarm', {
-      alarmName: 'ndx-notification-slack-failure',
+    const slackFailureAlarm = new cloudwatch.Alarm(this, "SlackFailureAlarm", {
+      alarmName: "ndx-notification-slack-failure",
       alarmDescription: `Slack message failures detected - check webhook configuration and SNS backup. Runbook: ${RUNBOOK_BASE_URL}/slack-failure-alarm`,
       metric: new cloudwatch.Metric({
-        namespace: 'NDX/Notifications',
-        metricName: 'SlackMessageFailed',
+        namespace: "NDX/Notifications",
+        metricName: "SlackMessageFailed",
         period: cdk.Duration.minutes(5),
-        statistic: 'Sum',
+        statistic: "Sum",
       }),
       threshold: 0,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    });
-    slackFailureAlarm.addAlarmAction(alarmAction);
+    })
+    slackFailureAlarm.addAlarmAction(alarmAction)
 
     // Tag all alarms for governance
-    [
+    ;[
       dlqDepthAlarm,
       lambdaErrorsAlarm,
       canaryAlarm,
@@ -604,29 +591,29 @@ export class NdxNotificationStack extends cdk.Stack {
       unsubscribeRateAlarm,
       slackFailureAlarm,
     ].forEach((alarm) => {
-      cdk.Tags.of(alarm).add('project', 'ndx');
-      cdk.Tags.of(alarm).add('environment', env);
-      cdk.Tags.of(alarm).add('managedby', 'cdk');
-      cdk.Tags.of(alarm).add('component', 'notifications');
-    });
+      cdk.Tags.of(alarm).add("project", "ndx")
+      cdk.Tags.of(alarm).add("environment", env)
+      cdk.Tags.of(alarm).add("managedby", "cdk")
+      cdk.Tags.of(alarm).add("component", "notifications")
+    })
 
     // =========================================================================
     // CloudWatch Dashboard (AC-6.13)
     // =========================================================================
     // Unified health visibility per Service Blueprint/Value Chain analysis
-    this.dashboard = new cloudwatch.Dashboard(this, 'NotificationDashboard', {
-      dashboardName: 'ndx-notification-health',
-    });
+    this.dashboard = new cloudwatch.Dashboard(this, "NotificationDashboard", {
+      dashboardName: "ndx-notification-health",
+    })
 
     // Widget 1: Events per hour (EventsReceivedFromISB metric)
     this.dashboard.addWidgets(
       new cloudwatch.GraphWidget({
-        title: 'Events Received (per hour)',
+        title: "Events Received (per hour)",
         left: [
           this.notificationHandler.metricInvocations({
             period: cdk.Duration.hours(1),
-            statistic: 'Sum',
-            label: 'Lambda Invocations',
+            statistic: "Sum",
+            label: "Lambda Invocations",
           }),
         ],
         width: 12,
@@ -634,37 +621,37 @@ export class NdxNotificationStack extends cdk.Stack {
       }),
       // Widget 2: Success Rate
       new cloudwatch.GraphWidget({
-        title: 'Notification Success Rate',
+        title: "Notification Success Rate",
         left: [
           new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'NotificationSuccess',
+            namespace: "NDX/Notifications",
+            metricName: "NotificationSuccess",
             period: cdk.Duration.minutes(5),
-            statistic: 'Sum',
-            label: 'Success',
+            statistic: "Sum",
+            label: "Success",
           }),
           new cloudwatch.Metric({
-            namespace: 'NDX/Notifications',
-            metricName: 'NotificationFailure',
+            namespace: "NDX/Notifications",
+            metricName: "NotificationFailure",
             period: cdk.Duration.minutes(5),
-            statistic: 'Sum',
-            label: 'Failure',
+            statistic: "Sum",
+            label: "Failure",
           }),
         ],
         width: 12,
         height: 6,
-      })
-    );
+      }),
+    )
 
     // Widget 3: DLQ Depth
     this.dashboard.addWidgets(
       new cloudwatch.GraphWidget({
-        title: 'DLQ Depth',
+        title: "DLQ Depth",
         left: [
           this.deadLetterQueue.metricApproximateNumberOfMessagesVisible({
             period: cdk.Duration.minutes(5),
-            statistic: 'Maximum',
-            label: 'Messages in DLQ',
+            statistic: "Maximum",
+            label: "Messages in DLQ",
           }),
         ],
         width: 12,
@@ -672,28 +659,28 @@ export class NdxNotificationStack extends cdk.Stack {
       }),
       // Widget 4: Lambda Performance
       new cloudwatch.GraphWidget({
-        title: 'Lambda Performance',
+        title: "Lambda Performance",
         left: [
           this.notificationHandler.metricDuration({
             period: cdk.Duration.minutes(5),
-            statistic: 'Average',
-            label: 'Avg Duration (ms)',
+            statistic: "Average",
+            label: "Avg Duration (ms)",
           }),
           this.notificationHandler.metricErrors({
             period: cdk.Duration.minutes(5),
-            statistic: 'Sum',
-            label: 'Errors',
+            statistic: "Sum",
+            label: "Errors",
           }),
         ],
         width: 12,
         height: 6,
-      })
-    );
+      }),
+    )
 
-    cdk.Tags.of(this.dashboard).add('project', 'ndx');
-    cdk.Tags.of(this.dashboard).add('environment', env);
-    cdk.Tags.of(this.dashboard).add('managedby', 'cdk');
-    cdk.Tags.of(this.dashboard).add('component', 'notifications');
+    cdk.Tags.of(this.dashboard).add("project", "ndx")
+    cdk.Tags.of(this.dashboard).add("environment", env)
+    cdk.Tags.of(this.dashboard).add("managedby", "cdk")
+    cdk.Tags.of(this.dashboard).add("component", "notifications")
 
     // =========================================================================
     // DLQ Digest Lambda (n6-7)
@@ -702,127 +689,123 @@ export class NdxNotificationStack extends cdk.Stack {
     // and send a digest to Slack for ops visibility.
     // @see docs/sprint-artifacts/stories/n6-7-daily-dlq-summary-slack-digest.md
 
-    this.dlqDigestHandler = new lambdaNodejs.NodejsFunction(
-      this,
-      'DLQDigestHandler',
-      {
-        runtime: lambda.Runtime.NODEJS_20_X,
-        handler: 'handler',
-        entry: path.join(__dirname, 'lambda/notification/dlq-digest-handler.ts'),
-        timeout: cdk.Duration.seconds(60), // Allow time for SQS reads and Slack POST
-        memorySize: 256, // Minimal memory for read-only operation
-        description: 'NDX DLQ Digest - Daily summary of failed notification events',
-        functionName: 'ndx-dlq-digest',
-        logRetention: logs.RetentionDays.THREE_MONTHS,
-        tracing: lambda.Tracing.ACTIVE,
-        bundling: {
-          minify: true,
-          sourceMap: true,
-          target: 'node20',
-          externalModules: [],
-        },
-        environment: {
-          NODE_OPTIONS: '--enable-source-maps',
-          ENVIRONMENT: env,
-          LOG_LEVEL: env === 'prod' ? 'INFO' : 'DEBUG',
-          DLQ_URL: this.deadLetterQueue.queueUrl,
-          SECRETS_PATH: SECRETS_PATH,
-        },
-      }
-    );
+    this.dlqDigestHandler = new lambdaNodejs.NodejsFunction(this, "DLQDigestHandler", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "handler",
+      entry: path.join(__dirname, "lambda/notification/dlq-digest-handler.ts"),
+      timeout: cdk.Duration.seconds(60), // Allow time for SQS reads and Slack POST
+      memorySize: 256, // Minimal memory for read-only operation
+      description: "NDX DLQ Digest - Daily summary of failed notification events",
+      functionName: "ndx-dlq-digest",
+      logRetention: logs.RetentionDays.THREE_MONTHS,
+      tracing: lambda.Tracing.ACTIVE,
+      bundling: {
+        minify: true,
+        sourceMap: true,
+        target: "node20",
+        externalModules: [],
+      },
+      environment: {
+        NODE_OPTIONS: "--enable-source-maps",
+        ENVIRONMENT: env,
+        LOG_LEVEL: env === "prod" ? "INFO" : "DEBUG",
+        DLQ_URL: this.deadLetterQueue.queueUrl,
+        SECRETS_PATH: SECRETS_PATH,
+      },
+    })
 
     // Grant DLQ Digest Lambda permissions to read from DLQ (peek without consuming)
-    this.deadLetterQueue.grantConsumeMessages(this.dlqDigestHandler);
+    this.deadLetterQueue.grantConsumeMessages(this.dlqDigestHandler)
 
     // Grant Secrets Manager access for Slack webhook
     this.dlqDigestHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['secretsmanager:GetSecretValue'],
+        actions: ["secretsmanager:GetSecretValue"],
         resources: [
           `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SECRETS_PATH}*`,
           `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SLACK_WEBHOOK_SECRET_PATH}*`,
         ],
-      })
-    );
+      }),
+    )
 
     // Tag DLQ Digest Lambda
-    cdk.Tags.of(this.dlqDigestHandler).add('project', 'ndx');
-    cdk.Tags.of(this.dlqDigestHandler).add('environment', env);
-    cdk.Tags.of(this.dlqDigestHandler).add('managedby', 'cdk');
-    cdk.Tags.of(this.dlqDigestHandler).add('component', 'notifications');
+    cdk.Tags.of(this.dlqDigestHandler).add("project", "ndx")
+    cdk.Tags.of(this.dlqDigestHandler).add("environment", env)
+    cdk.Tags.of(this.dlqDigestHandler).add("managedby", "cdk")
+    cdk.Tags.of(this.dlqDigestHandler).add("component", "notifications")
 
     // CloudWatch Events rule to run daily at 9am UTC
-    const dlqDigestSchedule = new events.Rule(this, 'DLQDigestSchedule', {
-      ruleName: 'ndx-dlq-digest-schedule',
-      description: 'Triggers DLQ digest Lambda daily at 9am UTC',
+    const dlqDigestSchedule = new events.Rule(this, "DLQDigestSchedule", {
+      ruleName: "ndx-dlq-digest-schedule",
+      description: "Triggers DLQ digest Lambda daily at 9am UTC",
       schedule: events.Schedule.cron({
-        minute: '0',
-        hour: '9',
-        day: '*',
-        month: '*',
-        year: '*',
+        minute: "0",
+        hour: "9",
+        day: "*",
+        month: "*",
+        year: "*",
       }),
       targets: [new targets.LambdaFunction(this.dlqDigestHandler)],
-    });
+    })
 
-    cdk.Tags.of(dlqDigestSchedule).add('project', 'ndx');
-    cdk.Tags.of(dlqDigestSchedule).add('environment', env);
-    cdk.Tags.of(dlqDigestSchedule).add('managedby', 'cdk');
-    cdk.Tags.of(dlqDigestSchedule).add('component', 'notifications');
+    cdk.Tags.of(dlqDigestSchedule).add("project", "ndx")
+    cdk.Tags.of(dlqDigestSchedule).add("environment", env)
+    cdk.Tags.of(dlqDigestSchedule).add("managedby", "cdk")
+    cdk.Tags.of(dlqDigestSchedule).add("component", "notifications")
 
     // Outputs for reference
-    new cdk.CfnOutput(this, 'NotificationHandlerArn', {
+    new cdk.CfnOutput(this, "NotificationHandlerArn", {
       value: this.notificationHandler.functionArn,
-      description: 'ARN of the notification handler Lambda function',
-    });
+      description: "ARN of the notification handler Lambda function",
+    })
 
-    new cdk.CfnOutput(this, 'NotificationHandlerName', {
+    new cdk.CfnOutput(this, "NotificationHandlerName", {
       value: this.notificationHandler.functionName,
-      description: 'Name of the notification handler Lambda function',
-    });
+      description: "Name of the notification handler Lambda function",
+    })
 
-    new cdk.CfnOutput(this, 'NotificationRuleArn', {
+    new cdk.CfnOutput(this, "NotificationRuleArn", {
       value: notificationRule.ruleArn,
-      description: 'ARN of the EventBridge rule for ISB event subscription',
-    });
+      description: "ARN of the EventBridge rule for ISB event subscription",
+    })
 
-    new cdk.CfnOutput(this, 'ISBEventBusArn', {
+    new cdk.CfnOutput(this, "ISBEventBusArn", {
       value: isbEventBusArn,
-      description: 'ARN of the ISB EventBridge bus being subscribed to',
-    });
+      description: "ARN of the ISB EventBridge bus being subscribed to",
+    })
 
     // DLQ outputs (n4-4)
-    new cdk.CfnOutput(this, 'NotificationDLQArn', {
+    new cdk.CfnOutput(this, "NotificationDLQArn", {
       value: this.deadLetterQueue.queueArn,
-      description: 'ARN of the Dead Letter Queue for failed notification events',
-    });
+      description: "ARN of the Dead Letter Queue for failed notification events",
+    })
 
-    new cdk.CfnOutput(this, 'NotificationDLQUrl', {
+    new cdk.CfnOutput(this, "NotificationDLQUrl", {
       value: this.deadLetterQueue.queueUrl,
-      description: 'URL of the Dead Letter Queue for failed notification events',
-    });
+      description: "URL of the Dead Letter Queue for failed notification events",
+    })
 
     // Alarm outputs (n4-6)
-    new cdk.CfnOutput(this, 'AlarmTopicArn', {
+    new cdk.CfnOutput(this, "AlarmTopicArn", {
       value: this.alarmTopic.topicArn,
-      description: 'ARN of the SNS topic for alarm notifications',
-    });
+      description: "ARN of the SNS topic for alarm notifications",
+    })
 
-    new cdk.CfnOutput(this, 'DashboardUrl', {
+    new cdk.CfnOutput(this, "DashboardUrl", {
       value: `https://${this.region}.console.aws.amazon.com/cloudwatch/home?region=${this.region}#dashboards:name=${this.dashboard.dashboardName}`,
-      description: 'URL of the CloudWatch dashboard for notification health',
-    });
+      description: "URL of the CloudWatch dashboard for notification health",
+    })
 
     // DLQ Digest outputs (n6-7)
-    new cdk.CfnOutput(this, 'DLQDigestHandlerArn', {
+    new cdk.CfnOutput(this, "DLQDigestHandlerArn", {
       value: this.dlqDigestHandler.functionArn,
-      description: 'ARN of the DLQ digest Lambda function',
-    });
+      description: "ARN of the DLQ digest Lambda function",
+    })
 
-    new cdk.CfnOutput(this, 'DLQDigestHandlerName', {
+    new cdk.CfnOutput(this, "DLQDigestHandlerName", {
       value: this.dlqDigestHandler.functionName,
-      description: 'Name of the DLQ digest Lambda function',
-    });
+      description: "Name of the DLQ digest Lambda function",
+    })
   }
 }

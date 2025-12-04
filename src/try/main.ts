@@ -10,13 +10,13 @@
  * @module main
  */
 
-import { initAuthNav } from './ui/auth-nav';
-import { initTryPage } from './ui/try-page';
-import { initTryButton } from './ui/try-button';
-import { handleOAuthCallback, parseOAuthError } from './auth/oauth-flow';
+import { initAuthNav } from "./ui/auth-nav"
+import { initTryPage } from "./ui/try-page"
+import { initTryButton } from "./ui/try-button"
+import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
 
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
-export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from './auth/oauth-flow';
+export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from "./auth/oauth-flow"
 
 /**
  * Handle OAuth callback parameters on any page.
@@ -30,19 +30,19 @@ export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAf
  * Story 5.3: JWT token extraction from URL
  */
 function handlePageOAuthCallback(): void {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  const hasError = urlParams.has('error');
+  const urlParams = new URLSearchParams(window.location.search)
+  const token = urlParams.get("token")
+  const hasError = urlParams.has("error")
 
   // Only process if there's actually a token with a non-empty value
-  if (token && token.trim() !== '') {
+  if (token && token.trim() !== "") {
     // This is an OAuth callback with a token - extract and redirect
-    handleOAuthCallback();
+    handleOAuthCallback()
   } else if (hasError) {
     // This is an OAuth error callback - display error message
-    const error = parseOAuthError();
+    const error = parseOAuthError()
     if (error) {
-      const contentDiv = document.getElementById('main-content');
+      const contentDiv = document.getElementById("main-content")
       if (contentDiv) {
         const errorHTML = `
           <div class="govuk-error-summary" data-module="govuk-error-summary">
@@ -54,8 +54,8 @@ function handlePageOAuthCallback(): void {
               </div>
             </div>
           </div>
-        `;
-        contentDiv.insertAdjacentHTML('afterbegin', errorHTML);
+        `
+        contentDiv.insertAdjacentHTML("afterbegin", errorHTML)
       }
     }
   }
@@ -67,16 +67,16 @@ function handlePageOAuthCallback(): void {
  *
  * This ensures the DOM is fully loaded before attempting to access elements.
  */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Story 5.3: Handle OAuth callback parameters (token or error in URL)
-  handlePageOAuthCallback();
+  handlePageOAuthCallback()
 
   // Story 5.1: Initialize authentication navigation
-  initAuthNav();
+  initAuthNav()
 
   // Story 5.9: Initialize /try page (empty state for unauthenticated users)
-  initTryPage();
+  initTryPage()
 
   // Story 6.5: Initialize try button click handlers (auth check before AUP modal)
-  initTryButton();
-});
+  initTryButton()
+})

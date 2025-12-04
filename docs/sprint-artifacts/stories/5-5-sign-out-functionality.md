@@ -86,28 +86,31 @@ So that I can end my session and clear my authentication.
 ### Architecture Context
 
 **ADR-024: Authentication State Management with Event-Driven Notifications**
+
 - Sign out triggers `AuthState.notify()` to all subscribers
 - Nav links, try buttons, /try page react to sign out event
 - Ensures UI updates consistently across all components
 
 **Module Location:**
+
 - `src/try/auth/auth-provider.ts` - Add `signOut()` method
   - Clear sessionStorage
   - Notify all auth state subscribers
   - Redirect to home page
 
 **Technical Implementation:**
+
 ```typescript
 // src/try/auth/auth-provider.ts
 export function signOut(): void {
   // Clear JWT token
-  sessionStorage.removeItem('isb-jwt');
+  sessionStorage.removeItem("isb-jwt")
 
   // Notify subscribers of auth state change
-  AuthState.notify();
+  AuthState.notify()
 
   // Redirect to home page
-  window.location.href = '/';
+  window.location.href = "/"
 }
 ```
 
@@ -131,6 +134,7 @@ export function signOut(): void {
 ### Existing Components to Reuse
 
 **From Stories 5.1-5.4:**
+
 - `src/try/auth/auth-provider.ts` - AuthState class with subscribe/notify pattern
 - `src/try/auth/oauth-flow.ts` - Token extraction (uses same 'isb-jwt' key)
 - `src/try/main.ts` - Entry point, already wires auth components
@@ -138,12 +142,14 @@ export function signOut(): void {
 ### Testing Strategy
 
 **Unit Tests:**
+
 - `src/try/auth/auth-provider.test.ts` - Add signOut() tests
   - Mock sessionStorage.removeItem
   - Mock window.location
   - Verify AuthState.notify() called
 
 **E2E Tests:**
+
 - `tests/e2e/auth/sign-out.spec.ts` - Full sign out flow
   - Sign in → Sign out → Verify UI state
   - Sign out → Navigate to /try → Verify empty state
@@ -152,11 +158,13 @@ export function signOut(): void {
 ### Project Structure Notes
 
 **Files to Modify:**
+
 - `src/try/auth/auth-provider.ts` - Add signOut() method
 - `src/try/main.ts` - Wire sign out button event handler (if not already)
 - `src/try/auth/auth-provider.test.ts` - Add signOut() unit tests
 
 **Files to Create:**
+
 - `tests/e2e/auth/sign-out.spec.ts` - E2E tests for sign out flow
 
 ### References
@@ -206,17 +214,20 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 
 **Modified:**
+
 - `src/try/ui/auth-nav.ts` - Uncommented handleSignOut event handler wiring (lines 79-83, 118-122)
 - `src/assets/try.bundle.js` - Rebuilt with sign out functionality
 - `docs/sprint-artifacts/sprint-status.yaml` - Status updates
 
 **Created:**
+
 - `tests/e2e/auth/sign-out.spec.ts` - E2E test suite (7 tests)
 - `docs/sprint-artifacts/stories/5-5-sign-out-functionality.context.xml` - Story context
 
 ## Senior Developer Review (AI)
 
 ### Review Metadata
+
 - **Reviewer:** cns
 - **Date:** 2025-11-24
 - **Story:** 5.5 - Sign Out Functionality
@@ -225,6 +236,7 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### Summary
 
 Story 5.5 implementation is complete and verified. The sign out functionality correctly:
+
 1. Clears JWT token from sessionStorage via `authState.logout()`
 2. Notifies all AuthState subscribers to update UI
 3. Redirects user to home page
@@ -238,47 +250,49 @@ Implementation leveraged existing `logout()` method in auth-provider.ts and wire
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| 1 | Sign Out Button Click - clears sessionStorage, redirects to home | ✅ IMPLEMENTED | `auth-provider.ts:194` (removeItem), `auth-nav.ts:121` (redirect) |
-| 2 | UI State Update - shows "Sign in" after sign out | ✅ IMPLEMENTED | `auth-provider.ts:195` (notify), `auth-nav.ts:52-54` (subscribe) |
-| 3 | Feature Access Blocked - unauthenticated empty state | ✅ IMPLEMENTED | Token cleared, `isAuthenticated()` returns false |
-| 4 | API Authorization Cleared - no Authorization header | ✅ IMPLEMENTED | E2E test validates, token removed from sessionStorage |
-| 5 | AuthState Event Notification - subscribers updated | ✅ IMPLEMENTED | `auth-provider.ts:195`, unit test `auth-provider.test.ts:118-128` |
+| AC# | Description                                                      | Status         | Evidence                                                          |
+| --- | ---------------------------------------------------------------- | -------------- | ----------------------------------------------------------------- |
+| 1   | Sign Out Button Click - clears sessionStorage, redirects to home | ✅ IMPLEMENTED | `auth-provider.ts:194` (removeItem), `auth-nav.ts:121` (redirect) |
+| 2   | UI State Update - shows "Sign in" after sign out                 | ✅ IMPLEMENTED | `auth-provider.ts:195` (notify), `auth-nav.ts:52-54` (subscribe)  |
+| 3   | Feature Access Blocked - unauthenticated empty state             | ✅ IMPLEMENTED | Token cleared, `isAuthenticated()` returns false                  |
+| 4   | API Authorization Cleared - no Authorization header              | ✅ IMPLEMENTED | E2E test validates, token removed from sessionStorage             |
+| 5   | AuthState Event Notification - subscribers updated               | ✅ IMPLEMENTED | `auth-provider.ts:195`, unit test `auth-provider.test.ts:118-128` |
 
 **Summary:** 5 of 5 acceptance criteria fully implemented
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| 1.1: Add signOut() method | [x] | ✅ VERIFIED | `auth-provider.ts:188-196` (logout() exists) |
-| 1.2: Clear sessionStorage | [x] | ✅ VERIFIED | `auth-provider.ts:194` |
-| 1.3: Call AuthState.notify() | [x] | ✅ VERIFIED | `auth-provider.ts:195` |
-| 1.4: Redirect to home page | [x] | ✅ VERIFIED | `auth-nav.ts:121` |
-| 1.5: Write unit tests | [x] | ✅ VERIFIED | `auth-provider.test.ts:111-129` |
-| 2.1: Attach click event listener | [x] | ✅ VERIFIED | `auth-nav.ts:80-83` |
-| 2.2: Call signOut() on click | [x] | ✅ VERIFIED | `auth-nav.ts:120` |
-| 2.3: Verify browser compatibility | [x] | ✅ VERIFIED | E2E tests (Chromium) |
-| 2.4: Write unit tests for handler | [x] | ✅ VERIFIED | Covered by E2E tests |
-| 3.1: Verify nav shows "Sign in" | [x] | ✅ VERIFIED | `auth-nav.ts:88-92` renders Sign in |
-| 3.2: Verify subscribers notified | [x] | ✅ VERIFIED | Unit tests verify |
-| 3.3: Test page navigation | [x] | ✅ VERIFIED | E2E: "Token removal persists" |
-| 3.4: Write E2E test | [x] | ✅ VERIFIED | `sign-out.spec.ts` |
-| 4.1-4.4: Feature access tests | [x] | ✅ VERIFIED | E2E tests cover |
-| 5.1-5.4: API auth tests | [x] | ✅ VERIFIED | E2E: "AC #4" test |
-| 6.1: Create sign-out.spec.ts | [x] | ✅ VERIFIED | File exists with 7 tests |
-| 6.2-6.6: E2E test cases | [x] | ✅ VERIFIED | 7/7 tests passing |
+| Task                              | Marked As | Verified As | Evidence                                     |
+| --------------------------------- | --------- | ----------- | -------------------------------------------- |
+| 1.1: Add signOut() method         | [x]       | ✅ VERIFIED | `auth-provider.ts:188-196` (logout() exists) |
+| 1.2: Clear sessionStorage         | [x]       | ✅ VERIFIED | `auth-provider.ts:194`                       |
+| 1.3: Call AuthState.notify()      | [x]       | ✅ VERIFIED | `auth-provider.ts:195`                       |
+| 1.4: Redirect to home page        | [x]       | ✅ VERIFIED | `auth-nav.ts:121`                            |
+| 1.5: Write unit tests             | [x]       | ✅ VERIFIED | `auth-provider.test.ts:111-129`              |
+| 2.1: Attach click event listener  | [x]       | ✅ VERIFIED | `auth-nav.ts:80-83`                          |
+| 2.2: Call signOut() on click      | [x]       | ✅ VERIFIED | `auth-nav.ts:120`                            |
+| 2.3: Verify browser compatibility | [x]       | ✅ VERIFIED | E2E tests (Chromium)                         |
+| 2.4: Write unit tests for handler | [x]       | ✅ VERIFIED | Covered by E2E tests                         |
+| 3.1: Verify nav shows "Sign in"   | [x]       | ✅ VERIFIED | `auth-nav.ts:88-92` renders Sign in          |
+| 3.2: Verify subscribers notified  | [x]       | ✅ VERIFIED | Unit tests verify                            |
+| 3.3: Test page navigation         | [x]       | ✅ VERIFIED | E2E: "Token removal persists"                |
+| 3.4: Write E2E test               | [x]       | ✅ VERIFIED | `sign-out.spec.ts`                           |
+| 4.1-4.4: Feature access tests     | [x]       | ✅ VERIFIED | E2E tests cover                              |
+| 5.1-5.4: API auth tests           | [x]       | ✅ VERIFIED | E2E: "AC #4" test                            |
+| 6.1: Create sign-out.spec.ts      | [x]       | ✅ VERIFIED | File exists with 7 tests                     |
+| 6.2-6.6: E2E test cases           | [x]       | ✅ VERIFIED | 7/7 tests passing                            |
 
 **Summary:** 17 of 17 completed tasks verified, 0 questionable, 0 false completions
 
 ### Test Coverage and Gaps
 
 **Unit Tests:**
+
 - `auth-provider.test.ts` - 14 tests covering login/logout/notify/subscribe
 - Logout-specific tests at lines 111-129 verify token removal and subscriber notification
 
 **E2E Tests:**
+
 - `sign-out.spec.ts` - 7 tests covering:
   - Core logout functionality (sessionStorage clearing)
   - Token persistence after navigation
@@ -312,16 +326,18 @@ Implementation leveraged existing `logout()` method in auth-provider.ts and wire
 ### Action Items
 
 **Code Changes Required:**
+
 - None required
 
 **Advisory Notes:**
+
 - Note: Future SSO integration may require server-side logout endpoint (per ADR-017)
 - Note: Pre-existing oauth-flow.test.ts failures (5 tests from Story 5.3) are unrelated to this story
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-11-24 | 1.0 | Story created and drafted |
-| 2025-11-24 | 1.1 | Implementation complete, E2E tests passing |
-| 2025-11-24 | 1.2 | Senior Developer Review notes appended - APPROVED |
+| Date       | Version | Description                                       |
+| ---------- | ------- | ------------------------------------------------- |
+| 2025-11-24 | 1.0     | Story created and drafted                         |
+| 2025-11-24 | 1.1     | Implementation complete, E2E tests passing        |
+| 2025-11-24 | 1.2     | Senior Developer Review notes appended - APPROVED |

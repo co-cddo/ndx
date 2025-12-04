@@ -231,13 +231,13 @@ This workflow performs a comprehensive assessment of non-functional requirements
 
    ```yaml
    nfr_assessment:
-     date: '2025-10-14'
+     date: "2025-10-14"
      categories:
-       performance: 'PASS'
-       security: 'CONCERNS'
-       reliability: 'PASS'
-       maintainability: 'PASS'
-     overall_status: 'CONCERNS'
+       performance: "PASS"
+       security: "CONCERNS"
+       reliability: "PASS"
+       maintainability: "PASS"
+     overall_status: "CONCERNS"
      critical_issues: 0
      high_priority_issues: 1
      concerns: 2
@@ -625,21 +625,21 @@ Recommendation: BLOCKER - optimize performance before release
 
 ```yaml
 nfr_assessment:
-  date: '2025-10-14'
-  story_id: '1.3'
+  date: "2025-10-14"
+  story_id: "1.3"
   categories:
-    performance: 'PASS'
-    security: 'CONCERNS'
-    reliability: 'PASS'
-    maintainability: 'PASS'
-  overall_status: 'CONCERNS'
+    performance: "PASS"
+    security: "CONCERNS"
+    reliability: "PASS"
+    maintainability: "PASS"
+  overall_status: "CONCERNS"
   critical_issues: 0
   high_priority_issues: 1
   medium_priority_issues: 0
   concerns: 1
   blockers: false
   recommendations:
-    - 'Enforce MFA for all new accounts (HIGH - 4 hours)'
+    - "Enforce MFA for all new accounts (HIGH - 4 hours)"
   evidence_gaps: 2
 ```
 ````

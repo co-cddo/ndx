@@ -21,23 +21,24 @@ So that unintended infrastructure changes are detected automatically.
 **Then** the test file includes:
 
 ```typescript
-import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
-import { NdxStaticStack } from '../lib/ndx-stack';
+import { App } from "aws-cdk-lib"
+import { Template } from "aws-cdk-lib/assertions"
+import { NdxStaticStack } from "../lib/ndx-stack"
 
-describe('NdxStaticStack', () => {
-  test('CloudFront configuration snapshot', () => {
-    const app = new App();
-    const stack = new NdxStaticStack(app, 'TestStack');
-    const template = Template.fromStack(stack);
+describe("NdxStaticStack", () => {
+  test("CloudFront configuration snapshot", () => {
+    const app = new App()
+    const stack = new NdxStaticStack(app, "TestStack")
+    const template = Template.fromStack(stack)
 
-    expect(template.toJSON()).toMatchSnapshot();
-  });
-});
+    expect(template.toJSON()).toMatchSnapshot()
+  })
+})
 ```
 
 **And** running `yarn test` generates snapshot file in `__snapshots__/` directory
 **And** snapshot captures complete CloudFormation template including:
+
 - CloudFront distribution configuration
 - CloudFront Function resource
 - Cache Policy resource
@@ -52,6 +53,7 @@ describe('NdxStaticStack', () => {
 **Prerequisites:** Story 2.6 (Routing functionality deployed)
 
 **Technical Notes:**
+
 - Snapshot tests provide broad coverage with minimal code (FR31)
 - Catches ANY unintended CloudFormation changes
 - Jest `toMatchSnapshot()` creates snapshot files automatically
@@ -75,86 +77,95 @@ So that requirements are explicitly validated and violations caught early.
 **Then** tests validate critical properties:
 
 **Test 1: New S3 origin added with correct OAC**
-```typescript
-test('New S3 origin configured correctly', () => {
-  const template = Template.fromStack(stack);
 
-  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+```typescript
+test("New S3 origin configured correctly", () => {
+  const template = Template.fromStack(stack)
+
+  template.hasResourceProperties("AWS::CloudFront::Distribution", {
     DistributionConfig: {
-      Origins: expect.arrayContaining([{
-        Id: 'ndx-static-prod-origin',
-        DomainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-        S3OriginConfig: {
-          OriginAccessIdentity: '',
+      Origins: expect.arrayContaining([
+        {
+          Id: "ndx-static-prod-origin",
+          DomainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+          S3OriginConfig: {
+            OriginAccessIdentity: "",
+          },
+          OriginAccessControlId: "E3P8MA1G9Y5BYE",
         },
-        OriginAccessControlId: 'E3P8MA1G9Y5BYE'
-      }])
-    }
-  });
-});
+      ]),
+    },
+  })
+})
 ```
 
 **Test 2: API Gateway origin unchanged**
-```typescript
-test('API Gateway origin remains unchanged', () => {
-  const template = Template.fromStack(stack);
 
-  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+```typescript
+test("API Gateway origin remains unchanged", () => {
+  const template = Template.fromStack(stack)
+
+  template.hasResourceProperties("AWS::CloudFront::Distribution", {
     DistributionConfig: {
       Origins: expect.arrayContaining([
         expect.objectContaining({
-          DomainName: '1ewlxhaey6.execute-api.us-west-2.amazonaws.com',
-          CustomOriginConfig: expect.any(Object)
-        })
-      ])
-    }
-  });
-});
+          DomainName: "1ewlxhaey6.execute-api.us-west-2.amazonaws.com",
+          CustomOriginConfig: expect.any(Object),
+        }),
+      ]),
+    },
+  })
+})
 ```
 
 **Test 3: CloudFront Function created**
+
 ```typescript
-test('CloudFront Function configured', () => {
-  template.hasResourceProperties('AWS::CloudFront::Function', {
-    Name: 'ndx-cookie-router',
+test("CloudFront Function configured", () => {
+  template.hasResourceProperties("AWS::CloudFront::Function", {
+    Name: "ndx-cookie-router",
     FunctionConfig: {
-      Runtime: 'cloudfront-js-2.0'
-    }
-  });
-});
+      Runtime: "cloudfront-js-2.0",
+    },
+  })
+})
 ```
 
 **Test 4: Cache Policy with NDX cookie allowlist**
+
 ```typescript
-test('Cache Policy forwards NDX cookie only', () => {
-  template.hasResourceProperties('AWS::CloudFront::CachePolicy', {
+test("Cache Policy forwards NDX cookie only", () => {
+  template.hasResourceProperties("AWS::CloudFront::CachePolicy", {
     CachePolicyConfig: {
-      Name: 'NdxCookieRoutingPolicy',
+      Name: "NdxCookieRoutingPolicy",
       ParametersInCacheKeyAndForwardedToOrigin: {
         CookiesConfig: {
-          CookieBehavior: 'whitelist',
-          Cookies: ['NDX']
-        }
-      }
-    }
-  });
-});
+          CookieBehavior: "whitelist",
+          Cookies: ["NDX"],
+        },
+      },
+    },
+  })
+})
 ```
 
 **Test 5: Default cache behavior has function attached**
+
 ```typescript
-test('Function attached to default cache behavior', () => {
-  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+test("Function attached to default cache behavior", () => {
+  template.hasResourceProperties("AWS::CloudFront::Distribution", {
     DistributionConfig: {
       DefaultCacheBehavior: {
-        FunctionAssociations: [{
-          EventType: 'viewer-request',
-          FunctionARN: expect.stringContaining('ndx-cookie-router')
-        }]
-      }
-    }
-  });
-});
+        FunctionAssociations: [
+          {
+            EventType: "viewer-request",
+            FunctionARN: expect.stringContaining("ndx-cookie-router"),
+          },
+        ],
+      },
+    },
+  })
+})
 ```
 
 **And** all tests pass with current configuration
@@ -164,6 +175,7 @@ test('Function attached to default cache behavior', () => {
 **Prerequisites:** Story 3.1 (Snapshot tests created)
 
 **Technical Notes:**
+
 - Fine-grained assertions complement snapshots (Architecture ADR-005)
 - Explicit validation of security-critical properties (NFR-SEC-1)
 - FR31-34: Test validation requirements
@@ -248,6 +260,7 @@ echo "4. Clear cookie and verify revert to existing site"
 
 **And** script is executable: `chmod +x infra/test/integration.sh`
 **And** running integration test validates:
+
 - Distribution status is "Deployed"
 - All three origins exist
 - New origin `ndx-static-prod-origin` is configured
@@ -259,6 +272,7 @@ echo "4. Clear cookie and verify revert to existing site"
 **Prerequisites:** Story 3.2 (Assertion tests created)
 
 **Technical Notes:**
+
 - Integration test validates real AWS deployment (Architecture ADR-005)
 - Catches issues unit tests miss (permissions, quotas, region availability)
 - Uses AWS CLI to query actual deployed resources
@@ -282,12 +296,14 @@ So that the team can quickly revert changes if routing issues are discovered.
 **Then** the documentation includes three-tier rollback approach:
 
 **Option 1: Disable Function (Fastest - < 5 minutes)**
-```markdown
+
+````markdown
 # Rollback Option 1: Disable Function (Recommended)
 
 **When to use:** Routing logic causing issues, need immediate revert
 
 **Steps:**
+
 1. Edit `lib/ndx-stack.ts`
 2. Comment out function association:
    ```typescript
@@ -296,14 +312,18 @@ So that the team can quickly revert changes if routing issues are discovered.
    //   FunctionARN: cookieRouterFunction.functionArn
    // }]
    ```
+````
+
 3. Deploy: `cdk deploy --profile NDX/InnovationSandboxHub`
 4. Propagation: ~5-10 minutes
 5. Result: All traffic routes to existing S3Origin
 
 **Validation:**
+
 - Test with NDX=true cookie (should still see existing site)
 - Production traffic unaffected
-```
+
+````
 
 **Option 2: Git Revert (Medium - 5-10 minutes)**
 ```markdown
@@ -320,15 +340,17 @@ So that the team can quickly revert changes if routing issues are discovered.
 **Validation:**
 - Check git history: `git log`
 - Verify CDK diff shows revert: `cdk diff`
-```
+````
 
 **Option 3: Remove Origin (Slowest - 15 minutes)**
+
 ```markdown
 # Rollback Option 3: Remove Origin and Function
 
 **When to use:** Complete rollback including origin removal
 
 **Steps:**
+
 1. Edit `lib/ndx-stack.ts`
 2. Remove new origin configuration
 3. Remove CloudFront Function definition
@@ -340,6 +362,7 @@ So that the team can quickly revert changes if routing issues are discovered.
 ```
 
 **And** each option documents:
+
 - When to use this approach
 - Exact steps to execute
 - Expected timeline
@@ -351,6 +374,7 @@ So that the team can quickly revert changes if routing issues are discovered.
 **Prerequisites:** Story 3.3 (Integration test created)
 
 **Technical Notes:**
+
 - Three-tier approach: fastest to most complete (Architecture: "Rollback Procedures")
 - Option 1 preferred: Quickest, least disruptive (FR36)
 - FR36-40: Rollback and safety requirements
@@ -374,10 +398,12 @@ So that any team member can operate the routing infrastructure confidently.
 **Then** the README includes new sections:
 
 **Section: CloudFront Cookie-Based Routing**
+
 ```markdown
 # CloudFront Cookie-Based Routing
 
 ## Overview
+
 The NDX CloudFront distribution uses cookie-based routing to enable safe testing of new UI versions.
 
 - **Cookie Name:** `NDX` (case-sensitive)
@@ -388,6 +414,7 @@ The NDX CloudFront distribution uses cookie-based routing to enable safe testing
   - API routes: Unaffected (API Gateway origin unchanged)
 
 ## How to Test New UI
+
 1. Open browser DevTools Console
 2. Set cookie: `document.cookie = "NDX=true; path=/"`
 3. Browse to https://d7roov8fndsis.cloudfront.net/
@@ -396,10 +423,12 @@ The NDX CloudFront distribution uses cookie-based routing to enable safe testing
 ```
 
 **Section: Deployment Process**
-```markdown
+
+````markdown
 # Deployment Process
 
 ## Pre-Deployment Checklist
+
 - [ ] All tests pass: `yarn test`
 - [ ] Linting clean: `yarn lint`
 - [ ] CDK diff reviewed: `cdk diff --profile NDX/InnovationSandboxHub`
@@ -407,17 +436,21 @@ The NDX CloudFront distribution uses cookie-based routing to enable safe testing
 - [ ] Team notified of deployment window
 
 ## Deploy
+
 ```bash
 cd infra
 cdk deploy --profile NDX/InnovationSandboxHub
 ```
+````
 
 ## Post-Deployment Validation
+
 - Wait 10-15 minutes for global propagation
 - Run integration test: `test/integration.sh`
 - Manual cookie test (see "How to Test New UI" above)
 - Check CloudWatch metrics for errors
-```
+
+````
 
 **Section: Monitoring**
 ```markdown
@@ -433,3 +466,4 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ## Checking Distribution Status
 ```bash
 aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
+````

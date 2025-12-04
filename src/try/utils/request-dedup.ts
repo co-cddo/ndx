@@ -14,20 +14,20 @@
  */
 
 /** Maximum age for in-flight request entries (5 minutes) */
-const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
+const MAX_REQUEST_AGE_MS = 5 * 60 * 1000
 
 /** Maximum number of concurrent tracked requests */
-const MAX_TRACKED_REQUESTS = 100;
+const MAX_TRACKED_REQUESTS = 100
 
 /** Cleanup interval (1 minute) */
-const CLEANUP_INTERVAL_MS = 60 * 1000;
+const CLEANUP_INTERVAL_MS = 60 * 1000
 
 /**
  * Entry in the in-flight requests map with timestamp for TTL cleanup.
  */
 interface RequestEntry {
-  promise: Promise<unknown>;
-  timestamp: number;
+  promise: Promise<unknown>
+  timestamp: number
 }
 
 /**
@@ -35,30 +35,30 @@ interface RequestEntry {
  * When a request is in progress, subsequent calls with the same key
  * will return the same promise instead of making a new request.
  */
-const inFlightRequests = new Map<string, RequestEntry>();
+const inFlightRequests = new Map<string, RequestEntry>()
 
 /** Cleanup timer reference for tests */
-let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+let cleanupTimer: ReturnType<typeof setInterval> | null = null
 
 /**
  * Start periodic cleanup of stale entries.
  * Called automatically on first request.
  */
 function startCleanupTimer(): void {
-  if (cleanupTimer !== null) return;
+  if (cleanupTimer !== null) return
 
   cleanupTimer = setInterval(() => {
-    const now = Date.now();
+    const now = Date.now()
     Array.from(inFlightRequests.entries()).forEach(([key, entry]) => {
       if (now - entry.timestamp > MAX_REQUEST_AGE_MS) {
-        inFlightRequests.delete(key);
+        inFlightRequests.delete(key)
       }
-    });
-  }, CLEANUP_INTERVAL_MS);
+    })
+  }, CLEANUP_INTERVAL_MS)
 
   // Don't prevent Node.js from exiting
-  if (typeof cleanupTimer === 'object' && 'unref' in cleanupTimer) {
-    cleanupTimer.unref();
+  if (typeof cleanupTimer === "object" && "unref" in cleanupTimer) {
+    cleanupTimer.unref()
   }
 }
 
@@ -67,8 +67,8 @@ function startCleanupTimer(): void {
  */
 export function stopCleanupTimer(): void {
   if (cleanupTimer !== null) {
-    clearInterval(cleanupTimer);
-    cleanupTimer = null;
+    clearInterval(cleanupTimer)
+    cleanupTimer = null
   }
 }
 
@@ -105,27 +105,23 @@ export function stopCleanupTimer(): void {
  * // a, b, and c will all have the same value
  * ```
  */
-export async function deduplicatedRequest<T>(
-  key: string,
-  requestFn: () => Promise<T>
-): Promise<T> {
+export async function deduplicatedRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
   // Start cleanup timer on first use
-  startCleanupTimer();
+  startCleanupTimer()
 
   // Check if a request with this key is already in progress
-  const existing = inFlightRequests.get(key);
+  const existing = inFlightRequests.get(key)
   if (existing) {
-    return existing.promise as Promise<T>;
+    return existing.promise as Promise<T>
   }
 
   // Safety: prevent unbounded growth if cleanup fails
   if (inFlightRequests.size >= MAX_TRACKED_REQUESTS) {
-    console.warn('[request-dedup] Max tracked requests reached, clearing oldest entries');
+    console.warn("[request-dedup] Max tracked requests reached, clearing oldest entries")
     // Remove oldest half of entries
-    const entries = Array.from(inFlightRequests.entries())
-      .sort((a, b) => a[1].timestamp - b[1].timestamp);
-    const toRemove = entries.slice(0, Math.floor(entries.length / 2));
-    toRemove.forEach(([k]) => inFlightRequests.delete(k));
+    const entries = Array.from(inFlightRequests.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp)
+    const toRemove = entries.slice(0, Math.floor(entries.length / 2))
+    toRemove.forEach(([k]) => inFlightRequests.delete(k))
   }
 
   // Start new request and track it
@@ -133,15 +129,15 @@ export async function deduplicatedRequest<T>(
   // This ensures cleanup runs even if requestFn() throws synchronously
   const promise = (async () => {
     try {
-      return await requestFn();
+      return await requestFn()
     } finally {
       // Clean up when request completes (success or failure)
-      inFlightRequests.delete(key);
+      inFlightRequests.delete(key)
     }
-  })();
+  })()
 
-  inFlightRequests.set(key, { promise, timestamp: Date.now() });
-  return promise;
+  inFlightRequests.set(key, { promise, timestamp: Date.now() })
+  return promise
 }
 
 /**
@@ -149,7 +145,7 @@ export async function deduplicatedRequest<T>(
  * Useful for testing or resetting state.
  */
 export function clearInFlightRequests(): void {
-  inFlightRequests.clear();
+  inFlightRequests.clear()
 }
 
 /**
@@ -159,5 +155,5 @@ export function clearInFlightRequests(): void {
  * @returns true if a request with this key is in progress
  */
 export function isRequestInProgress(key: string): boolean {
-  return inFlightRequests.has(key);
+  return inFlightRequests.has(key)
 }

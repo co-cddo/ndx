@@ -140,8 +140,8 @@ Example customization:
 agent:
   persona:
     principles:
-      - 'HIPAA compliance is non-negotiable'
-      - 'Patient safety over feature velocity'
+      - "HIPAA compliance is non-negotiable"
+      - "Patient safety over feature velocity"
 ```
 
 See [Agents Guide](./agents-guide.md#agent-customization) for details.

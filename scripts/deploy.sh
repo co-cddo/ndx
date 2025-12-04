@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # Exit on any error
+set -e # Exit on any error
 
 # Prerequisite check
 if [ ! -d "_site" ]; then

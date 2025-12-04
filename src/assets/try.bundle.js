@@ -1,37 +1,37 @@
 // src/try/constants.ts
-var JWT_TOKEN_KEY = "isb-jwt";
-var RETURN_URL_KEY = "auth-return-to";
-var CALLBACK_PATH = "/callback";
-var OAUTH_LOGIN_URL = "/api/auth/login";
+var JWT_TOKEN_KEY = "isb-jwt"
+var RETURN_URL_KEY = "auth-return-to"
+var CALLBACK_PATH = "/callback"
+var OAUTH_LOGIN_URL = "/api/auth/login"
 
 // src/try/utils/jwt-utils.ts
 function parseJWT(token) {
   if (!token || typeof token !== "string") {
-    return null;
+    return null
   }
   try {
-    const parts = token.split(".");
+    const parts = token.split(".")
     if (parts.length !== 3) {
-      return null;
+      return null
     }
-    const payload = parts[1];
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = atob(base64);
-    return JSON.parse(decoded);
+    const payload = parts[1]
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/")
+    const decoded = atob(base64)
+    return JSON.parse(decoded)
   } catch {
-    return null;
+    return null
   }
 }
 function isJWTExpired(token, bufferSeconds = 60) {
-  const payload = parseJWT(token);
+  const payload = parseJWT(token)
   if (!payload) {
-    return true;
+    return true
   }
   if (!payload.exp) {
-    return false;
+    return false
   }
-  const now = Math.floor(Date.now() / 1e3);
-  return payload.exp < now + bufferSeconds;
+  const now = Math.floor(Date.now() / 1e3)
+  return payload.exp < now + bufferSeconds
 }
 
 // src/try/auth/auth-provider.ts
@@ -41,7 +41,7 @@ var AuthState = class {
      * Array of listener callbacks subscribed to auth state changes.
      * @private
      */
-    this.listeners = [];
+    this.listeners = []
   }
   // TOKEN_KEY imported from '../constants' as JWT_TOKEN_KEY
   /**
@@ -66,19 +66,19 @@ var AuthState = class {
    */
   isAuthenticated() {
     if (typeof sessionStorage === "undefined") {
-      console.warn("[AuthState] sessionStorage not available, auth features disabled");
-      return false;
+      console.warn("[AuthState] sessionStorage not available, auth features disabled")
+      return false
     }
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY)
     if (!token) {
-      return false;
+      return false
     }
     if (isJWTExpired(token, 60)) {
-      console.warn("[AuthState] JWT token expired, clearing from sessionStorage");
-      sessionStorage.removeItem(JWT_TOKEN_KEY);
-      return false;
+      console.warn("[AuthState] JWT token expired, clearing from sessionStorage")
+      sessionStorage.removeItem(JWT_TOKEN_KEY)
+      return false
     }
-    return true;
+    return true
   }
   /**
    * Subscribe to authentication state changes.
@@ -108,14 +108,14 @@ var AuthState = class {
    * ```
    */
   subscribe(listener) {
-    this.listeners.push(listener);
-    listener(this.isAuthenticated());
+    this.listeners.push(listener)
+    listener(this.isAuthenticated())
     return () => {
-      const index = this.listeners.indexOf(listener);
+      const index = this.listeners.indexOf(listener)
       if (index > -1) {
-        this.listeners.splice(index, 1);
+        this.listeners.splice(index, 1)
       }
-    };
+    }
   }
   /**
    * Notify all subscribed listeners of authentication state change.
@@ -137,8 +137,8 @@ var AuthState = class {
    * ```
    */
   notify() {
-    const isAuth = this.isAuthenticated();
-    this.listeners.forEach((listener) => listener(isAuth));
+    const isAuth = this.isAuthenticated()
+    this.listeners.forEach((listener) => listener(isAuth))
   }
   /**
    * Login helper method (for future use in Story 5.3).
@@ -159,11 +159,11 @@ var AuthState = class {
    */
   login(token) {
     if (typeof sessionStorage === "undefined") {
-      console.error("[AuthState] Cannot store token - sessionStorage not available");
-      return;
+      console.error("[AuthState] Cannot store token - sessionStorage not available")
+      return
     }
-    sessionStorage.setItem(JWT_TOKEN_KEY, token);
-    this.notify();
+    sessionStorage.setItem(JWT_TOKEN_KEY, token)
+    this.notify()
   }
   /**
    * Logout helper method (for future use in Story 5.5).
@@ -182,178 +182,178 @@ var AuthState = class {
    */
   logout() {
     if (typeof sessionStorage === "undefined") {
-      console.warn("[AuthState] sessionStorage not available, cannot clear token");
-      return;
+      console.warn("[AuthState] sessionStorage not available, cannot clear token")
+      return
     }
-    sessionStorage.removeItem(JWT_TOKEN_KEY);
-    this.notify();
+    sessionStorage.removeItem(JWT_TOKEN_KEY)
+    this.notify()
   }
-};
-var authState = new AuthState();
+}
+var authState = new AuthState()
 
 // src/try/utils/url-validator.ts
 function isValidReturnUrl(url) {
   if (!url || typeof url !== "string") {
-    return false;
+    return false
   }
   if (/^(javascript|data|vbscript|file|blob|about|mailto|tel|ftp):/i.test(url)) {
-    return false;
+    return false
   }
   if (url.startsWith("//")) {
-    return false;
+    return false
   }
   if (url.includes("\\")) {
-    return false;
+    return false
   }
   if (/[\x00-\x1F\x7F]/.test(url)) {
-    return false;
+    return false
   }
-  const lowerUrl = url.toLowerCase();
+  const lowerUrl = url.toLowerCase()
   if (lowerUrl.includes("%2f") || lowerUrl.includes("%252f")) {
-    return false;
+    return false
   }
   if (lowerUrl.includes("%00")) {
-    return false;
+    return false
   }
   if (lowerUrl.includes("%0d") || lowerUrl.includes("%0a")) {
-    return false;
+    return false
   }
   if (url.startsWith("/")) {
     if (/^\/[a-z]+:/i.test(url)) {
-      return false;
+      return false
     }
-    return true;
+    return true
   }
   try {
-    const parsed = new URL(url, window.location.origin);
+    const parsed = new URL(url, window.location.origin)
     if (parsed.origin !== window.location.origin) {
-      return false;
+      return false
     }
     if (parsed.username || parsed.password) {
-      return false;
+      return false
     }
-    return true;
+    return true
   } catch {
-    return false;
+    return false
   }
 }
 function sanitizeReturnUrl(url, fallback = "/") {
   if (!url) {
-    return fallback;
+    return fallback
   }
-  return isValidReturnUrl(url) ? url : fallback;
+  return isValidReturnUrl(url) ? url : fallback
 }
 
 // src/try/auth/oauth-flow.ts
 function storeReturnURL() {
   if (window.location.pathname === CALLBACK_PATH || window.location.pathname === `${CALLBACK_PATH}.html`) {
-    return;
+    return
   }
   if (typeof sessionStorage === "undefined") {
-    console.warn("[oauth-flow] sessionStorage not available, return URL not stored");
-    return;
+    console.warn("[oauth-flow] sessionStorage not available, return URL not stored")
+    return
   }
-  const returnURL = window.location.href;
+  const returnURL = window.location.href
   try {
-    sessionStorage.setItem(RETURN_URL_KEY, returnURL);
+    sessionStorage.setItem(RETURN_URL_KEY, returnURL)
   } catch (error) {
-    console.warn("[oauth-flow] Failed to store return URL:", error);
+    console.warn("[oauth-flow] Failed to store return URL:", error)
   }
 }
 function getReturnURL() {
   if (typeof sessionStorage === "undefined") {
-    console.warn("[oauth-flow] sessionStorage not available, returning home page");
-    return "/";
+    console.warn("[oauth-flow] sessionStorage not available, returning home page")
+    return "/"
   }
   try {
-    const returnURL = sessionStorage.getItem(RETURN_URL_KEY);
-    return sanitizeReturnUrl(returnURL, "/");
+    const returnURL = sessionStorage.getItem(RETURN_URL_KEY)
+    return sanitizeReturnUrl(returnURL, "/")
   } catch (error) {
-    console.warn("[oauth-flow] Failed to retrieve return URL:", error);
-    return "/";
+    console.warn("[oauth-flow] Failed to retrieve return URL:", error)
+    return "/"
   }
 }
 function clearReturnURL() {
   if (typeof sessionStorage === "undefined") {
-    console.warn("[oauth-flow] sessionStorage not available, cannot clear return URL");
-    return;
+    console.warn("[oauth-flow] sessionStorage not available, cannot clear return URL")
+    return
   }
   try {
-    sessionStorage.removeItem(RETURN_URL_KEY);
+    sessionStorage.removeItem(RETURN_URL_KEY)
   } catch (error) {
-    console.warn("[oauth-flow] Failed to clear return URL:", error);
+    console.warn("[oauth-flow] Failed to clear return URL:", error)
   }
 }
 function parseOAuthError() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const errorCode = urlParams.get("error");
+  const urlParams = new URLSearchParams(window.location.search)
+  const errorCode = urlParams.get("error")
   if (!errorCode) {
-    return null;
+    return null
   }
   const errorMessages = {
     access_denied: "You cancelled the sign in process. Please try again if you want to access Try features.",
     invalid_request: "There was a problem with the sign in request. Please try again.",
-    server_error: "The authentication service is temporarily unavailable. Please try again in a few minutes."
-  };
-  const message = errorMessages[errorCode] || "An error occurred during sign in. Please try again.";
-  return { code: errorCode, message };
+    server_error: "The authentication service is temporarily unavailable. Please try again in a few minutes.",
+  }
+  const message = errorMessages[errorCode] || "An error occurred during sign in. Please try again."
+  return { code: errorCode, message }
 }
 function extractTokenFromURL() {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get("token")
     if (!token || token.trim() === "") {
-      return false;
+      return false
     }
     try {
-      sessionStorage.setItem(JWT_TOKEN_KEY, token);
-      return true;
+      sessionStorage.setItem(JWT_TOKEN_KEY, token)
+      return true
     } catch (storageError) {
-      console.warn("[oauth-flow] Failed to store JWT token in sessionStorage:", storageError);
-      return false;
+      console.warn("[oauth-flow] Failed to store JWT token in sessionStorage:", storageError)
+      return false
     }
   } catch (error) {
-    console.warn("[oauth-flow] Failed to extract token from URL:", error);
-    return false;
+    console.warn("[oauth-flow] Failed to extract token from URL:", error)
+    return false
   }
 }
 function cleanupURLAfterExtraction() {
   try {
     if (!window.history || !window.history.replaceState) {
-      console.warn("[oauth-flow] History API not available, skipping URL cleanup");
-      return;
+      console.warn("[oauth-flow] History API not available, skipping URL cleanup")
+      return
     }
-    const cleanURL = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanURL);
+    const cleanURL = window.location.pathname
+    window.history.replaceState({}, document.title, cleanURL)
   } catch (error) {
-    console.warn("[oauth-flow] Failed to clean up URL after token extraction:", error);
+    console.warn("[oauth-flow] Failed to clean up URL after token extraction:", error)
   }
 }
 function handleOAuthCallback() {
-  const tokenExtracted = extractTokenFromURL();
+  const tokenExtracted = extractTokenFromURL()
   if (!tokenExtracted) {
-    clearReturnURL();
-    window.location.href = "/";
-    return;
+    clearReturnURL()
+    window.location.href = "/"
+    return
   }
-  cleanupURLAfterExtraction();
-  const returnURL = getReturnURL();
-  clearReturnURL();
+  cleanupURLAfterExtraction()
+  const returnURL = getReturnURL()
+  clearReturnURL()
   setTimeout(() => {
-    window.location.href = returnURL;
-  }, 0);
+    window.location.href = returnURL
+  }, 0)
 }
 
 // src/try/ui/auth-nav.ts
 function initAuthNav() {
-  const container2 = document.getElementById("auth-nav");
+  const container2 = document.getElementById("auth-nav")
   if (!container2) {
-    console.warn("[auth-nav] Container element #auth-nav not found - auth navigation not initialized");
-    return;
+    console.warn("[auth-nav] Container element #auth-nav not found - auth navigation not initialized")
+    return
   }
   authState.subscribe((isAuthenticated) => {
-    renderAuthNav(container2, isAuthenticated);
-  });
+    renderAuthNav(container2, isAuthenticated)
+  })
 }
 function renderAuthNav(container2, isAuthenticated) {
   if (isAuthenticated) {
@@ -361,241 +361,240 @@ function renderAuthNav(container2, isAuthenticated) {
       <a href="#" class="govuk-service-navigation__link govuk-header__link" data-module="sign-out-button" data-action="signout">
         Sign out
       </a>
-    `;
-    const signOutLink = container2.querySelector('[data-action="signout"]');
+    `
+    const signOutLink = container2.querySelector('[data-action="signout"]')
     if (signOutLink) {
-      signOutLink.addEventListener("click", handleSignOut);
+      signOutLink.addEventListener("click", handleSignOut)
     }
   } else {
     container2.innerHTML = `
       <a href="/api/auth/login" class="govuk-service-navigation__link govuk-header__link" id="sign-in-button">
         Sign in
       </a>
-    `;
-    const signInButton = container2.querySelector("#sign-in-button");
+    `
+    const signInButton = container2.querySelector("#sign-in-button")
     if (signInButton) {
       signInButton.addEventListener("click", () => {
-        storeReturnURL();
-      });
+        storeReturnURL()
+      })
     }
   }
 }
 function handleSignOut(event) {
-  event.preventDefault();
-  authState.logout();
-  window.location.href = "/";
+  event.preventDefault()
+  authState.logout()
+  window.location.href = "/"
 }
 
 // src/try/utils/request-dedup.ts
-var MAX_REQUEST_AGE_MS = 5 * 60 * 1e3;
-var MAX_TRACKED_REQUESTS = 100;
-var CLEANUP_INTERVAL_MS = 60 * 1e3;
-var inFlightRequests = /* @__PURE__ */ new Map();
-var cleanupTimer = null;
+var MAX_REQUEST_AGE_MS = 5 * 60 * 1e3
+var MAX_TRACKED_REQUESTS = 100
+var CLEANUP_INTERVAL_MS = 60 * 1e3
+var inFlightRequests = /* @__PURE__ */ new Map()
+var cleanupTimer = null
 function startCleanupTimer() {
-  if (cleanupTimer !== null) return;
+  if (cleanupTimer !== null) return
   cleanupTimer = setInterval(() => {
-    const now = Date.now();
+    const now = Date.now()
     for (const [key, entry] of inFlightRequests.entries()) {
       if (now - entry.timestamp > MAX_REQUEST_AGE_MS) {
-        inFlightRequests.delete(key);
+        inFlightRequests.delete(key)
       }
     }
-  }, CLEANUP_INTERVAL_MS);
+  }, CLEANUP_INTERVAL_MS)
   if (typeof cleanupTimer === "object" && "unref" in cleanupTimer) {
-    cleanupTimer.unref();
+    cleanupTimer.unref()
   }
 }
 async function deduplicatedRequest(key, requestFn) {
-  startCleanupTimer();
-  const existing = inFlightRequests.get(key);
+  startCleanupTimer()
+  const existing = inFlightRequests.get(key)
   if (existing) {
-    return existing.promise;
+    return existing.promise
   }
   if (inFlightRequests.size >= MAX_TRACKED_REQUESTS) {
-    console.warn("[request-dedup] Max tracked requests reached, clearing oldest entries");
-    const entries = Array.from(inFlightRequests.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp);
-    const toRemove = entries.slice(0, Math.floor(entries.length / 2));
-    toRemove.forEach(([k]) => inFlightRequests.delete(k));
+    console.warn("[request-dedup] Max tracked requests reached, clearing oldest entries")
+    const entries = Array.from(inFlightRequests.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp)
+    const toRemove = entries.slice(0, Math.floor(entries.length / 2))
+    toRemove.forEach(([k]) => inFlightRequests.delete(k))
   }
   const promise = (async () => {
     try {
-      return await requestFn();
+      return await requestFn()
     } finally {
-      inFlightRequests.delete(key);
+      inFlightRequests.delete(key)
     }
-  })();
-  inFlightRequests.set(key, { promise, timestamp: Date.now() });
-  return promise;
+  })()
+  inFlightRequests.set(key, { promise, timestamp: Date.now() })
+  return promise
 }
 
 // src/try/api/api-client.ts
 async function callISBAPI(endpoint, options = {}) {
-  const { skipAuthRedirect, ...fetchOptions } = options;
+  const { skipAuthRedirect, ...fetchOptions } = options
   const headers = {
     "Content-Type": "application/json",
-    ...extractHeaders(fetchOptions.headers)
-  };
-  const token = getToken();
+    ...extractHeaders(fetchOptions.headers),
+  }
+  const token = getToken()
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
   const response = await fetch(endpoint, {
     ...fetchOptions,
-    headers
-  });
+    headers,
+  })
   if (response.status === 401 && !skipAuthRedirect) {
-    clearToken();
-    redirectToOAuth();
-    throw new Error("Unauthorized - redirecting to login");
+    clearToken()
+    redirectToOAuth()
+    throw new Error("Unauthorized - redirecting to login")
   }
-  return response;
+  return response
 }
 function clearToken() {
   if (typeof sessionStorage === "undefined") {
-    return;
+    return
   }
   try {
-    sessionStorage.removeItem(JWT_TOKEN_KEY);
-  } catch {
-  }
+    sessionStorage.removeItem(JWT_TOKEN_KEY)
+  } catch {}
 }
 function redirectToOAuth() {
   if (typeof window === "undefined") {
-    return;
+    return
   }
-  window.location.href = OAUTH_LOGIN_URL;
+  window.location.href = OAUTH_LOGIN_URL
 }
 async function checkAuthStatus(timeout = 5e3) {
   return deduplicatedRequest("checkAuthStatus", async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
     try {
       const response = await callISBAPI("/api/auth/login/status", {
         skipAuthRedirect: true,
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json()
         if (data.authenticated && data.session?.user) {
           return {
             authenticated: true,
-            user: data.session.user
-          };
+            user: data.session.user,
+          }
         }
-        return { authenticated: false };
+        return { authenticated: false }
       } else if (response.status === 401) {
-        return { authenticated: false };
+        return { authenticated: false }
       } else {
-        console.error("[api-client] Auth status check failed:", response.status, response.statusText);
-        return { authenticated: false };
+        console.error("[api-client] Auth status check failed:", response.status, response.statusText)
+        return { authenticated: false }
       }
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
       if (error instanceof Error && error.name === "AbortError") {
-        console.error("[api-client] Auth status check timed out after", timeout, "ms");
-        return { authenticated: false };
+        console.error("[api-client] Auth status check timed out after", timeout, "ms")
+        return { authenticated: false }
       }
-      console.error("[api-client] Auth status check error:", error);
-      return { authenticated: false };
+      console.error("[api-client] Auth status check error:", error)
+      return { authenticated: false }
     }
-  });
+  })
 }
 function getToken() {
   if (typeof sessionStorage === "undefined") {
-    return null;
+    return null
   }
   try {
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY)
     if (token === null || token === "") {
-      return null;
+      return null
     }
-    return token;
+    return token
   } catch {
-    return null;
+    return null
   }
 }
 function extractHeaders(headersInit) {
   if (!headersInit) {
-    return {};
+    return {}
   }
   if (Array.isArray(headersInit)) {
-    const result = {};
+    const result = {}
     for (const entry of headersInit) {
       if (Array.isArray(entry) && entry.length >= 2 && typeof entry[0] === "string" && typeof entry[1] === "string") {
-        result[entry[0].trim()] = entry[1];
+        result[entry[0].trim()] = entry[1]
       }
     }
-    return result;
+    return result
   }
   if (typeof headersInit.forEach === "function") {
-    const result = {};
+    const result = {}
     headersInit.forEach((value, key) => {
       if (typeof key === "string" && typeof value === "string") {
-        result[key] = value;
+        result[key] = value
       }
-    });
-    return result;
+    })
+    return result
   }
   if (typeof headersInit === "object" && headersInit !== null) {
-    const result = {};
+    const result = {}
     for (const [key, value] of Object.entries(headersInit)) {
       if (typeof key === "string" && typeof value === "string") {
-        result[key] = value;
+        result[key] = value
       }
     }
-    return result;
+    return result
   }
-  return {};
+  return {}
 }
 
 // src/try/config.ts
-var DEFAULT_AWS_SSO_PORTAL_URL = "https://d-9267e1e371.awsapps.com/start";
-var DEFAULT_SSO_ROLE_NAME = "ndx_IsbUsersPS";
-var DEFAULT_API_BASE_URL = "/api";
-var DEFAULT_REQUEST_TIMEOUT = 1e4;
+var DEFAULT_AWS_SSO_PORTAL_URL = "https://d-9267e1e371.awsapps.com/start"
+var DEFAULT_SSO_ROLE_NAME = "ndx_IsbUsersPS"
+var DEFAULT_API_BASE_URL = "/api"
+var DEFAULT_REQUEST_TIMEOUT = 1e4
 function getConfigValue(key, defaultValue) {
-  const globalConfig = typeof window !== "undefined" && window.__TRY_CONFIG__ || {};
+  const globalConfig = (typeof window !== "undefined" && window.__TRY_CONFIG__) || {}
   if (globalConfig[key]) {
-    return globalConfig[key];
+    return globalConfig[key]
   }
   if (typeof process !== "undefined" && process.env?.[key]) {
-    return process.env[key];
+    return process.env[key]
   }
-  return defaultValue;
+  return defaultValue
 }
 var config = {
   awsSsoPortalUrl: getConfigValue("AWS_SSO_PORTAL_URL", DEFAULT_AWS_SSO_PORTAL_URL),
   ssoRoleName: getConfigValue("SSO_ROLE_NAME", DEFAULT_SSO_ROLE_NAME),
   apiBaseUrl: getConfigValue("API_BASE_URL", DEFAULT_API_BASE_URL),
   requestTimeout: parseInt(getConfigValue("REQUEST_TIMEOUT", String(DEFAULT_REQUEST_TIMEOUT)), 10),
-  oauthLoginUrl: getConfigValue("OAUTH_LOGIN_URL", "/api/auth/login")
-};
+  oauthLoginUrl: getConfigValue("OAUTH_LOGIN_URL", "/api/auth/login"),
+}
 
 // src/try/utils/error-utils.ts
 var CONTEXT_MESSAGES = {
   sessions: {
     401: "Please sign in to view your sessions.",
     403: "You do not have permission to view sessions.",
-    404: "Sessions not found."
+    404: "Sessions not found.",
   },
   configurations: {
     401: "Please sign in to continue.",
     403: "You do not have permission to access this resource.",
-    404: "Configuration not found. Please contact support."
+    404: "Configuration not found. Please contact support.",
   },
   configuration: {
     401: "Please sign in to continue.",
     403: "You do not have permission to access this resource.",
-    404: "Configuration not found. Please contact support."
+    404: "Configuration not found. Please contact support.",
   },
   leases: {
     401: "Please sign in to continue.",
-    404: "The requested resource was not found."
+    404: "The requested resource was not found.",
   },
-  general: {}
-};
+  general: {},
+}
 var DEFAULT_MESSAGES = {
   401: "Please sign in to continue.",
   403: "You do not have permission to access this resource.",
@@ -603,112 +602,112 @@ var DEFAULT_MESSAGES = {
   500: "The sandbox service is temporarily unavailable. Please try again later.",
   502: "The sandbox service is temporarily unavailable. Please try again later.",
   503: "The sandbox service is temporarily unavailable. Please try again later.",
-  504: "The sandbox service is temporarily unavailable. Please try again later."
-};
+  504: "The sandbox service is temporarily unavailable. Please try again later.",
+}
 function getHttpErrorMessage(status, context = "general") {
-  const contextMessage = CONTEXT_MESSAGES[context]?.[status];
+  const contextMessage = CONTEXT_MESSAGES[context]?.[status]
   if (contextMessage) {
-    return contextMessage;
+    return contextMessage
   }
-  const defaultMessage = DEFAULT_MESSAGES[status];
+  const defaultMessage = DEFAULT_MESSAGES[status]
   if (defaultMessage) {
-    return defaultMessage;
+    return defaultMessage
   }
-  return "An unexpected error occurred. Please try again.";
+  return "An unexpected error occurred. Please try again."
 }
 
 // src/try/api/sessions-service.ts
-var LEASES_ENDPOINT = "/api/leases";
+var LEASES_ENDPOINT = "/api/leases"
 async function fetchUserLeases() {
   return deduplicatedRequest("fetchUserLeases", async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout)
     try {
-      const authStatus = await checkAuthStatus();
+      const authStatus = await checkAuthStatus()
       if (!authStatus.authenticated || !authStatus.user?.email) {
-        console.error("[sessions-service] User not authenticated or email not available");
-        authState.logout();
+        console.error("[sessions-service] User not authenticated or email not available")
+        authState.logout()
         return {
           success: false,
-          error: "Please sign in to view your sessions."
-        };
+          error: "Please sign in to view your sessions.",
+        }
       }
-      const userEmail = encodeURIComponent(authStatus.user.email);
-      const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`;
+      const userEmail = encodeURIComponent(authStatus.user.email)
+      const endpoint = `${LEASES_ENDPOINT}?userEmail=${userEmail}`
       const response = await callISBAPI(endpoint, {
         method: "GET",
-        signal: controller.signal
+        signal: controller.signal,
         // Let 401 redirect happen naturally
-      });
-      clearTimeout(timeoutId);
+      })
+      clearTimeout(timeoutId)
       if (!response.ok) {
-        console.error("[sessions-service] API error:", response.status, response.statusText);
+        console.error("[sessions-service] API error:", response.status, response.statusText)
         return {
           success: false,
-          error: getHttpErrorMessage(response.status, "sessions")
-        };
+          error: getHttpErrorMessage(response.status, "sessions"),
+        }
       }
-      const data = await response.json();
-      let rawLeases = [];
+      const data = await response.json()
+      let rawLeases = []
       if (data?.status === "success" && Array.isArray(data?.data?.result)) {
-        rawLeases = data.data.result;
+        rawLeases = data.data.result
       } else if (Array.isArray(data)) {
-        rawLeases = data;
+        rawLeases = data
       } else if (Array.isArray(data?.leases)) {
-        rawLeases = data.leases;
+        rawLeases = data.leases
       }
-      const leases = rawLeases.map(transformLease);
-      leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const leases = rawLeases.map(transformLease)
+      leases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       return {
         success: true,
-        leases
-      };
+        leases,
+      }
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          console.error("[sessions-service] Request timeout");
+          console.error("[sessions-service] Request timeout")
           return {
             success: false,
-            error: "Request timed out. Please check your connection and try again."
-          };
+            error: "Request timed out. Please check your connection and try again.",
+          }
         }
         if (error.message.includes("Unauthorized")) {
           return {
             success: false,
-            error: "Please sign in to view your sessions."
-          };
+            error: "Please sign in to view your sessions.",
+          }
         }
-        console.error("[sessions-service] Fetch error:", error.message);
+        console.error("[sessions-service] Fetch error:", error.message)
       }
       return {
         success: false,
-        error: "Unable to load your sessions. Please try again."
-      };
+        error: "Unable to load your sessions. Please try again.",
+      }
     }
-  });
+  })
 }
 function transformLease(raw) {
-  let status = "Expired";
+  let status = "Expired"
   switch (raw.status) {
     case "Active":
-      status = "Active";
-      break;
+      status = "Active"
+      break
     case "Pending":
-      status = "Pending";
-      break;
+      status = "Pending"
+      break
     case "Expired":
-      status = "Expired";
-      break;
+      status = "Expired"
+      break
     case "Terminated":
-      status = "Terminated";
-      break;
+      status = "Terminated"
+      break
     case "ManuallyTerminated":
-      status = "ManuallyTerminated";
-      break;
+      status = "ManuallyTerminated"
+      break
     case "Failed":
-      status = "Failed";
-      break;
+      status = "Failed"
+      break
   }
   return {
     leaseId: raw.leaseId,
@@ -721,78 +720,78 @@ function transformLease(raw) {
     maxSpend: raw.maxSpend,
     currentSpend: raw.totalCostAccrued,
     // SSO URL will be configured in config
-    awsSsoPortalUrl: void 0
-  };
+    awsSsoPortalUrl: void 0,
+  }
 }
 function isLeaseActive(lease) {
-  return lease.status === "Active";
+  return lease.status === "Active"
 }
 function getSsoUrl(lease) {
   if (lease.awsSsoPortalUrl) {
-    return lease.awsSsoPortalUrl;
+    return lease.awsSsoPortalUrl
   }
-  const baseUrl = config.awsSsoPortalUrl;
-  const accountId = lease.awsAccountId;
-  const roleName = config.ssoRoleName;
-  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`;
+  const baseUrl = config.awsSsoPortalUrl
+  const accountId = lease.awsAccountId
+  const roleName = config.ssoRoleName
+  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`
 }
 
 // src/try/utils/date-utils.ts
 function formatRelativeTime(date) {
-  const targetDate = typeof date === "string" ? new Date(date) : date;
-  const now = /* @__PURE__ */ new Date();
-  const diffMs = targetDate.getTime() - now.getTime();
-  const diffSecs = Math.round(diffMs / 1e3);
-  const diffMins = Math.round(diffSecs / 60);
-  const diffHours = Math.round(diffMins / 60);
-  const diffDays = Math.round(diffHours / 24);
-  const rtf = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" });
+  const targetDate = typeof date === "string" ? new Date(date) : date
+  const now = /* @__PURE__ */ new Date()
+  const diffMs = targetDate.getTime() - now.getTime()
+  const diffSecs = Math.round(diffMs / 1e3)
+  const diffMins = Math.round(diffSecs / 60)
+  const diffHours = Math.round(diffMins / 60)
+  const diffDays = Math.round(diffHours / 24)
+  const rtf = new Intl.RelativeTimeFormat("en-GB", { numeric: "auto" })
   if (Math.abs(diffSecs) < 60) {
-    return rtf.format(diffSecs, "second");
+    return rtf.format(diffSecs, "second")
   } else if (Math.abs(diffMins) < 60) {
-    return rtf.format(diffMins, "minute");
+    return rtf.format(diffMins, "minute")
   } else if (Math.abs(diffHours) < 24) {
-    return rtf.format(diffHours, "hour");
+    return rtf.format(diffHours, "hour")
   } else if (Math.abs(diffDays) < 30) {
-    return rtf.format(diffDays, "day");
+    return rtf.format(diffDays, "day")
   } else {
-    return formatAbsoluteDate(targetDate);
+    return formatAbsoluteDate(targetDate)
   }
 }
 function formatAbsoluteDate(date) {
-  const targetDate = typeof date === "string" ? new Date(date) : date;
+  const targetDate = typeof date === "string" ? new Date(date) : date
   return targetDate.toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false
-  });
+    hour12: false,
+  })
 }
 function formatRemainingDuration(expiresAt) {
-  const targetDate = typeof expiresAt === "string" ? new Date(expiresAt) : expiresAt;
-  const now = /* @__PURE__ */ new Date();
-  const diffMs = targetDate.getTime() - now.getTime();
+  const targetDate = typeof expiresAt === "string" ? new Date(expiresAt) : expiresAt
+  const now = /* @__PURE__ */ new Date()
+  const diffMs = targetDate.getTime() - now.getTime()
   if (diffMs <= 0) {
-    return null;
+    return null
   }
-  const hours = Math.floor(diffMs / (1e3 * 60 * 60));
-  const minutes = Math.floor(diffMs % (1e3 * 60 * 60) / (1e3 * 60));
+  const hours = Math.floor(diffMs / (1e3 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1e3 * 60 * 60)) / (1e3 * 60))
   if (hours >= 24) {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    return `${days}d ${remainingHours}h remaining`;
+    const days = Math.floor(hours / 24)
+    const remainingHours = hours % 24
+    return `${days}d ${remainingHours}h remaining`
   }
   if (hours > 0) {
-    return `${hours}h ${minutes}m remaining`;
+    return `${hours}h ${minutes}m remaining`
   }
-  return `${minutes}m remaining`;
+  return `${minutes}m remaining`
 }
 function formatExpiry(expiresAt) {
-  const relative = formatRelativeTime(expiresAt);
-  const absolute = formatAbsoluteDate(expiresAt);
-  return `${relative} (${absolute})`;
+  const relative = formatRelativeTime(expiresAt)
+  const absolute = formatAbsoluteDate(expiresAt)
+  return `${relative} (${absolute})`
 }
 
 // src/try/utils/currency-utils.ts
@@ -801,15 +800,15 @@ function formatUSD(amount, decimals = 2) {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  }).format(amount);
+    maximumFractionDigits: decimals,
+  }).format(amount)
 }
 function formatBudget(currentSpend, maxSpend) {
-  return `${formatUSD(currentSpend, 4)} / ${formatUSD(maxSpend, 2)}`;
+  return `${formatUSD(currentSpend, 4)} / ${formatUSD(maxSpend, 2)}`
 }
 function calculateBudgetPercentage(currentSpend, maxSpend) {
-  if (maxSpend === 0) return 0;
-  return Math.round(currentSpend / maxSpend * 100);
+  if (maxSpend === 0) return 0
+  return Math.round((currentSpend / maxSpend) * 100)
 }
 
 // src/try/ui/components/sessions-table.ts
@@ -819,21 +818,21 @@ var STATUS_COLORS = {
   Expired: "govuk-tag--grey",
   Terminated: "govuk-tag--red",
   ManuallyTerminated: "govuk-tag--red",
-  Failed: "govuk-tag--red"
-};
+  Failed: "govuk-tag--red",
+}
 var STATUS_LABELS = {
   Pending: "Pending",
   Active: "Active",
   Expired: "Expired",
   Terminated: "Terminated",
   ManuallyTerminated: "Ended",
-  Failed: "Failed"
-};
+  Failed: "Failed",
+}
 function renderSessionsTable(leases) {
   if (leases.length === 0) {
-    return renderEmptyTable();
+    return renderEmptyTable()
   }
-  const rows = leases.map(renderSessionRow).join("");
+  const rows = leases.map(renderSessionRow).join("")
   return `
     <table class="govuk-table sessions-table">
       <caption class="govuk-table__caption govuk-table__caption--m govuk-visually-hidden">
@@ -853,16 +852,16 @@ function renderSessionsTable(leases) {
         ${rows}
       </tbody>
     </table>
-  `;
+  `
 }
 function renderSessionRow(lease) {
-  const statusClass = STATUS_COLORS[lease.status];
-  const expiry = formatExpiry(lease.expiresAt);
-  const budget = formatBudget(lease.currentSpend, lease.maxSpend);
-  const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend);
-  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`;
-  const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null;
-  const actions = renderActions(lease);
+  const statusClass = STATUS_COLORS[lease.status]
+  const expiry = formatExpiry(lease.expiresAt)
+  const budget = formatBudget(lease.currentSpend, lease.maxSpend)
+  const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend)
+  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`
+  const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null
+  const actions = renderActions(lease)
   return `
     <tr class="govuk-table__row">
       <td class="govuk-table__cell" data-label="Product">
@@ -895,13 +894,13 @@ function renderSessionRow(lease) {
         ${actions}
       </td>
     </tr>
-  `;
+  `
 }
 function renderActions(lease) {
   if (!isLeaseActive(lease)) {
-    return '<span class="govuk-body-s">No actions available</span>';
+    return '<span class="govuk-body-s">No actions available</span>'
   }
-  const ssoUrl = getSsoUrl(lease);
+  const ssoUrl = getSsoUrl(lease)
   return `
     <a
       href="${ssoUrl}"
@@ -913,7 +912,7 @@ function renderActions(lease) {
       Launch AWS Console
       <span class="govuk-visually-hidden">(opens in new tab)</span>
     </a>
-  `;
+  `
 }
 function renderEmptyTable() {
   return `
@@ -926,19 +925,19 @@ function renderEmptyTable() {
         to get started.
       </p>
     </div>
-  `;
+  `
 }
 function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
+  const div = document.createElement("div")
+  div.textContent = str
+  return div.innerHTML
 }
 function renderLoadingState() {
   return `
     <div class="sessions-loading" aria-live="polite">
       <p class="govuk-body">Loading your sessions...</p>
     </div>
-  `;
+  `
 }
 function renderErrorState(message) {
   return `
@@ -957,62 +956,62 @@ function renderErrorState(message) {
         </button>
       </div>
     </div>
-  `;
+  `
 }
 
 // src/try/ui/try-page.ts
-var CONTAINER_ID = "try-sessions-container";
+var CONTAINER_ID = "try-sessions-container"
 var currentState = {
   loading: false,
   error: null,
-  leases: []
-};
-var container = null;
-var refreshTimer = null;
-var authUnsubscribe = null;
-var visibilityChangeHandler = null;
+  leases: [],
+}
+var container = null
+var refreshTimer = null
+var authUnsubscribe = null
+var visibilityChangeHandler = null
 function initTryPage() {
-  container = document.getElementById(CONTAINER_ID);
+  container = document.getElementById(CONTAINER_ID)
   if (!container) {
-    return void 0;
+    return void 0
   }
   authUnsubscribe = authState.subscribe((isAuthenticated) => {
     if (isAuthenticated) {
-      loadAndRenderSessions();
+      loadAndRenderSessions()
     } else {
-      renderEmptyState(container);
+      renderEmptyState(container)
     }
-  });
+  })
   visibilityChangeHandler = () => {
     if (document.hidden) {
-      stopAutoRefresh();
+      stopAutoRefresh()
     } else if (authState.isAuthenticated() && currentState.leases.length > 0) {
-      startAutoRefresh();
+      startAutoRefresh()
     }
-  };
-  document.addEventListener("visibilitychange", visibilityChangeHandler);
+  }
+  document.addEventListener("visibilitychange", visibilityChangeHandler)
   container.addEventListener("click", (event) => {
-    const target = event.target;
+    const target = event.target
     if (target.dataset.action === "retry-fetch") {
-      loadAndRenderSessions();
+      loadAndRenderSessions()
     }
-  });
-  return cleanupTryPage;
+  })
+  return cleanupTryPage
 }
 async function loadAndRenderSessions() {
-  if (!container) return;
-  currentState = { loading: true, error: null, leases: [] };
+  if (!container) return
+  currentState = { loading: true, error: null, leases: [] }
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
     <p class="govuk-body-l">Manage your AWS sandbox environments</p>
     ${renderLoadingState()}
-  `;
-  const result = await fetchUserLeases();
+  `
+  const result = await fetchUserLeases()
   if (result.success && result.leases) {
-    currentState = { loading: false, error: null, leases: result.leases };
-    renderAuthenticatedState(container, result.leases);
+    currentState = { loading: false, error: null, leases: result.leases }
+    renderAuthenticatedState(container, result.leases)
   } else {
-    currentState = { loading: false, error: result.error || "Unknown error", leases: [] };
+    currentState = { loading: false, error: result.error || "Unknown error", leases: [] }
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
       <p class="govuk-body-l">Manage your AWS sandbox environments</p>
@@ -1029,11 +1028,11 @@ async function loadAndRenderSessions() {
       </a>
 
       ${renderFirstTimeGuidance()}
-    `;
+    `
   }
 }
 function renderEmptyState(container2) {
-  stopAutoRefresh();
+  stopAutoRefresh()
   container2.innerHTML = `
     <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
     <p class="govuk-body">
@@ -1045,18 +1044,19 @@ function renderEmptyState(container2) {
         <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
       </svg>
     </a>
-  `;
+  `
 }
 function renderAuthenticatedState(container2, leases) {
-  const hasLeases = leases.length > 0;
-  const activeCount = leases.filter((l) => l.status === "Active").length;
-  const pendingCount = leases.filter((l) => l.status === "Pending").length;
-  let summaryText = "";
+  const hasLeases = leases.length > 0
+  const activeCount = leases.filter((l) => l.status === "Active").length
+  const pendingCount = leases.filter((l) => l.status === "Pending").length
+  let summaryText = ""
   if (hasLeases) {
-    const parts = [];
-    if (activeCount > 0) parts.push(`${activeCount} active`);
-    if (pendingCount > 0) parts.push(`${pendingCount} pending`);
-    summaryText = parts.length > 0 ? `You have ${parts.join(" and ")} session${activeCount + pendingCount > 1 ? "s" : ""}.` : "";
+    const parts = []
+    if (activeCount > 0) parts.push(`${activeCount} active`)
+    if (pendingCount > 0) parts.push(`${pendingCount} pending`)
+    summaryText =
+      parts.length > 0 ? `You have ${parts.join(" and ")} session${activeCount + pendingCount > 1 ? "s" : ""}.` : ""
   }
   container2.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
@@ -1077,8 +1077,8 @@ function renderAuthenticatedState(container2, leases) {
     </a>
 
     ${!hasLeases ? renderFirstTimeGuidance() : ""}
-  `;
-  startAutoRefresh();
+  `
+  startAutoRefresh()
 }
 function renderFirstTimeGuidance() {
   return `
@@ -1095,34 +1095,34 @@ function renderFirstTimeGuidance() {
         <li>Your sandbox session will appear here within minutes</li>
       </ol>
     </div>
-  `;
+  `
 }
 function startAutoRefresh() {
-  stopAutoRefresh();
+  stopAutoRefresh()
   refreshTimer = window.setInterval(() => {
     if (container && currentState.leases.length > 0 && !currentState.loading) {
-      renderAuthenticatedState(container, currentState.leases);
+      renderAuthenticatedState(container, currentState.leases)
     }
-  }, 6e4);
+  }, 6e4)
 }
 function stopAutoRefresh() {
   if (refreshTimer !== null) {
-    clearInterval(refreshTimer);
-    refreshTimer = null;
+    clearInterval(refreshTimer)
+    refreshTimer = null
   }
 }
 function cleanupTryPage() {
-  stopAutoRefresh();
+  stopAutoRefresh()
   if (authUnsubscribe) {
-    authUnsubscribe();
-    authUnsubscribe = null;
+    authUnsubscribe()
+    authUnsubscribe = null
   }
   if (visibilityChangeHandler) {
-    document.removeEventListener("visibilitychange", visibilityChangeHandler);
-    visibilityChangeHandler = null;
+    document.removeEventListener("visibilitychange", visibilityChangeHandler)
+    visibilityChangeHandler = null
   }
-  container = null;
-  currentState = { loading: false, error: null, leases: [] };
+  container = null
+  currentState = { loading: false, error: null, leases: [] }
 }
 
 // src/try/ui/utils/focus-trap.ts
@@ -1132,94 +1132,94 @@ var FOCUSABLE_SELECTORS = [
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
-  '[tabindex]:not([tabindex="-1"])'
-].join(", ");
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ")
 function createFocusTrap(container2, options = {}) {
-  let active = false;
-  let previouslyFocused = null;
+  let active = false
+  let previouslyFocused = null
   function getFocusableElements() {
-    const elements = container2.querySelectorAll(FOCUSABLE_SELECTORS);
+    const elements = container2.querySelectorAll(FOCUSABLE_SELECTORS)
     return Array.from(elements).filter(
-      (el) => el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).visibility !== "hidden"
-    );
+      (el) => el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).visibility !== "hidden",
+    )
   }
   function handleKeydown(event) {
-    if (!active) return;
+    if (!active) return
     if (event.key === "Escape") {
-      event.preventDefault();
-      options.onEscape?.();
-      return;
+      event.preventDefault()
+      options.onEscape?.()
+      return
     }
-    if (event.key !== "Tab") return;
-    const focusable = getFocusableElements();
-    if (focusable.length === 0) return;
-    const firstElement = focusable[0];
-    const lastElement = focusable[focusable.length - 1];
-    const activeElement = document.activeElement;
+    if (event.key !== "Tab") return
+    const focusable = getFocusableElements()
+    if (focusable.length === 0) return
+    const firstElement = focusable[0]
+    const lastElement = focusable[focusable.length - 1]
+    const activeElement = document.activeElement
     if (event.shiftKey && activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-      return;
+      event.preventDefault()
+      lastElement.focus()
+      return
     }
     if (!event.shiftKey && activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-      return;
+      event.preventDefault()
+      firstElement.focus()
+      return
     }
   }
   return {
     activate() {
-      if (active) return;
-      active = true;
-      previouslyFocused = options.returnFocus || document.activeElement;
-      document.addEventListener("keydown", handleKeydown);
-      const focusable = getFocusableElements();
-      const initialElement = options.initialFocus || focusable[0];
+      if (active) return
+      active = true
+      previouslyFocused = options.returnFocus || document.activeElement
+      document.addEventListener("keydown", handleKeydown)
+      const focusable = getFocusableElements()
+      const initialElement = options.initialFocus || focusable[0]
       requestAnimationFrame(() => {
         if (initialElement) {
-          initialElement.focus();
+          initialElement.focus()
         } else if (focusable.length > 0) {
-          focusable[0].focus();
+          focusable[0].focus()
         }
-      });
+      })
     },
     deactivate() {
-      if (!active) return;
-      active = false;
-      document.removeEventListener("keydown", handleKeydown);
+      if (!active) return
+      active = false
+      document.removeEventListener("keydown", handleKeydown)
       if (previouslyFocused) {
-        previouslyFocused.focus();
-        previouslyFocused = null;
+        previouslyFocused.focus()
+        previouslyFocused = null
       }
     },
     isActive() {
-      return active;
-    }
-  };
+      return active
+    },
+  }
 }
 
 // src/try/ui/utils/aria-live.ts
-var liveRegion = null;
+var liveRegion = null
 function getLiveRegion() {
   if (liveRegion && document.body.contains(liveRegion)) {
-    return liveRegion;
+    return liveRegion
   }
-  liveRegion = document.createElement("div");
-  liveRegion.id = "aria-live-region";
-  liveRegion.setAttribute("role", "status");
-  liveRegion.setAttribute("aria-live", "polite");
-  liveRegion.setAttribute("aria-atomic", "true");
-  liveRegion.className = "govuk-visually-hidden";
-  document.body.appendChild(liveRegion);
-  return liveRegion;
+  liveRegion = document.createElement("div")
+  liveRegion.id = "aria-live-region"
+  liveRegion.setAttribute("role", "status")
+  liveRegion.setAttribute("aria-live", "polite")
+  liveRegion.setAttribute("aria-atomic", "true")
+  liveRegion.className = "govuk-visually-hidden"
+  document.body.appendChild(liveRegion)
+  return liveRegion
 }
 function announce(message, priority = "polite") {
-  const region = getLiveRegion();
-  region.setAttribute("aria-live", priority);
-  region.textContent = "";
+  const region = getLiveRegion()
+  region.setAttribute("aria-live", priority)
+  region.textContent = ""
   requestAnimationFrame(() => {
-    region.textContent = message;
-  });
+    region.textContent = message
+  })
 }
 
 // src/try/api/configurations-service.ts
@@ -1237,213 +1237,214 @@ By using this service, you agree to:
 Resources will be automatically terminated after the session expires.
 
 For full terms, please contact the Innovation Sandbox team.
-`.trim();
+`.trim()
 var DEFAULT_CONFIG = {
   aup: FALLBACK_AUP,
   maxLeases: 5,
-  leaseDuration: 24
-};
-var CONFIGURATIONS_ENDPOINT = "/api/configurations";
-var CACHE_TTL_MS = 3e4;
-var configurationCache = null;
+  leaseDuration: 24,
+}
+var CONFIGURATIONS_ENDPOINT = "/api/configurations"
+var CACHE_TTL_MS = 3e4
+var configurationCache = null
 function isCacheValid() {
   if (!configurationCache) {
-    return false;
+    return false
   }
-  const age = Date.now() - configurationCache.timestamp;
-  return age < CACHE_TTL_MS;
+  const age = Date.now() - configurationCache.timestamp
+  return age < CACHE_TTL_MS
 }
 async function fetchConfigurations() {
   if (isCacheValid() && configurationCache) {
-    return configurationCache.data;
+    return configurationCache.data
   }
   return deduplicatedRequest("fetchConfigurations", async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout)
     try {
       const response = await callISBAPI(CONFIGURATIONS_ENDPOINT, {
         method: "GET",
         signal: controller.signal,
-        skipAuthRedirect: true
+        skipAuthRedirect: true,
         // Don't redirect on 401, we'll show error in modal
-      });
-      clearTimeout(timeoutId);
+      })
+      clearTimeout(timeoutId)
       if (!response.ok) {
-        console.error("[configurations-service] API error:", response.status, response.statusText);
+        console.error("[configurations-service] API error:", response.status, response.statusText)
         return {
           success: false,
-          error: getHttpErrorMessage(response.status, "configuration")
-        };
+          error: getHttpErrorMessage(response.status, "configuration"),
+        }
       }
-      const rawData = await response.json();
-      const aupContent = rawData.data?.termsOfService || rawData.data?.aup || rawData.termsOfService || rawData.aup;
-      const maxLeases = rawData.data?.leases?.maxLeasesPerUser ?? rawData.maxLeases ?? DEFAULT_CONFIG.maxLeases;
-      const leaseDuration = rawData.data?.leases?.maxDurationHours ?? rawData.leaseDuration ?? DEFAULT_CONFIG.leaseDuration;
+      const rawData = await response.json()
+      const aupContent = rawData.data?.termsOfService || rawData.data?.aup || rawData.termsOfService || rawData.aup
+      const maxLeases = rawData.data?.leases?.maxLeasesPerUser ?? rawData.maxLeases ?? DEFAULT_CONFIG.maxLeases
+      const leaseDuration =
+        rawData.data?.leases?.maxDurationHours ?? rawData.leaseDuration ?? DEFAULT_CONFIG.leaseDuration
       if (!aupContent || typeof aupContent !== "string") {
-        console.warn("[configurations-service] Invalid AUP in response, using fallback");
+        console.warn("[configurations-service] Invalid AUP in response, using fallback")
         const fallbackResult = {
           success: true,
           data: {
             ...DEFAULT_CONFIG,
-            aup: DEFAULT_CONFIG.aup
-          }
-        };
-        configurationCache = { data: fallbackResult, timestamp: Date.now() };
-        return fallbackResult;
+            aup: DEFAULT_CONFIG.aup,
+          },
+        }
+        configurationCache = { data: fallbackResult, timestamp: Date.now() }
+        return fallbackResult
       }
       const result = {
         success: true,
         data: {
           maxLeases,
           leaseDuration,
-          aup: aupContent
-        }
-      };
-      configurationCache = { data: result, timestamp: Date.now() };
-      return result;
+          aup: aupContent,
+        },
+      }
+      configurationCache = { data: result, timestamp: Date.now() }
+      return result
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          console.error("[configurations-service] Request timeout");
+          console.error("[configurations-service] Request timeout")
           return {
             success: false,
-            error: "Request timed out. Please check your connection and try again."
-          };
+            error: "Request timed out. Please check your connection and try again.",
+          }
         }
-        console.error("[configurations-service] Fetch error:", error.message);
+        console.error("[configurations-service] Fetch error:", error.message)
       }
       return {
         success: false,
-        error: "Unable to load configuration. Please try again."
-      };
+        error: "Unable to load configuration. Please try again.",
+      }
     }
-  });
+  })
 }
 function getFallbackAup() {
-  return FALLBACK_AUP;
+  return FALLBACK_AUP
 }
 
 // src/try/api/lease-templates-service.ts
 var DEFAULTS = {
   leaseDurationInHours: 24,
-  maxSpend: 50
-};
+  maxSpend: 50,
+}
 var TIMEOUTS = {
   /** Critical operations: 5 seconds (user is actively waiting) */
   critical: 5e3,
   /** Standard operations: 10 seconds */
   standard: 1e4,
   /** Background operations: 30 seconds */
-  background: 3e4
-};
-var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  background: 3e4,
+}
+var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isValidUUID(value) {
   if (typeof value !== "string" || value.length === 0) {
-    return false;
+    return false
   }
   if (/[\x00-\x1F\x7F]/.test(value)) {
-    return false;
+    return false
   }
-  return UUID_REGEX.test(value);
+  return UUID_REGEX.test(value)
 }
 function buildEndpoint(tryId) {
-  return `/api/leaseTemplates/${tryId}`;
+  return `/api/leaseTemplates/${tryId}`
 }
 async function fetchLeaseTemplate(tryId) {
   if (!tryId || !isValidUUID(tryId)) {
-    console.warn("[lease-templates-service] Invalid UUID format:", tryId);
+    console.warn("[lease-templates-service] Invalid UUID format:", tryId)
     return {
       success: false,
       error: "Invalid template identifier.",
-      errorCode: "INVALID_UUID"
-    };
+      errorCode: "INVALID_UUID",
+    }
   }
   return deduplicatedRequest(`fetchLeaseTemplate:${tryId}`, async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.critical);
-    const startTime = Date.now();
-    const endpoint = buildEndpoint(tryId);
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.critical)
+    const startTime = Date.now()
+    const endpoint = buildEndpoint(tryId)
     try {
-      console.log("[lease-templates-service] Fetching template:", tryId);
+      console.log("[lease-templates-service] Fetching template:", tryId)
       const response = await callISBAPI(endpoint, {
         method: "GET",
         signal: controller.signal,
-        skipAuthRedirect: true
+        skipAuthRedirect: true,
         // Handle 401 gracefully, don't redirect
-      });
-      clearTimeout(timeoutId);
-      const elapsed = Date.now() - startTime;
-      console.log(`[lease-templates-service] Fetch completed in ${elapsed}ms`);
+      })
+      clearTimeout(timeoutId)
+      const elapsed = Date.now() - startTime
+      console.log(`[lease-templates-service] Fetch completed in ${elapsed}ms`)
       if (response.status === 404) {
-        console.error("[lease-templates-service] Template not found:", tryId);
+        console.error("[lease-templates-service] Template not found:", tryId)
         return {
           success: false,
           error: "This sandbox template was not found.",
-          errorCode: "NOT_FOUND"
-        };
+          errorCode: "NOT_FOUND",
+        }
       }
       if (response.status === 401) {
-        console.error("[lease-templates-service] Unauthorized:", tryId);
+        console.error("[lease-templates-service] Unauthorized:", tryId)
         return {
           success: false,
           error: "Please sign in to continue.",
-          errorCode: "UNAUTHORIZED"
-        };
+          errorCode: "UNAUTHORIZED",
+        }
       }
       if (!response.ok) {
-        console.error("[lease-templates-service] API error:", response.status, response.statusText);
+        console.error("[lease-templates-service] API error:", response.status, response.statusText)
         return {
           success: false,
           error: getHttpErrorMessage(response.status, "general"),
-          errorCode: "SERVER_ERROR"
-        };
+          errorCode: "SERVER_ERROR",
+        }
       }
-      const rawData = await response.json();
-      const data = rawData.data;
+      const rawData = await response.json()
+      const data = rawData.data
       if (!data) {
-        console.warn("[lease-templates-service] Response missing data field, template:", tryId);
+        console.warn("[lease-templates-service] Response missing data field, template:", tryId)
       }
-      const leaseDurationInHours = data?.leaseDurationInHours ?? DEFAULTS.leaseDurationInHours;
-      const maxSpend = data?.maxSpend ?? DEFAULTS.maxSpend;
-      const name = data?.name;
+      const leaseDurationInHours = data?.leaseDurationInHours ?? DEFAULTS.leaseDurationInHours
+      const maxSpend = data?.maxSpend ?? DEFAULTS.maxSpend
+      const name = data?.name
       if (data && data.leaseDurationInHours === void 0) {
         console.warn(
           "[lease-templates-service] Missing leaseDurationInHours, using default:",
-          DEFAULTS.leaseDurationInHours
-        );
+          DEFAULTS.leaseDurationInHours,
+        )
       }
       if (data && data.maxSpend === void 0) {
-        console.warn("[lease-templates-service] Missing maxSpend, using default:", DEFAULTS.maxSpend);
+        console.warn("[lease-templates-service] Missing maxSpend, using default:", DEFAULTS.maxSpend)
       }
       return {
         success: true,
         data: {
           leaseDurationInHours,
           maxSpend,
-          name
-        }
-      };
+          name,
+        },
+      }
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          console.error("[lease-templates-service] Request timeout for template:", tryId);
+          console.error("[lease-templates-service] Request timeout for template:", tryId)
           return {
             success: false,
             error: "Request timed out. Please check your connection and try again.",
-            errorCode: "TIMEOUT"
-          };
+            errorCode: "TIMEOUT",
+          }
         }
-        console.error("[lease-templates-service] Fetch error:", error.message);
+        console.error("[lease-templates-service] Fetch error:", error.message)
       }
       return {
         success: false,
         error: "Unable to load template details. Please try again.",
-        errorCode: "NETWORK_ERROR"
-      };
+        errorCode: "NETWORK_ERROR",
+      }
     }
-  });
+  })
 }
 
 // src/try/ui/components/aup-modal.ts
@@ -1461,14 +1462,14 @@ var IDS = {
   /** Story 9.2: Duration display element */
   DURATION: "aup-duration",
   /** Story 9.2: Budget display element */
-  BUDGET: "aup-budget"
-};
-var BODY_MODAL_OPEN_CLASS = "aup-modal-open";
-var ERROR_HIDDEN_CLASS = "aup-modal__error--hidden";
+  BUDGET: "aup-budget",
+}
+var BODY_MODAL_OPEN_CLASS = "aup-modal-open"
+var ERROR_HIDDEN_CLASS = "aup-modal__error--hidden"
 var AupModal = class {
   constructor() {
-    this.overlay = null;
-    this.focusTrap = null;
+    this.overlay = null
+    this.focusTrap = null
     this.state = {
       isOpen: false,
       tryId: null,
@@ -1481,13 +1482,13 @@ var AupModal = class {
       leaseTemplateData: null,
       leaseTemplateError: null,
       // Story 9.3: AUP loaded state (not just fallback)
-      aupLoaded: false
-    };
-    this.onAccept = null;
+      aupLoaded: false,
+    }
+    this.onAccept = null
     // CRITICAL-2 FIX: Store bound event handlers for proper cleanup
-    this.boundHandlers = {};
+    this.boundHandlers = {}
     // AbortController for cancelling in-flight requests when modal closes
-    this.abortController = null;
+    this.abortController = null
   }
   /**
    * Story 9.3: Computed property for all-or-nothing button gating.
@@ -1495,7 +1496,7 @@ var AupModal = class {
    * Note: leaseTemplateData !== null ensures we got actual data, not just completed loading.
    */
   get isFullyLoaded() {
-    return this.state.aupLoaded && this.state.leaseTemplateLoaded && this.state.leaseTemplateData !== null;
+    return this.state.aupLoaded && this.state.leaseTemplateLoaded && this.state.leaseTemplateData !== null
   }
   /**
    * Open the modal for a specific try product.
@@ -1505,67 +1506,67 @@ var AupModal = class {
    */
   open(tryId, onAccept) {
     if (this.state.isOpen) {
-      console.warn("[AupModal] Modal already open");
-      return;
+      console.warn("[AupModal] Modal already open")
+      return
     }
-    this.abortController = new AbortController();
-    this.state.tryId = tryId;
-    this.state.isOpen = true;
-    this.state.aupAccepted = false;
-    this.state.error = null;
-    this.state.leaseTemplateLoading = true;
-    this.state.leaseTemplateLoaded = false;
-    this.state.leaseTemplateData = null;
-    this.state.leaseTemplateError = null;
-    this.state.aupLoaded = false;
-    this.onAccept = onAccept;
-    this.render();
-    this.setupFocusTrap();
-    this.updateButtons();
-    document.body.classList.add(BODY_MODAL_OPEN_CLASS);
-    announce("Request AWS Sandbox Access dialog opened");
-    announce("Loading session terms...");
-    this.loadAupContent();
-    this.loadLeaseTemplate(tryId);
+    this.abortController = new AbortController()
+    this.state.tryId = tryId
+    this.state.isOpen = true
+    this.state.aupAccepted = false
+    this.state.error = null
+    this.state.leaseTemplateLoading = true
+    this.state.leaseTemplateLoaded = false
+    this.state.leaseTemplateData = null
+    this.state.leaseTemplateError = null
+    this.state.aupLoaded = false
+    this.onAccept = onAccept
+    this.render()
+    this.setupFocusTrap()
+    this.updateButtons()
+    document.body.classList.add(BODY_MODAL_OPEN_CLASS)
+    announce("Request AWS Sandbox Access dialog opened")
+    announce("Loading session terms...")
+    this.loadAupContent()
+    this.loadLeaseTemplate(tryId)
   }
   /**
    * Load AUP content from the configurations API.
    * Story 6.7: Fetch and display AUP from Innovation Sandbox API
    */
   async loadAupContent() {
-    const aupContent = document.getElementById(IDS.AUP_CONTENT);
-    if (!aupContent) return;
-    aupContent.textContent = "Loading Acceptable Use Policy...";
-    announce("Loading Acceptable Use Policy");
+    const aupContent = document.getElementById(IDS.AUP_CONTENT)
+    if (!aupContent) return
+    aupContent.textContent = "Loading Acceptable Use Policy..."
+    announce("Loading Acceptable Use Policy")
     try {
-      const result = await fetchConfigurations();
+      const result = await fetchConfigurations()
       if (this.abortController?.signal.aborted) {
-        console.debug("[AupModal] AUP request completed after modal closed, ignoring");
-        return;
+        console.debug("[AupModal] AUP request completed after modal closed, ignoring")
+        return
       }
       if (result.success && result.data?.aup) {
-        aupContent.textContent = result.data.aup;
-        this.state.aupLoaded = true;
-        announce("Acceptable Use Policy loaded");
+        aupContent.textContent = result.data.aup
+        this.state.aupLoaded = true
+        announce("Acceptable Use Policy loaded")
       } else {
-        console.warn("[AupModal] Failed to fetch AUP:", result.error);
-        aupContent.textContent = getFallbackAup();
-        this.state.aupLoaded = false;
+        console.warn("[AupModal] Failed to fetch AUP:", result.error)
+        aupContent.textContent = getFallbackAup()
+        this.state.aupLoaded = false
         if (result.error) {
-          this.showError(result.error + " Using default policy.");
+          this.showError(result.error + " Using default policy.")
         }
       }
     } catch (error) {
       if (this.abortController?.signal.aborted) {
-        console.debug("[AupModal] AUP request aborted");
-        return;
+        console.debug("[AupModal] AUP request aborted")
+        return
       }
-      console.error("[AupModal] Error loading AUP:", error);
-      aupContent.textContent = getFallbackAup();
-      this.state.aupLoaded = false;
-      this.showError("Unable to load policy. Using default policy.");
+      console.error("[AupModal] Error loading AUP:", error)
+      aupContent.textContent = getFallbackAup()
+      this.state.aupLoaded = false
+      this.showError("Unable to load policy. Using default policy.")
     }
-    this.updateButtons();
+    this.updateButtons()
   }
   /**
    * Load lease template from the API.
@@ -1575,60 +1576,60 @@ var AupModal = class {
    */
   async loadLeaseTemplate(tryId) {
     try {
-      const result = await fetchLeaseTemplate(tryId);
+      const result = await fetchLeaseTemplate(tryId)
       if (this.abortController?.signal.aborted) {
-        console.debug("[AupModal] Lease template request completed after modal closed, ignoring");
-        return;
+        console.debug("[AupModal] Lease template request completed after modal closed, ignoring")
+        return
       }
-      this.state.leaseTemplateLoading = false;
-      this.state.leaseTemplateLoaded = true;
+      this.state.leaseTemplateLoading = false
+      this.state.leaseTemplateLoaded = true
       if (result.success && result.data) {
         this.state.leaseTemplateData = {
           leaseDurationInHours: result.data.leaseDurationInHours,
-          maxSpend: result.data.maxSpend
-        };
-        this.state.leaseTemplateError = null;
+          maxSpend: result.data.maxSpend,
+        }
+        this.state.leaseTemplateError = null
         announce(
-          `Session terms loaded: ${result.data.leaseDurationInHours} hour session with $${result.data.maxSpend} budget`
-        );
+          `Session terms loaded: ${result.data.leaseDurationInHours} hour session with $${result.data.maxSpend} budget`,
+        )
       } else {
-        this.state.leaseTemplateData = null;
-        this.state.leaseTemplateError = result.error || "Failed to load session terms";
+        this.state.leaseTemplateData = null
+        this.state.leaseTemplateError = result.error || "Failed to load session terms"
         console.warn("[AupModal] Failed to fetch lease template:", {
           tryId,
           errorCode: result.errorCode || "UNKNOWN",
-          message: result.error
-        });
+          message: result.error,
+        })
         if (result.errorCode === "NOT_FOUND") {
-          this.showError("This sandbox is currently unavailable");
-          announce("This sandbox is currently unavailable", "assertive");
+          this.showError("This sandbox is currently unavailable")
+          announce("This sandbox is currently unavailable", "assertive")
         } else {
-          this.showError("Unable to load session details");
-          announce("Unable to load session details", "assertive");
+          this.showError("Unable to load session details")
+          announce("Unable to load session details", "assertive")
         }
       }
-      this.updateSessionTermsDisplay();
-      this.updateCheckboxState();
-      this.updateButtons();
+      this.updateSessionTermsDisplay()
+      this.updateCheckboxState()
+      this.updateButtons()
     } catch (error) {
       if (this.abortController?.signal.aborted) {
-        console.debug("[AupModal] Lease template request aborted");
-        return;
+        console.debug("[AupModal] Lease template request aborted")
+        return
       }
       console.warn("[AupModal] Failed to fetch lease template:", {
         tryId,
         errorCode: "NETWORK_ERROR",
-        message: error instanceof Error ? error.message : "Unknown error"
-      });
-      this.state.leaseTemplateLoading = false;
-      this.state.leaseTemplateLoaded = true;
-      this.state.leaseTemplateData = null;
-      this.state.leaseTemplateError = "Unable to load session terms";
-      this.showError("Unable to load session details");
-      announce("Unable to load session details", "assertive");
-      this.updateSessionTermsDisplay();
-      this.updateCheckboxState();
-      this.updateButtons();
+        message: error instanceof Error ? error.message : "Unknown error",
+      })
+      this.state.leaseTemplateLoading = false
+      this.state.leaseTemplateLoaded = true
+      this.state.leaseTemplateData = null
+      this.state.leaseTemplateError = "Unable to load session terms"
+      this.showError("Unable to load session details")
+      announce("Unable to load session details", "assertive")
+      this.updateSessionTermsDisplay()
+      this.updateCheckboxState()
+      this.updateButtons()
     }
   }
   /**
@@ -1639,80 +1640,80 @@ var AupModal = class {
    * layout thrashing from sequential reads/writes.
    */
   updateSessionTermsDisplay() {
-    const durationEl = document.getElementById(IDS.DURATION);
-    const budgetEl = document.getElementById(IDS.BUDGET);
-    const termsContainer = document.getElementById(IDS.SESSION_TERMS);
-    if (!termsContainer) return;
+    const durationEl = document.getElementById(IDS.DURATION)
+    const budgetEl = document.getElementById(IDS.BUDGET)
+    const termsContainer = document.getElementById(IDS.SESSION_TERMS)
+    if (!termsContainer) return
     requestAnimationFrame(() => {
-      const skeleton = termsContainer.querySelector(".aup-modal__skeleton");
+      const skeleton = termsContainer.querySelector(".aup-modal__skeleton")
       if (skeleton) {
-        skeleton.remove();
+        skeleton.remove()
       }
       if (this.state.leaseTemplateData) {
         if (durationEl) {
-          durationEl.textContent = `${this.state.leaseTemplateData.leaseDurationInHours} hours`;
-          durationEl.classList.remove("aup-modal__value--error");
+          durationEl.textContent = `${this.state.leaseTemplateData.leaseDurationInHours} hours`
+          durationEl.classList.remove("aup-modal__value--error")
         }
         if (budgetEl) {
-          budgetEl.textContent = `$${this.state.leaseTemplateData.maxSpend} USD`;
-          budgetEl.classList.remove("aup-modal__value--error");
+          budgetEl.textContent = `$${this.state.leaseTemplateData.maxSpend} USD`
+          budgetEl.classList.remove("aup-modal__value--error")
         }
       } else {
         if (durationEl) {
-          durationEl.textContent = "Unknown";
-          durationEl.classList.add("aup-modal__value--error");
+          durationEl.textContent = "Unknown"
+          durationEl.classList.add("aup-modal__value--error")
         }
         if (budgetEl) {
-          budgetEl.textContent = "Unknown";
-          budgetEl.classList.add("aup-modal__value--error");
+          budgetEl.textContent = "Unknown"
+          budgetEl.classList.add("aup-modal__value--error")
         }
       }
-      const valueEls = termsContainer.querySelectorAll(".aup-modal__info-text");
+      const valueEls = termsContainer.querySelectorAll(".aup-modal__info-text")
       valueEls.forEach((el) => {
-        el.style.display = "";
-      });
-    });
+        el.style.display = ""
+      })
+    })
   }
   /**
    * Update checkbox disabled state based on loading state.
    * Story 9.2: Disable checkbox with tooltip during loading.
    */
   updateCheckboxState() {
-    const checkbox = document.getElementById(IDS.CHECKBOX);
-    if (!checkbox) return;
+    const checkbox = document.getElementById(IDS.CHECKBOX)
+    if (!checkbox) return
     if (this.state.leaseTemplateLoading) {
-      checkbox.disabled = true;
-      checkbox.title = "Loading...";
+      checkbox.disabled = true
+      checkbox.title = "Loading..."
     } else {
-      checkbox.disabled = false;
-      checkbox.title = "";
+      checkbox.disabled = false
+      checkbox.title = ""
     }
   }
   /**
    * Close the modal.
    */
   close() {
-    if (!this.state.isOpen) return;
-    this.abortController?.abort();
-    this.abortController = null;
-    this.state.isOpen = false;
-    this.state.tryId = null;
-    this.state.aupAccepted = false;
-    this.state.isLoading = false;
-    this.state.error = null;
-    this.state.leaseTemplateLoading = false;
-    this.state.leaseTemplateLoaded = false;
-    this.state.leaseTemplateData = null;
-    this.state.leaseTemplateError = null;
-    this.state.aupLoaded = false;
-    this.onAccept = null;
-    this.focusTrap?.deactivate();
-    this.focusTrap = null;
-    this.detachEventListeners();
-    this.overlay?.remove();
-    this.overlay = null;
-    document.body.classList.remove(BODY_MODAL_OPEN_CLASS);
-    announce("Dialog closed");
+    if (!this.state.isOpen) return
+    this.abortController?.abort()
+    this.abortController = null
+    this.state.isOpen = false
+    this.state.tryId = null
+    this.state.aupAccepted = false
+    this.state.isLoading = false
+    this.state.error = null
+    this.state.leaseTemplateLoading = false
+    this.state.leaseTemplateLoaded = false
+    this.state.leaseTemplateData = null
+    this.state.leaseTemplateError = null
+    this.state.aupLoaded = false
+    this.onAccept = null
+    this.focusTrap?.deactivate()
+    this.focusTrap = null
+    this.detachEventListeners()
+    this.overlay?.remove()
+    this.overlay = null
+    document.body.classList.remove(BODY_MODAL_OPEN_CLASS)
+    announce("Dialog closed")
   }
   /**
    * Set the AUP content to display.
@@ -1723,9 +1724,9 @@ var AupModal = class {
    * @param content - AUP text content (HTML will be escaped)
    */
   setAupContent(content) {
-    const aupContent = document.getElementById(IDS.AUP_CONTENT);
+    const aupContent = document.getElementById(IDS.AUP_CONTENT)
     if (aupContent) {
-      aupContent.textContent = content;
+      aupContent.textContent = content
     }
   }
   /**
@@ -1736,22 +1737,22 @@ var AupModal = class {
    * @param message - Loading message to display
    */
   showLoading(message = "Loading...") {
-    this.state.isLoading = true;
-    const body = this.overlay?.querySelector(".aup-modal__body");
+    this.state.isLoading = true
+    const body = this.overlay?.querySelector(".aup-modal__body")
     if (body) {
       body.innerHTML = `
         <div class="aup-modal__loading" aria-live="polite">
           <div class="aup-modal__spinner" aria-hidden="true"></div>
           <span id="aup-loading-message"></span>
         </div>
-      `;
-      const messageEl = body.querySelector("#aup-loading-message");
+      `
+      const messageEl = body.querySelector("#aup-loading-message")
       if (messageEl) {
-        messageEl.textContent = message;
+        messageEl.textContent = message
       }
     }
-    this.updateButtons();
-    announce(message);
+    this.updateButtons()
+    announce(message)
   }
   /**
    * Show error message.
@@ -1759,24 +1760,24 @@ var AupModal = class {
    * @param message - Error message to display
    */
   showError(message) {
-    this.state.error = message;
-    this.state.isLoading = false;
-    const errorEl = document.getElementById(IDS.ERROR);
+    this.state.error = message
+    this.state.isLoading = false
+    const errorEl = document.getElementById(IDS.ERROR)
     if (errorEl) {
-      errorEl.textContent = message;
-      errorEl.classList.remove(ERROR_HIDDEN_CLASS);
+      errorEl.textContent = message
+      errorEl.classList.remove(ERROR_HIDDEN_CLASS)
     }
-    this.updateButtons();
-    announce(message, "assertive");
+    this.updateButtons()
+    announce(message, "assertive")
   }
   /**
    * Hide error message.
    */
   hideError() {
-    this.state.error = null;
-    const errorEl = document.getElementById(IDS.ERROR);
+    this.state.error = null
+    const errorEl = document.getElementById(IDS.ERROR)
     if (errorEl) {
-      errorEl.classList.add(ERROR_HIDDEN_CLASS);
+      errorEl.classList.add(ERROR_HIDDEN_CLASS)
     }
   }
   /**
@@ -1787,8 +1788,8 @@ var AupModal = class {
     return {
       ...this.state,
       // Story 9.3: Include computed isFullyLoaded property
-      isFullyLoaded: this.isFullyLoaded
-    };
+      isFullyLoaded: this.isFullyLoaded,
+    }
   }
   /**
    * Render the modal HTML.
@@ -1800,9 +1801,9 @@ var AupModal = class {
    * the innerHTML template string.
    */
   render() {
-    this.overlay = document.createElement("div");
-    this.overlay.className = "aup-modal-overlay";
-    this.overlay.setAttribute("aria-hidden", "false");
+    this.overlay = document.createElement("div")
+    this.overlay.className = "aup-modal-overlay"
+    this.overlay.setAttribute("aria-hidden", "false")
     this.overlay.innerHTML = `
       <div
         id="${IDS.MODAL}"
@@ -1877,64 +1878,64 @@ var AupModal = class {
           </button>
         </div>
       </div>
-    `;
-    document.body.appendChild(this.overlay);
-    this.attachEventListeners();
+    `
+    document.body.appendChild(this.overlay)
+    this.attachEventListeners()
   }
   /**
    * Attach event listeners to modal elements.
    * CRITICAL-2 FIX: Store handlers for later removal in detachEventListeners().
    */
   attachEventListeners() {
-    const checkbox = document.getElementById(IDS.CHECKBOX);
-    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
-    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+    const checkbox = document.getElementById(IDS.CHECKBOX)
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN)
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN)
     this.boundHandlers.checkboxChange = () => {
-      this.state.aupAccepted = checkbox.checked;
-      this.updateButtons();
+      this.state.aupAccepted = checkbox.checked
+      this.updateButtons()
       if (checkbox.checked) {
-        announce("Acceptable Use Policy accepted");
+        announce("Acceptable Use Policy accepted")
       } else {
-        announce("Acceptable Use Policy not accepted");
+        announce("Acceptable Use Policy not accepted")
       }
-    };
-    checkbox?.addEventListener("change", this.boundHandlers.checkboxChange);
+    }
+    checkbox?.addEventListener("change", this.boundHandlers.checkboxChange)
     this.boundHandlers.continueClick = async () => {
-      if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return;
-      this.state.isLoading = true;
-      this.updateButtons();
-      announce("Requesting your sandbox...");
+      if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return
+      this.state.isLoading = true
+      this.updateButtons()
+      announce("Requesting your sandbox...")
       try {
-        await this.onAccept?.(this.state.tryId);
+        await this.onAccept?.(this.state.tryId)
       } catch {
-        this.state.isLoading = false;
-        this.updateButtons();
+        this.state.isLoading = false
+        this.updateButtons()
       }
-    };
-    continueBtn?.addEventListener("click", this.boundHandlers.continueClick);
+    }
+    continueBtn?.addEventListener("click", this.boundHandlers.continueClick)
     this.boundHandlers.cancelClick = () => {
-      this.close();
-    };
-    cancelBtn?.addEventListener("click", this.boundHandlers.cancelClick);
+      this.close()
+    }
+    cancelBtn?.addEventListener("click", this.boundHandlers.cancelClick)
   }
   /**
    * Detach event listeners from modal elements.
    * CRITICAL-2 FIX: Prevents memory leaks when modal is closed.
    */
   detachEventListeners() {
-    const checkbox = document.getElementById(IDS.CHECKBOX);
-    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
-    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+    const checkbox = document.getElementById(IDS.CHECKBOX)
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN)
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN)
     if (this.boundHandlers.checkboxChange && checkbox) {
-      checkbox.removeEventListener("change", this.boundHandlers.checkboxChange);
+      checkbox.removeEventListener("change", this.boundHandlers.checkboxChange)
     }
     if (this.boundHandlers.continueClick && continueBtn) {
-      continueBtn.removeEventListener("click", this.boundHandlers.continueClick);
+      continueBtn.removeEventListener("click", this.boundHandlers.continueClick)
     }
     if (this.boundHandlers.cancelClick && cancelBtn) {
-      cancelBtn.removeEventListener("click", this.boundHandlers.cancelClick);
+      cancelBtn.removeEventListener("click", this.boundHandlers.cancelClick)
     }
-    this.boundHandlers = {};
+    this.boundHandlers = {}
   }
   /**
    * Update button disabled states.
@@ -1942,48 +1943,48 @@ var AupModal = class {
    * and announces when button becomes enabled.
    */
   updateButtons() {
-    const continueBtn = document.getElementById(IDS.CONTINUE_BTN);
-    const cancelBtn = document.getElementById(IDS.CANCEL_BTN);
+    const continueBtn = document.getElementById(IDS.CONTINUE_BTN)
+    const cancelBtn = document.getElementById(IDS.CANCEL_BTN)
     if (continueBtn) {
-      const wasDisabled = continueBtn.disabled;
-      const shouldDisable = !this.isFullyLoaded || !this.state.aupAccepted || this.state.isLoading;
-      continueBtn.disabled = shouldDisable;
-      continueBtn.setAttribute("aria-disabled", String(shouldDisable));
+      const wasDisabled = continueBtn.disabled
+      const shouldDisable = !this.isFullyLoaded || !this.state.aupAccepted || this.state.isLoading
+      continueBtn.disabled = shouldDisable
+      continueBtn.setAttribute("aria-disabled", String(shouldDisable))
       if (this.state.isLoading) {
-        continueBtn.textContent = "Requesting...";
+        continueBtn.textContent = "Requesting..."
       } else if (!this.isFullyLoaded) {
-        continueBtn.textContent = "Loading...";
+        continueBtn.textContent = "Loading..."
       } else {
-        continueBtn.textContent = "Continue";
+        continueBtn.textContent = "Continue"
       }
       if (wasDisabled && !shouldDisable) {
-        announce("Continue button is now enabled");
+        announce("Continue button is now enabled")
       }
     }
     if (cancelBtn) {
-      cancelBtn.disabled = this.state.isLoading;
-      cancelBtn.setAttribute("aria-disabled", String(this.state.isLoading));
+      cancelBtn.disabled = this.state.isLoading
+      cancelBtn.setAttribute("aria-disabled", String(this.state.isLoading))
     }
   }
   /**
    * Setup focus trap for the modal.
    */
   setupFocusTrap() {
-    const modal = document.getElementById(IDS.MODAL);
-    if (!modal) return;
+    const modal = document.getElementById(IDS.MODAL)
+    if (!modal) return
     this.focusTrap = createFocusTrap(modal, {
       onEscape: () => this.close(),
-      initialFocus: document.getElementById(IDS.CANCEL_BTN)
-    });
-    this.focusTrap.activate();
+      initialFocus: document.getElementById(IDS.CANCEL_BTN),
+    })
+    this.focusTrap.activate()
   }
-};
-var aupModal = new AupModal();
+}
+var aupModal = new AupModal()
 function openAupModal(tryId, onAccept) {
-  aupModal.open(tryId, onAccept);
+  aupModal.open(tryId, onAccept)
 }
 function closeAupModal() {
-  aupModal.close();
+  aupModal.close()
 }
 
 // src/try/api/leases-service.ts
@@ -1992,99 +1993,100 @@ var API_ERRORS = {
   MAX_LEASES: "maximum number of active/pending leases allowed",
   TEMPLATE_NOT_FOUND: "Lease template not found",
   ACCESS_DENIED: "Access denied",
-  USER_NOT_FOUND: "User not found in Identity Center"
-};
-var LEASES_ENDPOINT2 = "/api/leases";
+  USER_NOT_FOUND: "User not found in Identity Center",
+}
+var LEASES_ENDPOINT2 = "/api/leases"
 function getApiErrorMessage(errorData) {
-  if (!errorData || typeof errorData !== "object") return "";
-  const data = errorData;
-  return data?.data?.errors?.[0]?.message || "";
+  if (!errorData || typeof errorData !== "object") return ""
+  const data = errorData
+  return data?.data?.errors?.[0]?.message || ""
 }
 function matchesApiError(message, errorKey) {
-  return message.toLowerCase().includes(API_ERRORS[errorKey].toLowerCase());
+  return message.toLowerCase().includes(API_ERRORS[errorKey].toLowerCase())
 }
 async function createLease(leaseTemplateId) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout);
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout)
   const payload = {
     leaseTemplateUuid: leaseTemplateId,
-    comments: "User accepted the Acceptable Use Policy via NDX portal."
-  };
+    comments: "User accepted the Acceptable Use Policy via NDX portal.",
+  }
   try {
     const response = await callISBAPI(LEASES_ENDPOINT2, {
       method: "POST",
       body: JSON.stringify(payload),
-      signal: controller.signal
+      signal: controller.signal,
       // Let 401 redirect happen naturally (user needs to re-authenticate)
-    });
-    clearTimeout(timeoutId);
+    })
+    clearTimeout(timeoutId)
     if (response.ok) {
-      const lease = await response.json();
+      const lease = await response.json()
       return {
         success: true,
-        lease
-      };
+        lease,
+      }
     }
-    const errorData = await response.json().catch(() => null);
-    const errorMessage = getApiErrorMessage(errorData);
+    const errorData = await response.json().catch(() => null)
+    const errorMessage = getApiErrorMessage(errorData)
     switch (response.status) {
       case 409: {
         if (matchesApiError(errorMessage, "NO_ACCOUNTS")) {
           return {
             success: false,
             errorCode: "CONFLICT",
-            error: "No sandbox accounts are currently available. Please try again later."
-          };
+            error: "No sandbox accounts are currently available. Please try again later.",
+          }
         }
         return {
           success: false,
           errorCode: "CONFLICT",
-          error: "You've reached the maximum number of active sessions. Please end an existing session before starting a new one."
-        };
+          error:
+            "You've reached the maximum number of active sessions. Please end an existing session before starting a new one.",
+        }
       }
       case 404: {
-        console.error("[leases-service] Not found:", errorMessage);
+        console.error("[leases-service] Not found:", errorMessage)
         if (matchesApiError(errorMessage, "TEMPLATE_NOT_FOUND")) {
           return {
             success: false,
             errorCode: "NOT_FOUND",
-            error: "This sandbox template is no longer available."
-          };
+            error: "This sandbox template is no longer available.",
+          }
         }
         if (matchesApiError(errorMessage, "USER_NOT_FOUND")) {
           return {
             success: false,
             errorCode: "UNAUTHORIZED",
-            error: "Your account is not registered for sandbox access. Please contact support."
-          };
+            error: "Your account is not registered for sandbox access. Please contact support.",
+          }
         }
         return {
           success: false,
           errorCode: "NOT_FOUND",
-          error: "The requested resource was not found."
-        };
+          error: "The requested resource was not found.",
+        }
       }
       case 400: {
-        console.error("[leases-service] Bad request:", errorMessage);
+        console.error("[leases-service] Bad request:", errorMessage)
         return {
           success: false,
           errorCode: "SERVER_ERROR",
-          error: "Invalid request. Please try again or contact support."
-        };
+          error: "Invalid request. Please try again or contact support.",
+        }
       }
       case 401:
         return {
           success: false,
           errorCode: "UNAUTHORIZED",
-          error: "Please sign in to continue."
-        };
+          error: "Please sign in to continue.",
+        }
       case 403: {
-        console.error("[leases-service] Forbidden:", errorMessage);
+        console.error("[leases-service] Forbidden:", errorMessage)
         return {
           success: false,
           errorCode: "UNAUTHORIZED",
-          error: "You do not have permission to request this sandbox."
-        };
+          error: "You do not have permission to request this sandbox.",
+        }
       }
       case 500:
       case 502:
@@ -2093,105 +2095,103 @@ async function createLease(leaseTemplateId) {
         return {
           success: false,
           errorCode: "SERVER_ERROR",
-          error: "The sandbox service is temporarily unavailable. Please try again later."
-        };
+          error: "The sandbox service is temporarily unavailable. Please try again later.",
+        }
       default:
-        console.error("[leases-service] Unexpected status:", response.status);
+        console.error("[leases-service] Unexpected status:", response.status)
         return {
           success: false,
           errorCode: "SERVER_ERROR",
-          error: "An unexpected error occurred. Please try again."
-        };
+          error: "An unexpected error occurred. Please try again.",
+        }
     }
   } catch (error) {
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId)
     if (error instanceof Error) {
       if (error.name === "AbortError") {
-        console.error("[leases-service] Request timeout");
+        console.error("[leases-service] Request timeout")
         return {
           success: false,
           errorCode: "TIMEOUT",
-          error: "Request timed out. Please check your connection and try again."
-        };
+          error: "Request timed out. Please check your connection and try again.",
+        }
       }
       if (error.message.includes("Unauthorized")) {
         return {
           success: false,
           errorCode: "UNAUTHORIZED",
-          error: "Please sign in to continue."
-        };
+          error: "Please sign in to continue.",
+        }
       }
-      console.error("[leases-service] Fetch error:", error.message);
+      console.error("[leases-service] Fetch error:", error.message)
     }
     return {
       success: false,
       errorCode: "NETWORK_ERROR",
-      error: "Unable to connect to the sandbox service. Please check your connection."
-    };
+      error: "Unable to connect to the sandbox service. Please check your connection.",
+    }
   }
 }
 
 // src/try/ui/try-button.ts
 function initTryButton() {
-  const tryButtons = document.querySelectorAll(
-    "button[data-try-id], a[data-try-id]"
-  );
+  const tryButtons = document.querySelectorAll("button[data-try-id], a[data-try-id]")
   tryButtons.forEach((button) => {
-    button.addEventListener("click", handleTryButtonClick);
-  });
+    button.addEventListener("click", handleTryButtonClick)
+  })
 }
 function handleTryButtonClick(event) {
-  event.preventDefault();
-  const button = event.currentTarget;
-  const tryId = button.dataset.tryId;
+  event.preventDefault()
+  const button = event.currentTarget
+  const tryId = button.dataset.tryId
   if (!tryId) {
-    console.error("[TryButton] Button missing data-try-id attribute");
-    return;
+    console.error("[TryButton] Button missing data-try-id attribute")
+    return
   }
   if (!authState.isAuthenticated()) {
-    storeReturnURL();
-    window.location.href = "/api/auth/login";
-    return;
+    storeReturnURL()
+    window.location.href = "/api/auth/login"
+    return
   }
-  openAupModal(tryId, handleLeaseAccept);
+  openAupModal(tryId, handleLeaseAccept)
 }
 async function handleLeaseAccept(tryId) {
-  const result = await createLease(tryId);
+  const result = await createLease(tryId)
   if (result.success) {
-    closeAupModal(true);
-    window.location.href = "/try";
-    return;
+    closeAupModal(true)
+    window.location.href = "/try"
+    return
   }
   switch (result.errorCode) {
     case "CONFLICT":
-      closeAupModal(true);
-      alert(result.error);
-      window.location.href = "/try";
-      break;
+      closeAupModal(true)
+      alert(result.error)
+      window.location.href = "/try"
+      break
     case "UNAUTHORIZED":
-      closeAupModal(true);
-      window.location.href = "/api/auth/login";
-      break;
+      closeAupModal(true)
+      window.location.href = "/api/auth/login"
+      break
     case "TIMEOUT":
     case "NETWORK_ERROR":
     case "SERVER_ERROR":
     default:
-      aupModal.showError(result.error || "An error occurred. Please try again.");
-      break;
+      aupModal.showError(result.error || "An error occurred. Please try again.")
+      break
   }
 }
 
 // src/try/main.ts
 function handlePageOAuthCallback() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get("token");
-  const hasError = urlParams.has("error");
+  const urlParams = new URLSearchParams(window.location.search)
+  const token = urlParams.get("token")
+  const hasError = urlParams.has("error")
   if (token && token.trim() !== "") {
-    handleOAuthCallback();
+    handleOAuthCallback()
   } else if (hasError) {
-    const error = parseOAuthError();
+    const error = parseOAuthError()
     if (error) {
-      const contentDiv = document.getElementById("main-content");
+      const contentDiv = document.getElementById("main-content")
       if (contentDiv) {
         const errorHTML = `
           <div class="govuk-error-summary" data-module="govuk-error-summary">
@@ -2203,22 +2203,17 @@ function handlePageOAuthCallback() {
               </div>
             </div>
           </div>
-        `;
-        contentDiv.insertAdjacentHTML("afterbegin", errorHTML);
+        `
+        contentDiv.insertAdjacentHTML("afterbegin", errorHTML)
       }
     }
   }
 }
 document.addEventListener("DOMContentLoaded", () => {
-  handlePageOAuthCallback();
-  initAuthNav();
-  initTryPage();
-  initTryButton();
-});
-export {
-  cleanupURLAfterExtraction,
-  extractTokenFromURL,
-  handleOAuthCallback,
-  parseOAuthError
-};
+  handlePageOAuthCallback()
+  initAuthNav()
+  initTryPage()
+  initTryButton()
+})
+export { cleanupURLAfterExtraction, extractTokenFromURL, handleOAuthCallback, parseOAuthError }
 //# sourceMappingURL=try.bundle.js.map

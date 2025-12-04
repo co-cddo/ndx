@@ -13,6 +13,7 @@ So that batch ISB operations don't overwhelm GOV.UK Notify rate limits.
 **This story is CONDITIONAL and deferred pending ISB team confirmation.**
 
 Per Devil's Advocate analysis in tech-spec-epic-n4.md:
+
 - Only implement if ISB confirms batch operations (>100 events/min)
 - Otherwise defer to Growth phase
 - Current implementation uses EventBridge → Lambda direct invocation with reserved concurrency (10)
@@ -20,6 +21,7 @@ Per Devil's Advocate analysis in tech-spec-epic-n4.md:
 ## Acceptance Criteria
 
 **AC-8.1: CONDITIONAL - ISB confirmation required**
+
 - **Given** the ISB team operations profile
 - **When** batch operations are confirmed (>100 events/min)
 - **Then** this story should be implemented
@@ -27,12 +29,14 @@ Per Devil's Advocate analysis in tech-spec-epic-n4.md:
 - **Verification:** ISB team confirmation
 
 **AC-8.2: If implemented - SQS queue between EventBridge and Lambda**
+
 - **Given** the EventBridge rule
 - **When** events are received
 - **Then** they flow through SQS buffer queue
 - **Verification:** CDK assertion test
 
 **AC-8.3: If implemented - Rate limiting protection functional**
+
 - **Given** a burst of events (>100/min)
 - **When** processed through SQS
 - **Then** Lambda polls at controlled rate
@@ -41,6 +45,7 @@ Per Devil's Advocate analysis in tech-spec-epic-n4.md:
 ## Current Mitigation
 
 Without the SQS buffer, the following controls are in place:
+
 1. **Reserved Concurrency**: Lambda limited to 10 concurrent executions
 2. **DLQ**: Failed events captured for manual replay
 3. **Exponential Backoff**: Built into Lambda error handling
@@ -54,6 +59,7 @@ Without the SQS buffer, the following controls are in place:
 ## Architecture Reference
 
 From tech-spec-epic-n4.md:
+
 ```
 ├── SQS Buffer Queue (ndx-notification-buffer) [CONDITIONAL]
 │   ├── Enabled: Only if ISB confirms batch operations
@@ -84,10 +90,10 @@ From tech-spec-epic-n4.md:
 
 ## Risk Matrix Reference
 
-| Risk | Probability | Impact | Current Mitigation |
-|------|-------------|--------|-------------------|
-| GOV.UK Notify rate limiting | LOW | HIGH | Reserved concurrency + exponential backoff |
-| Event storm overwhelms Lambda | LOW | MEDIUM | DLQ + rate alarm + reserved concurrency |
+| Risk                          | Probability | Impact | Current Mitigation                         |
+| ----------------------------- | ----------- | ------ | ------------------------------------------ |
+| GOV.UK Notify rate limiting   | LOW         | HIGH   | Reserved concurrency + exponential backoff |
+| Event storm overwhelms Lambda | LOW         | MEDIUM | DLQ + rate alarm + reserved concurrency    |
 
 ## Decision Log
 

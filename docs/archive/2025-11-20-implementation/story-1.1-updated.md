@@ -1,29 +1,30 @@
 # Story 1.1: Import Existing CloudFront Distribution (Updated)
 
 ## Original Approach (Blocked)
+
 Used `Distribution.fromDistributionAttributes()` - creates read-only reference, cannot add origins.
 
 ## Updated Approach (Unblocking)
+
 Use `CfnDistribution` L1 construct with full config, then import via `cdk import`.
 
 ## Implementation Complete
 
 ### Code Changes
+
 File: `/Users/cns/httpdocs/cddo/ndx/infra/lib/ndx-stack.ts`
 
 Changed from:
+
 ```typescript
-cloudfront.Distribution.fromDistributionAttributes(
-  this,
-  'ImportedDistribution',
-  {
-    distributionId: 'E3THG4UHYDHVWP',
-    domainName: 'd7roov8fndsis.cloudfront.net'
-  }
-);
+cloudfront.Distribution.fromDistributionAttributes(this, "ImportedDistribution", {
+  distributionId: "E3THG4UHYDHVWP",
+  domainName: "d7roov8fndsis.cloudfront.net",
+})
 ```
 
 To:
+
 ```typescript
 const cfnDistribution = new cloudfront.CfnDistribution(this, 'ImportedDistribution', {
   distributionConfig: {
@@ -53,12 +54,14 @@ Full configuration mirrors existing CloudFront distribution E3THG4UHYDHVWP exact
 ### Validation
 
 1. **TypeScript Build**: ✅ Passes
+
    ```bash
    cd /Users/cns/httpdocs/cddo/ndx/infra
    npm run build
    ```
 
 2. **CDK Synthesis**: ✅ Valid CloudFormation
+
    ```bash
    npx cdk synth --profile NDX/InnovationSandboxHub
    ```
@@ -68,12 +71,14 @@ Full configuration mirrors existing CloudFront distribution E3THG4UHYDHVWP exact
 ## Next Step: Run Import
 
 ### Import Command
+
 ```bash
 cd /Users/cns/httpdocs/cddo/ndx
 ./docs/import-command.sh
 ```
 
 Or manually:
+
 ```bash
 cd /Users/cns/httpdocs/cddo/ndx/infra
 npx cdk import --profile NDX/InnovationSandboxHub NdxStatic
@@ -81,6 +86,7 @@ npx cdk import --profile NDX/InnovationSandboxHub NdxStatic
 ```
 
 ### Expected Results
+
 - CloudFormation stack `NdxStatic` manages distribution
 - Distribution status remains "Deployed"
 - Production site remains accessible
@@ -89,6 +95,7 @@ npx cdk import --profile NDX/InnovationSandboxHub NdxStatic
 ## Post-Import
 
 After successful import:
+
 1. Update sprint-status.yaml:
    - `1-1`: `ready-for-import` -> `done`
    - `1-2`: `blocked-on-import` -> `ready-for-dev`
@@ -100,6 +107,7 @@ After successful import:
 User accepts: ISB template updates to distribution may conflict with NDX stack.
 
 Mitigation:
+
 - Monitor ISB release notes
 - `cdk diff` will detect unexpected changes
 - Can remove distribution from stack if conflicts arise

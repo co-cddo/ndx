@@ -23,15 +23,15 @@
  * - Full Lambda Powertools idempotency integration is in story n5-7
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
-import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
-import type { EventBridgeEvent, HandlerResponse, NotificationEventType } from './types';
-import { ALLOWED_SOURCES } from './types';
-import { SecurityError } from './errors';
-import { processSlackAlert, isSlackAlertType } from './slack-alerts';
-import { validateEvent } from './validation';
-import { validateAllTemplatesOnce } from './template-validation';
-import { NotifySender } from './notify-sender';
+import { Logger } from "@aws-lambda-powertools/logger"
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import type { EventBridgeEvent, HandlerResponse, NotificationEventType } from "./types"
+import { ALLOWED_SOURCES } from "./types"
+import { SecurityError } from "./errors"
+import { processSlackAlert, isSlackAlertType } from "./slack-alerts"
+import { validateEvent } from "./validation"
+import { validateAllTemplatesOnce } from "./template-validation"
+import { NotifySender } from "./notify-sender"
 import {
   getTemplateConfig,
   getTemplateId,
@@ -40,10 +40,10 @@ import {
   isMonitoringAlertEvent,
   formatCurrency,
   formatUKDate,
-} from './templates';
-import { fetchLeaseRecord } from './enrichment';
-import { flattenObject, addKeysParameter } from './flatten';
-import { validateLeaseStatus, logFieldPresence } from './lease-status';
+} from "./templates"
+import { fetchLeaseRecord } from "./enrichment"
+import { flattenObject, addKeysParameter } from "./flatten"
+import { validateLeaseStatus, logFieldPresence } from "./lease-status"
 
 // =========================================================================
 // Field Mapping (DynamoDB → GOV.UK Notify Templates)
@@ -69,28 +69,26 @@ import { validateLeaseStatus, logFieldPresence } from './lease-status';
  * @param enrichedData - Flattened data from DynamoDB
  * @returns Data with additional alias fields for template compatibility
  */
-export function mapEnrichedFieldsToTemplateNames(
-  enrichedData: Record<string, string>
-): Record<string, string> {
-  const mapped = { ...enrichedData };
+export function mapEnrichedFieldsToTemplateNames(enrichedData: Record<string, string>): Record<string, string> {
+  const mapped = { ...enrichedData }
 
   // Map awsAccountId → accountId (no formatting needed)
   if (mapped.awsAccountId !== undefined && mapped.accountId === undefined) {
-    mapped.accountId = mapped.awsAccountId;
+    mapped.accountId = mapped.awsAccountId
   }
 
   // Map maxSpend → budgetLimit with currency formatting ($X.XX - AWS costs are in USD)
   if (mapped.maxSpend !== undefined && mapped.budgetLimit === undefined) {
-    const amount = parseFloat(mapped.maxSpend);
-    mapped.budgetLimit = isNaN(amount) ? mapped.maxSpend : formatCurrency(amount);
+    const amount = parseFloat(mapped.maxSpend)
+    mapped.budgetLimit = isNaN(amount) ? mapped.maxSpend : formatCurrency(amount)
   }
 
   // Map expirationDate → expiryDate with UK date formatting (DD/MM/YYYY, HH:MM:SS in Europe/London)
   if (mapped.expirationDate !== undefined && mapped.expiryDate === undefined) {
-    mapped.expiryDate = formatUKDate(mapped.expirationDate);
+    mapped.expiryDate = formatUKDate(mapped.expirationDate)
   }
 
-  return mapped;
+  return mapped
 }
 
 // =========================================================================
@@ -103,38 +101,38 @@ export function mapEnrichedFieldsToTemplateNames(
  * Template validation runs once per Lambda container during cold start.
  * This detects template drift before the first email is sent.
  */
-let coldStartValidationComplete = false;
-let coldStartValidationError: Error | null = null;
+let coldStartValidationComplete = false
+let coldStartValidationError: Error | null = null
 
 // Trigger validation during module load (cold start)
 // This runs in parallel with Lambda runtime initialization
 validateAllTemplatesOnce()
   .then(() => {
-    coldStartValidationComplete = true;
+    coldStartValidationComplete = true
   })
   .catch((error: Error) => {
-    coldStartValidationError = error;
+    coldStartValidationError = error
     // Log but don't throw here - we'll check in handler
-  });
+  })
 
 // =========================================================================
 // Lambda Powertools Configuration (AC-3.3)
 // =========================================================================
 
-type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'SILENT';
+type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR" | "SILENT"
 
 const logger = new Logger({
-  serviceName: 'ndx-notifications',
-  logLevel: (process.env.LOG_LEVEL as LogLevel | undefined) || 'INFO',
+  serviceName: "ndx-notifications",
+  logLevel: (process.env.LOG_LEVEL as LogLevel | undefined) || "INFO",
   persistentLogAttributes: {
-    environment: process.env.ENVIRONMENT || 'unknown',
+    environment: process.env.ENVIRONMENT || "unknown",
   },
-});
+})
 
 const metrics = new Metrics({
-  namespace: 'ndx/notifications',
-  serviceName: 'ndx-notifications',
-});
+  namespace: "ndx/notifications",
+  serviceName: "ndx-notifications",
+})
 
 // =========================================================================
 // Security Utilities
@@ -145,17 +143,17 @@ const metrics = new Metrics({
  * Escapes newlines, carriage returns, and other control characters
  */
 export function sanitizeLogInput(input: string): string {
-  if (typeof input !== 'string') {
-    return String(input);
+  if (typeof input !== "string") {
+    return String(input)
   }
   // Escape control characters that could cause log injection
   // eslint-disable-next-line no-control-regex
-  const controlCharRegex = /[\x00-\x1F\x7F]/g;
+  const controlCharRegex = /[\x00-\x1F\x7F]/g
   return input
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t')
-    .replace(controlCharRegex, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`);
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t")
+    .replace(controlCharRegex, (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
 }
 
 /**
@@ -163,9 +161,9 @@ export function sanitizeLogInput(input: string): string {
  */
 export function redactEmail(email: string | undefined): string {
   if (!email) {
-    return '[NO_EMAIL]';
+    return "[NO_EMAIL]"
   }
-  return '[REDACTED]';
+  return "[REDACTED]"
 }
 
 /**
@@ -174,18 +172,18 @@ export function redactEmail(email: string | undefined): string {
  */
 export function checkEmailDomain(email: string | undefined, eventId: string): void {
   if (!email) {
-    return;
+    return
   }
 
-  const domain = email.split('@')[1]?.toLowerCase();
-  if (domain && !domain.endsWith('.gov.uk')) {
+  const domain = email.split("@")[1]?.toLowerCase()
+  if (domain && !domain.endsWith(".gov.uk")) {
     // Emit suspicious email metric (Red Team requirement)
-    metrics.addMetric('SuspiciousEmailDomain', MetricUnit.Count, 1);
-    logger.warn('Non-.gov.uk email domain detected', {
+    metrics.addMetric("SuspiciousEmailDomain", MetricUnit.Count, 1)
+    logger.warn("Non-.gov.uk email domain detected", {
       eventId,
       emailDomain: sanitizeLogInput(domain),
       email: redactEmail(email),
-    });
+    })
   }
 }
 
@@ -194,24 +192,24 @@ export function checkEmailDomain(email: string | undefined, eventId: string): vo
  * This is a defense-in-depth measure - EventBridge rules also filter by source
  */
 export function validateEventSource(event: EventBridgeEvent): void {
-  const source = event.source;
-  const sanitizedSource = sanitizeLogInput(source);
+  const source = event.source
+  const sanitizedSource = sanitizeLogInput(source)
 
   if (!ALLOWED_SOURCES.includes(source as (typeof ALLOWED_SOURCES)[number])) {
-    logger.error('Invalid event source rejected', {
+    logger.error("Invalid event source rejected", {
       eventId: event.id,
       source: sanitizedSource,
       expectedSources: ALLOWED_SOURCES,
-    });
+    })
 
     // Emit security metric
-    metrics.addMetric('SecurityRejection', MetricUnit.Count, 1);
+    metrics.addMetric("SecurityRejection", MetricUnit.Count, 1)
 
-    throw new SecurityError('Invalid event source', {
-      expectedSource: ALLOWED_SOURCES.join(', '),
+    throw new SecurityError("Invalid event source", {
+      expectedSource: ALLOWED_SOURCES.join(", "),
       actualSource: sanitizedSource,
       eventId: event.id,
-    });
+    })
   }
 }
 
@@ -223,20 +221,16 @@ export function validateEventSource(event: EventBridgeEvent): void {
  * Determine which notification channel(s) to use based on event type
  * All events now go to Slack; user-facing events also get email (N5)
  */
-function getNotificationChannels(eventType: NotificationEventType): ('email' | 'slack')[] {
+function getNotificationChannels(eventType: NotificationEventType): ("email" | "slack")[] {
   // Ops events go to Slack only (no user email)
-  const opsOnlyEvents: NotificationEventType[] = [
-    'AccountCleanupFailed',
-    'AccountQuarantined',
-    'AccountDriftDetected',
-  ];
+  const opsOnlyEvents: NotificationEventType[] = ["AccountCleanupFailed", "AccountQuarantined", "AccountDriftDetected"]
 
   if (opsOnlyEvents.includes(eventType)) {
-    return ['slack'];
+    return ["slack"]
   }
 
   // All lease lifecycle events go to both Slack (visibility) and email (user notification)
-  return ['email', 'slack'];
+  return ["email", "slack"]
 }
 
 /**
@@ -249,29 +243,29 @@ function getNotificationChannels(eventType: NotificationEventType): ('email' | '
  * - detail.lease.userEmail (nested lease object)
  */
 function extractUserEmail(detail: unknown): string | undefined {
-  if (typeof detail === 'object' && detail !== null) {
-    const d = detail as Record<string, unknown>;
+  if (typeof detail === "object" && detail !== null) {
+    const d = detail as Record<string, unknown>
 
     // Check top-level email fields
-    if (typeof d.userEmail === 'string') return d.userEmail;
-    if (typeof d.principalEmail === 'string') return d.principalEmail;
-    if (typeof d.email === 'string') return d.email;
+    if (typeof d.userEmail === "string") return d.userEmail
+    if (typeof d.principalEmail === "string") return d.principalEmail
+    if (typeof d.email === "string") return d.email
 
     // Check leaseId object (ISB sometimes nests email in leaseId)
-    if (d.leaseId && typeof d.leaseId === 'object') {
-      const leaseId = d.leaseId as Record<string, unknown>;
-      if (typeof leaseId.userEmail === 'string') return leaseId.userEmail;
-      if (typeof leaseId.principalEmail === 'string') return leaseId.principalEmail;
+    if (d.leaseId && typeof d.leaseId === "object") {
+      const leaseId = d.leaseId as Record<string, unknown>
+      if (typeof leaseId.userEmail === "string") return leaseId.userEmail
+      if (typeof leaseId.principalEmail === "string") return leaseId.principalEmail
     }
 
     // Check nested lease object
-    if (d.lease && typeof d.lease === 'object') {
-      const lease = d.lease as Record<string, unknown>;
-      if (typeof lease.userEmail === 'string') return lease.userEmail;
-      if (typeof lease.principalEmail === 'string') return lease.principalEmail;
+    if (d.lease && typeof d.lease === "object") {
+      const lease = d.lease as Record<string, unknown>
+      if (typeof lease.userEmail === "string") return lease.userEmail
+      if (typeof lease.principalEmail === "string") return lease.principalEmail
     }
   }
-  return undefined;
+  return undefined
 }
 
 // =========================================================================
@@ -285,256 +279,259 @@ function extractUserEmail(detail: unknown): string | undefined {
  * @returns Handler response with status code
  */
 export async function handler(event: EventBridgeEvent): Promise<HandlerResponse> {
-  const eventId = event.id;
-  const eventType = event['detail-type'] as NotificationEventType;
-  const sanitizedEventType = sanitizeLogInput(eventType);
+  const eventId = event.id
+  const eventType = event["detail-type"] as NotificationEventType
+  const sanitizedEventType = sanitizeLogInput(eventType)
 
   // Add correlation IDs to all logs (AC-3.4)
   logger.appendKeys({
     eventId,
     eventType: sanitizedEventType,
     correlationId: eventId, // Use event ID as correlation ID
-  });
+  })
 
   // Log event receipt (AC-3.8 - INFO level for success path)
-  logger.info('Event received', {
+  logger.info("Event received", {
     source: sanitizeLogInput(event.source),
     timestamp: event.time,
     account: event.account,
-  });
+  })
 
   try {
     // Step 0: Check cold start validation status (AC-9.8)
     // If template validation failed during cold start, fail fast
     if (coldStartValidationError) {
-      logger.error('Cold start template validation failed', {
+      logger.error("Cold start template validation failed", {
         error: coldStartValidationError.message,
-      });
-      throw coldStartValidationError;
+      })
+      throw coldStartValidationError
     }
 
     // Ensure validation is complete before processing (defensive)
     if (!coldStartValidationComplete) {
       // Wait for validation to complete if still in progress
-      await validateAllTemplatesOnce();
+      await validateAllTemplatesOnce()
     }
 
     // Step 1: Validate event source (security control - AC-3.1)
-    validateEventSource(event);
+    validateEventSource(event)
 
     // Step 2: Check email domain for suspicious activity (AC-3.7)
-    const userEmail = extractUserEmail(event.detail);
-    checkEmailDomain(userEmail, eventId);
+    const userEmail = extractUserEmail(event.detail)
+    checkEmailDomain(userEmail, eventId)
 
     // Step 3: Determine notification channels
-    const channels = getNotificationChannels(eventType);
+    const channels = getNotificationChannels(eventType)
 
     // Step 4: Process notifications for each channel
     // Slack alerts (ops events)
-    if (channels.includes('slack') && isSlackAlertType(eventType)) {
-      const validatedEvent = validateEvent(event);
-       
-      await processSlackAlert(validatedEvent as any);
-      logger.info('Slack alert sent successfully', {
+    if (channels.includes("slack") && isSlackAlertType(eventType)) {
+      const validatedEvent = validateEvent(event)
+
+      await processSlackAlert(validatedEvent as any)
+      logger.info("Slack alert sent successfully", {
         eventId,
         eventType: sanitizedEventType,
-      });
+      })
     }
 
     // Email notifications (user events)
-    if (channels.includes('email') && (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType))) {
-      const validatedEvent = validateEvent(event);
+    if (channels.includes("email") && (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType))) {
+      const validatedEvent = validateEvent(event)
 
       // Get template configuration
-      const templateConfig = getTemplateConfig(eventType);
-      const templateId = getTemplateId(templateConfig);
+      const templateConfig = getTemplateConfig(eventType)
+      const templateId = getTemplateId(templateConfig)
 
       // N7-4: Fetch and flatten lease record for enrichment
       // N7-5: Track enrichment timing for performance monitoring
-      const detail = event.detail as Record<string, unknown>;
-      const leaseId = detail.leaseId;
+      const detail = event.detail as Record<string, unknown>
+      const leaseId = detail.leaseId
 
       // ISB sends leaseId as string (UUID) or object { userEmail, uuid }
-      let userEmail: string | undefined;
-      let uuid: string | undefined;
+      let userEmail: string | undefined
+      let uuid: string | undefined
 
-      if (typeof leaseId === 'string') {
+      if (typeof leaseId === "string") {
         // Current ISB format: leaseId is the UUID string
-        uuid = leaseId;
-        userEmail = (detail.userEmail || detail.principalEmail) as string | undefined;
-      } else if (leaseId && typeof leaseId === 'object') {
+        uuid = leaseId
+        userEmail = (detail.userEmail || detail.principalEmail) as string | undefined
+      } else if (leaseId && typeof leaseId === "object") {
         // Legacy format: leaseId is object { userEmail, uuid }
-        const leaseIdObj = leaseId as { userEmail?: string; uuid?: string };
-        uuid = leaseIdObj.uuid;
-        userEmail = leaseIdObj.userEmail || (detail.userEmail as string | undefined);
+        const leaseIdObj = leaseId as { userEmail?: string; uuid?: string }
+        uuid = leaseIdObj.uuid
+        userEmail = leaseIdObj.userEmail || (detail.userEmail as string | undefined)
       } else {
         // Fallback: try top-level fields
-        userEmail = detail.userEmail as string | undefined;
-        uuid = detail.uuid as string | undefined;
+        userEmail = detail.userEmail as string | undefined
+        uuid = detail.uuid as string | undefined
       }
 
-      logger.debug('Extracting lease key for enrichment', {
+      logger.debug("Extracting lease key for enrichment", {
         eventId,
         leaseIdType: typeof leaseId,
         hasUserEmail: !!userEmail,
         hasUuid: !!uuid,
-      });
+      })
 
-      let enrichedData: Record<string, string> = {};
-      let enrichmentStatus: 'success' | 'failed' | 'skipped' = 'skipped';
-      const enrichmentStartTime = Date.now();
+      let enrichedData: Record<string, string> = {}
+      let enrichmentStatus: "success" | "failed" | "skipped" = "skipped"
+      const enrichmentStartTime = Date.now()
 
       if (userEmail && uuid) {
         try {
-          const leaseRecord = await fetchLeaseRecord(userEmail, uuid, eventId);
-          const enrichmentDurationMs = Date.now() - enrichmentStartTime;
+          const leaseRecord = await fetchLeaseRecord(userEmail, uuid, eventId)
+          const enrichmentDurationMs = Date.now() - enrichmentStartTime
 
           if (leaseRecord) {
             // N7-6: Validate lease status (logs warning for unknown statuses)
-            const leaseStatus = leaseRecord.status;
-            validateLeaseStatus(leaseStatus, eventId);
+            const leaseStatus = leaseRecord.status
+            validateLeaseStatus(leaseStatus, eventId)
 
             // N7-4 AC-2-5: Flatten lease record and include key fields
-             
-            const { flattened } = flattenObject(leaseRecord as unknown as Record<string, unknown>, { eventId });
-            enrichedData = flattened;
+
+            const { flattened } = flattenObject(leaseRecord as unknown as Record<string, unknown>, { eventId })
+            enrichedData = flattened
 
             // N7-6: Log field presence analysis for monitoring schema evolution
-            logFieldPresence(enrichedData, leaseStatus, eventId);
+            logFieldPresence(enrichedData, leaseStatus, eventId)
 
             // N7-4: Set _enriched flag
-            enrichedData['_enriched'] = 'true';
-            enrichmentStatus = 'success';
+            enrichedData["_enriched"] = "true"
+            enrichmentStatus = "success"
 
             // N7-5: Log enrichment success with duration
-            logger.info('Lease record enriched for notification', {
+            logger.info("Lease record enriched for notification", {
               eventId,
               enrichmentStatus,
               enrichmentDurationMs,
               leaseStatus,
               enrichedFieldCount: Object.keys(enrichedData).length,
-              hasMaxSpend: 'maxSpend' in enrichedData,
-              hasLeaseDurationInHours: 'leaseDurationInHours' in enrichedData,
-            });
+              hasMaxSpend: "maxSpend" in enrichedData,
+              hasLeaseDurationInHours: "leaseDurationInHours" in enrichedData,
+            })
 
             // N7-5: Emit EnrichmentSuccess metric
-            metrics.addMetric('EnrichmentSuccess', MetricUnit.Count, 1);
-            metrics.addMetric('EnrichmentDurationMs', MetricUnit.Milliseconds, enrichmentDurationMs);
+            metrics.addMetric("EnrichmentSuccess", MetricUnit.Count, 1)
+            metrics.addMetric("EnrichmentDurationMs", MetricUnit.Milliseconds, enrichmentDurationMs)
           } else {
             // N7-5: Graceful degradation - continue without enrichment
-            enrichedData['_enriched'] = 'false';
-            enrichmentStatus = 'failed';
+            enrichedData["_enriched"] = "false"
+            enrichmentStatus = "failed"
 
-            logger.warn('Lease record not found for enrichment - continuing with event data only', {
+            logger.warn("Lease record not found for enrichment - continuing with event data only", {
               eventId,
               enrichmentStatus,
               enrichmentDurationMs,
-              userEmailHash: userEmail ? '[REDACTED]' : 'missing',
-              uuid: uuid || 'missing',
-            });
+              userEmailHash: userEmail ? "[REDACTED]" : "missing",
+              uuid: uuid || "missing",
+            })
 
             // N7-5: EnrichmentFailure metric with NotFound dimension (LeaseNotFound already emitted in fetchLeaseRecord)
-            metrics.addMetric('EnrichmentFailure', MetricUnit.Count, 1);
-            metrics.addDimension('ErrorType', 'NotFound');
+            metrics.addMetric("EnrichmentFailure", MetricUnit.Count, 1)
+            metrics.addDimension("ErrorType", "NotFound")
           }
         } catch (error) {
           // N7-5: Handle enrichment errors with graceful degradation
-          const enrichmentDurationMs = Date.now() - enrichmentStartTime;
-          enrichedData['_enriched'] = 'false';
-          enrichmentStatus = 'failed';
+          const enrichmentDurationMs = Date.now() - enrichmentStartTime
+          enrichedData["_enriched"] = "false"
+          enrichmentStatus = "failed"
 
           // N7-5: Classify error type for metric dimension
-          let errorType = 'Other';
+          let errorType = "Other"
           if (error instanceof Error) {
-            if (error.name === 'ProvisionedThroughputExceededException' || error.message.includes('throttle')) {
-              errorType = 'Throttled';
-            } else if (error.message.includes('timeout') || error.name === 'TimeoutError') {
-              errorType = 'Timeout';
+            if (error.name === "ProvisionedThroughputExceededException" || error.message.includes("throttle")) {
+              errorType = "Throttled"
+            } else if (error.message.includes("timeout") || error.name === "TimeoutError") {
+              errorType = "Timeout"
             }
           }
 
-          logger.warn('Enrichment failed - continuing with event data only', {
+          logger.warn("Enrichment failed - continuing with event data only", {
             eventId,
             enrichmentStatus,
             enrichmentDurationMs,
             errorType,
-            errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          });
+            errorMessage: error instanceof Error ? error.message : "Unknown error",
+          })
 
           // N7-5: EnrichmentFailure metric with error type dimension
-          metrics.addMetric('EnrichmentFailure', MetricUnit.Count, 1);
-          metrics.addDimension('ErrorType', errorType);
-          metrics.addMetric('EnrichmentDurationMs', MetricUnit.Milliseconds, enrichmentDurationMs);
+          metrics.addMetric("EnrichmentFailure", MetricUnit.Count, 1)
+          metrics.addDimension("ErrorType", errorType)
+          metrics.addMetric("EnrichmentDurationMs", MetricUnit.Milliseconds, enrichmentDurationMs)
         }
       } else {
-        enrichedData['_enriched'] = 'false';
-        logger.debug('No lease key in event - skipping enrichment', {
+        enrichedData["_enriched"] = "false"
+        logger.debug("No lease key in event - skipping enrichment", {
           eventId,
           enrichmentStatus,
-        });
+        })
       }
 
       // Build personalisation from event data (enrichedData passed for reference)
-      const personalisation = buildPersonalisation(validatedEvent);
+      const personalisation = buildPersonalisation(validatedEvent)
 
       // N7-4 AC-1: Merge with enriched data (enriched takes precedence)
       // Convert personalisation values to strings for consistency
-      const stringifiedPersonalisation: Record<string, string> = {};
+      const stringifiedPersonalisation: Record<string, string> = {}
       for (const [key, value] of Object.entries(personalisation)) {
-        stringifiedPersonalisation[key] = String(value);
+        stringifiedPersonalisation[key] = String(value)
       }
 
       // Map DynamoDB field names to template field names (e.g., awsAccountId → accountId)
-      const mappedEnrichedData = mapEnrichedFieldsToTemplateNames(enrichedData);
+      const mappedEnrichedData = mapEnrichedFieldsToTemplateNames(enrichedData)
 
       // N7-4 AC-5: Add keys parameter listing all available fields
-      const enrichedPersonalisation = addKeysParameter({
-        ...stringifiedPersonalisation,
-        ...mappedEnrichedData,
-      }, eventId);
+      const enrichedPersonalisation = addKeysParameter(
+        {
+          ...stringifiedPersonalisation,
+          ...mappedEnrichedData,
+        },
+        eventId,
+      )
 
       // Extract user email from event detail
-      const recipientEmail = extractUserEmail(event.detail);
+      const recipientEmail = extractUserEmail(event.detail)
       if (!recipientEmail) {
-        logger.error('No recipient email found in event', { eventId });
-        throw new Error('Missing recipient email in event detail');
+        logger.error("No recipient email found in event", { eventId })
+        throw new Error("Missing recipient email in event detail")
       }
 
       // Send via GOV.UK Notify
-      const sender = await NotifySender.getInstance();
+      const sender = await NotifySender.getInstance()
       const response = await sender.send({
         templateId,
         email: recipientEmail,
         personalisation: enrichedPersonalisation,
         eventId,
         eventUserEmail: recipientEmail,
-      });
+      })
 
-      logger.info('Email sent successfully', {
+      logger.info("Email sent successfully", {
         eventId,
         notifyId: response.id,
         templateId,
         eventType: sanitizedEventType,
-        enriched: enrichedData['_enriched'] === 'true',
-      });
+        enriched: enrichedData["_enriched"] === "true",
+      })
 
-      metrics.addMetric('EmailSent', MetricUnit.Count, 1);
-      if (enrichedData['_enriched'] === 'true') {
-        metrics.addMetric('EnrichedEmailSent', MetricUnit.Count, 1);
+      metrics.addMetric("EmailSent", MetricUnit.Count, 1)
+      if (enrichedData["_enriched"] === "true") {
+        metrics.addMetric("EnrichedEmailSent", MetricUnit.Count, 1)
       }
     }
 
-    logger.info('Event processed successfully', {
+    logger.info("Event processed successfully", {
       channels,
-      processingStatus: 'success',
-    });
+      processingStatus: "success",
+    })
 
     // Emit success metric
-    metrics.addMetric('NotificationSuccess', MetricUnit.Count, 1);
-    metrics.addMetric('EventsProcessed', MetricUnit.Count, 1);
+    metrics.addMetric("NotificationSuccess", MetricUnit.Count, 1)
+    metrics.addMetric("EventsProcessed", MetricUnit.Count, 1)
 
     // Flush metrics
-    metrics.publishStoredMetrics();
+    metrics.publishStoredMetrics()
 
     return {
       statusCode: 200,
@@ -544,23 +541,23 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
         eventType: sanitizedEventType,
         channels,
       }),
-    };
+    }
   } catch (error) {
     // Log error with appropriate level (AC-3.8 - ERROR for DLQ-worthy errors)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorName = error instanceof Error ? error.name : 'Error';
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    const errorName = error instanceof Error ? error.name : "Error"
 
-    logger.error('Event processing failed', {
-      processingStatus: 'failed',
+    logger.error("Event processing failed", {
+      processingStatus: "failed",
       errorName,
       errorMessage: sanitizeLogInput(errorMessage),
-    });
+    })
 
     // Emit failure metric
-    metrics.addMetric('NotificationFailure', MetricUnit.Count, 1);
-    metrics.publishStoredMetrics();
+    metrics.addMetric("NotificationFailure", MetricUnit.Count, 1)
+    metrics.publishStoredMetrics()
 
     // Re-throw to trigger Lambda retry/DLQ behavior
-    throw error;
+    throw error
   }
 }

@@ -93,6 +93,7 @@ so that I can enrich notifications with full lease context.
 ### Existing Patterns to Reuse
 
 From existing `enrichment.ts`:
+
 - `CircuitBreaker` class for query protection
 - `queryLeaseTable()` function structure
 - Error handling with `CriticalError` and `RetriableError`
@@ -136,6 +137,6 @@ Claude claude-opus-4-5-20251101
 
 ## Change Log
 
-| Date | Author | Change |
-|------|--------|--------|
+| Date       | Author         | Change                                    |
+| ---------- | -------------- | ----------------------------------------- |
 | 2025-12-02 | SM Agent (cns) | Story drafted from epics-notifications.md |

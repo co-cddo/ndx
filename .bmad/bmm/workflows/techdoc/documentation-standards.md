@@ -45,7 +45,7 @@ Time varies dramatically based on:
 - Use fenced blocks with language identifier:
   ````markdown
   ```javascript
-  const example = 'code';
+  const example = "code"
   ```
   ````
 - NOT indented code blocks (ambiguous)

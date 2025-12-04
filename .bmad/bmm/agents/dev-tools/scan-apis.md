@@ -1,6 +1,7 @@
 # Comprehensive API/SDK Scanner (Context7 Integration)
 
 ## Purpose
+
 Scan the entire codebase to discover all external API/SDK dependencies and validate their usage against up-to-date documentation via Context7.
 
 ## Execution Steps
@@ -8,7 +9,9 @@ Scan the entire codebase to discover all external API/SDK dependencies and valid
 ### 1. Discovery Phase
 
 #### 1a. Identify Dependencies
+
 Read project dependency files:
+
 - `package.json` (Node.js)
 - `requirements.txt` or `pyproject.toml` (Python)
 - `Gemfile` (Ruby)
@@ -19,6 +22,7 @@ Read project dependency files:
 Extract all external dependencies with versions.
 
 #### 1b. Identify Import Patterns
+
 Scan all source files for import/require statements:
 
 ```
@@ -32,7 +36,9 @@ PATTERNS:
 ```
 
 #### 1c. Categorize Dependencies
+
 Group dependencies:
+
 - **Core Libraries:** Major frameworks (React, Express, FastAPI, etc.)
 - **AWS/Cloud SDKs:** AWS SDK, GCP SDK, Azure SDK
 - **Testing Frameworks:** Jest, Playwright, Cypress, Pytest
@@ -42,6 +48,7 @@ Group dependencies:
 ### 2. Prioritization
 
 Create a prioritized validation queue based on:
+
 1. **Critical (P0):** Auth/Security libraries, Payment SDKs, Database clients
 2. **High (P1):** Main framework, Core business logic libraries
 3. **Medium (P2):** Utility libraries with significant usage
@@ -59,11 +66,13 @@ INPUT: libraryName = [dependency name]
 ```
 
 Track results:
+
 - ✅ **Resolved:** Store library ID for validation
 - ⚠️ **Multiple matches:** Flag for user selection
 - ❌ **Not found:** Skip Context7 validation, mark as "no-docs"
 
 **Output:** Resolved libraries map:
+
 ```
 {
   "react": "/facebook/react",
@@ -78,6 +87,7 @@ Track results:
 For each resolved library, identify usage patterns:
 
 #### 4a. Find All Usages
+
 ```
 TOOL: Grep
 PATTERN: Import statements + method calls
@@ -85,7 +95,9 @@ OUTPUT: List of files using this library
 ```
 
 #### 4b. Extract API Surface
+
 For each file:
+
 1. Read file
 2. Identify:
    - Classes instantiated
@@ -94,6 +106,7 @@ For each file:
    - Error handling patterns
 
 Create API usage inventory:
+
 ```
 Library: @aws-cdk/aws-s3
 Files: 3
@@ -108,6 +121,7 @@ API Calls:
 For each library with significant usage:
 
 #### 5a. Validate Core Usage
+
 ```
 TOOL: mcp__context7__get-library-docs
 INPUT:
@@ -118,6 +132,7 @@ INPUT:
 ```
 
 #### 5b. Validate Architecture Patterns
+
 ```
 TOOL: mcp__context7__get-library-docs
 INPUT:
@@ -128,14 +143,16 @@ INPUT:
 ```
 
 #### 5c. Check for Deprecations
+
 Query Context7 for:
+
 - Deprecated methods
 - Migration guides
 - Breaking changes in newer versions
 
 ### 6. Generate Comprehensive Report
 
-```markdown
+````markdown
 # Codebase API/SDK Validation Report
 
 **Generated:** [timestamp]
@@ -149,12 +166,14 @@ Query Context7 for:
 ## Executive Summary
 
 ### Health Score: [X]/100
+
 - ✅ Valid Usage: [X]%
 - ⚠️ Warnings (deprecations, suboptimal): [X]%
 - ❌ Critical Issues: [X]%
 - 🔍 Not Validated (no Context7 docs): [X]%
 
 ### Priority Issues
+
 [Top 5 issues that need immediate attention]
 
 ---
@@ -162,17 +181,19 @@ Query Context7 for:
 ## Dependency Inventory
 
 ### Resolved in Context7 ([count])
-| Library | Version | Context7 ID | Files Using | Status |
-|---------|---------|-------------|-------------|--------|
-| react   | 18.2.0  | /facebook/react | 45 | ✅ Valid |
-| aws-cdk | 2.120.0 | /aws/aws-cdk | 12 | ⚠️ 3 warnings |
-| playwright | 1.40.0 | /microsoft/playwright | 8 | ✅ Valid |
+
+| Library    | Version | Context7 ID           | Files Using | Status        |
+| ---------- | ------- | --------------------- | ----------- | ------------- |
+| react      | 18.2.0  | /facebook/react       | 45          | ✅ Valid      |
+| aws-cdk    | 2.120.0 | /aws/aws-cdk          | 12          | ⚠️ 3 warnings |
+| playwright | 1.40.0  | /microsoft/playwright | 8           | ✅ Valid      |
 
 ### Not Available in Context7 ([count])
-| Library | Version | Files Using | Validation Method |
-|---------|---------|-------------|-------------------|
-| custom-utils | 1.0.0 | 23 | Internal - skip |
-| legacy-lib | 0.5.0 | 3 | Manual review needed |
+
+| Library      | Version | Files Using | Validation Method    |
+| ------------ | ------- | ----------- | -------------------- |
+| custom-utils | 1.0.0   | 23          | Internal - skip      |
+| legacy-lib   | 0.5.0   | 3           | Manual review needed |
 
 ---
 
@@ -186,17 +207,21 @@ Query Context7 for:
 **APIs Validated:** [count]
 
 #### Usage Summary
+
 - [API/Method]: [count] usages - [status]
 - [API/Method]: [count] usages - [status]
 
 #### Issues Found
 
 ##### ⚠️ Warning: Deprecated API
+
 - **Location:** [file:line]
 - **Current Code:**
   ```javascript
   [code snippet]
   ```
+````
+
 - **Issue:** This method is deprecated since v[X]
 - **Recommended:**
   ```javascript
@@ -206,6 +231,7 @@ Query Context7 for:
 - **Migration Effort:** [Low/Medium/High]
 
 ##### ❌ Critical: Incorrect Parameter Type
+
 - **Location:** [file:line]
 - **Current Code:**
   ```javascript
@@ -223,14 +249,17 @@ Query Context7 for:
 ## Recommendations
 
 ### Immediate Actions Required
+
 1. [Fix critical issue X in file Y]
 2. [Update deprecated API in file Z]
 
 ### Short-term Improvements
+
 1. [Upgrade library X to version Y]
 2. [Refactor pattern X to use recommended pattern Y]
 
 ### Long-term Considerations
+
 1. [Consider migrating from library X to Y]
 2. [Consolidate multiple libraries doing similar things]
 
@@ -239,15 +268,18 @@ Query Context7 for:
 ## Validation Metadata
 
 ### Libraries Queried in Context7
+
 [List of all Context7 queries made with modes used]
 
 ### Coverage
+
 - Source Files Scanned: [count]
 - Dependencies Analyzed: [count]
 - API Calls Validated: [count]
 - Context7 Queries: [count]
 
 ### Limitations
+
 - [Any libraries not available in Context7]
 - [Any APIs not found in documentation]
 - [Areas requiring manual review]
@@ -265,7 +297,8 @@ Query Context7 for:
 
 **Note:** This report uses Context7 MCP server for real-time documentation lookup.
 All recommendations are based on the latest official documentation available at scan time.
-```
+
+````
 
 ### 7. Interactive Options
 
@@ -316,11 +349,12 @@ Add validation results to story context XML:
     <warnings count="2"/>
   </library>
 </api-validation>
-```
+````
 
 ## Configuration Options
 
 Ask user to configure scan behavior:
+
 - **Depth:** Quick (imports only) vs Deep (all API calls)
 - **Scope:** Specific directories vs entire codebase
 - **Exclusions:** node_modules, vendor, test files
@@ -329,19 +363,25 @@ Ask user to configure scan behavior:
 ## Error Handling
 
 ### Rate Limiting
+
 If Context7 rate limited:
+
 - Pause and retry
 - Reduce parallel queries
 - Cache results for reuse
 
 ### Incomplete Documentation
+
 If Context7 returns partial results:
+
 - Use pagination (page=2, page=3)
 - Try alternative topic queries
 - Flag for manual review
 
 ### Large Codebases
+
 If codebase is massive:
+
 - Scan in chunks
 - Show progress indicator
 - Allow pause/resume
@@ -355,4 +395,5 @@ If codebase is massive:
 - **Batch Operations:** Group similar validations
 
 ## Exit
+
 Return control to the Dev agent main menu with scan results summary.

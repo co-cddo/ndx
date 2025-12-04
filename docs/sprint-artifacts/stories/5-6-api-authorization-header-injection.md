@@ -75,39 +75,39 @@ so that backend can authenticate requests and return user-specific data.
 ### Architecture Context
 
 **ADR-021: Centralized API client with authentication interceptor**
+
 - Single `api-client.ts` module handles all Innovation Sandbox API calls
 - Automatic Authorization header injection (DRY principle)
 - Automatic 401 handling (Story 5.8 will implement)
 - Type-safe API responses with TypeScript interfaces
 
 **Module Location:**
+
 - `src/try/api/api-client.ts` - Centralized API client
 - `src/try/api/types.ts` - API request/response types (for future stories)
 
 **Technical Implementation:**
+
 ```typescript
 // src/try/api/api-client.ts
-const JWT_TOKEN_KEY = 'isb-jwt';
+const JWT_TOKEN_KEY = "isb-jwt"
 
-export async function callISBAPI(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<Response> {
-  const token = sessionStorage.getItem(JWT_TOKEN_KEY);
+export async function callISBAPI(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const token = sessionStorage.getItem(JWT_TOKEN_KEY)
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>)
-  };
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   return fetch(endpoint, {
     ...options,
-    headers
-  });
+    headers,
+  })
 }
 ```
 
@@ -126,22 +126,26 @@ export async function callISBAPI(
 ### Project Structure Notes
 
 **Files to Create:**
+
 - `src/try/api/api-client.ts` - API client module
 - `src/try/api/api-client.test.ts` - Unit tests
 
 **Existing Files to Reference:**
+
 - `src/try/auth/auth-provider.ts` - Uses same JWT_TOKEN_KEY pattern
 - `src/try/main.ts` - Entry point for try bundle
 
 ### Testing Strategy
 
 **Unit Tests:**
+
 - Mock `sessionStorage.getItem()` to return token or null
 - Mock `fetch()` to capture request options
 - Verify Authorization header format: `Bearer {token}`
 - Verify header absent when no token
 
 **E2E Tests:**
+
 - Set token in sessionStorage via `page.evaluate()`
 - Make API call and inspect network request
 - Verify Authorization header present in request
@@ -188,17 +192,20 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### File List
 
 **Created:**
+
 - `src/try/api/api-client.ts` - Centralized API client with auth header injection
 - `src/try/api/api-client.test.ts` - Unit tests (19 tests)
 - `docs/sprint-artifacts/stories/5-6-api-authorization-header-injection.context.xml` - Story context
 
 **Modified:**
+
 - `src/assets/try.bundle.js` - Rebuilt with new api-client module
 - `docs/sprint-artifacts/sprint-status.yaml` - Status updates
 
 ## Senior Developer Review (AI)
 
 ### Review Metadata
+
 - **Reviewer:** Code Review Expert Agent
 - **Date:** 2025-11-24
 - **Story:** 5.6 - API Authorization Header Injection
@@ -207,6 +214,7 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 ### Summary
 
 Story 5.6 implementation is complete and verified. The API client correctly:
+
 1. Adds `Authorization: Bearer {token}` header when JWT exists in sessionStorage
 2. Preserves custom headers passed in options
 3. Proceeds without auth header when token missing (graceful degradation)
@@ -214,25 +222,25 @@ Story 5.6 implementation is complete and verified. The API client correctly:
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| 1 | Authorization Header Injection | PASS | Lines 64-66: adds Bearer token, 2 tests verify |
-| 2 | Conditional Header Behavior | PASS | Lines 57-60: spreads custom headers, 5 tests verify |
-| 3 | No Token Behavior | PASS | Line 64: conditional check, 4 tests verify |
-| 4 | Centralized API Client | PASS | Single `callISBAPI()` function, no duplicates found |
-| 5 | DevTools Verification | PASS | Uses native `fetch()` - visible in Network tab |
+| AC# | Description                    | Status | Evidence                                            |
+| --- | ------------------------------ | ------ | --------------------------------------------------- |
+| 1   | Authorization Header Injection | PASS   | Lines 64-66: adds Bearer token, 2 tests verify      |
+| 2   | Conditional Header Behavior    | PASS   | Lines 57-60: spreads custom headers, 5 tests verify |
+| 3   | No Token Behavior              | PASS   | Line 64: conditional check, 4 tests verify          |
+| 4   | Centralized API Client         | PASS   | Single `callISBAPI()` function, no duplicates found |
+| 5   | DevTools Verification          | PASS   | Uses native `fetch()` - visible in Network tab      |
 
 **Summary:** 5 of 5 acceptance criteria fully implemented
 
 ### Task Completion Validation
 
-| Task | Status | Evidence |
-|------|--------|----------|
-| Task 1: Create API Client Module | COMPLETE | `src/try/api/api-client.ts` exists |
-| Task 2: Handle No-Token Case | COMPLETE | Lines 64, 81-97 handle gracefully |
-| Task 3: Export API Client | COMPLETE | Exported at line 52, JSDoc documented |
-| Task 4: Unit Tests | COMPLETE | 19/19 tests passing |
-| Task 5: E2E Coverage | COMPLETE | Covered by existing tests + unit tests |
+| Task                             | Status   | Evidence                               |
+| -------------------------------- | -------- | -------------------------------------- |
+| Task 1: Create API Client Module | COMPLETE | `src/try/api/api-client.ts` exists     |
+| Task 2: Handle No-Token Case     | COMPLETE | Lines 64, 81-97 handle gracefully      |
+| Task 3: Export API Client        | COMPLETE | Exported at line 52, JSDoc documented  |
+| Task 4: Unit Tests               | COMPLETE | 19/19 tests passing                    |
+| Task 5: E2E Coverage             | COMPLETE | Covered by existing tests + unit tests |
 
 **Summary:** 18 of 18 subtasks verified complete
 
@@ -259,13 +267,14 @@ Implementation uses functional approach rather than class-based ADR-021 design. 
 **Required:** None - implementation approved as-is
 
 **Advisory:**
+
 - Story 5.8 will add 401 handling to `callISBAPI()`
 - Future stories may wrap in class-based client per ADR-021 full spec
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-11-24 | 1.0 | Story created and drafted |
-| 2025-11-24 | 1.1 | Implementation complete, 19 unit tests passing |
-| 2025-11-24 | 1.2 | Senior Developer Review - APPROVED |
+| Date       | Version | Description                                    |
+| ---------- | ------- | ---------------------------------------------- |
+| 2025-11-24 | 1.0     | Story created and drafted                      |
+| 2025-11-24 | 1.1     | Implementation complete, 19 unit tests passing |
+| 2025-11-24 | 1.2     | Senior Developer Review - APPROVED             |

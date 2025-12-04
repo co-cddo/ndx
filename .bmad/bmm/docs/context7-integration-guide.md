@@ -7,19 +7,23 @@ The BMAD agents have been enhanced with extensive Context7 MCP server integratio
 ## Enhanced Agents
 
 ### 1. Dev Agent (Amelia) - 💻
+
 **Role:** Senior Software Engineer with API/SDK Validation Expertise
 
 **Context7 Integration:**
+
 - ✅ Validates ALL API/SDK usage before implementation
 - ✅ Queries Context7 for method signatures, parameters, return types
 - ✅ Flags deprecated APIs and suggests modern alternatives
 - ✅ Caches library IDs for session efficiency
 
 **New Menu Items:**
+
 - `*validate-api` - Validate specific library usage against Context7
 - `*scan-apis` - Comprehensive codebase API/SDK validation scan
 
 **Activation Protocol:**
+
 ```
 Step 8: 🔍 API/SDK VALIDATION PROTOCOL
 - BEFORE implementing ANY API/SDK code: resolve library ID
@@ -29,21 +33,25 @@ Step 8: 🔍 API/SDK VALIDATION PROTOCOL
 ```
 
 **Use Cases:**
+
 - Before implementing new API integrations
 - During story development
 - When encountering API-related errors
 - As part of code review checklist
 
 ### 2. TEA Agent (Murat) - 🧪
+
 **Role:** Master Test Architect with Framework API Validation
 
 **Context7 Integration:**
+
 - ✅ Validates testing framework APIs (Playwright, Cypress, Jest, etc.)
 - ✅ Verifies test patterns against official documentation
 - ✅ Ensures correct fixture syntax, selectors, async patterns
 - ✅ Flags deprecated test methods
 
 **Activation Protocol:**
+
 ```
 Step 6: 🔍 TEST FRAMEWORK VALIDATION
 - BEFORE recommending patterns: resolve test framework ID
@@ -53,21 +61,25 @@ Step 6: 🔍 TEST FRAMEWORK VALIDATION
 ```
 
 **Use Cases:**
+
 - Designing test frameworks
 - Validating test automation code
 - Ensuring E2E tests use correct APIs
 - Updating test libraries
 
 ### 3. Architect Agent (Winston) - 🏗️
+
 **Role:** System Architect with Library Validation
 
 **Context7 Integration:**
+
 - ✅ Validates library/SDK selection decisions
 - ✅ Compares alternatives using Context7
 - ✅ Verifies architectural patterns and scalability
 - ✅ Documents technology choices with references
 
 **Activation Protocol:**
+
 ```
 Step 4: 🔍 ARCHITECTURE VALIDATION
 - BEFORE selecting libraries: resolve and compare options
@@ -77,6 +89,7 @@ Step 4: 🔍 ARCHITECTURE VALIDATION
 ```
 
 **Use Cases:**
+
 - Technology selection during architecture phase
 - Evaluating library tradeoffs
 - Validating SDK capabilities
@@ -89,6 +102,7 @@ Step 4: 🔍 ARCHITECTURE VALIDATION
 **Purpose:** Convert library name to Context7-compatible library ID
 
 **Usage:**
+
 ```javascript
 Tool: mcp__context7__resolve-library-id
 Input:
@@ -98,11 +112,13 @@ Output:
 ```
 
 **When to Use:**
+
 - Before any Context7 documentation query
 - When user mentions a library by common name
 - To discover available documentation
 
 **Best Practices:**
+
 - Try variations: "aws-cdk", "AWS CDK", "cdk"
 - Handle multiple matches: present options to user
 - Cache resolved IDs for session
@@ -112,6 +128,7 @@ Output:
 **Purpose:** Fetch up-to-date documentation for a library
 
 **Parameters:**
+
 - `context7CompatibleLibraryID` - From resolve-library-id
 - `mode` - 'code' or 'info'
 - `topic` - Specific API/concept to query
@@ -120,6 +137,7 @@ Output:
 **Mode Selection:**
 
 #### mode='code' - Use For:
+
 - API method signatures
 - Function parameters
 - Return types
@@ -128,6 +146,7 @@ Output:
 - Error handling patterns
 
 **Example:**
+
 ```javascript
 Tool: mcp__context7__get-library-docs
 Input:
@@ -139,6 +158,7 @@ Output:
 ```
 
 #### mode='info' - Use For:
+
 - Architectural patterns
 - Best practices
 - Conceptual guides
@@ -147,6 +167,7 @@ Output:
 - Scalability considerations
 
 **Example:**
+
 ```javascript
 Tool: mcp__context7__get-library-docs
 Input:
@@ -160,10 +181,11 @@ Output:
 ### Pagination
 
 If documentation is incomplete, use pagination:
+
 ```javascript
-page: 1  // First query
-page: 2  // If more info needed
-page: 3  // Continue if necessary
+page: 1 // First query
+page: 2 // If more info needed
+page: 3 // Continue if necessary
 ```
 
 ## Validation Workflows
@@ -197,11 +219,13 @@ page: 3  // Continue if necessary
 ## New Dev Tools
 
 ### Tool: `/validate-api`
+
 **Location:** `.bmad/bmm/agents/dev-tools/validate-api.md`
 
 **Purpose:** Validate specific library usage against Context7
 
 **Features:**
+
 - Interactive library selection
 - File-specific or codebase-wide scanning
 - Detailed validation report
@@ -209,17 +233,20 @@ page: 3  // Continue if necessary
 - Context7 reference citations
 
 **Output:** Markdown report with:
+
 - Valid usage (✅)
 - Warnings - deprecated/suboptimal (⚠️)
 - Issues - incorrect usage (❌)
 - Fix recommendations with code examples
 
 ### Tool: `/scan-apis`
+
 **Location:** `.bmad/bmm/agents/dev-tools/scan-apis.md`
 
 **Purpose:** Comprehensive codebase API/SDK validation
 
 **Features:**
+
 - Automatic dependency discovery
 - Priority-based validation (P0-P3)
 - Parallel Context7 queries
@@ -227,6 +254,7 @@ page: 3  // Continue if necessary
 - Actionable recommendations
 
 **Output:** Executive report with:
+
 - Health score (X/100)
 - Dependency inventory
 - Priority issues
@@ -241,6 +269,7 @@ page: 3  // Continue if necessary
 User: "Implement S3 bucket with lifecycle rules"
 
 Dev Agent:
+
 1. Loads story context
 2. Identifies AWS CDK requirement
 3. Resolves: resolve-library-id("AWS CDK") → "/aws/aws-cdk"
@@ -257,6 +286,7 @@ Dev Agent:
 User: "Review these Playwright tests"
 
 TEA Agent:
+
 1. Reads test files
 2. Identifies Playwright usage
 3. Resolves: resolve-library-id("Playwright") → "/microsoft/playwright"
@@ -276,6 +306,7 @@ TEA Agent:
 User: "Should we use Next.js or Remix?"
 
 Architect:
+
 1. Resolves both:
    - resolve-library-id("Next.js") → "/vercel/next.js"
    - resolve-library-id("Remix") → "/remix-run/remix"
@@ -293,28 +324,33 @@ Architect:
 ## Best Practices
 
 ### 1. Query Strategy
+
 - **Start broad:** Use mode='info' to understand concepts
 - **Get specific:** Use mode='code' for implementation details
 - **Paginate:** Use page=2,3 if initial results incomplete
 - **Cache:** Store library IDs and frequent queries
 
 ### 2. Validation Timing
+
 - **Before:** Always query before implementing new APIs
 - **During:** Validate as you implement complex integrations
 - **After:** Run comprehensive scan as part of DoD
 
 ### 3. Error Handling
+
 - **Library not found:** Try alternative names, check Context7 availability
 - **API not in docs:** May be internal/custom, flag for manual review
 - **Multiple versions:** Check package.json for version, use versioned ID if available
 
 ### 4. Documentation
+
 - Always cite Context7 library IDs in code comments
 - Include mode used (code/info) in documentation
 - Reference specific doc sections in validation reports
 - Track Context7 queries in story context
 
 ### 5. Performance
+
 - Query in parallel when validating multiple libraries
 - Cache resolved library IDs for session
 - Batch similar validations
@@ -343,25 +379,31 @@ Track these throughout agent sessions:
 ## Reporting Standards
 
 ### Validation Report Structure
+
 ```markdown
 # Validation Report: [Library]
+
 **Library ID:** [Context7 ID]
 **Date:** [ISO date]
 **Status:** [✅/⚠️/❌]
 
 ## Summary
+
 - Issues: [count]
 - Warnings: [count]
 - Queries: [count]
 
 ## Findings
+
 [Detailed list with file:line references]
 
 ## Context7 References
+
 [List all Context7 queries made]
 ```
 
 ### Story Context Addition
+
 ```xml
 <api-validation date="2025-11-24">
   <library id="/aws/aws-cdk" status="validated">
@@ -374,14 +416,18 @@ Track these throughout agent sessions:
 ## Continuous Improvement
 
 ### Adding to CI/CD
+
 Recommend integrating API validation into:
+
 - Pre-commit hooks
 - PR validation
 - Nightly scans
 - Release checks
 
 ### Trend Analysis
+
 Track over time:
+
 - Validation scores
 - Deprecated API usage
 - Library health
@@ -390,20 +436,25 @@ Track over time:
 ## Troubleshooting
 
 ### Issue: Library Not Found
+
 **Solution:** Try variations, check Context7 availability, fallback to web search
 
 ### Issue: Incomplete Documentation
+
 **Solution:** Use pagination (page=2,3), try broader topics, combine mode='code' and mode='info'
 
 ### Issue: Rate Limiting
+
 **Solution:** Implement query throttling, cache results, batch similar queries
 
 ### Issue: Version Mismatch
+
 **Solution:** Check package.json for versions, use versioned library ID if available
 
 ## Summary
 
 With Context7 integration, BMAD agents now:
+
 - ✅ Validate ALL API/SDK usage in real-time
 - ✅ Reference up-to-date official documentation
 - ✅ Flag deprecated APIs automatically

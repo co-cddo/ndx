@@ -11,14 +11,14 @@ name: Accessibility Tests
 
 on:
   push:
-    branches: [try/aws]  # Change to 'main' after testing
+    branches: [try/aws] # Change to 'main' after testing
   pull_request:
-    branches: [try/aws]  # Change to 'main' after testing
+    branches: [try/aws] # Change to 'main' after testing
 
 jobs:
   accessibility:
     name: WCAG 2.2 AA Compliance
-    if: false  # Temporarily disabled - fix duplicate auth-nav IDs and SVG role issues
+    if: false # Temporarily disabled - fix duplicate auth-nav IDs and SVG role issues
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -32,8 +32,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'yarn'
+          node-version: "22"
+          cache: "yarn"
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -63,7 +63,7 @@ jobs:
 
   lighthouse:
     name: Lighthouse Accessibility Audit
-    if: false  # Temporarily disabled - fix duplicate auth-nav IDs and SVG role issues
+    if: false # Temporarily disabled - fix duplicate auth-nav IDs and SVG role issues
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -77,8 +77,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'yarn'
+          node-version: "22"
+          cache: "yarn"
 
       - name: Install dependencies
         run: yarn install --immutable

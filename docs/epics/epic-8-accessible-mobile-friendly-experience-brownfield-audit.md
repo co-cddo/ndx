@@ -23,6 +23,7 @@ So that I can identify and remediate issues early, preventing compounding violat
 **Then** I identify and document:
 
 **Automated Scan (axe-core/pa11y):**
+
 - Color contrast violations (WCAG 2.2 Level A/AA/AAA)
 - Missing ARIA labels
 - Form label associations
@@ -31,6 +32,7 @@ So that I can identify and remediate issues early, preventing compounding violat
 - Keyboard navigation barriers
 
 **Manual Testing:**
+
 - Screen reader experience (NVDA/JAWS/VoiceOver)
 - Keyboard-only navigation
 - Focus management
@@ -38,12 +40,14 @@ So that I can identify and remediate issues early, preventing compounding violat
 - Error messaging clarity
 
 **And** audit results documented in `/docs/accessibility-audit.md`:
+
 - Violations categorized by severity (Critical/High/Medium/Low)
 - WCAG 2.2 success criteria referenced
 - Remediation recommendations
 - Estimated effort for fixes
 
 **And** critical violations remediated immediately:
+
 - Color contrast failures (govuk-frontend usually compliant)
 - Missing alt text on images
 - Broken keyboard navigation
@@ -51,6 +55,7 @@ So that I can identify and remediate issues early, preventing compounding violat
 **Prerequisites:** None (Epic 4, Story 4.1) - Runs in parallel
 
 **Technical Notes:**
+
 - Pre-mortem preventive measure #1 (early brownfield audit)
 - Identifies existing issues before adding new features
 - Prevents compounding accessibility debt
@@ -59,12 +64,14 @@ So that I can identify and remediate issues early, preventing compounding violat
 - GOV.UK Design System components usually compliant (validate integration)
 
 **Architecture Context:**
+
 - **ADR-004:** Early brownfield audit prevents compounding accessibility debt
 - **Tools:** axe DevTools browser extension + pa11y-ci CLI
 - **Output:** `/docs/accessibility-audit.md` with severity-categorized violations
 - **Immediate Remediation:** Critical violations fixed before Epic 5 starts
 
 **UX Design Context:**
+
 - **Audit Scope:** Existing NDX pages (catalogue, product pages, home, navigation)
 - **WCAG 2.2 Compliance:** UX Section 8.1 - AA minimum target
 - **GOV.UK Components:** Usually WCAG compliant (validate correct usage)
@@ -84,6 +91,7 @@ So that we catch violations before deployment.
 **Then** CI runs automated tests:
 
 **Test Suite:**
+
 ```yaml
 # .github/workflows/accessibility.yml
 name: Accessibility Tests
@@ -98,7 +106,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
       - name: Install dependencies
         run: yarn install
       - name: Build site
@@ -108,17 +116,14 @@ jobs:
 ```
 
 **And** pa11y-ci configuration includes:
+
 ```json
 {
   "defaults": {
     "standard": "WCAG2AA",
     "timeout": 10000
   },
-  "urls": [
-    "http://localhost:8080/",
-    "http://localhost:8080/catalogue/",
-    "http://localhost:8080/try"
-  ]
+  "urls": ["http://localhost:8080/", "http://localhost:8080/catalogue/", "http://localhost:8080/try"]
 }
 ```
 
@@ -129,6 +134,7 @@ jobs:
 **Prerequisites:** Story 8.1 (Brownfield audit) - Existing issues documented/remediated
 
 **Technical Notes:**
+
 - Pre-mortem preventive measure #3 (automated a11y tests in CI)
 - Catches violations before merge to main
 - WCAG 2.2 Level AA standard
@@ -137,6 +143,7 @@ jobs:
 - Fast feedback loop for developers
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (CRITICAL)
   - PR blocked if ANY WCAG 2.2 AA violations detected
   - Zero tolerance policy for accessibility regressions
@@ -147,6 +154,7 @@ jobs:
 - **Test URLs:** /, /catalogue/, /try (all key pages)
 
 **UX Design Context:**
+
 - **Quality Gate:** No PR merges without passing accessibility tests
 - **Developer Experience:** Immediate feedback on violations (shift-left testing)
 - **Compliance:** Continuous WCAG 2.2 AA compliance (not just end-of-project audit)
@@ -166,6 +174,7 @@ So that we validate compliance before release.
 **Then** I validate WCAG 2.2 success criteria:
 
 **Level A (Must Pass - 30 criteria):**
+
 - 1.1.1 Non-text Content: Alt text for images/icons
 - 1.3.1 Info and Relationships: Semantic HTML, ARIA labels
 - 2.1.1 Keyboard: All functionality keyboard accessible
@@ -174,6 +183,7 @@ So that we validate compliance before release.
 - 4.1.2 Name, Role, Value: Form inputs labeled
 
 **Level AA (Must Pass - 20 criteria):**
+
 - 1.4.3 Contrast (Minimum): 4.5:1 for text, 3:1 for UI components
 - 1.4.5 Images of Text: Avoid text in images (use real text)
 - 2.4.6 Headings and Labels: Descriptive headings
@@ -181,11 +191,13 @@ So that we validate compliance before release.
 - 3.2.4 Consistent Identification: UI components consistent across pages
 
 **Level AAA (Optional - 28 criteria):**
+
 - 1.4.6 Contrast (Enhanced): 7:1 for text
 - 2.4.8 Location: Breadcrumbs or location indicators
 - 3.1.5 Reading Level: Plain English (UK government standard)
 
 **And** audit covers all Try feature components:
+
 - Sign in/out buttons (Epic 5)
 - Try button and modal (Epic 6)
 - Sessions table and launch button (Epic 7)
@@ -197,6 +209,7 @@ So that we validate compliance before release.
 **Prerequisites:** Story 8.2 (CI tests running)
 
 **Technical Notes:**
+
 - WCAG 2.2 released October 2023 (latest standard)
 - FR-TRY-76 requires Level AA minimum
 - GOV.UK services aim for AAA where possible
@@ -204,6 +217,7 @@ So that we validate compliance before release.
 - Tools: axe DevTools, WAVE, Lighthouse, manual testing
 
 **Architecture Context:**
+
 - **ADR-004:** Pa11y integration for automated WCAG 2.2 scanning
   - Scans all Try feature pages (product pages, /try, modals)
   - Detects ~30% of WCAG violations automatically (manual testing for rest)
@@ -216,6 +230,7 @@ So that we validate compliance before release.
 - **Output:** `/docs/wcag-compliance-report.md` with all 50 AA criteria checked
 
 **UX Design Context:**
+
 - **WCAG 2.2 Target:** UX Section 8.1 - AA minimum, AAA where feasible
 - **Component Audit Coverage:**
   - Epic 5: Sign in/out buttons, empty states
@@ -239,6 +254,7 @@ So that we ensure correct implementation and accessibility inheritance.
 **Then** I validate:
 
 **Component Checklist:**
+
 - ✓ Buttons: `govukButton` macro used correctly
 - ✓ Tags: `govukTag` macro for status badges
 - ✓ Table: `govukTable` macro for sessions table
@@ -249,6 +265,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - ✓ Layout: GOV.UK grid system used
 
 **And** component parameters validated:
+
 - Buttons have accessible labels
 - Tags have correct color classes
 - Table has headers with scope attributes
@@ -256,6 +273,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - Headings follow hierarchy (h1 → h2 → h3)
 
 **And** custom components (modal) follow GOV.UK patterns:
+
 - Color palette: GOV.UK colors only
 - Typography: GOV.UK font stack
 - Spacing: GOV.UK spacing scale
@@ -267,6 +285,7 @@ So that we ensure correct implementation and accessibility inheritance.
 **Prerequisites:** Story 8.3 (WCAG audit)
 
 **Technical Notes:**
+
 - GOV.UK Design System: https://design-system.service.gov.uk/
 - Components inherently accessible (if used correctly)
 - Custom modal needs careful ARIA implementation (no GOV.UK modal component)
@@ -274,6 +293,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - FR-TRY-15 requires GOV.UK Design System usage
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint)
   - Must use GOV.UK Nunjucks macros (not React/Vue components)
   - `govukButton`, `govukTag`, `govukTable`, `govukCheckboxes` macros
@@ -288,6 +308,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - **Output:** `/docs/govuk-component-audit.md` with component checklist
 
 **UX Design Context:**
+
 - **Design System:** UX Section 6.0 - GOV.UK Design System v5.x required
 - **Component Specs:** UX Section 6.2 specifies exact GOV.UK components to use
   - Component 1: Sessions Table (govukTable macro)
@@ -312,6 +333,7 @@ So that I can access sandbox management from my phone/tablet.
 **Then** I validate responsiveness for:
 
 **Viewport Sizes:**
+
 - Mobile: 320px - 767px width
 - Tablet: 768px - 1023px width
 - Desktop: 1024px+ width
@@ -319,32 +341,38 @@ So that I can access sandbox management from my phone/tablet.
 **Component Responsiveness:**
 
 **Sign In/Out Buttons (Epic 5):**
+
 - Visible in mobile navigation (not hidden)
 - Accessible in collapsed menu (if applicable)
 - Touch-friendly size (min 44x44px)
 
 **Try Button (Epic 6):**
+
 - Button full-width on mobile (easier to tap)
 - Text readable on small screens
 - Icon appropriately sized
 
 **Lease Request Modal (Epic 6):**
+
 - Modal adapts to mobile viewport (not cut off)
 - AUP text scrollable on mobile
 - Checkbox/buttons touch-friendly
 - Modal closable on mobile (X button or Escape key)
 
 **Sessions Table (Epic 7):**
+
 - **Option A:** Horizontal scroll (table intact)
 - **Option B:** Stacked cards (one session per card)
 - All data visible (not truncated)
 - Launch button accessible on mobile
 
 **Empty States:**
+
 - Guidance text readable on mobile
 - Links touch-friendly
 
 **And** manual testing on real devices:
+
 - iOS: Safari (iPhone/iPad)
 - Android: Chrome (various screen sizes)
 - No horizontal scroll (except intentional table scroll)
@@ -355,6 +383,7 @@ So that I can access sandbox management from my phone/tablet.
 **Prerequisites:** Story 8.4 (GOV.UK component audit)
 
 **Technical Notes:**
+
 - FR-TRY-66, FR-TRY-67, FR-TRY-68, FR-TRY-69 covered
 - GOV.UK Design System is mobile-first by default
 - Test on real devices (not just browser DevTools)
@@ -362,6 +391,7 @@ So that I can access sandbox management from my phone/tablet.
 - Consider card view for mobile sessions table (better UX than scroll)
 
 **Architecture Context:**
+
 - **ADR-008:** Mobile-first CSS approach (GOV.UK default)
   - Breakpoints: 320px (mobile), 768px (tablet), 1024px (desktop)
   - Base styles for mobile, media queries for larger screens
@@ -377,6 +407,7 @@ So that I can access sandbox management from my phone/tablet.
 - **Output:** `/docs/responsive-design-validation.md` with device test results
 
 **UX Design Context:**
+
 - **Mobile Breakpoints:** UX Section 6.2 Component Specifications
   - Mobile: <640px (full-width buttons, stacked layouts)
   - Tablet: 640px-1023px (hybrid layout)
@@ -403,12 +434,14 @@ So that we ensure fast, secure user experience.
 **Then** I validate:
 
 **Performance (Lighthouse):**
+
 - Performance score: ≥90
 - First Contentful Paint: <1.5s
 - Time to Interactive: <3s
 - Cumulative Layout Shift: <0.1
 
 **Security:**
+
 - JWT tokens NOT logged to console
 - JWT tokens NOT exposed in URLs (cleaned after extraction)
 - sessionStorage used correctly (not localStorage for sensitive data)
@@ -417,12 +450,14 @@ So that we ensure fast, secure user experience.
 - HTTPS enforced (redirect HTTP to HTTPS)
 
 **API Calls:**
-- Authorization header included (all /api/* requests)
+
+- Authorization header included (all /api/\* requests)
 - 401 responses handled (automatic re-auth)
 - CORS configured correctly (Innovation Sandbox API)
 - Error handling prevents information leakage
 
 **And** Lighthouse audit run on:
+
 - /try page (authenticated and unauthenticated)
 - Product page with Try button
 - Lease request modal
@@ -433,6 +468,7 @@ So that we ensure fast, secure user experience.
 **Prerequisites:** Story 8.5 (Mobile validation)
 
 **Technical Notes:**
+
 - Lighthouse: Chrome DevTools or CI integration
 - Performance budget: GOV.UK recommendation
 - JWT security: sessionStorage (temporary), never log tokens
@@ -440,6 +476,7 @@ So that we ensure fast, secure user experience.
 - HTTPS: CloudFront enforces (redirect-to-https viewer protocol policy)
 
 **Architecture Context:**
+
 - **ADR-016:** sessionStorage for JWT tokens (security consideration)
   - JWT never logged to console (no console.log in production code)
   - JWT cleared on browser close (sessionStorage clears automatically)
@@ -449,7 +486,7 @@ So that we ensure fast, secure user experience.
   - Token never visible in address bar after extraction
   - Prevents token exposure in screenshots, shared URLs
 - **ADR-021:** Centralized API client with Authorization header injection
-  - Validates Authorization header present on all /api/* requests
+  - Validates Authorization header present on all /api/\* requests
   - 401 responses trigger automatic re-auth (redirect to sign in)
 - **Performance Target:** Lighthouse score ≥90 (GOV.UK standard)
   - First Contentful Paint <1.5s, Time to Interactive <3s
@@ -458,6 +495,7 @@ So that we ensure fast, secure user experience.
 - **Output:** `/docs/performance-security-audit.md` with Lighthouse + OWASP ZAP results
 
 **UX Design Context:**
+
 - **Security:** UX Section 7.1 Authentication State Management
   - sessionStorage choice balances security (browser close = sign out) + UX (multi-tab persistence)
   - No visible tokens in UI, URLs, or console logs
@@ -480,11 +518,13 @@ So that I can access all features without a mouse.
 **Then** I can complete all user flows:
 
 **Flow 1: Sign In**
+
 - Tab to "Sign in" button
 - Press Enter → Redirected to OAuth
 - After auth, tab to navigation → See "Sign out" button
 
 **Flow 2: Request Lease**
+
 - Tab to "Try Before You Buy" tag filter
 - Press Enter → Catalogue filtered
 - Tab to product card → Press Enter → Product page
@@ -496,12 +536,14 @@ So that I can access all features without a mouse.
   - Press Escape → Modal closes (alternative to Cancel button)
 
 **Flow 3: Launch Sandbox**
+
 - Tab to /try page link
 - Press Enter → Navigate to /try page
 - Tab to sessions table → Arrow keys navigate rows (optional)
 - Tab to "Launch AWS Console" button → Press Enter → Opens AWS portal
 
 **Flow 4: Sign Out**
+
 - Tab to "Sign out" button → Press Enter → Signed out
 
 **And** focus indicators visible at all times (WCAG 2.2 Level AA)
@@ -512,6 +554,7 @@ So that I can access all features without a mouse.
 **Prerequisites:** Story 8.6 (Performance/security validation)
 
 **Technical Notes:**
+
 - FR-TRY-70, FR-TRY-71, FR-TRY-72, FR-TRY-73 covered
 - Modal focus trap: Critical for accessibility (prevent focus escaping modal)
 - Escape key closes modal (keyboard shortcut)
@@ -519,6 +562,7 @@ So that I can access all features without a mouse.
 - Tab order: HTML source order (avoid CSS visual reordering that breaks tab order)
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible Modal Pattern - Focus Management (CRITICAL)
   - **Focus trap:** Tab key cycles within modal only (no escape to background)
   - **Focus on open:** Automatically move focus to first interactive element (AUP checkbox)
@@ -533,6 +577,7 @@ So that I can access all features without a mouse.
 - **Tab Order Validation:** HTML source order matches visual order (no CSS reordering issues)
 
 **UX Design Context:**
+
 - **User Journeys:** UX Section 5.1 - All 5 journeys must be keyboard-navigable
   - Journey 1: Authentication Sign In (Tab to "Sign in", Enter)
   - Journey 2: Lease Request (Tab through filters, product, Try button, modal, submit)
@@ -558,16 +603,19 @@ So that I can access all features through audio feedback.
 **Then** I hear clear announcements:
 
 **Sign In/Out Buttons:**
+
 - Button role announced
 - Button label: "Sign in" or "Sign out"
 - Button state: Focused/Not focused
 
 **Try Button:**
+
 - Button role announced
 - Button label: "Try this now for 24 hours"
 - Start button icon decorative (aria-hidden)
 
 **Lease Request Modal:**
+
 - Dialog role announced: "Dialog: Request AWS Sandbox Access"
 - AUP heading: "Acceptable Use Policy"
 - Checkbox label: "I accept the Acceptable Use Policy"
@@ -576,6 +624,7 @@ So that I can access all features through audio feedback.
 - Continue button state: Disabled/Enabled
 
 **Sessions Table:**
+
 - Table role announced
 - Table caption: "Your try sessions"
 - Column headers: Template Name, AWS Account ID, Expiry, Budget, Status
@@ -584,15 +633,15 @@ So that I can access all features through audio feedback.
 - Budget: "Budget: $12.35 used of $50 maximum" (clear pronunciation)
 
 **Empty States:**
+
 - Heading: "Sign in to view your try sessions"
 - Guidance text read clearly
 - Links announced with purpose
 
 **And** ARIA labels used where needed:
+
 ```html
-<span aria-label="Budget: $12.35 used of $50 maximum">
-  $12.3456 / $50.00
-</span>
+<span aria-label="Budget: $12.35 used of $50 maximum"> $12.3456 / $50.00 </span>
 
 <div role="dialog" aria-labelledby="modal-title" aria-modal="true">
   <h2 id="modal-title">Request AWS Sandbox Access</h2>
@@ -601,6 +650,7 @@ So that I can access all features through audio feedback.
 ```
 
 **And** manual testing with 3 screen readers:
+
 - NVDA (Windows)
 - JAWS (Windows)
 - VoiceOver (macOS/iOS)
@@ -608,6 +658,7 @@ So that I can access all features through audio feedback.
 **Prerequisites:** Story 8.7 (Keyboard navigation testing)
 
 **Technical Notes:**
+
 - FR-TRY-74, FR-TRY-75, FR-TRY-79 covered
 - ARIA labels: Supplement visual information for screen readers
 - aria-hidden: Hide decorative icons from screen readers
@@ -616,6 +667,7 @@ So that I can access all features through audio feedback.
 - Table accessibility: th scope="col", caption or aria-label
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible Modal Pattern - ARIA Attributes (CRITICAL)
   - `role="dialog"` on modal container
   - `aria-modal="true"` prevents screen reader navigating outside modal
@@ -635,6 +687,7 @@ So that I can access all features through audio feedback.
 - **Decorative Icons:** `aria-hidden="true"` on Try button start icon
 
 **UX Design Context:**
+
 - **Screen Reader Testing:** UX Section 8.1 WCAG 2.2 compliance requires testing with 3 screen readers
   - NVDA (Windows, free)
   - JAWS (Windows, enterprise standard)
@@ -664,12 +717,14 @@ So that I always know where I am on the page.
 **Then** I see clear focus indicators on all interactive elements:
 
 **Focus Indicator Requirements:**
+
 - Visible outline or border around focused element
 - Contrast ratio: 3:1 minimum against background (WCAG 2.2 Level AA)
 - Consistent style across all elements
 - Not removed by CSS (no `outline: none` without replacement)
 
 **Elements with Focus Indicators:**
+
 - Sign in/out buttons
 - "Try Before You Buy" tag filter
 - "Try this now" button
@@ -681,6 +736,7 @@ So that I always know where I am on the page.
 - All navigation links
 
 **And** focus indicator uses GOV.UK Design System default:
+
 ```css
 /* GOV.UK focus indicator */
 :focus {
@@ -697,6 +753,7 @@ So that I always know where I am on the page.
 **Prerequisites:** Story 8.8 (Screen reader testing)
 
 **Technical Notes:**
+
 - FR-TRY-71 covered (focus indicators visible)
 - GOV.UK Design System provides focus styles automatically
 - Custom CSS must not override (validate no `outline: none`)
@@ -705,6 +762,7 @@ So that I always know where I am on the page.
 - Focus order: Determined by HTML source order (not CSS visual order)
 
 **Architecture Context:**
+
 - **GOV.UK Focus Indicator (default):** Yellow outline + black shadow
   ```css
   :focus {
@@ -723,6 +781,7 @@ So that I always know where I am on the page.
 - **Dynamic Content:** Focus NOT lost during AJAX content loading (preserve focus reference)
 
 **UX Design Context:**
+
 - **Focus Indicator Standard:** GOV.UK Design System default (yellow + black)
   - Visible on all interactive elements (buttons, links, checkboxes, inputs)
   - Consistent across all components (no custom overrides)
@@ -752,12 +811,14 @@ So that I know when something goes wrong and how to fix it.
 **Then** I see and hear error message:
 
 **Visual Error Display:**
+
 - GOV.UK error message component
 - Red left border (govuk-error-message class)
 - Error text clearly visible
 - Error associated with failed element (ARIA)
 
 **Screen Reader Announcement:**
+
 - ARIA live region announces error immediately
 - Error message descriptive (not just "Error")
 - Remediation guidance included
@@ -765,14 +826,16 @@ So that I know when something goes wrong and how to fix it.
 **Error Scenarios:**
 
 **1. Lease Request Failure (409 Max Leases):**
+
 ```html
 <div role="alert" aria-live="assertive">
-  You have reached the maximum number of active sandbox leases (5).
-  Please terminate an existing lease before requesting a new one.
+  You have reached the maximum number of active sandbox leases (5). Please terminate an existing lease before requesting
+  a new one.
 </div>
 ```
 
 **2. API Failure (Network Error):**
+
 ```html
 <div role="alert" aria-live="assertive">
   Failed to load your try sessions. Please check your connection and refresh the page.
@@ -780,13 +843,13 @@ So that I know when something goes wrong and how to fix it.
 ```
 
 **3. Authentication Failure (401):**
+
 ```html
-<div role="alert" aria-live="assertive">
-  Your session has expired. Redirecting to sign in...
-</div>
+<div role="alert" aria-live="assertive">Your session has expired. Redirecting to sign in...</div>
 ```
 
 **And** error messages use GOV.UK error pattern:
+
 - Clear, concise language
 - Action-oriented (tell user what to do)
 - No technical jargon
@@ -798,6 +861,7 @@ So that I know when something goes wrong and how to fix it.
 **Prerequisites:** Story 8.9 (Focus indicators)
 
 **Technical Notes:**
+
 - FR-TRY-79 covered (ARIA live regions for errors)
 - ARIA live regions: Announce dynamic content to screen readers
 - aria-live="assertive": Immediate announcement (interrupts screen reader)
@@ -805,6 +869,7 @@ So that I know when something goes wrong and how to fix it.
 - Error text: Plain English, action-oriented (UK government standard)
 
 **Architecture Context:**
+
 - **ADR-028:** ARIA live regions for error announcements (CRITICAL)
   - `role="alert"` with `aria-live="assertive"` for immediate interruption
   - Screen readers announce errors instantly (don't wait for focus)
@@ -824,6 +889,7 @@ So that I know when something goes wrong and how to fix it.
 - **Module:** `src/try/utils/error-handler.ts` - Centralized error message formatting
 
 **UX Design Context:**
+
 - **Error Strategy:** UX Section 7.4 Success/Error Notification Strategy
   - Immediate announcement via ARIA live regions
   - Clear, actionable guidance (not just "Error")
@@ -853,12 +919,14 @@ So that we meet UK government accessibility standards before release.
 **Then** I certify compliance with:
 
 **WCAG 2.2 Level A (30 criteria) - All Pass:**
+
 - ✓ Perceivable: Text alternatives, adaptable, distinguishable
 - ✓ Operable: Keyboard accessible, enough time, navigable
 - ✓ Understandable: Readable, predictable, input assistance
 - ✓ Robust: Compatible with assistive technologies
 
 **WCAG 2.2 Level AA (20 criteria) - All Pass:**
+
 - ✓ Contrast (Minimum): 4.5:1 text, 3:1 UI components
 - ✓ Resize Text: 200% zoom without loss of functionality
 - ✓ Reflow: No horizontal scroll at 320px width
@@ -866,34 +934,41 @@ So that we meet UK government accessibility standards before release.
 - ✓ Label in Name: Accessible names match visible labels
 
 **WCAG 2.2 Level AAA (Optional - Best Effort):**
+
 - ✓ Contrast (Enhanced): 7:1 where possible (GOV.UK achieves this)
 - ✓ Reading Level: Plain English (UK government standard)
 
 **And** compliance certification includes:
 
 **1. Accessibility Statement (Public):**
+
 ```markdown
 # Accessibility Statement for NDX Try Before You Buy
 
 This website is run by the Cabinet Office. We want as many people as possible to be able to use this website.
 
 # Compliance Status
+
 This website is fully compliant with the Web Content Accessibility Guidelines version 2.2 AA standard.
 
 # Testing
+
 We regularly test this website using:
+
 - Automated testing with axe-core and pa11y
 - Manual testing with NVDA, JAWS, and VoiceOver
 - Keyboard-only navigation testing
 - Mobile device testing (iOS/Android)
 
 # Feedback
+
 If you have difficulty using this website, contact us: [contact details]
 
 Last updated: [Date]
 ```
 
 **2. Internal Compliance Report:**
+
 - All WCAG 2.2 success criteria checked
 - Testing methodology documented
 - Evidence of compliance (screenshots, test results)
@@ -905,6 +980,7 @@ Last updated: [Date]
 **Prerequisites:** Story 8.10 (Error messaging accessibility)
 
 **Technical Notes:**
+
 - UK government requirement: WCAG 2.2 Level AA minimum
 - GOV.UK services must publish accessibility statement
 - Compliance statement template: https://www.gov.uk/guidance/accessibility-requirements-for-public-sector-websites-and-apps
@@ -912,6 +988,7 @@ Last updated: [Date]
 - Ongoing compliance: CI tests prevent regressions (Story 8.2)
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (ongoing compliance)
   - CI pipeline blocks PRs with WCAG violations (Story 8.2)
   - Prevents accessibility regressions after initial certification
@@ -933,6 +1010,7 @@ Last updated: [Date]
   - Reading Level: Plain English (UK government standard)
 
 **UX Design Context:**
+
 - **WCAG 2.2 Target:** UX Section 8.1 - Level AA minimum, AAA where feasible
 - **Accessibility Statement Required:** UK government public sector requirement
   - Published at `/accessibility` route

@@ -18,19 +18,14 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   test.beforeEach(async ({ page }) => {
     // Set up authenticated state
     await page.goto(BASE_URL)
-    await page.evaluate(
-      ([key, token]) => sessionStorage.setItem(key, token),
-      [TOKEN_KEY, TEST_TOKEN]
-    )
+    await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
   })
 
-  test("AC #1: Product page has Try button with correct attributes", async ({
-    page,
-  }) => {
+  test("AC #1: Product page has Try button with correct attributes", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
 
     // Verify Try button exists
-    const tryButton = page.locator('[data-try-id]')
+    const tryButton = page.locator("[data-try-id]")
     await expect(tryButton).toBeVisible()
 
     // Verify button text
@@ -39,18 +34,14 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
     // Verify data-try-id attribute exists
     const tryId = await tryButton.getAttribute("data-try-id")
     expect(tryId).toBeTruthy()
-    expect(tryId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    )
+    expect(tryId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
   })
 
-  test("AC #2: Try button opens AUP modal for authenticated users", async ({
-    page,
-  }) => {
+  test("AC #2: Try button opens AUP modal for authenticated users", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
 
     // Click try button
-    const tryButton = page.locator('[data-try-id]')
+    const tryButton = page.locator("[data-try-id]")
     await tryButton.click()
 
     // Verify modal opens
@@ -58,14 +49,12 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
     await expect(modal).toBeVisible({ timeout: 5000 })
 
     // Verify modal title
-    await expect(modal.locator("h2")).toContainText(
-      "Request AWS Sandbox Access"
-    )
+    await expect(modal.locator("h2")).toContainText("Request AWS Sandbox Access")
   })
 
   test("AC #3: AUP modal displays session info", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.locator('[data-try-id]').click()
+    await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
     await expect(modal).toBeVisible()
@@ -79,7 +68,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
 
   test("AC #4: AUP checkbox enables Continue button", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.locator('[data-try-id]').click()
+    await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
     await expect(modal).toBeVisible()
@@ -98,7 +87,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
 
   test("AC #5: Cancel button closes modal", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.locator('[data-try-id]').click()
+    await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
     await expect(modal).toBeVisible()
@@ -112,7 +101,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
 
   test("AC #6: Escape key closes modal", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.locator('[data-try-id]').click()
+    await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
     await expect(modal).toBeVisible()
@@ -126,7 +115,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
 
   test("AC #7: Focus trap keeps focus within modal", async ({ page }) => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
-    await page.locator('[data-try-id]').click()
+    await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
     await expect(modal).toBeVisible()
@@ -152,14 +141,11 @@ test.describe("Try Before You Buy - Unauthenticated User", () => {
     await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
 
     // Verify no token in sessionStorage
-    const hasToken = await page.evaluate(
-      (key) => sessionStorage.getItem(key) !== null,
-      TOKEN_KEY
-    )
+    const hasToken = await page.evaluate((key) => sessionStorage.getItem(key) !== null, TOKEN_KEY)
     expect(hasToken).toBe(false)
 
     // Click try button
-    const tryButton = page.locator('[data-try-id]')
+    const tryButton = page.locator("[data-try-id]")
     await tryButton.click()
 
     // Should redirect through /api/auth/login to OAuth provider (AWS SSO)
@@ -169,17 +155,14 @@ test.describe("Try Before You Buy - Unauthenticated User", () => {
     // Verify we were redirected (either to /api/auth/login or directly to OAuth provider)
     // OAuth redirect is fast, so we might land at AWS SSO (awsapps.com)
     const finalUrl = page.url()
-    const isRedirected = finalUrl.includes('/api/auth/login') ||
-                        finalUrl.includes('awsapps.com') ||
-                        finalUrl.includes('oauth')
+    const isRedirected =
+      finalUrl.includes("/api/auth/login") || finalUrl.includes("awsapps.com") || finalUrl.includes("oauth")
     expect(isRedirected).toBe(true)
   })
 })
 
 test.describe("NDX:Try - Catalogue Filter", () => {
-  test("AC #9: NDX:Try filter shows tryable products", async ({
-    page,
-  }) => {
+  test("AC #9: NDX:Try filter shows tryable products", async ({ page }) => {
     await page.goto(`${BASE_URL}/catalogue/tags/try-before-you-buy`)
 
     // Verify filter page loads
@@ -190,9 +173,7 @@ test.describe("NDX:Try - Catalogue Filter", () => {
     await expect(productList).toBeVisible()
   })
 
-  test("AC #10: Try Before You Buy tag visible on product card", async ({
-    page,
-  }) => {
+  test("AC #10: Try Before You Buy tag visible on product card", async ({ page }) => {
     await page.goto(`${BASE_URL}/catalogue`)
 
     // Find a product with Try Before You Buy tag

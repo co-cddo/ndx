@@ -5,7 +5,7 @@
 
 project_name: ndx
 user_skill_level: expert
-sprint_artifacts: '{project-root}/docs/sprint-artifacts'
+sprint_artifacts: "{project-root}/docs/sprint-artifacts"
 tea_use_mcp_enhancements: true
 
 # Core Configuration Values
@@ -13,5 +13,5 @@ bmad_folder: .bmad
 user_name: cns
 communication_language: English
 document_output_language: English
-output_folder: '{project-root}/docs'
+output_folder: "{project-root}/docs"
 install_user_docs: true

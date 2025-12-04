@@ -13,73 +13,74 @@ The AUP modal currently hardcodes "24 hours" and "$50 USD" instead of fetching a
 
 ## Pre-mortem Risk Analysis
 
-*Identified failure modes and preventive measures (from pre-mortem analysis):*
+_Identified failure modes and preventive measures (from pre-mortem analysis):_
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
-| Slow API causing UX friction | Medium | High | Timeout (5s) + skeleton loading + 3G performance budget |
-| Race condition on button state | Medium | Critical | Explicit `isFullyLoaded` computed state |
-| API schema changes breaking display | Low | High | Defensive parsing + logging for mismatches |
-| A11y regression in loading states | Medium | High | Screen reader testing in DoD |
-| Invalid template ID at runtime | Low | Medium | Graceful 404 handling (Story 9.4) |
+| Risk                                | Likelihood | Impact   | Mitigation                                              |
+| ----------------------------------- | ---------- | -------- | ------------------------------------------------------- |
+| Slow API causing UX friction        | Medium     | High     | Timeout (5s) + skeleton loading + 3G performance budget |
+| Race condition on button state      | Medium     | Critical | Explicit `isFullyLoaded` computed state                 |
+| API schema changes breaking display | Low        | High     | Defensive parsing + logging for mismatches              |
+| A11y regression in loading states   | Medium     | High     | Screen reader testing in DoD                            |
+| Invalid template ID at runtime      | Low        | Medium   | Graceful 404 handling (Story 9.4)                       |
 
 ---
 
 ## Journey Mapping Insights
 
-*UX improvements from user journey analysis:*
+_UX improvements from user journey analysis:_
 
-| Finding | Enhancement |
-|---------|-------------|
-| Multiple loading indicators confusing | Single combined loading state with skeleton |
-| Budget wording unclear | Clarify: "Maximum spend: ${maxSpend} USD (limits sandbox costs)" |
-| Checkbox visible during loading | Disabled with tooltip until content loads |
-| Values must come from template | All duration/budget values fetched from `/api/leaseTemplates/{tryId}` |
+| Finding                               | Enhancement                                                           |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| Multiple loading indicators confusing | Single combined loading state with skeleton                           |
+| Budget wording unclear                | Clarify: "Maximum spend: ${maxSpend} USD (limits sandbox costs)"      |
+| Checkbox visible during loading       | Disabled with tooltip until content loads                             |
+| Values must come from template        | All duration/budget values fetched from `/api/leaseTemplates/{tryId}` |
 
 ---
 
 ## Devil's Advocate Refinements
 
-*Stress-tested assumptions and adjustments:*
+_Stress-tested assumptions and adjustments:_
 
-| Challenge | Decision |
-|-----------|----------|
-| Is 4 stories over-engineered? | No - user trust requires proper error handling |
-| Checkbox disabled adds friction? | Keep disabled - prevents premature consent |
-| Retry logic is scope creep? | Removed - just show error, user can close and retry manually |
-| API schema unverified? | Added prerequisite to verify endpoint |
+| Challenge                        | Decision                                                     |
+| -------------------------------- | ------------------------------------------------------------ |
+| Is 4 stories over-engineered?    | No - user trust requires proper error handling               |
+| Checkbox disabled adds friction? | Keep disabled - prevents premature consent                   |
+| Retry logic is scope creep?      | Removed - just show error, user can close and retry manually |
+| API schema unverified?           | Added prerequisite to verify endpoint                        |
 
 ---
 
 ## Design Rationale (Decision Matrix)
 
-*Key design decisions validated through weighted criteria analysis:*
+_Key design decisions validated through weighted criteria analysis:_
 
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Fetch strategy | **Parallel** | Fastest time-to-interactive, best user perception |
+| Decision        | Choice                | Why                                                    |
+| --------------- | --------------------- | ------------------------------------------------------ |
+| Fetch strategy  | **Parallel**          | Fastest time-to-interactive, best user perception      |
 | Loading display | **Combined skeleton** | Clearest UX, single loading state vs multiple spinners |
-| Partial success | **All-or-nothing** | User trust requires both AUP and template to succeed |
+| Partial success | **All-or-nothing**    | User trust requires both AUP and template to succeed   |
 
 ---
 
 ## User Insights (Empathy Map)
 
-*Key findings from user perspective analysis:*
+_Key findings from user perspective analysis:_
 
-| Insight | Design Impact |
-|---------|---------------|
-| Users scan duration/budget **first** | Make these prominent, visible immediately when loaded |
-| Loading anxiety is real | Skeleton animation conveys activity, prevents "is it broken?" |
-| Budget wording causes confusion | Clarified with "(limits sandbox costs)" |
-| Users skim AUP, don't read thoroughly | Keep AUP short, key terms in duration/budget display |
-| Quick = trust, slow = doubt | Parallel fetching minimizes wait time |
+| Insight                               | Design Impact                                                 |
+| ------------------------------------- | ------------------------------------------------------------- |
+| Users scan duration/budget **first**  | Make these prominent, visible immediately when loaded         |
+| Loading anxiety is real               | Skeleton animation conveys activity, prevents "is it broken?" |
+| Budget wording causes confusion       | Clarified with "(limits sandbox costs)"                       |
+| Users skim AUP, don't read thoroughly | Keep AUP short, key terms in duration/budget display          |
+| Quick = trust, slow = doubt           | Parallel fetching minimizes wait time                         |
 
 ---
 
 ## Prerequisites
 
 **Before Story 9.1 begins:**
+
 - [ ] Verify `GET /api/leaseTemplates/{id}` endpoint exists in Innovation Sandbox API
 - [ ] Confirm response schema includes `leaseDurationInHours` and `maxSpend` fields
 - [ ] Confirm auth requirements match other ISB endpoints (same JWT flow)
@@ -100,25 +101,28 @@ So that the modal can display actual duration and budget limits.
 
 **And** the service calls `GET /api/leaseTemplates/{tryId}` endpoint
 **And** the response is parsed for:
+
 - `leaseDurationInHours` (number) - Session duration in hours
 - `maxSpend` (number) - Maximum budget in USD
 - `name` (string, optional) - Template name for display
 
 **And** the service returns a typed result:
+
 ```typescript
 interface LeaseTemplateResult {
-  success: boolean;
+  success: boolean
   data?: {
-    leaseDurationInHours: number;
-    maxSpend: number;
-    name?: string;
-  };
-  error?: string;
-  errorCode?: 'NOT_FOUND' | 'UNAUTHORIZED' | 'TIMEOUT' | 'SERVER_ERROR' | 'NETWORK_ERROR';
+    leaseDurationInHours: number
+    maxSpend: number
+    name?: string
+  }
+  error?: string
+  errorCode?: "NOT_FOUND" | "UNAUTHORIZED" | "TIMEOUT" | "SERVER_ERROR" | "NETWORK_ERROR"
 }
 ```
 
 **And** error handling covers:
+
 - 404: Template not found (errorCode: 'NOT_FOUND')
 - 401: Redirect to sign-in (errorCode: 'UNAUTHORIZED')
 - 500+: Server error with retry guidance (errorCode: 'SERVER_ERROR')
@@ -131,6 +135,7 @@ interface LeaseTemplateResult {
 **Prerequisites:** None
 
 **Technical Notes:**
+
 - New file: `src/try/api/lease-templates-service.ts`
 - Follows existing pattern from `configurations-service.ts`
 - Uses `callISBAPI()` for authenticated requests
@@ -139,11 +144,13 @@ interface LeaseTemplateResult {
 - Log API response shape mismatches for monitoring
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API Client - use `callISBAPI()` wrapper
 - **ADR-028:** Request Deduplication - wrap in `deduplicatedRequest()`
 - **Module:** `src/try/api/` - API services directory
 
 **Test Cases:**
+
 1. Successful fetch returns template data with all fields
 2. Successful fetch with missing optional fields (name) still succeeds
 3. 404 returns NOT_FOUND error with user-friendly message
@@ -168,6 +175,7 @@ So that I know exactly what I'm agreeing to before requesting access.
 **Given** the AUP modal opens for a tryable product
 **When** the modal renders
 **Then** a single combined loading state is displayed:
+
 - Loading skeleton animation covers session info area
 - Message: "Loading session terms..."
 - Replaces separate loading indicators for duration/budget/AUP
@@ -177,15 +185,18 @@ So that I know exactly what I'm agreeing to before requesting access.
 **And** modal must be interactive within 3 seconds on 3G connection (performance budget)
 
 **And** once lease template data loads successfully (values from API):
+
 - Duration displays as: "Session duration: {leaseDurationInHours} hours"
 - Budget displays as: "Maximum spend: ${maxSpend} USD" with clarification "(limits sandbox costs)"
 
 **And** if lease template fetch fails:
+
 - Error message displayed: "Unable to load session details. Please try again."
 - Duration and budget show: "Unknown" (not blank)
 - Continue button remains disabled (cannot proceed without knowing terms)
 
 **And** loading states use ARIA live regions for screen reader announcements:
+
 - On open: "Loading session details"
 - On success: "Session details loaded: {hours} hours, ${budget} budget"
 - On error: "Error loading session details"
@@ -195,6 +206,7 @@ So that I know exactly what I'm agreeing to before requesting access.
 **Prerequisites:** Story 9.1 (Lease Template Service)
 
 **Technical Notes:**
+
 - Modify `src/try/ui/components/aup-modal.ts`
 - Remove hardcoded "24 hours" and "$50 USD" strings
 - Add `leaseTemplateLoading` and `leaseTemplateData` state properties
@@ -204,10 +216,12 @@ So that I know exactly what I'm agreeing to before requesting access.
 - Use CSS skeleton animations for loading state (not just text)
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible Modal Pattern - maintain WCAG 2.2 AA compliance
 - **UX Design:** Modal must clearly communicate what user is agreeing to
 
 **Test Cases:**
+
 1. Single combined loading state shown initially (not 3 separate)
 2. Checkbox disabled with tooltip during loading
 3. Checkbox enabled once content loads
@@ -234,6 +248,7 @@ So that I cannot accidentally agree to terms I haven't seen.
 **Given** the AUP modal is open
 **When** determining Continue button enabled state
 **Then** the button is disabled (with `aria-disabled="true"`) unless ALL conditions are met:
+
 1. AUP content has loaded successfully (not loading, not error/fallback)
 2. Lease template data has loaded successfully (duration and budget known)
 3. User has checked the "I accept the Acceptable Use Policy" checkbox
@@ -243,6 +258,7 @@ So that I cannot accidentally agree to terms I haven't seen.
 **And** if AUP loads with fallback content (API failed), the button remains disabled
 **And** if lease template fails to load, the button remains disabled
 **And** visual indication shows what's still loading:
+
 - During load: "Loading..." on button or info text
 - On partial failure: Error message explains what failed
 
@@ -251,6 +267,7 @@ So that I cannot accidentally agree to terms I haven't seen.
 **Prerequisites:** Stories 9.1, 9.2
 
 **Technical Notes:**
+
 - Modify `updateButtons()` method in `aup-modal.ts`
 - Add new state properties:
   - `aupLoaded: boolean` (true only on successful fetch, not fallback)
@@ -258,18 +275,18 @@ So that I cannot accidentally agree to terms I haven't seen.
   - `isFullyLoaded: boolean` (computed: aupLoaded && leaseTemplateLoaded)
 - Update button disabled logic:
   ```typescript
-  const shouldDisable = !this.state.isFullyLoaded ||
-                        !this.state.aupAccepted ||
-                        this.state.isLoading;
+  const shouldDisable = !this.state.isFullyLoaded || !this.state.aupAccepted || this.state.isLoading
   ```
 - Checkbox handler must call `updateButtons()` which checks `isFullyLoaded`
 - Consider combined loading state: "Loading policy and session details..."
 
 **Architecture Context:**
+
 - **FR-TRY-57:** Continue button disabled until AUP checkbox checked (enhanced)
 - **WCAG:** Focus management - disabled button announced to screen readers
 
 **Test Cases:**
+
 1. Button disabled when AUP loading
 2. Button disabled when lease template loading
 3. Button disabled when AUP failed (fallback shown)
@@ -294,12 +311,14 @@ So that I understand why I cannot proceed.
 **Given** the AUP modal opens for a tryable product
 **When** the lease template API returns an error (404, 500, timeout, etc.)
 **Then** the modal displays:
+
 - Error message: "Unable to load session details"
 - Session details show: "Unknown"
 - Continue button remains disabled
 - Cancel button available (user can close and try again)
 
 **And** if template returns 404 specifically:
+
 - Error message: "This sandbox is currently unavailable"
 - Guidance: "Please try a different product or contact support"
 
@@ -308,15 +327,18 @@ So that I understand why I cannot proceed.
 **Prerequisites:** Stories 9.1, 9.2, 9.3
 
 **Technical Notes:**
+
 - Simple error display - no retry button (user can close modal and click Try again)
 - Log errors to console for debugging
 - Error state prevents Continue button from enabling
 
 **Architecture Context:**
+
 - **UX Design:** Keep it simple - error + close is sufficient
 - **Monitoring:** Log all error scenarios for operational visibility
 
 **Test Cases:**
+
 1. API error displays "Unable to load session details"
 2. 404 response displays "sandbox unavailable" message
 3. Continue button remains disabled on error
@@ -356,6 +378,7 @@ User can close modal and click Try button again to retry.
 ### Rollback Safety
 
 If issues arise, the fallback behavior (hardcoded values) can be restored by:
+
 1. Reverting `updateButtons()` to original logic
 2. Keeping lease template fetch but ignoring results for button state
 

@@ -65,33 +65,36 @@ So that unintended infrastructure changes are detected automatically.
 ### Technical Implementation
 
 **Testing Framework Setup:**
+
 - Jest already configured in `/infra/package.json` (jest@^29.7.0)
 - TypeScript support via ts-jest@^29.2.5
 - CDK assertions library: `aws-cdk-lib/assertions`
 - Test pattern: `**/*.test.ts`
 
 **Snapshot Test Pattern (from Architecture ADR-005):**
+
 ```typescript
-import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
-import { NdxStaticStack } from '../lib/ndx-stack';
+import { App } from "aws-cdk-lib"
+import { Template } from "aws-cdk-lib/assertions"
+import { NdxStaticStack } from "../lib/ndx-stack"
 
 // Validates: Complete CloudFormation template integrity
 // Why: Catches ANY unintended infrastructure changes (FR31)
-describe('NdxStaticStack', () => {
-  test('CloudFront configuration snapshot', () => {
-    const app = new App();
-    const stack = new NdxStaticStack(app, 'TestStack');
-    const template = Template.fromStack(stack);
+describe("NdxStaticStack", () => {
+  test("CloudFront configuration snapshot", () => {
+    const app = new App()
+    const stack = new NdxStaticStack(app, "TestStack")
+    const template = Template.fromStack(stack)
 
     // Snapshot captures entire CloudFormation template
-    expect(template.toJSON()).toMatchSnapshot();
-  });
-});
+    expect(template.toJSON()).toMatchSnapshot()
+  })
+})
 ```
 
 **Expected Snapshot Content:**
 The snapshot file will capture:
+
 - AWS::CloudFront::Distribution (with 3 origins, default cache behavior, function association)
 - AWS::CloudFront::Function (ndx-cookie-router)
 - AWS::CloudFront::CachePolicy (NdxCookieRoutingPolicy with NDX cookie allowlist)
@@ -99,6 +102,7 @@ The snapshot file will capture:
 - All resource properties and configuration
 
 **Test Execution:**
+
 ```bash
 # Run tests
 cd infra && yarn test
@@ -113,18 +117,21 @@ yarn test --watch
 ### Architecture References
 
 **From Tech Spec (Testing Strategy):**
+
 - Complete testing pyramid: Unit tests + Snapshot tests + Assertions + Integration
 - Fast feedback loop: Unit/snapshot tests run in seconds
 - Regression prevention: Snapshots catch unintended CloudFormation changes
 - Defense-in-depth: Multiple layers validate different aspects
 
 **From ADR-005 (Testing Patterns):**
+
 - Snapshot tests provide broad coverage with minimal code
 - Catches ANY CloudFormation changes automatically
 - Snapshots must be version controlled in git
 - Use `yarn test -u` to update after intentional changes
 
 **NFRs Addressed:**
+
 - NFR-PERF-TEST-1: Unit tests execute in < 10 seconds
 - NFR-MAINT-TEST-2: Test documentation (WHAT and WHY comments)
 - NFR-MAINT-TEST-3: Snapshot commit discipline
@@ -133,16 +140,19 @@ yarn test --watch
 ### Project Structure Notes
 
 **Test File Location:**
+
 - Path: `infra/test/ndx-stack.test.ts`
 - Co-located with source: `infra/lib/ndx-stack.ts`
 - Follows CDK standard pattern (ADR-005)
 
 **Snapshot Storage:**
+
 - Jest creates: `infra/test/__snapshots__/ndx-stack.test.ts.snap`
 - Must be committed to git
 - Binary-friendly (JSON format)
 
 **Existing Test Infrastructure:**
+
 - Jest config: `infra/jest.config.js` (or in package.json)
 - Test script: `"test": "jest"` in package.json
 - TypeScript compilation handled by ts-jest
@@ -152,10 +162,12 @@ yarn test --watch
 **From Story 2.6 (Status: done)**
 
 **Critical Bug Fixes Applied:**
+
 1. **CloudFront Function API Update:** Function now uses correct JavaScript 2.0 API (`cf.updateRequestOrigin()`) with proper `originAccessControlConfig`
 2. **S3 Bucket Policy Added:** `ndx-static-prod` bucket now has policy allowing CloudFront access via OAC
 
 **Infrastructure State:**
+
 - CloudFront Function deployed: `arn:aws:cloudfront::568672915267:function/ndx-cookie-router`
 - Function status: ASSOCIATED (attached to viewer-request)
 - Cookie routing WORKING (validated via manual testing)
@@ -163,16 +175,19 @@ yarn test --watch
 - Cache policy deployed: NdxCookieRoutingPolicy with NDX cookie allowlist
 
 **Files to Reference for Testing:**
+
 - CDK Stack: `infra/lib/ndx-stack.ts` (contains all CloudFront resources)
 - Function Code: `infra/lib/functions/cookie-router.js` (deployed and working)
 
 **Testing Considerations:**
+
 - Snapshot should capture current working state (post-bug-fix)
 - Function association must be present in snapshot
 - S3 bucket policy should be reflected in snapshot (if managed by CDK)
 - Three origins must appear in snapshot
 
 **Recommendation from Story 2.6:**
+
 - Always invalidate CloudFront cache after routing changes for immediate effect
 - Consider adding cache invalidation step to deployment workflow
 
@@ -181,18 +196,21 @@ yarn test --watch
 ### Implementation Notes
 
 **Jest Configuration Changes:**
+
 - Modified `jest.config.js` to exclude `cookie-router.test.ts` from test suite
 - Reason: CloudFront Function uses ES6 modules (`import cf from 'cloudfront'`) which are incompatible with Jest/Node.js test environment
 - CloudFront Functions run in CloudFront's JavaScript 2.0 runtime, not Node.js
 - Limitation documented in jest.config.js via `testPathIgnorePatterns`
 
 **TypeScript Compilation Requirement:**
+
 - CRITICAL: Must run `yarn build` before running tests to compile TypeScript to JavaScript
 - Tests execute against compiled JS files in `lib/` directory
 - Stale JS files will cause tests to use outdated code
 - Build script: `"build": "tsc"` in package.json
 
 **Test Directory Structure:**
+
 - Tests moved from `lib/` to `test/` directory per ADR-005 best practices
 - Snapshot files stored in `test/__snapshots__/` directory
 - Old test files in `lib/` directory removed during implementation
@@ -240,14 +258,17 @@ yarn test --watch
 ### File List
 
 **Created:**
+
 - `infra/test/ndx-stack.test.ts` - CDK snapshot test with documentation
 - `infra/test/__snapshots__/ndx-stack.test.ts.snap` - CloudFormation template snapshot
 
 **Modified:**
+
 - `infra/jest.config.js` - Updated roots to `test/` only, added `testPathIgnorePatterns` for cookie-router
 - `infra/lib/ndx-stack.ts` - No functional changes (temporary debug logging added and removed during investigation)
 
 **Removed:**
+
 - `infra/lib/__snapshots__/ndx-stack.test.ts.snap` - Old snapshot in incorrect location
 - `infra/lib/ndx-stack.test.ts` - Old test in incorrect location per ADR-005
 

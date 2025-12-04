@@ -13,10 +13,10 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-017|ADR-017: Try Button}
  */
 
-import { authState } from '../auth/auth-provider';
-import { openAupModal, closeAupModal, aupModal } from './components/aup-modal';
-import { createLease } from '../api/leases-service';
-import { storeReturnURL } from '../auth/oauth-flow';
+import { authState } from "../auth/auth-provider"
+import { openAupModal, closeAupModal, aupModal } from "./components/aup-modal"
+import { createLease } from "../api/leases-service"
+import { storeReturnURL } from "../auth/oauth-flow"
 
 /**
  * Initialize try button click handlers.
@@ -30,13 +30,11 @@ import { storeReturnURL } from '../auth/oauth-flow';
  */
 export function initTryButton(): void {
   // Select buttons by data-try-id presence (more reliable than duplicate data-module)
-  const tryButtons = document.querySelectorAll<HTMLButtonElement>(
-    'button[data-try-id], a[data-try-id]'
-  );
+  const tryButtons = document.querySelectorAll<HTMLButtonElement>("button[data-try-id], a[data-try-id]")
 
   tryButtons.forEach((button) => {
-    button.addEventListener('click', handleTryButtonClick);
-  });
+    button.addEventListener("click", handleTryButtonClick)
+  })
 }
 
 /**
@@ -45,28 +43,28 @@ export function initTryButton(): void {
  * @param {Event} event - Click event from try button
  */
 function handleTryButtonClick(event: Event): void {
-  event.preventDefault();
+  event.preventDefault()
 
-  const button = event.currentTarget as HTMLButtonElement;
-  const tryId = button.dataset.tryId;
+  const button = event.currentTarget as HTMLButtonElement
+  const tryId = button.dataset.tryId
 
   if (!tryId) {
-    console.error('[TryButton] Button missing data-try-id attribute');
-    return;
+    console.error("[TryButton] Button missing data-try-id attribute")
+    return
   }
 
   // Story 6.5: Check authentication
   if (!authState.isAuthenticated()) {
     // Store return URL for post-login redirect (uses oauth-flow's storage)
-    storeReturnURL();
+    storeReturnURL()
 
     // Redirect to OAuth login
-    window.location.href = '/api/auth/login';
-    return;
+    window.location.href = "/api/auth/login"
+    return
   }
 
   // Story 6.6: User is authenticated, open AUP modal
-  openAupModal(tryId, handleLeaseAccept);
+  openAupModal(tryId, handleLeaseAccept)
 }
 
 /**
@@ -78,37 +76,36 @@ function handleTryButtonClick(event: Event): void {
  * @param tryId - The product's try_id UUID
  */
 async function handleLeaseAccept(tryId: string): Promise<void> {
-  const result = await createLease(tryId);
+  const result = await createLease(tryId)
 
   if (result.success) {
     // Success: Close modal and navigate to /try page
-    closeAupModal();
-    window.location.href = '/try';
-    return;
+    closeAupModal()
+    window.location.href = "/try"
+    return
   }
 
   // Handle specific error codes
   switch (result.errorCode) {
-    case 'CONFLICT':
+    case "CONFLICT":
       // Max sessions reached - alert and redirect to /try
-      closeAupModal();
-      alert(result.error);
-      window.location.href = '/try';
-      break;
+      closeAupModal()
+      alert(result.error)
+      window.location.href = "/try"
+      break
 
-    case 'UNAUTHORIZED':
+    case "UNAUTHORIZED":
       // Auth issue - callISBAPI should have redirected, but handle gracefully
-      closeAupModal();
-      window.location.href = '/api/auth/login';
-      break;
+      closeAupModal()
+      window.location.href = "/api/auth/login"
+      break
 
-    case 'TIMEOUT':
-    case 'NETWORK_ERROR':
-    case 'SERVER_ERROR':
+    case "TIMEOUT":
+    case "NETWORK_ERROR":
+    case "SERVER_ERROR":
     default:
       // Show error in modal, allow retry
-      aupModal.showError(result.error || 'An error occurred. Please try again.');
-      break;
+      aupModal.showError(result.error || "An error occurred. Please try again.")
+      break
   }
 }
-

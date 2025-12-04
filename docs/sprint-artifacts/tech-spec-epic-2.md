@@ -11,12 +11,14 @@
 ## Overview
 
 This epic implements CloudFront Function-based cookie inspection and origin routing logic. When a request arrives at CloudFront, the function inspects the `NDX` cookie value and dynamically selects the appropriate S3 origin:
+
 - Requests with `NDX=true` route to `ndx-static-prod` (new UI for testers)
 - All other requests route to existing S3Origin (production UI)
 
 This approach enables safe UI testing for authorized testers without affecting production users. The routing function executes at CloudFront edge locations before any caching, ensuring consistent behavior globally.
 
 **What This Epic Delivers:**
+
 - CloudFront Function containing cookie-based routing logic
 - Comprehensive unit tests for routing scenarios
 - Cache policy configuration allowing NDX cookie inspection
@@ -25,10 +27,11 @@ This approach enables safe UI testing for authorized testers without affecting p
 - Validation that routing works correctly in production
 
 **What This Epic Does NOT Include:**
+
 - Testing infrastructure (Epic 3)
 - Rollback procedures (Epic 3)
 - Operational monitoring setup (Epic 3)
-- Changes to API Gateway cache behavior (preserves existing /prod/* routes)
+- Changes to API Gateway cache behavior (preserves existing /prod/\* routes)
 
 ---
 
@@ -37,6 +40,7 @@ This approach enables safe UI testing for authorized testers without affecting p
 ### In-Scope
 
 **Routing Function Development:**
+
 - CloudFront Function JavaScript code with cookie parsing
 - Exact string matching for `NDX` cookie name and `true` value
 - Dynamic origin selection based on cookie presence/value
@@ -44,22 +48,26 @@ This approach enables safe UI testing for authorized testers without affecting p
 - Sub-1KB code size optimized for CloudFront Functions runtime
 
 **Testing:**
+
 - Unit tests covering all routing scenarios (5+ test cases)
 - Cookie parsing edge cases (missing, malformed, multiple cookies)
 - Validation that non-"true" values route to default origin
 
 **Cache Policy Configuration:**
+
 - Configure CloudFront to forward `NDX` cookie to function
 - Preserve all existing cache behavior settings
 - Maintain existing TTL, compression, HTTPS redirect policies
 
 **Deployment:**
+
 - Deploy CloudFront Function via CDK to distribution E3THG4UHYDHVWP
 - Attach function to default cache behavior as viewer-request function
-- Preserve API Gateway cache behavior (/prod/*) unchanged
+- Preserve API Gateway cache behavior (/prod/\*) unchanged
 - Zero-downtime deployment via CloudFormation
 
 **Validation:**
+
 - Smoke test: Set `NDX=true` cookie, verify routing to new origin
 - Smoke test: No cookie or `NDX=false`, verify default origin
 - CloudFormation deployment completion verification
@@ -76,11 +84,13 @@ This approach enables safe UI testing for authorized testers without affecting p
 ### System Architecture Alignment
 
 **Architecture References:**
+
 - **CloudFront Function Pattern (ADR-001):** Lightweight JavaScript execution at 225+ edge locations, sub-millisecond latency
 - **Cookie-Based Routing Section:** Exact implementation code provided in Architecture document
 - **Security Model (ADR-002):** Reuse OAC E3P8MA1G9Y5BYE for new origin access
 
 **Alignment:**
+
 - Function uses CloudFront Functions runtime (not Lambda@Edge)
 - Executes as viewer-request function (before cache lookup)
 - Fail-open design aligns with NFR-REL-3 (graceful degradation)
@@ -93,6 +103,7 @@ This approach enables safe UI testing for authorized testers without affecting p
 ### CloudFront Function JavaScript Runtime
 
 **Constraints:**
+
 - **JavaScript Subset:** ECMAScript 5.1 compatible (no ES6 features)
 - **Keywords:** Must use `var` (not `const` or `let`)
 - **Functions:** No arrow functions, use `function` keyword
@@ -101,6 +112,7 @@ This approach enables safe UI testing for authorized testers without affecting p
 - **No console.log:** Avoid for production (adds execution cost)
 
 **Supported CloudFront Functions Features:**
+
 - String manipulation
 - Object/array operations (basic)
 - Header access via `event.request.headers`
@@ -111,32 +123,36 @@ This approach enables safe UI testing for authorized testers without affecting p
 ### Distribution E3THG4UHYDHVWP Context
 
 **Current Origins:**
+
 1. **S3Origin** (ID: "S3Origin") - Default for HTML/assets
-2. **API Gateway** (ID: "InnovationSandbox...") - /prod/* routes
+2. **API Gateway** (ID: "InnovationSandbox...") - /prod/\* routes
 3. **ndx-static-prod-origin** (NEW in Epic 1) - New UI for testers
 
 **Cache Behaviors:**
-- **Default** (*): Currently targets S3Origin, no routing function attached
+
+- **Default** (\*): Currently targets S3Origin, no routing function attached
 - **/prod/\***: Targets API Gateway, preserves existing behavior
 
 **Target Configuration:**
+
 - Attach cookie-router function to **Default cache behavior** only
-- Leave /prod/* cache behavior unchanged
+- Leave /prod/\* cache behavior unchanged
 
 ### Origin Access Control (OAC)
 
 **OAC ID:** E3P8MA1G9Y5BYE (reused from Epic 1)
 
 **Critical:** CloudFront Function must specify OAC when routing to `ndx-static-prod`:
+
 ```javascript
 request.origin = {
   s3: {
-    domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-    region: 'us-west-2',
-    authMethod: 'origin-access-control',
-    originAccessControlId: 'E3P8MA1G9Y5BYE'
-  }
-};
+    domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+    region: "us-west-2",
+    authMethod: "origin-access-control",
+    originAccessControlId: "E3P8MA1G9Y5BYE",
+  },
+}
 ```
 
 ---
@@ -151,47 +167,48 @@ request.origin = {
 
 ```javascript
 function handler(event) {
-  var request = event.request;
-  var cookies = parseCookies(request.headers.cookie);
+  var request = event.request
+  var cookies = parseCookies(request.headers.cookie)
 
   // Route to new origin if NDX=true (exact match, case-sensitive)
-  if (cookies['NDX'] === 'true') {
+  if (cookies["NDX"] === "true") {
     request.origin = {
       s3: {
-        domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-        region: 'us-west-2',
-        authMethod: 'origin-access-control',
-        originAccessControlId: 'E3P8MA1G9Y5BYE'
-      }
-    };
+        domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+        region: "us-west-2",
+        authMethod: "origin-access-control",
+        originAccessControlId: "E3P8MA1G9Y5BYE",
+      },
+    }
   }
   // Else: request.origin remains undefined, uses default cache behavior origin
 
-  return request;
+  return request
 }
 
 function parseCookies(cookieHeader) {
   if (!cookieHeader || !cookieHeader.value) {
-    return {};
+    return {}
   }
 
-  var cookies = {};
-  var cookieString = cookieHeader.value;
+  var cookies = {}
+  var cookieString = cookieHeader.value
 
-  cookieString.split(';').forEach(function(cookie) {
-    var parts = cookie.split('=');
+  cookieString.split(";").forEach(function (cookie) {
+    var parts = cookie.split("=")
     if (parts.length >= 2) {
-      var key = parts[0].trim();
-      var value = parts.slice(1).join('=').trim(); // Handle values with = in them
-      cookies[key] = value;
+      var key = parts[0].trim()
+      var value = parts.slice(1).join("=").trim() // Handle values with = in them
+      cookies[key] = value
     }
-  });
+  })
 
-  return cookies;
+  return cookies
 }
 ```
 
 **Validation:**
+
 - Code size: ~500 bytes ✓
 - No ES6 features: `var`, `function`, no arrow functions ✓
 - Exact string matching: `cookies['NDX'] === 'true'` ✓
@@ -207,116 +224,117 @@ function parseCookies(cookieHeader) {
 **Implementation:**
 
 ```typescript
-import { handler } from '../lib/functions/cookie-router';
+import { handler } from "../lib/functions/cookie-router"
 
-describe('CloudFront Cookie Router', () => {
-  test('routes to new origin when NDX=true', () => {
+describe("CloudFront Cookie Router", () => {
+  test("routes to new origin when NDX=true", () => {
     const event = {
       request: {
         headers: {
-          cookie: { value: 'NDX=true' }
-        }
-      }
-    };
+          cookie: { value: "NDX=true" },
+        },
+      },
+    }
 
-    const result = handler(event);
+    const result = handler(event)
 
-    expect(result.origin).toBeDefined();
-    expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
-    expect(result.origin.s3.region).toBe('us-west-2');
-    expect(result.origin.s3.authMethod).toBe('origin-access-control');
-    expect(result.origin.s3.originAccessControlId).toBe('E3P8MA1G9Y5BYE');
-  });
+    expect(result.origin).toBeDefined()
+    expect(result.origin.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+    expect(result.origin.s3.region).toBe("us-west-2")
+    expect(result.origin.s3.authMethod).toBe("origin-access-control")
+    expect(result.origin.s3.originAccessControlId).toBe("E3P8MA1G9Y5BYE")
+  })
 
-  test('uses default origin when cookie missing', () => {
+  test("uses default origin when cookie missing", () => {
     const event = {
       request: {
-        headers: {}
-      }
-    };
+        headers: {},
+      },
+    }
 
-    const result = handler(event);
+    const result = handler(event)
 
-    expect(result.origin).toBeUndefined();
-  });
+    expect(result.origin).toBeUndefined()
+  })
 
-  test('uses default origin when NDX=false', () => {
+  test("uses default origin when NDX=false", () => {
     const event = {
       request: {
         headers: {
-          cookie: { value: 'NDX=false' }
-        }
-      }
-    };
+          cookie: { value: "NDX=false" },
+        },
+      },
+    }
 
-    const result = handler(event);
+    const result = handler(event)
 
-    expect(result.origin).toBeUndefined();
-  });
+    expect(result.origin).toBeUndefined()
+  })
 
-  test('uses default origin when NDX has non-true value', () => {
-    const testValues = ['TRUE', 'True', '1', 'yes', '"true"', 'true '];
+  test("uses default origin when NDX has non-true value", () => {
+    const testValues = ["TRUE", "True", "1", "yes", '"true"', "true "]
 
-    testValues.forEach(value => {
+    testValues.forEach((value) => {
       const event = {
         request: {
           headers: {
-            cookie: { value: `NDX=${value}` }
-          }
-        }
-      };
+            cookie: { value: `NDX=${value}` },
+          },
+        },
+      }
 
-      const result = handler(event);
-      expect(result.origin).toBeUndefined();
-    });
-  });
+      const result = handler(event)
+      expect(result.origin).toBeUndefined()
+    })
+  })
 
-  test('parses multiple cookies correctly', () => {
+  test("parses multiple cookies correctly", () => {
     const event = {
       request: {
         headers: {
-          cookie: { value: 'session=abc123; NDX=true; other=xyz' }
-        }
-      }
-    };
+          cookie: { value: "session=abc123; NDX=true; other=xyz" },
+        },
+      },
+    }
 
-    const result = handler(event);
+    const result = handler(event)
 
-    expect(result.origin).toBeDefined();
-    expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
-  });
+    expect(result.origin).toBeDefined()
+    expect(result.origin.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+  })
 
-  test('handles malformed cookies gracefully', () => {
+  test("handles malformed cookies gracefully", () => {
     const event = {
       request: {
         headers: {
-          cookie: { value: 'invalid;;;NDX=true;;;' }
-        }
-      }
-    };
+          cookie: { value: "invalid;;;NDX=true;;;" },
+        },
+      },
+    }
 
-    const result = handler(event);
+    const result = handler(event)
 
-    expect(result.origin).toBeDefined(); // Should still route correctly
-  });
+    expect(result.origin).toBeDefined() // Should still route correctly
+  })
 
-  test('handles cookie values with equals signs', () => {
+  test("handles cookie values with equals signs", () => {
     const event = {
       request: {
         headers: {
-          cookie: { value: 'data=a=b=c; NDX=true' }
-        }
-      }
-    };
+          cookie: { value: "data=a=b=c; NDX=true" },
+        },
+      },
+    }
 
-    const result = handler(event);
+    const result = handler(event)
 
-    expect(result.origin).toBeDefined();
-  });
-});
+    expect(result.origin).toBeDefined()
+  })
+})
 ```
 
 **Validation:**
+
 - Run `yarn test` - all tests pass ✓
 - Test execution time < 100ms ✓
 - 7 test cases covering all scenarios ✓
@@ -332,8 +350,9 @@ describe('CloudFront Cookie Router', () => {
 Since distribution E3THG4UHYDHVWP is externally managed, cache policy configuration via Custom Resource Lambda or manual CloudFront console update.
 
 **Option A: Manual Configuration (Recommended for Epic 2):**
+
 1. AWS Console → CloudFront → Distribution E3THG4UHYDHVWP
-2. Behaviors → Default (*) → Edit
+2. Behaviors → Default (\*) → Edit
 3. Cache key and origin requests:
    - Cache policy: Create new or modify existing
    - Cookies: Allowlist
@@ -341,6 +360,7 @@ Since distribution E3THG4UHYDHVWP is externally managed, cache policy configurat
 4. Save changes
 
 **Option B: Custom Resource Lambda (Future Enhancement):**
+
 ```typescript
 // Similar to Epic 1's add-origin Custom Resource
 // UpdateDistributionConfig API call to modify cache behavior
@@ -349,6 +369,7 @@ Since distribution E3THG4UHYDHVWP is externally managed, cache policy configurat
 **For Epic 2:** Manual configuration acceptable, document in story completion notes.
 
 **Validation:**
+
 ```bash
 aws cloudfront get-distribution \
   --id E3THG4UHYDHVWP \
@@ -357,12 +378,13 @@ aws cloudfront get-distribution \
 
 # Then get cache policy details
 aws cloudfront get-cache-policy \
-  --id <policy-id> \
-  --profile NDX/InnovationSandboxHub \
-  --query 'CachePolicy.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin.CookiesConfig'
+  --id \
+  NDX/InnovationSandboxHub \
+  --query 'CachePolicy.CachePolicyConfig.ParametersInCacheKeyAndForwardedToOrigin.CookiesConfig' < policy-id > --profile
 ```
 
 **Expected:**
+
 - CookieBehavior: `whitelist` (or `allowlist` in newer API versions)
 - Cookies.Items: `["NDX"]`
 
@@ -375,30 +397,31 @@ aws cloudfront get-cache-policy \
 **Implementation:**
 
 ```typescript
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
+import * as fs from "fs"
+import * as path from "path"
 
 // In NdxStaticStack constructor (after Custom Resource Lambda section):
 
 // CloudFront Function for cookie-based routing
-const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouterFunction', {
-  functionName: 'ndx-cookie-router',
+const cookieRouterFunction = new cloudfront.Function(this, "CookieRouterFunction", {
+  functionName: "ndx-cookie-router",
   code: cloudfront.FunctionCode.fromFile({
-    filePath: path.join(__dirname, 'functions/cookie-router.js'),
+    filePath: path.join(__dirname, "functions/cookie-router.js"),
   }),
-  comment: 'Routes requests to ndx-static-prod origin when NDX=true cookie is present',
+  comment: "Routes requests to ndx-static-prod origin when NDX=true cookie is present",
   runtime: cloudfront.FunctionRuntime.JS_2_0,
-});
+})
 
 // Output function ARN for reference
-new cdk.CfnOutput(this, 'CookieRouterFunctionArn', {
+new cdk.CfnOutput(this, "CookieRouterFunctionArn", {
   value: cookieRouterFunction.functionArn,
-  description: 'ARN of CloudFront cookie router function',
-});
+  description: "ARN of CloudFront cookie router function",
+})
 ```
 
 **Validation:**
+
 ```bash
 cd infra
 npx cdk diff --profile NDX/InnovationSandboxHub
@@ -422,12 +445,13 @@ Since distribution E3THG4UHYDHVWP is not fully CDK-managed (Custom Resource Lamb
 
 1. **AWS Console Approach:**
    - CloudFront → Distribution E3THG4UHYDHVWP
-   - Behaviors → Default (*) → Edit
+   - Behaviors → Default (\*) → Edit
    - Function associations → Viewer request
    - Select function: `ndx-cookie-router`
    - Save
 
 2. **AWS CLI Approach:**
+
 ```bash
 # Get current distribution config
 aws cloudfront get-distribution-config \
@@ -457,6 +481,7 @@ aws cloudfront update-distribution \
 ```
 
 **Validation:**
+
 ```bash
 aws cloudfront get-distribution \
   --id E3THG4UHYDHVWP \
@@ -465,6 +490,7 @@ aws cloudfront get-distribution \
 ```
 
 **Expected Output:**
+
 ```json
 {
   "Quantity": 1,
@@ -484,6 +510,7 @@ aws cloudfront get-distribution \
 **Validation Steps:**
 
 **1. Verify Distribution Status:**
+
 ```bash
 aws cloudfront get-distribution \
   --id E3THG4UHYDHVWP \
@@ -493,11 +520,13 @@ aws cloudfront get-distribution \
 ```
 
 **2. Wait for Global Propagation:**
+
 - CloudFront distributes function to 225+ edge locations
 - Typical propagation time: 5-15 minutes
 - Status will show "InProgress" during propagation
 
 **3. Smoke Test - NDX=true (New Origin):**
+
 ```bash
 # Set NDX=true cookie and verify routing to new origin
 curl -I -H "Cookie: NDX=true" https://d7roov8fndsis.cloudfront.net/
@@ -507,6 +536,7 @@ curl -I -H "Cookie: NDX=true" https://d7roov8fndsis.cloudfront.net/
 ```
 
 **4. Smoke Test - No Cookie (Default Origin):**
+
 ```bash
 # No cookie - should route to existing S3Origin
 curl -I https://d7roov8fndsis.cloudfront.net/
@@ -515,6 +545,7 @@ curl -I https://d7roov8fndsis.cloudfront.net/
 ```
 
 **5. Smoke Test - NDX=false (Default Origin):**
+
 ```bash
 curl -I -H "Cookie: NDX=false" https://d7roov8fndsis.cloudfront.net/
 
@@ -522,6 +553,7 @@ curl -I -H "Cookie: NDX=false" https://d7roov8fndsis.cloudfront.net/
 ```
 
 **6. Verify API Routes Unchanged:**
+
 ```bash
 # API Gateway routes should be unaffected
 curl https://d7roov8fndsis.cloudfront.net/prod/api/health
@@ -535,7 +567,7 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ✅ Distribution status: Deployed
 ✅ NDX=true cookie routes to ndx-static-prod
 ✅ No cookie / NDX=false routes to default S3Origin
-✅ API Gateway routes unchanged (/prod/*)
+✅ API Gateway routes unchanged (/prod/\*)
 ✅ Zero production user impact
 
 ---
@@ -543,6 +575,7 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ## Acceptance Criteria Summary
 
 ### Story 2.1
+
 ✓ CloudFront Function created: `cookie-router.js`
 ✓ Function < 1KB size
 ✓ Uses `var` keyword (no ES6)
@@ -551,6 +584,7 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ✓ Specifies OAC ID: E3P8MA1G9Y5BYE
 
 ### Story 2.2
+
 ✓ Unit tests created: `cookie-router.test.ts`
 ✓ 7+ test cases covering all scenarios
 ✓ All tests pass via `yarn test`
@@ -558,23 +592,27 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ✓ Validates exact string matching
 
 ### Story 2.3
+
 ✓ Cache policy configured to allowlist `NDX` cookie
 ✓ Existing cache settings preserved (TTL, compression, HTTPS)
 ✓ Verified via AWS CLI query
 
 ### Story 2.4
+
 ✓ CloudFront Function resource added to CDK stack
 ✓ Function code loaded from `cookie-router.js`
 ✓ `cdk deploy` succeeds
 ✓ Function ARN output for reference
 
 ### Story 2.5
+
 ✓ Function attached to default cache behavior
 ✓ Event type: viewer-request
 ✓ API Gateway cache behavior unchanged
 ✓ Verified via CloudFront API query
 
 ### Story 2.6
+
 ✓ Distribution status: Deployed
 ✓ Global propagation complete (5-15 minutes)
 ✓ Smoke test: NDX=true routes to new origin
@@ -597,21 +635,25 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ## Risks & Mitigations
 
 **Risk 1: Incorrect cookie parsing breaks routing**
+
 - **Impact:** HIGH - Testers cannot access new UI
 - **Mitigation:** Comprehensive unit tests (Story 2.2) validate all parsing scenarios
 - **Fallback:** Function error routes to default origin (fail-open)
 
 **Risk 2: Function attachment to wrong cache behavior**
+
 - **Impact:** CRITICAL - Could affect API Gateway routes
 - **Mitigation:** Manual verification after attachment (Story 2.5), AWS CLI validation
 - **Fallback:** Detach function via CloudFront console immediately
 
 **Risk 3: Cache policy misconfiguration blocks cookies**
+
 - **Impact:** MEDIUM - Routing function doesn't receive NDX cookie
 - **Mitigation:** Validate cache policy via AWS CLI (Story 2.3)
 - **Testing:** Smoke tests verify end-to-end cookie flow
 
 **Risk 4: CloudFront propagation delay**
+
 - **Impact:** LOW - Delays validation testing
 - **Mitigation:** Wait for "Deployed" status before smoke tests (Story 2.6)
 - **Expected:** 5-15 minutes typical
@@ -621,11 +663,13 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ## Dependencies
 
 **Required Before Epic 2:**
+
 - ✅ Epic 1 complete (new origin added to E3THG4UHYDHVWP)
 - ✅ Distribution E3THG4UHYDHVWP has 3 origins configured
 - ✅ OAC E3P8MA1G9Y5BYE exists and accessible
 
 **Required After Epic 2:**
+
 - Epic 3 will add CDK snapshot/integration tests
 - Epic 3 will create rollback automation
 - Epic 3 will document deployment procedures
@@ -635,6 +679,7 @@ curl https://d7roov8fndsis.cloudfront.net/prod/api/health
 ## Testing (Epic 3)
 
 Epic 2 delivers basic unit tests (Story 2.2) and smoke tests (Story 2.6). Comprehensive testing added in Epic 3:
+
 - CDK snapshot tests for function resource
 - CDK integration tests with real AWS deployment
 - Automated rollback procedures

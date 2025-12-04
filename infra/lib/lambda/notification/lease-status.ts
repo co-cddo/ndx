@@ -10,8 +10,8 @@
  * @see docs/epics-notifications.md#Story-7.6
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
-import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
+import { Logger } from "@aws-lambda-powertools/logger"
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 
 // =============================================================================
 // Constants
@@ -23,87 +23,76 @@ import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
  *           BudgetExceeded, ManuallyTerminated, AccountQuarantined, Ejected
  */
 export const KNOWN_LEASE_STATUSES = [
-  'PendingApproval',
-  'ApprovalDenied',
-  'Active',
-  'Frozen',
-  'Expired',
-  'BudgetExceeded',
-  'ManuallyTerminated',
-  'AccountQuarantined',
-  'Ejected',
-] as const;
+  "PendingApproval",
+  "ApprovalDenied",
+  "Active",
+  "Frozen",
+  "Expired",
+  "BudgetExceeded",
+  "ManuallyTerminated",
+  "AccountQuarantined",
+  "Ejected",
+] as const
 
-export type KnownLeaseStatus = (typeof KNOWN_LEASE_STATUSES)[number];
+export type KnownLeaseStatus = (typeof KNOWN_LEASE_STATUSES)[number]
 
 /**
  * Status categories for field set determination
  */
 export const STATUS_CATEGORIES = {
   /** Statuses that only have base fields */
-  pending: ['PendingApproval'] as const,
+  pending: ["PendingApproval"] as const,
 
   /** Statuses that only have base fields + ttl */
-  denied: ['ApprovalDenied'] as const,
+  denied: ["ApprovalDenied"] as const,
 
   /** Statuses that have base + monitored fields */
-  monitored: ['Active', 'Frozen'] as const,
+  monitored: ["Active", "Frozen"] as const,
 
   /** Statuses that have base + monitored + expired fields */
-  terminal: ['Expired', 'BudgetExceeded', 'ManuallyTerminated', 'AccountQuarantined', 'Ejected'] as const,
-} as const;
+  terminal: ["Expired", "BudgetExceeded", "ManuallyTerminated", "AccountQuarantined", "Ejected"] as const,
+} as const
 
 /**
  * Expected field sets by status category
  */
 export const EXPECTED_FIELDS = {
   /** Base fields present in all lease records */
-  base: [
-    'userEmail',
-    'uuid',
-    'status',
-    'leaseDurationInHours',
-    'maxSpend',
-  ] as const,
+  base: ["userEmail", "uuid", "status", "leaseDurationInHours", "maxSpend"] as const,
 
   /** Nested base fields (will be flattened with prefix) */
   baseNested: [
-    'meta',           // -> meta_createdAt, meta_requestedBy, etc.
-    'budgetThresholds', // -> budgetThresholds_*
-    'durationThresholds', // -> durationThresholds_*
+    "meta", // -> meta_createdAt, meta_requestedBy, etc.
+    "budgetThresholds", // -> budgetThresholds_*
+    "durationThresholds", // -> durationThresholds_*
   ] as const,
 
   /** Monitored fields added when lease is active/frozen */
   monitored: [
-    'awsAccountId',
-    'approvedBy',
-    'startDate',
-    'expirationDate',
-    'lastCheckedDate',
-    'totalCostAccrued',
+    "awsAccountId",
+    "approvedBy",
+    "startDate",
+    "expirationDate",
+    "lastCheckedDate",
+    "totalCostAccrued",
   ] as const,
 
   /** Terminal fields added when lease is expired/terminated */
-  terminal: [
-    'endDate',
-    'ttl',
-  ] as const,
+  terminal: ["endDate", "ttl"] as const,
 
   /** TTL field for denied leases */
-  denied: [
-    'ttl',
-  ] as const,
-} as const;
+  denied: ["ttl"] as const,
+} as const
 
 // =============================================================================
 // Logger and Metrics
 // =============================================================================
 
-const logger = new Logger({ serviceName: 'ndx-notifications' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
 const metrics = new Metrics({
-  namespace: 'ndx/notifications',
-  serviceName: 'ndx-notifications',
-});
+  namespace: "ndx/notifications",
+  serviceName: "ndx-notifications",
+})
 
 // =============================================================================
 // Status Validation Functions
@@ -117,9 +106,9 @@ const metrics = new Metrics({
  */
 export function isKnownLeaseStatus(status: string | undefined): status is KnownLeaseStatus {
   if (!status) {
-    return false;
+    return false
   }
-  return (KNOWN_LEASE_STATUSES as readonly string[]).includes(status);
+  return (KNOWN_LEASE_STATUSES as readonly string[]).includes(status)
 }
 
 /**
@@ -132,32 +121,29 @@ export function isKnownLeaseStatus(status: string | undefined): status is KnownL
  * @param eventId - Event ID for logging correlation
  * @returns The status (unchanged) for chaining
  */
-export function validateLeaseStatus(
-  status: string | undefined,
-  eventId: string
-): string | undefined {
+export function validateLeaseStatus(status: string | undefined, eventId: string): string | undefined {
   if (!status) {
-    logger.debug('No lease status in record', { eventId });
-    return status;
+    logger.debug("No lease status in record", { eventId })
+    return status
   }
 
   if (!isKnownLeaseStatus(status)) {
     // N7-6: Log warning for unknown status (forward-compatible)
-    logger.warn('Unknown lease status encountered - processing with available fields', {
+    logger.warn("Unknown lease status encountered - processing with available fields", {
       eventId,
       status,
       knownStatuses: KNOWN_LEASE_STATUSES,
-      note: 'Forward-compatible: flattening all available fields regardless of status',
-    });
+      note: "Forward-compatible: flattening all available fields regardless of status",
+    })
 
     // N7-6: Emit UnexpectedLeaseStatus metric
-    metrics.addMetric('UnexpectedLeaseStatus', MetricUnit.Count, 1);
-    metrics.addDimension('LeaseStatus', status.substring(0, 50)); // Truncate for safety
+    metrics.addMetric("UnexpectedLeaseStatus", MetricUnit.Count, 1)
+    metrics.addDimension("LeaseStatus", status.substring(0, 50)) // Truncate for safety
   } else {
-    logger.debug('Valid lease status', { eventId, status });
+    logger.debug("Valid lease status", { eventId, status })
   }
 
-  return status;
+  return status
 }
 
 /**
@@ -167,26 +153,26 @@ export function validateLeaseStatus(
  * @returns The category name or 'unknown'
  */
 export function getStatusCategory(
-  status: string | undefined
-): 'pending' | 'denied' | 'monitored' | 'terminal' | 'unknown' {
+  status: string | undefined,
+): "pending" | "denied" | "monitored" | "terminal" | "unknown" {
   if (!status) {
-    return 'unknown';
+    return "unknown"
   }
 
   if ((STATUS_CATEGORIES.pending as readonly string[]).includes(status)) {
-    return 'pending';
+    return "pending"
   }
   if ((STATUS_CATEGORIES.denied as readonly string[]).includes(status)) {
-    return 'denied';
+    return "denied"
   }
   if ((STATUS_CATEGORIES.monitored as readonly string[]).includes(status)) {
-    return 'monitored';
+    return "monitored"
   }
   if ((STATUS_CATEGORIES.terminal as readonly string[]).includes(status)) {
-    return 'terminal';
+    return "terminal"
   }
 
-  return 'unknown';
+  return "unknown"
 }
 
 /**
@@ -198,26 +184,22 @@ export function getStatusCategory(
  * @returns Array of expected field names (not including nested prefixes)
  */
 export function getExpectedFieldsForStatus(status: string | undefined): readonly string[] {
-  const category = getStatusCategory(status);
+  const category = getStatusCategory(status)
 
   switch (category) {
-    case 'pending':
+    case "pending":
       // PendingApproval: base fields only
-      return [...EXPECTED_FIELDS.base, ...EXPECTED_FIELDS.baseNested];
+      return [...EXPECTED_FIELDS.base, ...EXPECTED_FIELDS.baseNested]
 
-    case 'denied':
+    case "denied":
       // ApprovalDenied: base fields + ttl
-      return [...EXPECTED_FIELDS.base, ...EXPECTED_FIELDS.baseNested, ...EXPECTED_FIELDS.denied];
+      return [...EXPECTED_FIELDS.base, ...EXPECTED_FIELDS.baseNested, ...EXPECTED_FIELDS.denied]
 
-    case 'monitored':
+    case "monitored":
       // Active/Frozen: base fields + monitored fields
-      return [
-        ...EXPECTED_FIELDS.base,
-        ...EXPECTED_FIELDS.baseNested,
-        ...EXPECTED_FIELDS.monitored,
-      ];
+      return [...EXPECTED_FIELDS.base, ...EXPECTED_FIELDS.baseNested, ...EXPECTED_FIELDS.monitored]
 
-    case 'terminal':
+    case "terminal":
       // Expired/BudgetExceeded/ManuallyTerminated/AccountQuarantined/Ejected:
       // base + monitored + terminal fields
       return [
@@ -225,9 +207,9 @@ export function getExpectedFieldsForStatus(status: string | undefined): readonly
         ...EXPECTED_FIELDS.baseNested,
         ...EXPECTED_FIELDS.monitored,
         ...EXPECTED_FIELDS.terminal,
-      ];
+      ]
 
-    case 'unknown':
+    case "unknown":
     default:
       // Unknown: return all possible fields (forward-compatible)
       return [
@@ -235,7 +217,7 @@ export function getExpectedFieldsForStatus(status: string | undefined): readonly
         ...EXPECTED_FIELDS.baseNested,
         ...EXPECTED_FIELDS.monitored,
         ...EXPECTED_FIELDS.terminal,
-      ];
+      ]
   }
 }
 
@@ -250,32 +232,32 @@ export function getExpectedFieldsForStatus(status: string | undefined): readonly
 export function logFieldPresence(
   leaseRecord: Record<string, unknown>,
   status: string | undefined,
-  eventId: string
+  eventId: string,
 ): void {
-  const expectedFields = getExpectedFieldsForStatus(status);
-  const actualFields = Object.keys(leaseRecord);
+  const expectedFields = getExpectedFieldsForStatus(status)
+  const actualFields = Object.keys(leaseRecord)
 
   // Find which expected fields are present (checking for prefix matches for nested fields)
   const presentExpected = expectedFields.filter((field) => {
     // Direct match
     if (leaseRecord[field] !== undefined) {
-      return true;
+      return true
     }
     // Prefix match (e.g., 'meta' -> 'meta_createdAt')
-    return actualFields.some((actual) => actual.startsWith(`${field}_`));
-  });
+    return actualFields.some((actual) => actual.startsWith(`${field}_`))
+  })
 
   // Find unexpected fields (not in expected list or their prefixes)
   const unexpectedFields = actualFields.filter((actual) => {
     // Direct match in expected
     if (expectedFields.includes(actual)) {
-      return false;
+      return false
     }
     // Prefix match (e.g., 'meta_createdAt' matches 'meta')
-    return !expectedFields.some((expected) => actual.startsWith(`${expected}_`));
-  });
+    return !expectedFields.some((expected) => actual.startsWith(`${expected}_`))
+  })
 
-  logger.debug('Lease record field analysis', {
+  logger.debug("Lease record field analysis", {
     eventId,
     status,
     category: getStatusCategory(status),
@@ -286,14 +268,14 @@ export function logFieldPresence(
     ...(unexpectedFields.length > 0 && {
       unexpectedFields: unexpectedFields.slice(0, 10), // Limit for log size
     }),
-  });
+  })
 
   // If there are unexpected fields, this indicates schema evolution
   if (unexpectedFields.length > 0) {
-    logger.info('Schema evolution detected - new fields in lease record', {
+    logger.info("Schema evolution detected - new fields in lease record", {
       eventId,
       newFieldCount: unexpectedFields.length,
-      note: 'New fields are included via flattening (forward-compatible)',
-    });
+      note: "New fields are included via flattening (forward-compatible)",
+    })
   }
 }

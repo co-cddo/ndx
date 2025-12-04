@@ -18,6 +18,7 @@ To obtain a sandbox API key:
 4. The key format is: `{key_name}-{service_id}-{secret_key}`
 
 **Important**: Sandbox/test keys are prefixed differently than production keys. The sandbox environment:
+
 - Does not deliver emails to real recipients
 - Uses the same API endpoints as production
 - Returns identical response formats
@@ -60,6 +61,7 @@ The E2E tests run automatically in the GitHub Actions workflow:
 3. Deployment is blocked if E2E tests fail (AC-8.9)
 
 Configure these secrets in GitHub:
+
 - `NOTIFY_SANDBOX_API_KEY`: The sandbox API key
 - `NOTIFY_TEMPLATE_LEASE_APPROVED`: Template ID for LeaseApproved emails
 
@@ -67,16 +69,16 @@ Configure these secrets in GitHub:
 
 ### E2E Tests (`test/e2e/`)
 
-| File | Purpose |
-|------|---------|
-| `setup.ts` | Validates test environment and credentials |
-| `notify-test-client.ts` | Test utilities for GOV.UK Notify API |
-| `notify-template.e2e.test.ts` | Template validation tests |
+| File                          | Purpose                                    |
+| ----------------------------- | ------------------------------------------ |
+| `setup.ts`                    | Validates test environment and credentials |
+| `notify-test-client.ts`       | Test utilities for GOV.UK Notify API       |
+| `notify-template.e2e.test.ts` | Template validation tests                  |
 
 ### Smoke Tests (`test/smoke/`)
 
-| File | Purpose |
-|------|---------|
+| File                        | Purpose                      |
+| --------------------------- | ---------------------------- |
 | `post-deploy.smoke.test.ts` | Post-deployment verification |
 
 ## What the Tests Validate
@@ -84,6 +86,7 @@ Configure these secrets in GitHub:
 ### Template Validation (AC-8.7)
 
 The tests check that:
+
 1. Emails can be sent via the GOV.UK Notify API
 2. All personalisation fields are populated (no `((field))` placeholders)
 3. Expected content appears in the email body
@@ -94,7 +97,7 @@ The tests check that:
 The test utilities detect unfilled GOV.UK Notify placeholders using this pattern:
 
 ```typescript
-const PLACEHOLDER_PATTERN = /\(\([^)]+\)\)/g;
+const PLACEHOLDER_PATTERN = /\(\([^)]+\)\)/g
 
 // Detects: ((userName)), ((accountId)), etc.
 // Does not match: (optional), normal parentheses
@@ -124,47 +127,45 @@ const PLACEHOLDER_PATTERN = /\(\([^)]+\)\)/g;
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NOTIFY_SANDBOX_API_KEY` | Yes* | Sandbox API key for testing |
-| `NOTIFY_TEMPLATE_LEASE_APPROVED` | No | Template ID for LeaseApproved emails |
-| `AWS_REGION` | No | AWS region for Secrets Manager |
-| `E2E_SECRETS_PATH` | No | Custom Secrets Manager path |
-| `SKIP_SMOKE_TESTS` | No | Set to "true" to skip smoke tests |
-| `SMOKE_TEST_OPS_EMAIL` | No | Email for smoke test notifications |
+| Variable                         | Required | Description                          |
+| -------------------------------- | -------- | ------------------------------------ |
+| `NOTIFY_SANDBOX_API_KEY`         | Yes\*    | Sandbox API key for testing          |
+| `NOTIFY_TEMPLATE_LEASE_APPROVED` | No       | Template ID for LeaseApproved emails |
+| `AWS_REGION`                     | No       | AWS region for Secrets Manager       |
+| `E2E_SECRETS_PATH`               | No       | Custom Secrets Manager path          |
+| `SKIP_SMOKE_TESTS`               | No       | Set to "true" to skip smoke tests    |
+| `SMOKE_TEST_OPS_EMAIL`           | No       | Email for smoke test notifications   |
 
-*Either `NOTIFY_SANDBOX_API_KEY` or Secrets Manager must be configured
+\*Either `NOTIFY_SANDBOX_API_KEY` or Secrets Manager must be configured
 
 ## Adding New Template Tests
 
 To add E2E tests for additional templates:
 
 1. Add the template ID to your environment variables:
+
    ```bash
    export NOTIFY_TEMPLATE_YOUR_TEMPLATE=<template-id>
    ```
 
 2. Add a test case in `notify-template.e2e.test.ts`:
-   ```typescript
-   describe('YourTemplate template', () => {
-     const templateId = process.env.NOTIFY_TEMPLATE_YOUR_TEMPLATE;
-     const conditionalTest = skipIf(!templateId);
 
-     conditionalTest('sends email with all fields populated', async () => {
+   ```typescript
+   describe("YourTemplate template", () => {
+     const templateId = process.env.NOTIFY_TEMPLATE_YOUR_TEMPLATE
+     const conditionalTest = skipIf(!templateId)
+
+     conditionalTest("sends email with all fields populated", async () => {
        const personalisation = {
          // Your template's personalisation fields
-       };
+       }
 
-       const result = await client.sendEmail(
-         templateId!,
-         'test@example.gov.uk',
-         personalisation
-       );
+       const result = await client.sendEmail(templateId!, "test@example.gov.uk", personalisation)
 
-       const notification = await client.waitForNotification(result.id);
-       expect(findUnfilledPlaceholders(notification.body)).toHaveLength(0);
-     });
-   });
+       const notification = await client.waitForNotification(result.id)
+       expect(findUnfilledPlaceholders(notification.body)).toHaveLength(0)
+     })
+   })
    ```
 
 ## References

@@ -11,12 +11,14 @@ so that I can develop Try feature UI locally while testing against the real Inno
 ## Acceptance Criteria
 
 **AC1: Addon script exists at correct path**
+
 - **Given** the repository structure
 - **When** I check for the addon script
 - **Then** it exists at `scripts/mitmproxy-addon.py`
 - **And** the file has correct Python syntax (runs without errors: `python scripts/mitmproxy-addon.py`)
 
 **AC2: UI routes forward to localhost**
+
 - **Given** an HTTP request to CloudFront domain (`d7roov8fndsis.cloudfront.net`)
 - **When** the request path is a UI route (`/`, `/catalogue/*`, `/try`, `/assets/*`)
 - **Then** the addon modifies the request:
@@ -26,6 +28,7 @@ so that I can develop Try feature UI locally while testing against the real Inno
 - **And** the request is forwarded to the local NDX server
 
 **AC3: API routes pass through unchanged**
+
 - **Given** an HTTP request to CloudFront domain (`d7roov8fndsis.cloudfront.net`)
 - **When** the request path starts with `/api/`
 - **Then** the addon does NOT modify the request
@@ -33,12 +36,14 @@ so that I can develop Try feature UI locally while testing against the real Inno
 - **And** all headers (including `Authorization`) are preserved
 
 **AC4: Non-CloudFront domains ignored**
+
 - **Given** an HTTP request to any domain other than `d7roov8fndsis.cloudfront.net`
 - **When** the addon processes the request
 - **Then** the addon does NOT modify the request
 - **And** the request is passed through unchanged
 
 **AC5: Script includes docstring and comments**
+
 - **Given** I read the addon script source code
 - **When** I review the file structure
 - **Then** it includes:
@@ -88,6 +93,7 @@ so that I can develop Try feature UI locally while testing against the real Inno
 ### Epic 4 Context
 
 This story implements the **core routing logic** for Epic 4 (Local Development Infrastructure). The addon script is the critical component that enables local UI development with real API testing:
+
 - Story 4.1 documented the architecture and setup process
 - **Story 4.2** creates the actual addon script (this story)
 - Story 4.3 will add npm scripts to simplify mitmproxy startup
@@ -100,6 +106,7 @@ This story implements the **core routing logic** for Epic 4 (Local Development I
 ### Technical Design Notes
 
 **mitmproxy Flow API:**
+
 ```python
 from mitmproxy import http
 
@@ -116,6 +123,7 @@ def request(flow: http.HTTPFlow) -> None:
 ```
 
 **Routing Logic Decision Tree:**
+
 ```
 Request arrives at mitmproxy
   ↓
@@ -131,6 +139,7 @@ Is pretty_host == "d7roov8fndsis.cloudfront.net"?
 ```
 
 **Implementation Pattern:**
+
 ```python
 def request(flow: http.HTTPFlow) -> None:
     # Only process CloudFront domain requests
@@ -148,6 +157,7 @@ def request(flow: http.HTTPFlow) -> None:
 ```
 
 **Why This Approach:**
+
 - **Simple conditional logic**: Easy to understand and maintain
 - **Early returns**: Non-CloudFront and API requests pass through immediately
 - **Preserves headers**: Authorization JWT tokens remain intact for API calls
@@ -159,9 +169,11 @@ def request(flow: http.HTTPFlow) -> None:
 **From Story 4.1 (mitmproxy Setup Documentation):**
 
 **New Files Created:**
+
 - `docs/development/local-try-setup.md` - Complete setup guide referenced for addon architecture context
 
 **Key Insights:**
+
 - Documentation established architecture: Browser → mitmproxy (8081) → localhost:8080 (UI) or CloudFront (API)
 - Port allocation confirmed: 8080 for NDX server, 8081 for mitmproxy (no conflicts)
 - Correct startup command: `yarn start` (not `yarn dev`) for local NDX server
@@ -169,14 +181,17 @@ def request(flow: http.HTTPFlow) -> None:
 - System proxy configuration required for browser traffic interception (covered in Story 4.4)
 
 **Patterns to Reuse:**
+
 - Clear docstrings and comments (documentation style guide applies to code)
 - Platform-agnostic implementation (addon script runs on macOS/Windows/Linux)
 - Reference existing documentation for context (link to local-try-setup.md)
 
 **Technical Debt Noted:**
+
 - None affecting Story 4.2 (addon script is self-contained)
 
 **Pending Review Items:**
+
 - None from Story 4.1 affecting this story (documentation review completed, approved)
 
 [Source: docs/sprint-artifacts/4-1-mitmproxy-setup-documentation.md#Dev-Agent-Record]
@@ -184,33 +199,39 @@ def request(flow: http.HTTPFlow) -> None:
 ### Architecture References
 
 **From try-before-you-buy-architecture.md:**
+
 - **ADR-017**: Vanilla TypeScript (no framework) - addon script enables local TS development workflow
 - **ADR-018**: esbuild for TypeScript compilation - local server serves compiled assets from `_site/`
 - **ADR-020**: Progressive enhancement pattern - static HTML works seamlessly with proxy routing
 
 **From tech-spec-epic-4.md:**
+
 - **Detailed Design → Data Models**: mitmproxy Flow API contract (properties: pretty_host, path, scheme, host, port)
 - **Detailed Design → Workflows**: Daily workflow requires addon script loaded automatically
 - **NFR → Performance**: Proxy adds < 10ms overhead to UI requests (minimal impact on development)
 - **NFR → Security**: Addon must preserve Authorization headers unchanged (JWT integrity)
 
 **From prd.md:**
+
 - **NFR-TRY-TEST-1**: End-to-end tests prove proxy and app server integration (addon script enables this foundation)
 - **NFR-TRY-TEST-2**: Smoke tests cover main website areas to catch regressions (addon script enables local testing)
 
 ### Project Structure Notes
 
 **New Script File:**
+
 - Path: `scripts/mitmproxy-addon.py`
 - Purpose: Conditional request forwarding (UI → localhost, API → CloudFront)
 - Language: Python 3.8+ (mitmproxy dependency)
 - Dependencies: `from mitmproxy import http` (mitmproxy package installed via pip)
 
 **Addon Loading:**
+
 - Command: `mitmproxy -s scripts/mitmproxy-addon.py`
 - Story 4.3 will wrap this in npm script: `yarn dev:proxy`
 
 **No Conflicts:**
+
 - `scripts/` directory may not exist yet (create if needed)
 - No existing proxy scripts in repository
 
@@ -226,15 +247,15 @@ Since mitmproxy addons are Python scripts that expect specific mitmproxy objects
 
 **Test Scenarios (Manual Verification):**
 
-| Test Case | Request | Expected Routing | Validation Method |
-|-----------|---------|-----------------|-------------------|
-| Root path | `GET https://d7roov8fndsis.cloudfront.net/` | → localhost:8080 | mitmproxy console: verify host=localhost, port=8080 |
-| Catalogue page | `GET https://d7roov8fndsis.cloudfront.net/catalogue/aws/lambda` | → localhost:8080 | mitmproxy console: verify modified request |
-| Try page | `GET https://d7roov8fndsis.cloudfront.net/try` | → localhost:8080 | mitmproxy console: verify modified request |
-| Static asset | `GET https://d7roov8fndsis.cloudfront.net/assets/main.css` | → localhost:8080 | mitmproxy console: verify modified request |
-| API leases | `GET https://d7roov8fndsis.cloudfront.net/api/leases` | → CloudFront (passthrough) | mitmproxy console: verify unchanged host |
-| API auth status | `GET https://d7roov8fndsis.cloudfront.net/api/auth/login/status` | → CloudFront (passthrough) | mitmproxy console: verify unchanged host |
-| Non-CloudFront | `GET https://example.com/test` | → example.com (passthrough) | mitmproxy console: verify unchanged host |
+| Test Case       | Request                                                          | Expected Routing            | Validation Method                                   |
+| --------------- | ---------------------------------------------------------------- | --------------------------- | --------------------------------------------------- |
+| Root path       | `GET https://d7roov8fndsis.cloudfront.net/`                      | → localhost:8080            | mitmproxy console: verify host=localhost, port=8080 |
+| Catalogue page  | `GET https://d7roov8fndsis.cloudfront.net/catalogue/aws/lambda`  | → localhost:8080            | mitmproxy console: verify modified request          |
+| Try page        | `GET https://d7roov8fndsis.cloudfront.net/try`                   | → localhost:8080            | mitmproxy console: verify modified request          |
+| Static asset    | `GET https://d7roov8fndsis.cloudfront.net/assets/main.css`       | → localhost:8080            | mitmproxy console: verify modified request          |
+| API leases      | `GET https://d7roov8fndsis.cloudfront.net/api/leases`            | → CloudFront (passthrough)  | mitmproxy console: verify unchanged host            |
+| API auth status | `GET https://d7roov8fndsis.cloudfront.net/api/auth/login/status` | → CloudFront (passthrough)  | mitmproxy console: verify unchanged host            |
+| Non-CloudFront  | `GET https://example.com/test`                                   | → example.com (passthrough) | mitmproxy console: verify unchanged host            |
 
 **Acceptance Criteria Validation:**
 
@@ -245,6 +266,7 @@ Since mitmproxy addons are Python scripts that expect specific mitmproxy objects
 - **AC5**: Code review confirms docstrings and comments present
 
 **Future Automated Testing (Post-Story 4.6):**
+
 - Integration tests in Story 4.6 validation script will verify addon loads correctly
 - End-to-end tests (post-Epic 4) will validate full browser → proxy → server flow
 
@@ -274,6 +296,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Implementation Approach:**
+
 - Created Python addon script following mitmproxy addon API specification
 - Used module-level `request()` function pattern (simple, no class needed for this use case)
 - Implemented routing logic with early returns for clarity and performance
@@ -281,12 +304,14 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Added comprehensive logging at INFO level for debugging routing decisions
 
 **Technical Decisions:**
+
 1. **UI Routes Pattern Matching:** Used list of route prefixes with `startswith()` for performance (faster than regex)
 2. **API Passthrough First:** Checked `/api/*` pattern before UI routes to prioritize API requests
 3. **Host Header Preservation:** Explicitly preserved original Host header after modifying request destination (OAuth requirement)
 4. **Logging Strategy:** INFO-level logging shows routing decisions without verbose request details
 
 **Testing Performed:**
+
 - Python syntax validation: Script runs without errors
 - mitmproxy loading test: `mitmdump --scripts scripts/mitmproxy-addon.py` loads successfully without errors
 - Code review: All acceptance criteria met (routing logic, docstrings, comments, error-free loading)
@@ -296,24 +321,28 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 **Story 4.2 Implementation Complete:**
 
 ✅ **Created mitmproxy addon script** (`scripts/mitmproxy-addon.py`)
+
 - Module-level docstring with purpose, usage, architecture, and examples
 - Python 3.8+ compatible with mitmproxy 10.x+ API
 - Request routing function with comprehensive inline comments
 - Configuration constants for easy modification (CLOUDFRONT_DOMAIN, LOCAL_SERVER_HOST, LOCAL_SERVER_PORT)
 
 ✅ **Routing Logic Implemented:**
+
 - UI routes (`/`, `/catalogue/*`, `/try`, `/assets/*`) forward to localhost:8080
 - API routes (`/api/*`) pass through to CloudFront unchanged
 - Non-CloudFront domains ignored (pass through unchanged)
 - CloudFront Host header preserved for OAuth callback URL validation
 
 ✅ **Documentation and Logging:**
+
 - Module and function docstrings explain purpose, parameters, and behavior
 - Inline comments clarify routing decision tree
 - INFO-level logging tracks routing decisions for debugging
 - Usage examples in module docstring
 
 ✅ **Validation Complete:**
+
 - Python syntax check: No errors
 - mitmproxy addon loading: Successful (tested with mitmdump)
 - Code review: All acceptance criteria satisfied
@@ -324,9 +353,11 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### File List
 
 **Files Created:**
+
 - `scripts/mitmproxy-addon.py` - mitmproxy addon script for conditional request forwarding
 
 **Files Modified:**
+
 - `docs/development/local-try-setup.md` - Updated Story 4.2 status to completed with script path reference
 
 ---
@@ -350,31 +381,32 @@ The addon script enables local Try Before You Buy feature development by routing
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| **AC1** | Addon script exists at correct path with valid Python syntax | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:1-120 - File exists, shebang present, valid imports, no syntax errors |
-| **AC2** | UI routes (/, /catalogue/*, /try, /assets/*) forward to localhost:8080 | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:45-50 (UI_ROUTES definition), 94-107 (routing logic: scheme=http, host=localhost, port=8080) |
-| **AC3** | API routes (/api/*) pass through to CloudFront unchanged | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:82-84 - API path check with early return, Authorization headers preserved |
-| **AC4** | Non-CloudFront domains ignored (pass through unchanged) | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:76-77 - Domain check with early return for non-CloudFront requests |
-| **AC5** | Script includes comprehensive docstrings and comments | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:2-28 (module docstring), 54-74 (function docstring), inline comments throughout (lines 75, 81, 95-97, 100, 104, 109) |
+| AC#     | Description                                                            | Status         | Evidence                                                                                                                                        |
+| ------- | ---------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AC1** | Addon script exists at correct path with valid Python syntax           | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:1-120 - File exists, shebang present, valid imports, no syntax errors                                                |
+| **AC2** | UI routes (/, /catalogue/_, /try, /assets/_) forward to localhost:8080 | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:45-50 (UI_ROUTES definition), 94-107 (routing logic: scheme=http, host=localhost, port=8080)                         |
+| **AC3** | API routes (/api/\*) pass through to CloudFront unchanged              | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:82-84 - API path check with early return, Authorization headers preserved                                            |
+| **AC4** | Non-CloudFront domains ignored (pass through unchanged)                | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:76-77 - Domain check with early return for non-CloudFront requests                                                   |
+| **AC5** | Script includes comprehensive docstrings and comments                  | ✅ IMPLEMENTED | scripts/mitmproxy-addon.py:2-28 (module docstring), 54-74 (function docstring), inline comments throughout (lines 75, 81, 95-97, 100, 104, 109) |
 
 **Summary:** 5 of 5 acceptance criteria fully implemented ✅
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Create addon script file structure | ✅ Complete | ✅ VERIFIED | scripts/mitmproxy-addon.py created with module docstring (lines 2-28), mitmproxy imports (lines 30-31) |
-| Task 2: Implement request routing logic | ✅ Complete | ✅ VERIFIED | request() function defined (lines 53-112), CloudFront domain check (line 76), API path check (line 82), localhost forwarding (lines 100-102) |
+| Task                                       | Marked As   | Verified As | Evidence                                                                                                                                                                |
+| ------------------------------------------ | ----------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task 1: Create addon script file structure | ✅ Complete | ✅ VERIFIED | scripts/mitmproxy-addon.py created with module docstring (lines 2-28), mitmproxy imports (lines 30-31)                                                                  |
+| Task 2: Implement request routing logic    | ✅ Complete | ✅ VERIFIED | request() function defined (lines 53-112), CloudFront domain check (line 76), API path check (line 82), localhost forwarding (lines 100-102)                            |
 | Task 3: Test routing logic with edge cases | ✅ Complete | ✅ VERIFIED | All 7 edge cases covered: root (line 46), catalogue (line 47), try page (line 48), assets (line 49), API (line 82), API subpaths (startswith), non-CloudFront (line 76) |
-| Task 4: Validate addon script | ✅ Complete | ✅ VERIFIED | Dev Agent Record confirms Python syntax validation and mitmdump loading test successful |
-| Task 5: Document addon script usage | ✅ Complete | ✅ VERIFIED | Usage examples in module docstring (line 15), local-try-setup.md updated (confirmed in Dev Agent Record), flow API documented (lines 62-73) |
+| Task 4: Validate addon script              | ✅ Complete | ✅ VERIFIED | Dev Agent Record confirms Python syntax validation and mitmdump loading test successful                                                                                 |
+| Task 5: Document addon script usage        | ✅ Complete | ✅ VERIFIED | Usage examples in module docstring (line 15), local-try-setup.md updated (confirmed in Dev Agent Record), flow API documented (lines 62-73)                             |
 
 **Summary:** 5 of 5 completed tasks verified, 0 questionable, 0 falsely marked complete ✅
 
 ### Test Coverage and Gaps
 
 **Manual Testing Performed (Story 4.2 scope):**
+
 - ✅ **Python Syntax Validation:** Script runs without errors (confirmed in Dev Agent Record)
 - ✅ **mitmproxy Loading Test:** `mitmdump --scripts scripts/mitmproxy-addon.py` loads successfully (confirmed in Dev Agent Record)
 - ✅ **Code Review:** All acceptance criteria satisfied with file:line evidence
@@ -387,15 +419,17 @@ Story 4.2 uses manual testing approach (syntax validation + addon loading). Auto
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✅ **CloudFront Domain:** Correctly configured as `d7roov8fndsis.cloudfront.net` (line 40)
 - ✅ **Localhost Port:** Port 8080 correctly configured for NDX server (line 42)
-- ✅ **UI Routes Pattern:** Matches tech spec requirement: /, /catalogue/*, /try, /assets/* (lines 45-50)
+- ✅ **UI Routes Pattern:** Matches tech spec requirement: /, /catalogue/_, /try, /assets/_ (lines 45-50)
 - ✅ **API Routes Pattern:** `/api/*` correctly implemented with startswith() (line 82)
 - ✅ **Host Header Preservation:** **CRITICAL OAuth requirement met** - CloudFront Host header preserved (lines 97, 105) for OAuth callback URL validation
 - ✅ **HTTP Scheme:** localhost uses http, not https (line 100) - correct per tech spec (Eleventy runs HTTP only)
 - ✅ **Performance (NFR-TRY-PERF-4):** Uses startswith() for path matching (fast O(n) string comparison, no regex overhead) - meets < 50ms routing overhead requirement
 
 **Architecture Decision Adherence:**
+
 - ✅ **ADR-015 Compliance:** Epic-specific guidance followed (mitmproxy addon API, conditional routing)
 - ✅ **Development Workflow Alignment:** Browser → mitmproxy (8081) → localhost:8080 (UI) or CloudFront (API)
 
@@ -414,6 +448,7 @@ Story 4.2 uses manual testing approach (syntax validation + addon loading). Auto
 - ✅ **Local Development Scope:** Module docstring (lines 14-15) clearly states "For local development only" with usage context
 
 **Security Best Practices:**
+
 - No user input processing (only path inspection) - eliminates injection risks
 - Early returns prevent accidental request modification
 - Constants defined at top (easy security audit of domains/ports)
@@ -444,6 +479,7 @@ Story 4.2 implementation follows Python and mitmproxy best practices:
 The implementation uses module-level `request()` function (line 53) instead of class-based addon pattern suggested in story context XML. This is a **valid and simpler alternative** for single-function addons. mitmproxy auto-discovers module-level `request()` functions, making the empty `addons = []` list (line 116) correct.
 
 **References:**
+
 - [mitmproxy Addon Documentation](https://docs.mitmproxy.org/stable/addons-overview/)
 - [mitmproxy HTTP Flow API](https://docs.mitmproxy.org/stable/api/mitmproxy/http.html)
 - [Python PEP 8 Style Guide](https://peps.python.org/pep-0008/)
@@ -467,6 +503,7 @@ Story 4.2 delivers production-ready mitmproxy addon script that fully satisfies 
 ✅ **Test Coverage:** Manual syntax validation and addon loading tests successful (Story 4.2 scope)
 
 Systematic validation confirms:
+
 - ✅ All acceptance criteria present with file:line evidence
 - ✅ All tasks marked complete have been verified
 - ✅ Zero defects, zero questionable completions, zero false task completions
@@ -478,6 +515,7 @@ Systematic validation confirms:
 ## Change Log
 
 ### Version 1.1 - 2025-11-23
+
 - Senior Developer Review notes appended (AI review by cns)
 - Status: review → done (approved)
 - Review outcome: APPROVE (all ACs verified, all tasks complete, zero defects, OAuth security validated)

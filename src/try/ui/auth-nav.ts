@@ -14,8 +14,8 @@
  * @see {@link https://docs/ux-design-specification.md#Component-5-Authentication-State-Indicator|UX Design: Component 5}
  */
 
-import { authState } from '../auth/auth-provider';
-import { storeReturnURL } from '../auth/oauth-flow';
+import { authState } from "../auth/auth-provider"
+import { storeReturnURL } from "../auth/oauth-flow"
 
 /**
  * Initialize authentication navigation component.
@@ -39,19 +39,19 @@ import { storeReturnURL } from '../auth/oauth-flow';
  * ```
  */
 export function initAuthNav(): void {
-  const container = document.getElementById('auth-nav');
+  const container = document.getElementById("auth-nav")
 
   if (!container) {
-    console.warn('[auth-nav] Container element #auth-nav not found - auth navigation not initialized');
-    return;
+    console.warn("[auth-nav] Container element #auth-nav not found - auth navigation not initialized")
+    return
   }
 
   // Subscribe to auth state changes
   // Note: subscribe() calls listener immediately with current state,
   // so initial render happens synchronously (no button flicker)
   authState.subscribe((isAuthenticated) => {
-    renderAuthNav(container, isAuthenticated);
-  });
+    renderAuthNav(container, isAuthenticated)
+  })
 }
 
 /**
@@ -74,12 +74,12 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
       <a href="#" class="govuk-service-navigation__link govuk-header__link" data-module="sign-out-button" data-action="signout">
         Sign out
       </a>
-    `;
+    `
 
     // Story 5.5: Add event listener for sign out
-    const signOutLink = container.querySelector('[data-action="signout"]');
+    const signOutLink = container.querySelector('[data-action="signout"]')
     if (signOutLink) {
-      signOutLink.addEventListener('click', handleSignOut);
+      signOutLink.addEventListener("click", handleSignOut)
     }
   } else {
     // Render "Sign in" button
@@ -89,15 +89,15 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
       <a href="/api/auth/login" class="govuk-service-navigation__link govuk-header__link" id="sign-in-button">
         Sign in
       </a>
-    `;
+    `
 
     // Story 5.2: Store return URL before OAuth redirect
-    const signInButton = container.querySelector('#sign-in-button');
+    const signInButton = container.querySelector("#sign-in-button")
     if (signInButton) {
-      signInButton.addEventListener('click', () => {
-        storeReturnURL();
+      signInButton.addEventListener("click", () => {
+        storeReturnURL()
         // Allow default link behavior (browser redirects to /api/auth/login)
-      });
+      })
     }
   }
 }
@@ -116,7 +116,7 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
  * @private
  */
 function handleSignOut(event: Event): void {
-  event.preventDefault();
-  authState.logout();
-  window.location.href = '/';
+  event.preventDefault()
+  authState.logout()
+  window.location.href = "/"
 }

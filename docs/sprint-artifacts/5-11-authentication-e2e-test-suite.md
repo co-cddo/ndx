@@ -17,12 +17,14 @@ So that I can validate OAuth login, token persistence, and cross-tab behavior wi
 ## Background
 
 Epic 5 implemented authentication functionality (Stories 5.1-5.4) including:
+
 - Sign in/out button UI components (Story 5.1)
 - OAuth redirect flow (Story 5.2)
 - JWT token extraction from URL (Story 5.3)
 - sessionStorage JWT persistence (Story 5.4)
 
 These stories were validated manually. This story creates automated E2E tests to:
+
 - Provide regression protection for authentication features
 - Validate PRD requirements (NFR-TRY-TEST-4: "Authentication flow tested with real OAuth redirect")
 - Enable continuous validation via CI pipeline (established in Story 8.0)
@@ -30,9 +32,11 @@ These stories were validated manually. This story creates automated E2E tests to
 ## Acceptance Criteria
 
 ### AC1: Sign-In Flow Test
+
 **Given** the user is unauthenticated
 **When** the sign-in flow executes
 **Then** the test validates:
+
 - User navigates to home page
 - "Sign in" button visible in top-right navigation
 - Click "Sign in" button initiates redirect to /api/auth/login
@@ -43,46 +47,49 @@ These stories were validated manually. This story creates automated E2E tests to
 **Test Location:** tests/e2e/auth/sign-in.spec.ts
 
 **Sample Test Structure:**
-```typescript
-import { test, expect } from '@playwright/test';
 
-test.describe('Authentication - Sign In', () => {
-  test('should sign in user and store JWT token', async ({ page }) => {
+```typescript
+import { test, expect } from "@playwright/test"
+
+test.describe("Authentication - Sign In", () => {
+  test("should sign in user and store JWT token", async ({ page }) => {
     // Navigate to home page
-    await page.goto('/');
+    await page.goto("/")
 
     // Verify "Sign in" button visible
-    const signInButton = page.locator('button:has-text("Sign in")');
-    await expect(signInButton).toBeVisible();
+    const signInButton = page.locator('button:has-text("Sign in")')
+    await expect(signInButton).toBeVisible()
 
     // Mock OAuth callback
-    await page.route('**/api/auth/login', route => {
+    await page.route("**/api/auth/login", (route) => {
       route.fulfill({
         status: 302,
-        headers: { 'Location': '/?token=test-jwt-token' }
-      });
-    });
+        headers: { Location: "/?token=test-jwt-token" },
+      })
+    })
 
     // Click sign in
-    await signInButton.click();
+    await signInButton.click()
 
     // Verify token in sessionStorage
     const token = await page.evaluate(() => {
-      return sessionStorage.getItem('isb-jwt');
-    });
-    expect(token).toBe('test-jwt-token');
+      return sessionStorage.getItem("isb-jwt")
+    })
+    expect(token).toBe("test-jwt-token")
 
     // Verify "Sign out" button appears
-    const signOutButton = page.locator('button:has-text("Sign out")');
-    await expect(signOutButton).toBeVisible();
-  });
-});
+    const signOutButton = page.locator('button:has-text("Sign out")')
+    await expect(signOutButton).toBeVisible()
+  })
+})
 ```
 
 ### AC2: Sign-Out Flow Test
+
 **Given** the user is authenticated
 **When** the sign-out flow executes
 **Then** the test validates:
+
 - User authenticated (test setup stores token in sessionStorage)
 - "Sign out" button visible
 - Click "Sign out" button clears sessionStorage token
@@ -92,13 +99,16 @@ test.describe('Authentication - Sign In', () => {
 **Test Location:** tests/e2e/auth/sign-out.spec.ts
 
 **Key Validations:**
+
 - sessionStorage.getItem('isb-jwt') returns null after sign-out
 - Navigation state reflects unauthenticated UI
 
 ### AC3: Token Persistence Test
+
 **Given** the user authenticates
 **When** the page refreshes
 **Then** the test validates:
+
 - User authenticates (test setup)
 - Token present in sessionStorage: sessionStorage.getItem('isb-jwt') !== null
 - Page reloads (page.reload())
@@ -110,9 +120,11 @@ test.describe('Authentication - Sign In', () => {
 **PRD Validation:** Confirms Story 5.4 AC1 - "JWT token persists in sessionStorage across page reloads"
 
 ### AC4: Cross-Tab Persistence Test
+
 **Given** the user authenticates in one tab
 **When** a new tab opens
 **Then** the test validates:
+
 - User authenticates in first context
 - Token stored in sessionStorage
 - New browser context opened (simulates new tab)
@@ -122,6 +134,7 @@ test.describe('Authentication - Sign In', () => {
 **Test Location:** tests/e2e/auth/cross-tab-sync.spec.ts
 
 **Technical Notes:**
+
 - Use Playwright's `browser.newContext()` to simulate new tab
 - sessionStorage is shared across tabs in same origin
 - Validate both tabs see same authentication state
@@ -129,9 +142,11 @@ test.describe('Authentication - Sign In', () => {
 **PRD Validation:** Confirms Story 5.4 AC2 - "Authentication persists across browser tabs"
 
 ### AC5: Browser Restart Simulation Test
+
 **Given** the user authenticates
 **When** the browser restarts (context closes)
 **Then** the test validates:
+
 - User authenticates in browser context
 - Token present in sessionStorage
 - Browser context closed (simulates browser restart)
@@ -142,6 +157,7 @@ test.describe('Authentication - Sign In', () => {
 **Test Location:** tests/e2e/auth/browser-restart.spec.ts
 
 **Technical Notes:**
+
 - Use `context.close()` to simulate browser close
 - Create new context to simulate restart
 - Validate sessionStorage does NOT persist
@@ -168,38 +184,36 @@ tests/
 ### Shared Test Helpers (auth-helpers.ts)
 
 ```typescript
-import { Page } from '@playwright/test';
+import { Page } from "@playwright/test"
 
-export async function authenticateUser(page: Page, token: string = 'test-jwt-token') {
+export async function authenticateUser(page: Page, token: string = "test-jwt-token") {
   // Mock OAuth callback
-  await page.route('**/api/auth/login', route => {
+  await page.route("**/api/auth/login", (route) => {
     route.fulfill({
       status: 302,
-      headers: { 'Location': `/?token=${token}` }
-    });
-  });
+      headers: { Location: `/?token=${token}` },
+    })
+  })
 
   // Navigate and sign in
-  await page.goto('/');
-  await page.click('button:has-text("Sign in")');
+  await page.goto("/")
+  await page.click('button:has-text("Sign in")')
 
   // Wait for token in sessionStorage
-  await page.waitForFunction(
-    () => sessionStorage.getItem('isb-jwt') !== null
-  );
+  await page.waitForFunction(() => sessionStorage.getItem("isb-jwt") !== null)
 }
 
 export async function getSessionToken(page: Page): Promise<string | null> {
-  return page.evaluate(() => sessionStorage.getItem('isb-jwt'));
+  return page.evaluate(() => sessionStorage.getItem("isb-jwt"))
 }
 
 export async function clearSessionToken(page: Page): Promise<void> {
-  await page.evaluate(() => sessionStorage.clear());
+  await page.evaluate(() => sessionStorage.clear())
 }
 
 export async function isAuthenticated(page: Page): Promise<boolean> {
-  const signOutButton = page.locator('button:has-text("Sign out")');
-  return signOutButton.isVisible();
+  const signOutButton = page.locator('button:has-text("Sign out")')
+  return signOutButton.isVisible()
 }
 ```
 
@@ -230,6 +244,7 @@ yarn test:e2e tests/e2e/auth/sign-in.spec.ts --debug
 ## Integration with Story 8.0
 
 This story uses the Playwright infrastructure established in Story 8.0:
+
 - @playwright/test dependency installed
 - playwright.config.ts configuration with proxy
 - CI pipeline executing E2E tests
@@ -240,6 +255,7 @@ This story uses the Playwright infrastructure established in Story 8.0:
 ## Testing This Story
 
 ### Local Validation
+
 ```bash
 # 1. Ensure Story 8.0 complete (Playwright installed)
 npx playwright --version
@@ -265,6 +281,7 @@ yarn test:e2e:auth
 ```
 
 ### CI Validation
+
 - Push changes to branch
 - Create PR
 - Verify GitHub Actions workflow runs
@@ -288,6 +305,7 @@ yarn test:e2e:auth
 ## Known Defects to Address
 
 ### Defect #1: OAuth Callback Redirect Not Completing in E2E Tests
+
 **Source:** Story 5.3 - JWT Token Extraction from URL
 **Severity:** NON-CRITICAL
 **Date Identified:** 2025-11-24
@@ -296,6 +314,7 @@ yarn test:e2e:auth
 During Story 5.3 implementation, 2 redirect tests in `tests/e2e/auth/oauth-callback-flow.spec.ts` were found to timeout when waiting for navigation to complete after `handleOAuthCallback()` executes. The redirect command (`window.location.href` assignment) executes successfully (confirmed via console logs), but Playwright does not detect the navigation completing.
 
 **Current Test Results:** 9/11 tests passing in oauth-callback-flow.spec.ts
+
 - ✅ Token extraction working
 - ✅ sessionStorage persistence working
 - ✅ URL cleanup working
@@ -304,11 +323,13 @@ During Story 5.3 implementation, 2 redirect tests in `tests/e2e/auth/oauth-callb
 - ❌ Integration test with return URL preservation fails (timeout waiting for navigation)
 
 **Impact:**
+
 - **Production:** NONE - Manual testing confirms OAuth flow works correctly in real browsers
 - **Test Coverage:** LOW - 82% pass rate (9/11 tests), core functionality verified
 - **User Experience:** NONE - Users can successfully authenticate via OAuth in production
 
 **Resolution Tasks for Story 5.11:**
+
 1. Investigate why `window.location.href` redirect completes in production but not in Playwright test environment
 2. Determine if issue is related to:
    - Playwright's `page.waitForNavigation()` timing
@@ -320,6 +341,7 @@ During Story 5.3 implementation, 2 redirect tests in `tests/e2e/auth/oauth-callb
 5. Document any Playwright-specific workarounds required for testing redirect flows
 
 **Reference:**
+
 - Story 5.3 Known Defects section: `/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/stories/5-3-jwt-token-extraction-from-url.md` (lines 1163-1233)
 - Failing test file: `tests/e2e/auth/oauth-callback-flow.spec.ts`
 - Implementation: `src/try/auth/oauth-flow.ts` (`handleOAuthCallback()` function)
@@ -342,21 +364,21 @@ During Story 5.3 implementation, 2 redirect tests in `tests/e2e/auth/oauth-callb
 
 ## Test Coverage Map
 
-| Story | Acceptance Criteria | Test File | Status |
-|-------|-------------------|-----------|--------|
-| 5.1 | Sign in button visible when unauthenticated | sign-in.spec.ts | ✅ AC1 |
-| 5.1 | Sign out button visible when authenticated | sign-in.spec.ts | ✅ AC1 |
-| 5.1 | Sign out button clears session | sign-out.spec.ts | ✅ AC2 |
-| 5.2 | Redirect to /api/auth/login on sign in | sign-in.spec.ts | ✅ AC1 |
-| 5.3 | Extract token from URL query param | sign-in.spec.ts | ✅ AC1 |
-| 5.3 | Store token in sessionStorage | sign-in.spec.ts | ✅ AC1 |
-| 5.4 | Token persists across page reloads | token-persistence.spec.ts | ✅ AC3 |
-| 5.4 | Token persists across browser tabs | cross-tab-sync.spec.ts | ✅ AC4 |
-| 5.4 | Token cleared on browser restart | browser-restart.spec.ts | ✅ AC5 |
+| Story | Acceptance Criteria                         | Test File                 | Status |
+| ----- | ------------------------------------------- | ------------------------- | ------ |
+| 5.1   | Sign in button visible when unauthenticated | sign-in.spec.ts           | ✅ AC1 |
+| 5.1   | Sign out button visible when authenticated  | sign-in.spec.ts           | ✅ AC1 |
+| 5.1   | Sign out button clears session              | sign-out.spec.ts          | ✅ AC2 |
+| 5.2   | Redirect to /api/auth/login on sign in      | sign-in.spec.ts           | ✅ AC1 |
+| 5.3   | Extract token from URL query param          | sign-in.spec.ts           | ✅ AC1 |
+| 5.3   | Store token in sessionStorage               | sign-in.spec.ts           | ✅ AC1 |
+| 5.4   | Token persists across page reloads          | token-persistence.spec.ts | ✅ AC3 |
+| 5.4   | Token persists across browser tabs          | cross-tab-sync.spec.ts    | ✅ AC4 |
+| 5.4   | Token cleared on browser restart            | browser-restart.spec.ts   | ✅ AC5 |
 
 ---
 
-*This story provides automated regression testing for Epic 5 authentication work, fulfilling PRD testing requirements (NFR-TRY-TEST-4) that were deferred during initial implementation.*
+_This story provides automated regression testing for Epic 5 authentication work, fulfilling PRD testing requirements (NFR-TRY-TEST-4) that were deferred during initial implementation._
 
 ---
 
@@ -372,6 +394,7 @@ During Story 5.3 implementation, 2 redirect tests in `tests/e2e/auth/oauth-callb
 Story 5.11 Authentication E2E Test Suite has been successfully implemented and provides comprehensive automated testing for Epic 5 authentication functionality. The implementation validates all critical authentication flows including OAuth callback, token storage, persistence, and sign-out behavior. All acceptance criteria have been met with evidence in the codebase.
 
 **Key Strengths:**
+
 - Comprehensive test coverage across all Epic 5 authentication stories (5.1-5.4)
 - Well-structured test organization with clear AC mapping
 - Excellent documentation and comments in test files
@@ -379,6 +402,7 @@ Story 5.11 Authentication E2E Test Suite has been successfully implemented and p
 - Tests are production-ready and passing in CI
 
 **Minor Issue Resolved:**
+
 - 1 test initially failing due to Playwright sessionStorage behavior
 - Test properly documented and skipped with detailed explanation
 - Implementation verified correct through manual testing
@@ -395,6 +419,7 @@ All acceptance criteria implemented and verified. Tests provide robust regressio
 **No Low Issues**
 
 **1 Test Environment Limitation (Documented):**
+
 - Test: "AC #1: Token persists across page navigations in same session"
 - Issue: Playwright sessionStorage behavior differs from real browsers when navigating back to homepage
 - Status: Test skipped with comprehensive documentation
@@ -405,13 +430,13 @@ All acceptance criteria implemented and verified. Tests provide robust regressio
 
 All 5 acceptance criteria fully implemented with test evidence:
 
-| AC# | Description | Status | Test File | Evidence |
-|-----|-------------|--------|-----------|----------|
-| AC1 | Sign-In Flow Test | IMPLEMENTED | oauth-callback-flow.spec.ts | Lines 30-43: Token extraction and storage validated |
-| AC2 | Sign-Out Flow Test | IMPLEMENTED | sign-out.spec.ts | Lines 32-53: Token clearing and UI state validated |
-| AC3 | Token Persistence Test | IMPLEMENTED | sessionstorage-persistence.spec.ts | Lines 40-70: Page reload persistence validated |
-| AC4 | Cross-Tab Persistence Test | IMPLEMENTED | sessionstorage-persistence.spec.ts | Lines 40-70: Same-session persistence validated |
-| AC5 | Browser Restart Simulation Test | IMPLEMENTED | sessionstorage-persistence.spec.ts | Lines 72-109: Browser close clearing validated |
+| AC# | Description                     | Status      | Test File                          | Evidence                                            |
+| --- | ------------------------------- | ----------- | ---------------------------------- | --------------------------------------------------- |
+| AC1 | Sign-In Flow Test               | IMPLEMENTED | oauth-callback-flow.spec.ts        | Lines 30-43: Token extraction and storage validated |
+| AC2 | Sign-Out Flow Test              | IMPLEMENTED | sign-out.spec.ts                   | Lines 32-53: Token clearing and UI state validated  |
+| AC3 | Token Persistence Test          | IMPLEMENTED | sessionstorage-persistence.spec.ts | Lines 40-70: Page reload persistence validated      |
+| AC4 | Cross-Tab Persistence Test      | IMPLEMENTED | sessionstorage-persistence.spec.ts | Lines 40-70: Same-session persistence validated     |
+| AC5 | Browser Restart Simulation Test | IMPLEMENTED | sessionstorage-persistence.spec.ts | Lines 72-109: Browser close clearing validated      |
 
 **Summary:** 5 of 5 acceptance criteria fully implemented and tested (100%)
 
@@ -419,23 +444,24 @@ All 5 acceptance criteria fully implemented with test evidence:
 
 All tasks marked complete in Definition of Done were systematically verified:
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| 5 E2E tests written and passing locally | [x] Complete | VERIFIED | 24 tests exist, 23 passing, 1 skipped (documented) |
-| sign-in.spec.ts validates AC1 | [x] Complete | VERIFIED | oauth-callback-flow.spec.ts (covers AC1 functionality) |
-| sign-out.spec.ts validates AC2 | [x] Complete | VERIFIED | sign-out.spec.ts lines 32-158 |
-| token-persistence.spec.ts validates AC3 | [x] Complete | VERIFIED | sessionstorage-persistence.spec.ts lines 40-70 |
-| cross-tab-sync.spec.ts validates AC4 | [x] Complete | VERIFIED | sessionstorage-persistence.spec.ts lines 40-70 (equivalent coverage) |
-| browser-restart.spec.ts validates AC5 | [x] Complete | VERIFIED | sessionstorage-persistence.spec.ts lines 72-109 |
-| Tests validate all Epic 5 authentication ACs | [x] Complete | VERIFIED | Test coverage map shows all Stories 5.1-5.4 covered |
-| Tests passing in CI pipeline | [x] Complete | VERIFIED | 23/24 tests passing (96% pass rate) |
-| Test code documented with clear comments | [x] Complete | VERIFIED | Excellent JSDoc comments in all test files |
-| Shared test helpers created (auth-helpers.ts) | [x] Complete | PARTIAL | Helper functions exist inline in tests (not separate file - acceptable) |
-| Tests executable via yarn test:e2e:auth command | [x] Complete | VERIFIED | Command works, tests execute successfully |
+| Task                                            | Marked As    | Verified As | Evidence                                                                |
+| ----------------------------------------------- | ------------ | ----------- | ----------------------------------------------------------------------- |
+| 5 E2E tests written and passing locally         | [x] Complete | VERIFIED    | 24 tests exist, 23 passing, 1 skipped (documented)                      |
+| sign-in.spec.ts validates AC1                   | [x] Complete | VERIFIED    | oauth-callback-flow.spec.ts (covers AC1 functionality)                  |
+| sign-out.spec.ts validates AC2                  | [x] Complete | VERIFIED    | sign-out.spec.ts lines 32-158                                           |
+| token-persistence.spec.ts validates AC3         | [x] Complete | VERIFIED    | sessionstorage-persistence.spec.ts lines 40-70                          |
+| cross-tab-sync.spec.ts validates AC4            | [x] Complete | VERIFIED    | sessionstorage-persistence.spec.ts lines 40-70 (equivalent coverage)    |
+| browser-restart.spec.ts validates AC5           | [x] Complete | VERIFIED    | sessionstorage-persistence.spec.ts lines 72-109                         |
+| Tests validate all Epic 5 authentication ACs    | [x] Complete | VERIFIED    | Test coverage map shows all Stories 5.1-5.4 covered                     |
+| Tests passing in CI pipeline                    | [x] Complete | VERIFIED    | 23/24 tests passing (96% pass rate)                                     |
+| Test code documented with clear comments        | [x] Complete | VERIFIED    | Excellent JSDoc comments in all test files                              |
+| Shared test helpers created (auth-helpers.ts)   | [x] Complete | PARTIAL     | Helper functions exist inline in tests (not separate file - acceptable) |
+| Tests executable via yarn test:e2e:auth command | [x] Complete | VERIFIED    | Command works, tests execute successfully                               |
 
 **Summary:** 10 of 10 completed tasks verified (100%)
 
 **Note on auth-helpers.ts:** The story specified creating a shared `auth-helpers.ts` file, but implementation uses inline helper functions within test files. This is an acceptable architectural choice as:
+
 - Test code is well-organized and DRY
 - Helper logic is simple and doesn't warrant extraction
 - No duplication observed across test files
@@ -444,6 +470,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 ### Test Coverage and Gaps
 
 **Test Coverage:**
+
 - **Sign-In Flow:** ✅ Comprehensive (oauth-callback-flow.spec.ts - 11 tests)
   - Token extraction from URL
   - sessionStorage storage
@@ -467,12 +494,14 @@ All tasks marked complete in Definition of Done were systematically verified:
   - Null when no token present
 
 **No Test Gaps Identified:**
+
 - All Epic 5 Stories (5.1-5.4) have test coverage
 - All PRD requirements validated
 - Error cases tested
 - Edge cases covered
 
 **Test Quality:**
+
 - ✅ Clear test descriptions
 - ✅ Good separation of concerns
 - ✅ Appropriate use of test.describe blocks
@@ -483,6 +512,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✅ Uses Playwright as specified in Story 8.0
 - ✅ Tests organized under `tests/e2e/auth/` as specified
 - ✅ Tests validate OAuth flow, token persistence, and sign-out per Epic 5 tech spec
@@ -490,6 +520,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 - ✅ Adheres to ADR-016 (sessionStorage for JWT tokens)
 
 **Architecture Patterns:**
+
 - ✅ Tests validate sessionStorage usage (not localStorage or cookies)
 - ✅ Tests confirm token key is 'isb-jwt' (consistent across codebase)
 - ✅ Tests validate OAuth callback behavior without breaking existing flows
@@ -500,6 +531,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 ### Security Notes
 
 **Security Testing:**
+
 - ✅ Token cleared on sign-out (prevents unauthorized access)
 - ✅ Token cleared on browser close (shared device security)
 - ✅ URL cleanup removes token from browser history (prevents token exposure)
@@ -507,6 +539,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 - ✅ Empty/whitespace tokens rejected (input validation)
 
 **Security Best Practices:**
+
 - ✅ Tests validate token is not in URL after extraction
 - ✅ Tests validate sessionStorage (not localStorage) per security requirements
 - ✅ Tests validate browser context isolation
@@ -517,6 +550,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 ### Best Practices and References
 
 **Testing Best Practices:**
+
 - ✅ Follows Playwright best practices (waitForLoadState, proper selectors)
 - ✅ Uses test.describe for logical grouping
 - ✅ beforeEach hooks for test isolation
@@ -525,6 +559,7 @@ All tasks marked complete in Definition of Done were systematically verified:
 - ✅ Error context preserved for debugging (videos, screenshots)
 
 **References:**
+
 - [Playwright Documentation](https://playwright.dev/) - Best practices followed
 - [sessionStorage API](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) - Correctly implemented
 - [OAuth 2.0 Spec](https://oauth.net/2/) - Flow patterns validated
@@ -534,17 +569,20 @@ All tasks marked complete in Definition of Done were systematically verified:
 ### Action Items
 
 **No Code Changes Required:**
+
 - All tests passing (23/24, 1 skipped with documentation)
 - All acceptance criteria met
 - No bugs or issues found
 - Implementation ready for production
 
 **Documentation Notes:**
+
 - Note: Test file naming differs from story specification (oauth-callback-flow.spec.ts vs sign-in.spec.ts, sessionstorage-persistence.spec.ts vs token-persistence.spec.ts) - This is acceptable as file names clearly describe functionality and all ACs are covered.
 - Note: auth-helpers.ts not created as separate file - Helper functions inline in tests. Acceptable architectural choice.
 - Note: 1 test skipped due to Playwright environment limitation - Documented comprehensively in test file.
 
 **Recommendations for Future Work:**
+
 - Consider adding E2E test for Story 5.6 (API Authorization Header Injection) to validate end-to-end API call flow with real backend
 - Consider adding E2E test for Story 5.7 (Authentication Status Check API) once backend endpoint is stable
 - Consider adding E2E test for Story 5.8 (401 Unauthorized Response Handling) to validate automatic re-authentication flow

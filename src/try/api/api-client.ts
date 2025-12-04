@@ -17,9 +17,9 @@
  * @module api-client
  */
 
-import { JWT_TOKEN_KEY, OAUTH_LOGIN_URL } from '../constants';
-import { deduplicatedRequest } from '../utils/request-dedup';
-import { config } from '../config';
+import { JWT_TOKEN_KEY, OAUTH_LOGIN_URL } from "../constants"
+import { deduplicatedRequest } from "../utils/request-dedup"
+import { config } from "../config"
 
 /**
  * User session data returned from auth status API.
@@ -28,13 +28,13 @@ import { config } from '../config';
  */
 export interface UserData {
   /** User's email address (e.g., "user@example.gov.uk") */
-  email: string;
+  email: string
   /** User's display name (e.g., "Jane Smith") */
-  displayName: string;
+  displayName: string
   /** User's username (e.g., "jane.smith") */
-  userName: string;
+  userName: string
   /** User's roles (e.g., ["user"]) */
-  roles: string[];
+  roles: string[]
 }
 
 /**
@@ -44,9 +44,9 @@ export interface UserData {
  */
 export interface AuthStatusResult {
   /** Whether the user is currently authenticated */
-  authenticated: boolean;
+  authenticated: boolean
   /** User data (only present if authenticated) */
-  user?: UserData;
+  user?: UserData
 }
 
 // JWT_TOKEN_KEY and OAUTH_LOGIN_URL imported from '../constants'
@@ -62,7 +62,7 @@ export interface ISBAPIOptions extends RequestInit {
    * Use this for operations that check auth status (like checkAuthStatus).
    * Default: false (401 triggers redirect)
    */
-  skipAuthRedirect?: boolean;
+  skipAuthRedirect?: boolean
 }
 
 /**
@@ -103,43 +103,40 @@ export interface ISBAPIOptions extends RequestInit {
  * const response = await callISBAPI('/api/auth/status', { skipAuthRedirect: true });
  * ```
  */
-export async function callISBAPI(
-  endpoint: string,
-  options: ISBAPIOptions = {}
-): Promise<Response> {
+export async function callISBAPI(endpoint: string, options: ISBAPIOptions = {}): Promise<Response> {
   // Extract custom options, pass rest to fetch
-  const { skipAuthRedirect, ...fetchOptions } = options;
+  const { skipAuthRedirect, ...fetchOptions } = options
 
   // Build headers object, preserving any custom headers from options
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...extractHeaders(fetchOptions.headers),
-  };
+  }
 
   // Add Authorization header if JWT token exists
-  const token = getToken();
+  const token = getToken()
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   // Make the fetch request with merged options
   const response = await fetch(endpoint, {
     ...fetchOptions,
     headers,
-  });
+  })
 
   // Story 5.8: Handle 401 Unauthorized - automatic re-authentication
   // Skip if skipAuthRedirect is true (used by checkAuthStatus)
   if (response.status === 401 && !skipAuthRedirect) {
     // Clear invalid token to prevent infinite loops
-    clearToken();
+    clearToken()
     // Redirect to OAuth login
-    redirectToOAuth();
+    redirectToOAuth()
     // Throw to stop promise chain (redirect will navigate away)
-    throw new Error('Unauthorized - redirecting to login');
+    throw new Error("Unauthorized - redirecting to login")
   }
 
-  return response;
+  return response
 }
 
 /**
@@ -149,11 +146,11 @@ export async function callISBAPI(
  */
 function clearToken(): void {
   // Guard against SSR environments
-  if (typeof sessionStorage === 'undefined') {
-    return;
+  if (typeof sessionStorage === "undefined") {
+    return
   }
   try {
-    sessionStorage.removeItem(JWT_TOKEN_KEY);
+    sessionStorage.removeItem(JWT_TOKEN_KEY)
   } catch {
     // Ignore sessionStorage errors
   }
@@ -166,10 +163,10 @@ function clearToken(): void {
  */
 function redirectToOAuth(): void {
   // Guard against SSR environments
-  if (typeof window === 'undefined') {
-    return;
+  if (typeof window === "undefined") {
+    return
   }
-  window.location.href = OAUTH_LOGIN_URL;
+  window.location.href = OAUTH_LOGIN_URL
 }
 
 /**
@@ -203,12 +200,12 @@ function redirectToOAuth(): void {
  * Response structure from /api/auth/login/status endpoint.
  */
 interface AuthStatusResponse {
-  authenticated: boolean;
+  authenticated: boolean
   session?: {
-    user: UserData;
-    iat: number;
-    exp: number;
-  };
+    user: UserData
+    iat: number
+    exp: number
+  }
 }
 
 /**
@@ -225,53 +222,53 @@ interface AuthStatusResponse {
  * @returns Promise resolving to AuthStatusResult
  */
 export async function checkAuthStatus(timeout = 5000): Promise<AuthStatusResult> {
-  return deduplicatedRequest('checkAuthStatus', async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+  return deduplicatedRequest("checkAuthStatus", async () => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
       // Use skipAuthRedirect to prevent redirect on 401 - we handle it gracefully here
-      const response = await callISBAPI('/api/auth/login/status', {
+      const response = await callISBAPI("/api/auth/login/status", {
         skipAuthRedirect: true,
         signal: controller.signal,
-      });
+      })
 
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       if (response.ok) {
-        const data: AuthStatusResponse = await response.json();
+        const data: AuthStatusResponse = await response.json()
 
         // Handle actual API response structure: { authenticated, session: { user } }
         if (data.authenticated && data.session?.user) {
           return {
             authenticated: true,
             user: data.session.user,
-          };
+          }
         }
 
-        return { authenticated: false };
+        return { authenticated: false }
       } else if (response.status === 401) {
         // Token invalid or expired - this is expected, not an error
-        return { authenticated: false };
+        return { authenticated: false }
       } else {
         // Other HTTP errors (500, etc.)
-        console.error('[api-client] Auth status check failed:', response.status, response.statusText);
-        return { authenticated: false };
+        console.error("[api-client] Auth status check failed:", response.status, response.statusText)
+        return { authenticated: false }
       }
     } catch (error) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
 
       // Handle timeout specifically
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error('[api-client] Auth status check timed out after', timeout, 'ms');
-        return { authenticated: false };
+      if (error instanceof Error && error.name === "AbortError") {
+        console.error("[api-client] Auth status check timed out after", timeout, "ms")
+        return { authenticated: false }
       }
 
       // Network errors (offline, CORS, etc.)
-      console.error('[api-client] Auth status check error:', error);
-      return { authenticated: false };
+      console.error("[api-client] Auth status check error:", error)
+      return { authenticated: false }
     }
-  });
+  })
 }
 
 /**
@@ -282,20 +279,20 @@ export async function checkAuthStatus(timeout = 5000): Promise<AuthStatusResult>
  */
 function getToken(): string | null {
   // Guard against SSR environments where sessionStorage is unavailable
-  if (typeof sessionStorage === 'undefined') {
-    return null;
+  if (typeof sessionStorage === "undefined") {
+    return null
   }
 
   try {
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY)
     // Treat empty string as no token
-    if (token === null || token === '') {
-      return null;
+    if (token === null || token === "") {
+      return null
     }
-    return token;
+    return token
   } catch {
     // Handle any sessionStorage access errors (e.g., security restrictions)
-    return null;
+    return null
   }
 }
 
@@ -309,52 +306,47 @@ function getToken(): string | null {
  */
 function extractHeaders(headersInit?: HeadersInit): Record<string, string> {
   if (!headersInit) {
-    return {};
+    return {}
   }
 
   // Handle array of [key, value] pairs (must check before Headers due to duck typing)
   if (Array.isArray(headersInit)) {
-    const result: Record<string, string> = {};
+    const result: Record<string, string> = {}
     for (const entry of headersInit) {
       // H12: Validate array entry is a valid [key, value] pair
-      if (
-        Array.isArray(entry) &&
-        entry.length >= 2 &&
-        typeof entry[0] === 'string' &&
-        typeof entry[1] === 'string'
-      ) {
-        result[entry[0].trim()] = entry[1];
+      if (Array.isArray(entry) && entry.length >= 2 && typeof entry[0] === "string" && typeof entry[1] === "string") {
+        result[entry[0].trim()] = entry[1]
       }
     }
-    return result;
+    return result
   }
 
   // Handle Headers object using duck typing (works across environments)
   // Check for forEach method which is characteristic of Headers interface
-  if (typeof (headersInit as Headers).forEach === 'function') {
-    const result: Record<string, string> = {};
-    (headersInit as Headers).forEach((value, key) => {
+  if (typeof (headersInit as Headers).forEach === "function") {
+    const result: Record<string, string> = {}
+    ;(headersInit as Headers).forEach((value, key) => {
       // H12: Validate key and value are strings
-      if (typeof key === 'string' && typeof value === 'string') {
-        result[key] = value;
+      if (typeof key === "string" && typeof value === "string") {
+        result[key] = value
       }
-    });
-    return result;
+    })
+    return result
   }
 
   // Handle plain object with validation
-  if (typeof headersInit === 'object' && headersInit !== null) {
-    const result: Record<string, string> = {};
+  if (typeof headersInit === "object" && headersInit !== null) {
+    const result: Record<string, string> = {}
     for (const [key, value] of Object.entries(headersInit)) {
       // H12: Only include string key-value pairs
-      if (typeof key === 'string' && typeof value === 'string') {
-        result[key] = value;
+      if (typeof key === "string" && typeof value === "string") {
+        result[key] = value
       }
     }
-    return result;
+    return result
   }
 
-  return {};
+  return {}
 }
 
 /**
@@ -368,4 +360,4 @@ export const _internal = {
   extractHeaders,
   clearToken,
   redirectToOAuth,
-};
+}

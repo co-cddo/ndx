@@ -16,6 +16,7 @@
 ## Project Context
 
 ### Workflow Status
+
 - **Project:** ndx (National Digital Exchange)
 - **Track:** BMad Method
 - **Field Type:** Brownfield
@@ -23,12 +24,15 @@
 - **Workflow Path:** method-brownfield.yaml
 
 ### Completed Pre-requisites
+
 - ✓ PRD: `docs/prd.md` (completed 2025-11-18)
 - ✓ Architecture: `docs/infrastructure-architecture.md` (completed 2025-11-18)
 - ✓ Epics & Stories: `docs/epics.md` (completed 2025-11-18)
 
 ### Implementation Status Context
+
 **From user context:**
+
 - Epic 1: Complete (6/6 stories done)
 - Epic 2 & 3: Not started
 
@@ -37,4 +41,3 @@ This assessment validates that the completed Epic 1 and planned Epics 2-3 are pr
 ---
 
 ## Document Inventory
-

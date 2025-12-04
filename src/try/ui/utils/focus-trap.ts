@@ -13,24 +13,24 @@
  * Based on WCAG 2.2 focus management requirements.
  */
 const FOCUSABLE_SELECTORS = [
-  'button:not([disabled])',
-  '[href]',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
+  "button:not([disabled])",
+  "[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
-].join(', ');
+].join(", ")
 
 /**
  * Focus trap instance for managing modal focus.
  */
 export interface FocusTrap {
   /** Activate the focus trap */
-  activate(): void;
+  activate(): void
   /** Deactivate the focus trap */
-  deactivate(): void;
+  deactivate(): void
   /** Check if trap is currently active */
-  isActive(): boolean;
+  isActive(): boolean
 }
 
 /**
@@ -54,103 +54,103 @@ export function createFocusTrap(
   container: HTMLElement,
   options: {
     /** Callback when Escape key is pressed */
-    onEscape?: () => void;
+    onEscape?: () => void
     /** Element to focus when trap activates (defaults to first focusable) */
-    initialFocus?: HTMLElement | null;
+    initialFocus?: HTMLElement | null
     /** Element to return focus to when trap deactivates */
-    returnFocus?: HTMLElement | null;
-  } = {}
+    returnFocus?: HTMLElement | null
+  } = {},
 ): FocusTrap {
-  let active = false;
-  let previouslyFocused: HTMLElement | null = null;
+  let active = false
+  let previouslyFocused: HTMLElement | null = null
 
   /**
    * Get all focusable elements within the container.
    */
   function getFocusableElements(): HTMLElement[] {
-    const elements = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+    const elements = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
     return Array.from(elements).filter(
-      (el) => el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).visibility !== 'hidden'
-    );
+      (el) => el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).visibility !== "hidden",
+    )
   }
 
   /**
    * Handle keydown events for focus trapping and Escape key.
    */
   function handleKeydown(event: KeyboardEvent): void {
-    if (!active) return;
+    if (!active) return
 
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      options.onEscape?.();
-      return;
+    if (event.key === "Escape") {
+      event.preventDefault()
+      options.onEscape?.()
+      return
     }
 
-    if (event.key !== 'Tab') return;
+    if (event.key !== "Tab") return
 
-    const focusable = getFocusableElements();
-    if (focusable.length === 0) return;
+    const focusable = getFocusableElements()
+    if (focusable.length === 0) return
 
-    const firstElement = focusable[0];
-    const lastElement = focusable[focusable.length - 1];
-    const activeElement = document.activeElement as HTMLElement;
+    const firstElement = focusable[0]
+    const lastElement = focusable[focusable.length - 1]
+    const activeElement = document.activeElement as HTMLElement
 
     // Shift+Tab on first element → wrap to last
     if (event.shiftKey && activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-      return;
+      event.preventDefault()
+      lastElement.focus()
+      return
     }
 
     // Tab on last element → wrap to first
     if (!event.shiftKey && activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-      return;
+      event.preventDefault()
+      firstElement.focus()
+      return
     }
   }
 
   return {
     activate() {
-      if (active) return;
-      active = true;
+      if (active) return
+      active = true
 
       // Store currently focused element
-      previouslyFocused = options.returnFocus || (document.activeElement as HTMLElement);
+      previouslyFocused = options.returnFocus || (document.activeElement as HTMLElement)
 
       // Add keydown listener
-      document.addEventListener('keydown', handleKeydown);
+      document.addEventListener("keydown", handleKeydown)
 
       // Focus initial element
-      const focusable = getFocusableElements();
-      const initialElement = options.initialFocus || focusable[0];
+      const focusable = getFocusableElements()
+      const initialElement = options.initialFocus || focusable[0]
 
       // Delay focus slightly to ensure modal is visible
       requestAnimationFrame(() => {
         if (initialElement) {
-          initialElement.focus();
+          initialElement.focus()
         } else if (focusable.length > 0) {
-          focusable[0].focus();
+          focusable[0].focus()
         }
-      });
+      })
     },
 
     deactivate() {
-      if (!active) return;
-      active = false;
+      if (!active) return
+      active = false
 
       // Remove keydown listener
-      document.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener("keydown", handleKeydown)
 
       // Return focus to previous element
       if (previouslyFocused) {
-        previouslyFocused.focus();
-        previouslyFocused = null;
+        previouslyFocused.focus()
+        previouslyFocused = null
       }
     },
 
     isActive() {
-      return active;
+      return active
     },
-  };
+  }
 }

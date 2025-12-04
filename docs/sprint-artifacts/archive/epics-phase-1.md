@@ -12,6 +12,7 @@
 This document provides the complete epic and story breakdown for the NDX Infrastructure Evolution project, decomposing the requirements from the [PRD](./prd.md) into implementable stories with full technical context from the [Infrastructure Architecture](./infrastructure-architecture.md).
 
 **Context Incorporated:**
+
 - ✅ PRD requirements (26 FRs, 23 NFRs)
 - ✅ Infrastructure Architecture technical decisions
 
@@ -20,6 +21,7 @@ This document provides the complete epic and story breakdown for the NDX Infrast
 ## Functional Requirements Inventory
 
 ### Infrastructure Provisioning
+
 - **FR1:** System can define S3 bucket (`ndx-static-prod`) as Infrastructure-as-Code using AWS CDK TypeScript
 - **FR2:** System can deploy S3 bucket to AWS us-west-2 region using `NDX/InnovationSandboxHub` profile
 - **FR3:** System can configure S3 bucket for CloudFront origin access (public access blocked, prepared for CDN)
@@ -29,6 +31,7 @@ This document provides the complete epic and story breakdown for the NDX Infrast
 - **FR7:** Infrastructure deployments are idempotent (re-running deploy with no changes causes no AWS updates)
 
 ### File Deployment
+
 - **FR8:** System can upload all files from `_site/` directory to `ndx-static-prod` S3 bucket
 - **FR9:** Deployment script can use AWS CLI with `NDX/InnovationSandboxHub` profile for S3 upload
 - **FR10:** Deployment preserves file structure and MIME types during S3 upload
@@ -36,6 +39,7 @@ This document provides the complete epic and story breakdown for the NDX Infrast
 - **FR12:** Deployment requires successful `yarn build` to complete before uploading files
 
 ### Infrastructure Quality & Testing
+
 - **FR13:** CDK infrastructure code can be tested via snapshot tests (CloudFormation template validation)
 - **FR14:** CDK infrastructure code can be tested via fine-grained assertions (bucket properties, encryption, naming)
 - **FR15:** CDK TypeScript code can be linted via ESLint with AWS CDK recommended rules
@@ -43,16 +47,19 @@ This document provides the complete epic and story breakdown for the NDX Infrast
 - **FR17:** Infrastructure code can be version-controlled in git with appropriate .gitignore for CDK artifacts
 
 ### Documentation & Maintainability
+
 - **FR18:** Infrastructure setup, deployment process, and architecture are documented in `/infra/README.md`
 - **FR19:** Deployment workflow is documented for team members to understand manual deployment process
 - **FR20:** CDK code follows TypeScript and AWS CDK best practices for long-term maintainability
 
 ### Rollback & Safety
+
 - **FR21:** Infrastructure changes can be reviewed before applying (via `cdk diff`)
 - **FR22:** S3 bucket supports versioning for file rollback capability (if enabled)
 - **FR23:** Failed deployments can be investigated via CloudFormation events and logs
 
 ### Future Extensibility
+
 - **FR24:** Infrastructure structure supports future addition of CloudFront CDN
 - **FR25:** Infrastructure structure supports future addition of OIDC authentication for GitHub Actions
 - **FR26:** Infrastructure structure supports future multi-environment contexts (dev/staging/prod)
@@ -76,6 +83,7 @@ This document provides the complete epic and story breakdown for the NDX Infrast
 - **Epic 3 (Deployment & Docs):** FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16, FR17, FR18, FR19, FR20
 
 **Pre-mortem Enhancements Applied:**
+
 - Added CDK bootstrap story (Epic 1)
 - Added bucket name validation and access pattern verification (Epic 2)
 - Enhanced deployment script with error recovery (Epic 3)
@@ -105,6 +113,7 @@ So that I have the standard CDK structure and dependencies to define infrastruct
 **Given** the project root directory exists
 **When** I run `mkdir infra && cd infra && cdk init app --language typescript`
 **Then** the CDK project is created with standard structure:
+
 - `bin/infra.ts` - CDK app entry point exists
 - `lib/` - Directory for stack definitions exists
 - `test/` - Directory for tests exists
@@ -119,6 +128,7 @@ So that I have the standard CDK structure and dependencies to define infrastruct
 **Prerequisites:** None (first story)
 
 **Technical Notes:**
+
 - Use `cdk init app --language typescript` (official AWS CDK starter)
 - Architecture specifies CDK v2.224.0 (Nov 2025 release)
 - Example stack will be replaced in Epic 2, but validates setup works
@@ -137,6 +147,7 @@ So that package management is consistent with the main NDX application.
 **Given** the CDK project is initialized with npm
 **When** I run `rm package-lock.json && yarn install`
 **Then** the project uses Yarn:
+
 - `package-lock.json` is deleted
 - `yarn.lock` is created
 - `node_modules/` is populated via Yarn
@@ -149,6 +160,7 @@ So that package management is consistent with the main NDX application.
 **Prerequisites:** Story 1.1 (CDK project initialized)
 
 **Technical Notes:**
+
 - Main NDX app uses Yarn 4.5.0 (Berry)
 - Consistency reduces context switching for developers
 - Yarn workspaces not needed (separate package.json in `/infra`)
@@ -167,6 +179,7 @@ So that infrastructure code follows best practices and catches common mistakes e
 **Given** the CDK project exists with TypeScript
 **When** I install and configure ESLint
 **Then** ESLint is set up with:
+
 - Dependencies installed: `eslint`, `typescript-eslint`, `eslint-plugin-awscdk`
 - `eslint.config.mjs` created using flat config format (2025 standard)
 - Configuration includes:
@@ -183,6 +196,7 @@ So that infrastructure code follows best practices and catches common mistakes e
 **Prerequisites:** Story 1.2 (Yarn installed)
 
 **Technical Notes:**
+
 - ESLint flat config (`eslint.config.mjs`) is 2025 standard (replaces `.eslintrc`)
 - `eslint-plugin-awscdk` provides CDK-specific best practice rules
 - Type-checked rules require `parserOptions.project: true`
@@ -202,6 +216,7 @@ So that infrastructure code is tracked while CDK artifacts are excluded.
 **Given** the CDK project exists with generated `.gitignore`
 **When** I verify and enhance the `.gitignore`
 **Then** the following are excluded from git:
+
 - `node_modules/`
 - `cdk.out/`
 - `cdk.context.json`
@@ -211,6 +226,7 @@ So that infrastructure code is tracked while CDK artifacts are excluded.
 - `.DS_Store` (macOS files)
 
 **And** the following ARE tracked in git:
+
 - `yarn.lock`
 - `cdk.json`
 - `tsconfig.json`
@@ -224,6 +240,7 @@ So that infrastructure code is tracked while CDK artifacts are excluded.
 **Prerequisites:** Story 1.3 (ESLint configured)
 
 **Technical Notes:**
+
 - CDK init creates baseline `.gitignore`, verify completeness
 - Infrastructure code must be in main repo (not separate)
 - Architecture doc section 8.3 specifies version control requirements
@@ -242,6 +259,7 @@ So that CDK has the necessary staging resources (S3 bucket, IAM roles) to deploy
 **Given** the AWS CLI is configured with `NDX/InnovationSandboxHub` profile
 **When** I run `cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub`
 **Then** CDK bootstrap completes successfully creating:
+
 - CDK staging S3 bucket (for CloudFormation templates and assets)
 - IAM roles for CloudFormation execution
 - SSM parameters for bootstrap version
@@ -253,6 +271,7 @@ So that CDK has the necessary staging resources (S3 bucket, IAM roles) to deploy
 **Prerequisites:** Story 1.4 (Git configured)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** Bootstrap is one-time AWS setup required before any `cdk deploy`
 - Failure to bootstrap causes cryptic "assets bucket not found" errors
 - Bootstrap creates `CDKToolkit` CloudFormation stack
@@ -275,11 +294,13 @@ So that team members can understand and execute infrastructure operations.
 **Then** the README includes:
 
 **Section 1: Overview**
+
 - Project name and purpose
 - Link to main architecture document
 - **Document version and last updated date** (living doc marker)
 
 **Section 2: Prerequisites**
+
 - Node.js 20.17.0+
 - Yarn 4.5.0+
 - AWS CLI v2.x
@@ -287,17 +308,20 @@ So that team members can understand and execute infrastructure operations.
 - Verification command: `aws sts get-caller-identity --profile NDX/InnovationSandboxHub`
 
 **Section 3: Initial Setup** (one-time)
+
 - CDK bootstrap command with account ID
 - Dependency installation: `yarn install`
 - Build verification: `yarn build`
 
 **Section 4: Development Workflow**
+
 - Run tests: `yarn test`
 - Lint code: `yarn lint`
 - Preview changes: `cdk diff --profile NDX/InnovationSandboxHub`
 - Deploy infrastructure: `cdk deploy --profile NDX/InnovationSandboxHub`
 
 **Section 5: Troubleshooting**
+
 - Common errors and solutions
 - Link to CloudFormation events for debugging
 
@@ -307,6 +331,7 @@ So that team members can understand and execute infrastructure operations.
 **Prerequisites:** Story 1.5 (CDK bootstrapped)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** Documentation as living document, not one-time artifact
 - Include version/date to track when last updated
 - Will be enhanced in Epic 3 with deployment script details
@@ -338,10 +363,12 @@ So that deployment won't fail due to global bucket name conflicts.
 **Then** one of two outcomes occurs:
 
 **Case 1: Bucket does not exist (desired)**
+
 - Command returns 404 error
 - Proceed with bucket creation in Story 2.2
 
 **Case 2: Bucket exists**
+
 - Command returns 200 or 403
 - Document bucket name conflict
 - Choose alternative: `ndx-static-prod-SUFFIX` or use CDK auto-generated names
@@ -352,6 +379,7 @@ So that deployment won't fail due to global bucket name conflicts.
 **Prerequisites:** Story 1.6 (README created)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** S3 bucket names are globally unique across all AWS accounts
 - Hard-coding `ndx-static-prod` assumes it's available
 - Failure discovered at deploy time is too late
@@ -374,25 +402,26 @@ So that the bucket is created with proper security, versioning, and tags as code
 **Then** the stack includes:
 
 ```typescript
-import * as cdk from 'aws-cdk-lib';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cdk from "aws-cdk-lib"
+import * as s3 from "aws-cdk-lib/aws-s3"
 
 export class NdxStaticStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+    super(scope, id, props)
 
-    new s3.Bucket(this, 'StaticSiteBucket', {
-      bucketName: 'ndx-static-prod',
+    new s3.Bucket(this, "StaticSiteBucket", {
+      bucketName: "ndx-static-prod",
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       versioned: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
+    })
   }
 }
 ```
 
 **And** bucket configuration includes:
+
 - Name: `ndx-static-prod` (or validated alternative)
 - Encryption: SSE-S3 (AWS managed keys)
 - Public access: Completely blocked (all 4 settings)
@@ -406,6 +435,7 @@ export class NdxStaticStack extends cdk.Stack {
 **Prerequisites:** Story 2.1 (Bucket name validated)
 
 **Technical Notes:**
+
 - Replace example stack from Story 1.1 with real infrastructure
 - Stack name: `NdxStaticStack`
 - Bin entry point (`bin/infra.ts`) instantiates this stack
@@ -429,6 +459,7 @@ So that the site is actually reachable after deployment, not just uploaded.
 **Then** I document the chosen access method:
 
 **Option A: CloudFront Required for MVP**
+
 - Bucket remains private (blocked public access)
 - Files accessible only via CloudFront CDN
 - CloudFront OAI granted bucket read access
@@ -436,6 +467,7 @@ So that the site is actually reachable after deployment, not just uploaded.
 - **Action:** Document in README that CloudFront is required for site access
 
 **Option B: Temporary Static Website Hosting**
+
 - Enable static website hosting on bucket
 - Adjust public access block settings
 - Files accessible via S3 website endpoint
@@ -443,6 +475,7 @@ So that the site is actually reachable after deployment, not just uploaded.
 - **Action:** Update CDK stack to enable `websiteIndexDocument: 'index.html'`
 
 **And** the access decision is documented in:
+
 - `/infra/README.md` - Deployment section
 - Architecture doc - Data Architecture section updated
 - Epic 3 Story 3.2 - Deployment script knows which endpoint to verify
@@ -452,6 +485,7 @@ So that the site is actually reachable after deployment, not just uploaded.
 **Prerequisites:** Story 2.2 (S3 bucket defined in CDK)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** Architecture says "static hosting: disabled" but doesn't clarify MVP access
 - Team could deploy files successfully but site returns 403 Forbidden
 - Must decide NOW: enable static hosting temporarily or require CloudFront from day 1
@@ -472,6 +506,7 @@ So that the S3 bucket exists in production and is ready to receive files.
 **Given** the CDK stack is defined and validated via `cdk synth`
 **When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
 **Then** the deployment succeeds with:
+
 - CloudFormation stack `NdxStaticStack` created in us-west-2
 - S3 bucket `ndx-static-prod` exists
 - Bucket has encryption enabled (verified: `aws s3api get-bucket-encryption`)
@@ -486,6 +521,7 @@ So that the S3 bucket exists in production and is ready to receive files.
 **Prerequisites:** Story 2.3 (Access pattern validated and documented)
 
 **Technical Notes:**
+
 - First real infrastructure deployment to AWS
 - Use `--profile NDX/InnovationSandboxHub` for authentication
 - CloudFormation creates stack with automatic rollback on failure
@@ -520,6 +556,7 @@ So that deployment is triggered from the project root with a simple command.
 **Given** the root `package.json` exists
 **When** I add the deploy script
 **Then** `package.json` includes:
+
 ```json
 {
   "scripts": {
@@ -535,6 +572,7 @@ So that deployment is triggered from the project root with a simple command.
 **Prerequisites:** Story 2.4 (S3 bucket deployed to AWS)
 
 **Technical Notes:**
+
 - Deployment automation lives at root, not in `/infra`
 - Keeps infrastructure (CDK) separate from deployment (site files)
 - Architecture doc section 5.3 specifies `yarn deploy` at root
@@ -556,7 +594,7 @@ So that deployments are reliable and recoverable from failures.
 
 ```bash
 #!/bin/bash
-set -e  # Exit on any error
+set -e # Exit on any error
 
 # Prerequisite check
 if [ ! -d "_site" ]; then
@@ -595,12 +633,13 @@ echo "✓ Deployment complete: $UPLOADED_FILES files uploaded"
 **Prerequisites:** Story 3.1 (Deploy script placeholder created)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** Network failures mid-upload leave bucket in broken state
 - `--exact-timestamps` makes script idempotent (re-run only uploads changes)
 - File count check catches incomplete uploads
 - AWS CLI auto-detects MIME types correctly for standard web files
 - Architecture doc section 5.3 shows deploy script example
-- FR8: Upload all files from _site ✓
+- FR8: Upload all files from \_site ✓
 - FR9: Use AWS CLI with profile ✓
 - FR10: Preserve file structure and MIME types ✓
 - FR12: Require yarn build first ✓
@@ -621,21 +660,22 @@ So that unintended infrastructure changes are detected automatically.
 **Then** the test file includes:
 
 ```typescript
-import { Template } from 'aws-cdk-lib/assertions';
-import * as cdk from 'aws-cdk-lib';
-import { NdxStaticStack } from './ndx-stack';
+import { Template } from "aws-cdk-lib/assertions"
+import * as cdk from "aws-cdk-lib"
+import { NdxStaticStack } from "./ndx-stack"
 
-test('Stack snapshot matches expected CloudFormation', () => {
-  const app = new cdk.App();
-  const stack = new NdxStaticStack(app, 'TestStack');
-  const template = Template.fromStack(stack);
+test("Stack snapshot matches expected CloudFormation", () => {
+  const app = new cdk.App()
+  const stack = new NdxStaticStack(app, "TestStack")
+  const template = Template.fromStack(stack)
 
-  expect(template.toJSON()).toMatchSnapshot();
-});
+  expect(template.toJSON()).toMatchSnapshot()
+})
 ```
 
 **And** running `yarn test` generates snapshot file
 **And** snapshot captures complete CloudFormation template including:
+
 - S3 bucket resource definition
 - Bucket properties (encryption, versioning, public access block)
 - Tags
@@ -647,6 +687,7 @@ test('Stack snapshot matches expected CloudFormation', () => {
 **Prerequisites:** Story 3.2 (Deployment script implemented)
 
 **Technical Notes:**
+
 - Snapshot tests provide broad coverage with minimal code
 - Catches ANY unintended CloudFormation changes
 - Jest `toMatchSnapshot()` creates `__snapshots__/` directory
@@ -670,41 +711,44 @@ So that security and configuration requirements are explicitly validated.
 **Then** the test file includes specific property validations:
 
 ```typescript
-test('S3 bucket has correct configuration', () => {
-  const app = new cdk.App();
-  const stack = new NdxStaticStack(app, 'TestStack');
-  const template = Template.fromStack(stack);
+test("S3 bucket has correct configuration", () => {
+  const app = new cdk.App()
+  const stack = new NdxStaticStack(app, "TestStack")
+  const template = Template.fromStack(stack)
 
-  template.hasResourceProperties('AWS::S3::Bucket', {
-    BucketName: 'ndx-static-prod',
+  template.hasResourceProperties("AWS::S3::Bucket", {
+    BucketName: "ndx-static-prod",
     BucketEncryption: {
-      ServerSideEncryptionConfiguration: [{
-        ServerSideEncryptionByDefault: {
-          SSEAlgorithm: 'AES256'
-        }
-      }]
+      ServerSideEncryptionConfiguration: [
+        {
+          ServerSideEncryptionByDefault: {
+            SSEAlgorithm: "AES256",
+          },
+        },
+      ],
     },
     VersioningConfiguration: {
-      Status: 'Enabled'
+      Status: "Enabled",
     },
     PublicAccessBlockConfiguration: {
       BlockPublicAcls: true,
       BlockPublicPolicy: true,
       IgnorePublicAcls: true,
-      RestrictPublicBuckets: true
+      RestrictPublicBuckets: true,
     },
     Tags: [
-      { Key: 'project', Value: 'ndx' },
-      { Key: 'environment', Value: 'prod' },
-      { Key: 'managedby', Value: 'cdk' }
-    ]
-  });
-});
+      { Key: "project", Value: "ndx" },
+      { Key: "environment", Value: "prod" },
+      { Key: "managedby", Value: "cdk" },
+    ],
+  })
+})
 ```
 
 **And** running `yarn test` validates all properties pass
 **And** test failure clearly identifies which property is incorrect
 **And** tests validate NFR requirements:
+
 - Encryption enabled (NFR-SEC-2)
 - Public access blocked (NFR-SEC-1)
 - Versioning enabled (FR22)
@@ -713,6 +757,7 @@ test('S3 bucket has correct configuration', () => {
 **Prerequisites:** Story 3.3 (Snapshot tests created)
 
 **Technical Notes:**
+
 - Fine-grained assertions complement snapshots
 - Explicit validation of security-critical properties
 - CDK assertions library: `Template.hasResourceProperties()`
@@ -758,6 +803,7 @@ echo "✓ Integration test passed"
 **And** test cleans up resources after validation
 **And** test is documented in README as optional quality gate
 **And** test catches issues like:
+
 - Bucket name conflicts
 - IAM permission problems
 - Region availability issues
@@ -765,6 +811,7 @@ echo "✓ Integration test passed"
 **Prerequisites:** Story 3.4 (Assertion tests created)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** Unit tests validate CloudFormation but miss real AWS issues
 - Integration test deploys to actual AWS, catches environment-specific failures
 - Uses CDK context (`--context env=test`) to parameterize bucket name
@@ -787,27 +834,32 @@ So that documentation evolves with the infrastructure and remains accurate.
 **Then** the README includes new sections:
 
 **Section 6: Deployment Process**
+
 - Build site: `yarn build` (from project root)
 - Deploy files: `yarn deploy` (from project root)
 - Verify deployment: [smoke test command from Story 3.7]
 - Access pattern: [From Story 2.3 decision - static hosting or CloudFront required]
 
 **Section 7: Testing**
+
 - Unit tests: `yarn test` (snapshot + assertions)
 - Integration test: `test/integration.sh` (optional)
 - Linting: `yarn lint`
 
 **Section 8: Infrastructure Changes**
+
 - When to re-deploy infrastructure vs just files
 - Infrastructure: `cdk deploy` when `lib/*.ts` changes
 - Files only: `yarn deploy` when `src/` content changes
 
 **Section 9: Maintenance**
+
 - **Document version:** Current version and last updated date
 - **Review cadence:** README reviewed monthly or when infrastructure changes
 - **Update responsibility:** Developer making infrastructure changes updates README
 
 **And** document header includes:
+
 ```markdown
 **Last Updated:** 2025-11-18
 **Document Version:** 1.1
@@ -820,6 +872,7 @@ So that documentation evolves with the infrastructure and remains accurate.
 **Prerequisites:** Story 3.5 (Integration test created)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** Documentation as one-time deliverable goes stale immediately
 - Living document with version/date tracking
 - Maintenance section establishes update responsibility
@@ -862,11 +915,13 @@ echo "Running smoke test..."
 ```
 
 **And** if static hosting enabled (from Story 2.3):
+
 - Script makes HTTP request to S3 website endpoint
 - Validates 200 response
 - Validates index.html contains expected content (basic string match)
 
 **And** if CloudFront required (from Story 2.3):
+
 - Script validates index.html exists in bucket
 - Script outputs message: "Site deployed but not publicly accessible until CloudFront configured"
 
@@ -876,6 +931,7 @@ echo "Running smoke test..."
 **Prerequisites:** Story 3.6 (README enhanced)
 
 **Technical Notes:**
+
 - **PRE-MORTEM INSIGHT:** "Deployment complete" doesn't mean "site works"
 - Smoke test validates actual accessibility/functionality
 - Implementation depends on Story 2.3 access decision
@@ -887,34 +943,34 @@ echo "Running smoke test..."
 
 ## FR Coverage Matrix
 
-| FR | Description | Epic | Stories |
-|----|-------------|------|---------|
-| FR1 | Define S3 bucket as IaC using AWS CDK TypeScript | Epic 2 | Story 2.2 |
-| FR2 | Deploy S3 bucket to us-west-2 using profile | Epic 2 | Story 2.4 |
-| FR3 | Configure S3 for CloudFront origin access | Epic 2 | Story 2.2, 2.3 |
-| FR4 | Validate infrastructure via `cdk synth` | Epic 2 | Story 2.2, 2.4 |
-| FR5 | Preview changes via `cdk diff` | Epic 2 | Story 2.4 |
-| FR6 | Deploy infrastructure via `cdk deploy` | Epic 2 | Story 2.4 |
-| FR7 | Idempotent infrastructure deployments | Epic 2 | Story 2.4 |
-| FR8 | Upload all files from `_site/` to S3 | Epic 3 | Story 3.2 |
-| FR9 | Use AWS CLI with profile for S3 upload | Epic 3 | Story 3.2 |
-| FR10 | Preserve file structure and MIME types | Epic 3 | Story 3.2 |
-| FR11 | Deploy via `yarn deploy` command | Epic 3 | Story 3.1, 3.2 |
-| FR12 | Require `yarn build` before deployment | Epic 3 | Story 3.2 |
-| FR13 | CDK snapshot tests (CloudFormation validation) | Epic 3 | Story 3.3 |
-| FR14 | CDK fine-grained assertions (bucket properties) | Epic 3 | Story 3.4 |
-| FR15 | ESLint with AWS CDK recommended rules | Epic 1 | Story 1.3 |
-| FR16 | Tests must pass before deployment | Epic 3 | Story 3.3, 3.4 |
-| FR17 | Version control with proper .gitignore | Epic 1 | Story 1.4 |
-| FR18 | Infrastructure documented in README | Epic 1, Epic 3 | Story 1.6, 3.6 |
-| FR19 | Deployment workflow documented | Epic 3 | Story 3.6 |
-| FR20 | CDK code follows best practices | Epic 1, Epic 2 | Story 1.3, 2.2 |
-| FR21 | Review infrastructure changes before applying | Epic 2 | Story 2.4 |
-| FR22 | S3 versioning for rollback capability | Epic 2 | Story 2.2 |
-| FR23 | Failed deployment investigation via CloudFormation | Epic 2 | Story 2.4 |
-| FR24 | Infrastructure supports future CloudFront | Epic 2 | Story 2.2, 2.3 |
-| FR25 | Infrastructure supports future OIDC | Epic 1 | Story 1.5 (bootstrap prepares) |
-| FR26 | Infrastructure supports multi-environment contexts | Epic 3 | Story 3.5 (test context) |
+| FR   | Description                                        | Epic           | Stories                        |
+| ---- | -------------------------------------------------- | -------------- | ------------------------------ |
+| FR1  | Define S3 bucket as IaC using AWS CDK TypeScript   | Epic 2         | Story 2.2                      |
+| FR2  | Deploy S3 bucket to us-west-2 using profile        | Epic 2         | Story 2.4                      |
+| FR3  | Configure S3 for CloudFront origin access          | Epic 2         | Story 2.2, 2.3                 |
+| FR4  | Validate infrastructure via `cdk synth`            | Epic 2         | Story 2.2, 2.4                 |
+| FR5  | Preview changes via `cdk diff`                     | Epic 2         | Story 2.4                      |
+| FR6  | Deploy infrastructure via `cdk deploy`             | Epic 2         | Story 2.4                      |
+| FR7  | Idempotent infrastructure deployments              | Epic 2         | Story 2.4                      |
+| FR8  | Upload all files from `_site/` to S3               | Epic 3         | Story 3.2                      |
+| FR9  | Use AWS CLI with profile for S3 upload             | Epic 3         | Story 3.2                      |
+| FR10 | Preserve file structure and MIME types             | Epic 3         | Story 3.2                      |
+| FR11 | Deploy via `yarn deploy` command                   | Epic 3         | Story 3.1, 3.2                 |
+| FR12 | Require `yarn build` before deployment             | Epic 3         | Story 3.2                      |
+| FR13 | CDK snapshot tests (CloudFormation validation)     | Epic 3         | Story 3.3                      |
+| FR14 | CDK fine-grained assertions (bucket properties)    | Epic 3         | Story 3.4                      |
+| FR15 | ESLint with AWS CDK recommended rules              | Epic 1         | Story 1.3                      |
+| FR16 | Tests must pass before deployment                  | Epic 3         | Story 3.3, 3.4                 |
+| FR17 | Version control with proper .gitignore             | Epic 1         | Story 1.4                      |
+| FR18 | Infrastructure documented in README                | Epic 1, Epic 3 | Story 1.6, 3.6                 |
+| FR19 | Deployment workflow documented                     | Epic 3         | Story 3.6                      |
+| FR20 | CDK code follows best practices                    | Epic 1, Epic 2 | Story 1.3, 2.2                 |
+| FR21 | Review infrastructure changes before applying      | Epic 2         | Story 2.4                      |
+| FR22 | S3 versioning for rollback capability              | Epic 2         | Story 2.2                      |
+| FR23 | Failed deployment investigation via CloudFormation | Epic 2         | Story 2.4                      |
+| FR24 | Infrastructure supports future CloudFront          | Epic 2         | Story 2.2, 2.3                 |
+| FR25 | Infrastructure supports future OIDC                | Epic 1         | Story 1.5 (bootstrap prepares) |
+| FR26 | Infrastructure supports multi-environment contexts | Epic 3         | Story 3.5 (test context)       |
 
 **Coverage Validation:** All 26 FRs mapped to stories ✓
 
@@ -935,6 +991,7 @@ echo "Running smoke test..."
 This epic breakdown transforms the NDX Infrastructure Evolution PRD into 17 bite-sized, implementable stories across 3 epics. All 26 functional requirements are covered with full architectural context from the Infrastructure Architecture document.
 
 **Key Strengths:**
+
 - **Pre-mortem insights applied:** Bootstrap story added, bucket validation, error recovery, integration tests, smoke tests, living documentation
 - **Vertical slicing:** Each story delivers complete functionality, not just one layer
 - **Clear prerequisites:** Sequential dependencies only (no forward references)
@@ -945,12 +1002,14 @@ This epic breakdown transforms the NDX Infrastructure Evolution PRD into 17 bite
 - **Living documentation:** README includes version/date and maintenance responsibility
 
 **Implementation Approach:**
+
 1. Execute stories sequentially within each epic
 2. Each story is sized for single developer session completion
 3. All tests must pass before moving to next story
 4. Documentation updated continuously, not at the end
 
 **Context for Phase 4:**
+
 - PRD provides functional requirements (WHAT capabilities)
 - Infrastructure Architecture provides technical decisions (HOW to implement)
 - Epics provide tactical implementation plan (STORY-BY-STORY breakdown)

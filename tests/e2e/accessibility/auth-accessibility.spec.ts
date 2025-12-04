@@ -23,9 +23,7 @@ const TOKEN_KEY = "isb-jwt"
 
 test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
   test.describe("AC #3, #4: WCAG 2.2 AA Compliance Scanning", () => {
-    test("Home page - unauthenticated state (Sign in visible)", async ({
-      page,
-    }) => {
+    test("Home page - unauthenticated state (Sign in visible)", async ({ page }) => {
       await page.goto("/")
 
       // Wait for page to be fully loaded
@@ -40,16 +38,14 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       if (accessibilityScanResults.violations.length > 0) {
         console.log(
           "Accessibility violations on home page (unauthenticated):",
-          JSON.stringify(accessibilityScanResults.violations, null, 2)
+          JSON.stringify(accessibilityScanResults.violations, null, 2),
         )
       }
 
       expect(accessibilityScanResults.violations).toEqual([])
     })
 
-    test("Home page - authenticated state (Sign out visible)", async ({
-      page,
-    }) => {
+    test("Home page - authenticated state (Sign out visible)", async ({ page }) => {
       await page.goto("/")
 
       // Set JWT to simulate authenticated state
@@ -57,7 +53,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
         ([key, token]) => {
           sessionStorage.setItem(key, token)
         },
-        [TOKEN_KEY, TEST_TOKEN]
+        [TOKEN_KEY, TEST_TOKEN],
       )
 
       // Reload to trigger auth state check
@@ -73,7 +69,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       if (accessibilityScanResults.violations.length > 0) {
         console.log(
           "Accessibility violations on home page (authenticated):",
-          JSON.stringify(accessibilityScanResults.violations, null, 2)
+          JSON.stringify(accessibilityScanResults.violations, null, 2),
         )
       }
 
@@ -94,9 +90,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
         })
       } catch {
         // If container not found, just scan what's on the page
-        console.log(
-          "Note: #try-sessions-container h1 not found, scanning existing page"
-        )
+        console.log("Note: #try-sessions-container h1 not found, scanning existing page")
       }
 
       // Run axe accessibility scan
@@ -108,16 +102,14 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       if (accessibilityScanResults.violations.length > 0) {
         console.log(
           "Accessibility violations on /try page (empty state):",
-          JSON.stringify(accessibilityScanResults.violations, null, 2)
+          JSON.stringify(accessibilityScanResults.violations, null, 2),
         )
       }
 
       expect(accessibilityScanResults.violations).toEqual([])
     })
 
-    test("/try page - authenticated state (sessions placeholder)", async ({
-      page,
-    }) => {
+    test("/try page - authenticated state (sessions placeholder)", async ({ page }) => {
       await page.goto("/try")
 
       // Set JWT to simulate authenticated state
@@ -125,7 +117,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
         ([key, token]) => {
           sessionStorage.setItem(key, token)
         },
-        [TOKEN_KEY, TEST_TOKEN]
+        [TOKEN_KEY, TEST_TOKEN],
       )
 
       // Reload to trigger auth state check
@@ -138,9 +130,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
           timeout: 5000,
         })
       } catch {
-        console.log(
-          "Note: #try-sessions-container h1 not found, scanning existing page"
-        )
+        console.log("Note: #try-sessions-container h1 not found, scanning existing page")
       }
 
       // Run axe accessibility scan
@@ -152,7 +142,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       if (accessibilityScanResults.violations.length > 0) {
         console.log(
           "Accessibility violations on /try page (authenticated):",
-          JSON.stringify(accessibilityScanResults.violations, null, 2)
+          JSON.stringify(accessibilityScanResults.violations, null, 2),
         )
       }
 
@@ -161,16 +151,12 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
   })
 
   test.describe("AC #1: Keyboard Navigation", () => {
-    test("Sign in button on /try page is keyboard accessible", async ({
-      page,
-    }) => {
+    test("Sign in button on /try page is keyboard accessible", async ({ page }) => {
       await page.goto("/try")
       await page.waitForLoadState("networkidle")
 
       // Try to find the Story 5.9 sign in button, fall back to any sign in link
-      let signInButton = page.locator(
-        '#try-sessions-container a.govuk-button[href="/api/auth/login"]'
-      )
+      let signInButton = page.locator('#try-sessions-container a.govuk-button[href="/api/auth/login"]')
 
       // Wait for content with shorter timeout
       try {
@@ -194,9 +180,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       await page.goto("/try")
       await page.waitForLoadState("networkidle")
 
-      let signInButton = page.locator(
-        '#try-sessions-container a.govuk-button[href="/api/auth/login"]'
-      )
+      let signInButton = page.locator('#try-sessions-container a.govuk-button[href="/api/auth/login"]')
 
       try {
         await signInButton.waitFor({ timeout: 5000 })
@@ -221,9 +205,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       await page.goto("/try")
       await page.waitForLoadState("networkidle")
 
-      let signInButton = page.locator(
-        '#try-sessions-container a.govuk-button[href="/api/auth/login"]'
-      )
+      let signInButton = page.locator('#try-sessions-container a.govuk-button[href="/api/auth/login"]')
 
       try {
         await signInButton.waitFor({ timeout: 5000 })
@@ -270,9 +252,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       await page.goto("/try")
       await page.waitForLoadState("networkidle")
 
-      let signInButton = page.locator(
-        '#try-sessions-container a.govuk-button[href="/api/auth/login"]'
-      )
+      let signInButton = page.locator('#try-sessions-container a.govuk-button[href="/api/auth/login"]')
 
       try {
         await signInButton.waitFor({ timeout: 5000 })
@@ -320,9 +300,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       await page.goto("/try")
       await page.waitForLoadState("networkidle")
 
-      const signInButton = page.locator(
-        '#try-sessions-container a.govuk-button[href="/api/auth/login"]'
-      )
+      const signInButton = page.locator('#try-sessions-container a.govuk-button[href="/api/auth/login"]')
 
       try {
         await signInButton.waitFor({ timeout: 5000 })
@@ -368,7 +346,7 @@ test.describe("Auth UI Accessibility - Callback Page", () => {
     if (accessibilityScanResults.violations.length > 0) {
       console.log(
         "Accessibility violations on callback page:",
-        JSON.stringify(accessibilityScanResults.violations, null, 2)
+        JSON.stringify(accessibilityScanResults.violations, null, 2),
       )
     }
 

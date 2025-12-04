@@ -10,18 +10,18 @@ so that **I cannot proceed without seeing the complete session terms and AUP con
 
 ## Acceptance Criteria
 
-| ID | Criterion | Test Approach |
-|----|-----------|---------------|
-| AC-1 | Button disabled when AUP loading | State: isLoading test |
-| AC-2 | Button disabled when lease template loading | State: leaseTemplateLoading test |
-| AC-3 | Button disabled when AUP failed (fallback shown) | State: aupLoaded false test |
-| AC-4 | Button disabled when lease template failed | State: leaseTemplateError test |
-| AC-5 | Button disabled when checkbox unchecked | State: aupAccepted test |
-| AC-6 | Button enabled only when all three conditions met | State: isFullyLoaded && aupAccepted |
-| AC-7 | Button re-disables if user unchecks checkbox | Interaction: toggle checkbox test |
-| AC-8 | Screen reader announces button state changes | A11y: ARIA live region test |
-| AC-9 | Race: checkbox checked while loading -> button stays disabled | Race condition test |
-| AC-10 | Race: template loads while checkbox checked -> button enables | Race condition test |
+| ID    | Criterion                                                     | Test Approach                       |
+| ----- | ------------------------------------------------------------- | ----------------------------------- |
+| AC-1  | Button disabled when AUP loading                              | State: isLoading test               |
+| AC-2  | Button disabled when lease template loading                   | State: leaseTemplateLoading test    |
+| AC-3  | Button disabled when AUP failed (fallback shown)              | State: aupLoaded false test         |
+| AC-4  | Button disabled when lease template failed                    | State: leaseTemplateError test      |
+| AC-5  | Button disabled when checkbox unchecked                       | State: aupAccepted test             |
+| AC-6  | Button enabled only when all three conditions met             | State: isFullyLoaded && aupAccepted |
+| AC-7  | Button re-disables if user unchecks checkbox                  | Interaction: toggle checkbox test   |
+| AC-8  | Screen reader announces button state changes                  | A11y: ARIA live region test         |
+| AC-9  | Race: checkbox checked while loading -> button stays disabled | Race condition test                 |
+| AC-10 | Race: template loads while checkbox checked -> button enables | Race condition test                 |
 
 ## Tasks / Subtasks
 
@@ -72,9 +72,9 @@ so that **I cannot proceed without seeing the complete session terms and AUP con
 
 ### Source Tree Components
 
-| Component | Path | Action |
-|-----------|------|--------|
-| AUP Modal | `src/try/ui/components/aup-modal.ts` | MODIFY |
+| Component       | Path                                      | Action |
+| --------------- | ----------------------------------------- | ------ |
+| AUP Modal       | `src/try/ui/components/aup-modal.ts`      | MODIFY |
 | AUP Modal Tests | `src/try/ui/components/aup-modal.test.ts` | MODIFY |
 
 ### Testing Standards
@@ -143,25 +143,29 @@ claude-opus-4-5-20251101
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-12-02 | 1.0.0 | Story implementation complete - 10/10 ACs satisfied, 66 tests passing |
-| 2025-12-02 | 1.0.1 | Senior Developer Review notes appended - APPROVED |
+| Date       | Version | Description                                                           |
+| ---------- | ------- | --------------------------------------------------------------------- |
+| 2025-12-02 | 1.0.0   | Story implementation complete - 10/10 ACs satisfied, 66 tests passing |
+| 2025-12-02 | 1.0.1   | Senior Developer Review notes appended - APPROVED                     |
 
 ---
 
 ## Senior Developer Review (AI)
 
 ### Reviewer
+
 cns
 
 ### Date
+
 2025-12-02
 
 ### Outcome
+
 **APPROVE** - All acceptance criteria implemented with comprehensive test coverage
 
 ### Summary
+
 Story 9.3 successfully implements all-or-nothing button gating logic for the AUP modal. The Continue button now remains disabled until both AUP content and lease template data have loaded successfully, and the checkbox is checked. This prevents users from accepting terms they haven't fully seen. Implementation follows established patterns and maintains WCAG 2.2 AA accessibility compliance.
 
 ### Key Findings
@@ -169,46 +173,47 @@ Story 9.3 successfully implements all-or-nothing button gating logic for the AUP
 **No HIGH or MEDIUM severity issues found.**
 
 **LOW severity (informational):**
+
 - Note: Story file task checkboxes were not updated during development (now corrected in this review)
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC-1 | Button disabled when AUP loading | ✅ IMPLEMENTED | `aup-modal.ts:655` via `isFullyLoaded` |
-| AC-2 | Button disabled when lease template loading | ✅ IMPLEMENTED | `aup-modal.ts:655` via `isFullyLoaded` |
-| AC-3 | Button disabled when AUP failed (fallback shown) | ✅ IMPLEMENTED | `aup-modal.ts:215-226` sets `aupLoaded=false` |
-| AC-4 | Button disabled when lease template failed | ✅ IMPLEMENTED | `aup-modal.ts:145` checks `leaseTemplateData !== null` |
-| AC-5 | Button disabled when checkbox unchecked | ✅ IMPLEMENTED | `aup-modal.ts:655` `!this.state.aupAccepted` |
-| AC-6 | Button enabled when all conditions met | ✅ IMPLEMENTED | `aup-modal.ts:655-656` all-or-nothing logic |
-| AC-7 | Button re-disables on uncheck | ✅ IMPLEMENTED | `aup-modal.ts:581-582` updateButtons() on change |
-| AC-8 | Screen reader announces state changes | ✅ IMPLEMENTED | `aup-modal.ts:668-671` announce() on enable |
-| AC-9 | Race: checkbox before load | ✅ IMPLEMENTED | Test `aup-modal.test.ts:960-995` |
-| AC-10 | Race: load after checkbox | ✅ IMPLEMENTED | Test `aup-modal.test.ts:997-1030` |
+| AC#   | Description                                      | Status         | Evidence                                               |
+| ----- | ------------------------------------------------ | -------------- | ------------------------------------------------------ |
+| AC-1  | Button disabled when AUP loading                 | ✅ IMPLEMENTED | `aup-modal.ts:655` via `isFullyLoaded`                 |
+| AC-2  | Button disabled when lease template loading      | ✅ IMPLEMENTED | `aup-modal.ts:655` via `isFullyLoaded`                 |
+| AC-3  | Button disabled when AUP failed (fallback shown) | ✅ IMPLEMENTED | `aup-modal.ts:215-226` sets `aupLoaded=false`          |
+| AC-4  | Button disabled when lease template failed       | ✅ IMPLEMENTED | `aup-modal.ts:145` checks `leaseTemplateData !== null` |
+| AC-5  | Button disabled when checkbox unchecked          | ✅ IMPLEMENTED | `aup-modal.ts:655` `!this.state.aupAccepted`           |
+| AC-6  | Button enabled when all conditions met           | ✅ IMPLEMENTED | `aup-modal.ts:655-656` all-or-nothing logic            |
+| AC-7  | Button re-disables on uncheck                    | ✅ IMPLEMENTED | `aup-modal.ts:581-582` updateButtons() on change       |
+| AC-8  | Screen reader announces state changes            | ✅ IMPLEMENTED | `aup-modal.ts:668-671` announce() on enable            |
+| AC-9  | Race: checkbox before load                       | ✅ IMPLEMENTED | Test `aup-modal.test.ts:960-995`                       |
+| AC-10 | Race: load after checkbox                        | ✅ IMPLEMENTED | Test `aup-modal.test.ts:997-1030`                      |
 
 **Summary: 10 of 10 acceptance criteria fully implemented**
 
 ### Task Completion Validation
 
-| Task | Marked | Verified | Evidence |
-|------|--------|----------|----------|
-| 1.1 Add aupLoaded to interface | [x] | ✅ DONE | aup-modal.ts:62-63 |
-| 1.2 Initialize aupLoaded: false | [x] | ✅ DONE | aup-modal.ts:127-128 |
-| 1.3 Set aupLoaded=true on success | [x] | ✅ DONE | aup-modal.ts:208-209 |
-| 1.4 Reset aupLoaded on close | [x] | ✅ DONE | aup-modal.ts:379-380 |
-| 2.1 Add isFullyLoaded getter | [x] | ✅ DONE | aup-modal.ts:144-146 |
-| 2.2 Update getState() | [x] | ✅ DONE | aup-modal.ts:475-476 |
-| 3.1 Gate on isFullyLoaded | [x] | ✅ DONE | aup-modal.ts:655 |
-| 3.2 Show "Loading..." text | [x] | ✅ DONE | aup-modal.ts:662-663 |
-| 3.3 Maintain aupAccepted check | [x] | ✅ DONE | aup-modal.ts:655 |
-| 3.4 Maintain isLoading check | [x] | ✅ DONE | aup-modal.ts:655 |
-| 3.5 Re-disable on uncheck | [x] | ✅ DONE | aup-modal.ts:581-582 |
-| 4.1 Announce button enable | [x] | ✅ DONE | aup-modal.ts:668-671 |
-| 4.2 Use announce() utility | [x] | ✅ DONE | aup-modal.ts:31 import |
-| 5.1 updateButtons() after state | [x] | ✅ DONE | aup-modal.ts:231, 272, 287-288 |
-| 5.2 Preserve checkbox state | [x] | ✅ DONE | Test aup-modal.test.ts:960-995 |
-| 5.3 Enable immediately | [x] | ✅ DONE | Test aup-modal.test.ts:997-1030 |
-| 6.1-6.10 Unit tests | [x] | ✅ DONE | aup-modal.test.ts:842-1055 |
+| Task                              | Marked | Verified | Evidence                        |
+| --------------------------------- | ------ | -------- | ------------------------------- |
+| 1.1 Add aupLoaded to interface    | [x]    | ✅ DONE  | aup-modal.ts:62-63              |
+| 1.2 Initialize aupLoaded: false   | [x]    | ✅ DONE  | aup-modal.ts:127-128            |
+| 1.3 Set aupLoaded=true on success | [x]    | ✅ DONE  | aup-modal.ts:208-209            |
+| 1.4 Reset aupLoaded on close      | [x]    | ✅ DONE  | aup-modal.ts:379-380            |
+| 2.1 Add isFullyLoaded getter      | [x]    | ✅ DONE  | aup-modal.ts:144-146            |
+| 2.2 Update getState()             | [x]    | ✅ DONE  | aup-modal.ts:475-476            |
+| 3.1 Gate on isFullyLoaded         | [x]    | ✅ DONE  | aup-modal.ts:655                |
+| 3.2 Show "Loading..." text        | [x]    | ✅ DONE  | aup-modal.ts:662-663            |
+| 3.3 Maintain aupAccepted check    | [x]    | ✅ DONE  | aup-modal.ts:655                |
+| 3.4 Maintain isLoading check      | [x]    | ✅ DONE  | aup-modal.ts:655                |
+| 3.5 Re-disable on uncheck         | [x]    | ✅ DONE  | aup-modal.ts:581-582            |
+| 4.1 Announce button enable        | [x]    | ✅ DONE  | aup-modal.ts:668-671            |
+| 4.2 Use announce() utility        | [x]    | ✅ DONE  | aup-modal.ts:31 import          |
+| 5.1 updateButtons() after state   | [x]    | ✅ DONE  | aup-modal.ts:231, 272, 287-288  |
+| 5.2 Preserve checkbox state       | [x]    | ✅ DONE  | Test aup-modal.test.ts:960-995  |
+| 5.3 Enable immediately            | [x]    | ✅ DONE  | Test aup-modal.test.ts:997-1030 |
+| 6.1-6.10 Unit tests               | [x]    | ✅ DONE  | aup-modal.test.ts:842-1055      |
 
 **Summary: 17 of 17 completed tasks verified, 0 questionable, 0 false completions**
 
@@ -243,7 +248,9 @@ Story 9.3 successfully implements all-or-nothing button gating logic for the AUP
 ### Action Items
 
 **Code Changes Required:**
+
 - None
 
 **Advisory Notes:**
+
 - Note: Consider adding E2E tests for button gating behavior in future sprint

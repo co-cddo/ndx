@@ -21,13 +21,13 @@ The custom header template (`src/_includes/components/header/template.njk`) cont
 
 ### Evidence
 
-| Component | Expected | Actual |
-|-----------|----------|--------|
-| Header template | Custom header with nav + `#auth-nav` | Plugin's minimal header (logo only) |
-| `<main>` content | `#try-sessions-container` div | Empty `<main>` element |
-| Navigation | Header navigation items + auth | Service navigation in separate div |
-| `try.bundle.js` | Included in page | Missing from output |
-| E2E tests | 24/24 passing | 15/24 passing (9 failures) |
+| Component        | Expected                             | Actual                              |
+| ---------------- | ------------------------------------ | ----------------------------------- |
+| Header template  | Custom header with nav + `#auth-nav` | Plugin's minimal header (logo only) |
+| `<main>` content | `#try-sessions-container` div        | Empty `<main>` element              |
+| Navigation       | Header navigation items + auth       | Service navigation in separate div  |
+| `try.bundle.js`  | Included in page                     | Missing from output                 |
+| E2E tests        | 24/24 passing                        | 15/24 passing (9 failures)          |
 
 ---
 
@@ -35,15 +35,16 @@ The custom header template (`src/_includes/components/header/template.njk`) cont
 
 ### Epic Impact
 
-| Epic | Status | Stories Affected |
-|------|--------|------------------|
+| Epic   | Status | Stories Affected    |
+| ------ | ------ | ------------------- |
 | Epic 5 | Review | 5-1, 5-5, 5-9, 5-11 |
-| Epic 7 | Review | 7-1 |
-| Epic 8 | Review | 8-0 |
+| Epic 7 | Review | 7-1                 |
+| Epic 8 | Review | 8-0                 |
 
 ### Root Cause
 
 The `govukEleventyPlugin` uses TWO different header patterns:
+
 1. **Header Navigation Pattern** - Navigation in header (what custom template uses)
 2. **Service Navigation Pattern** - Separate service nav below header (what plugin renders)
 
@@ -76,6 +77,7 @@ The custom header template exists at `src/_includes/components/header/template.n
 **Action:** Research how @x-govuk/govuk-eleventy-plugin handles header template overrides
 
 **Options to investigate:**
+
 1. Plugin may need `header.template` config option pointing to custom template
 2. Custom template may need to be in `_includes/layouts/` not `_includes/components/`
 3. Plugin may use Nunjucks block override pattern (extending base template)
@@ -97,6 +99,7 @@ serviceNavigation: {
 ### Change 3: Fix Try Page Content Rendering
 
 **Investigation:**
+
 - Check if `layout: base.njk` is correctly resolving
 - Verify Nunjucks template inheritance is working
 - Check if content block is being rendered

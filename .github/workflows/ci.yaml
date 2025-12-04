@@ -3,17 +3,17 @@ name: CI
 on:
   push:
     branches:
-      - try/aws  # Change to 'main' after testing
+      - try/aws # Change to 'main' after testing
     tags:
       - "v*.*.*"
     paths-ignore:
-      - 'infra/**'  # Infra changes trigger infra.yaml instead
-      - 'docs/**'
+      - "infra/**" # Infra changes trigger infra.yaml instead
+      - "docs/**"
   pull_request:
     branches:
-      - try/aws  # Change to 'main' after testing
+      - try/aws # Change to 'main' after testing
     paths-ignore:
-      - 'infra/**'
+      - "infra/**"
 
 permissions: read-all
 
@@ -110,12 +110,12 @@ jobs:
     name: Deploy to S3
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # Required for OIDC
+      id-token: write # Required for OIDC
       contents: read
     needs:
       - build
       - test
-    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }}  # Change to 'main' after testing
+    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }} # Change to 'main' after testing
     environment:
       name: production
       url: https://ndx.digital.cabinet-office.gov.uk

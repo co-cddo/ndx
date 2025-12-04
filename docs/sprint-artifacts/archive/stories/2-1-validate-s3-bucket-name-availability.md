@@ -52,18 +52,21 @@ So that deployment won't fail due to global bucket name conflicts.
 ### Architecture Patterns and Constraints
 
 **S3 Bucket Global Uniqueness** [Source: docs/epics.md#Story-2.1-Technical-Notes]
+
 - S3 bucket names are globally unique across ALL AWS accounts
 - Hard-coding `ndx-static-prod` assumes it's available
 - Failure discovered at deploy time is too late
 - Early validation prevents wasted effort on Story 2.2
 
 **Bucket Naming Strategy** [Source: docs/infrastructure-architecture.md#Naming-Conventions]
+
 - Pattern: `ndx-{resource-type}-{environment}`
 - Primary name: `ndx-static-prod`
 - Alternative pattern if unavailable: `ndx-static-prod-{unique-suffix}`
 - CDK can auto-generate unique names using logical ID + hash if needed
 
 **Architecture Document Update Location** [Source: docs/infrastructure-architecture.md#Data-Architecture]
+
 - Section 7: Data Architecture
 - Subsection: S3 Bucket Configuration
 - Current specification: Bucket name `ndx-static-prod`
@@ -81,6 +84,7 @@ So that deployment won't fail due to global bucket name conflicts.
 - **Documentation Pattern**: All commands include `--profile NDX/InnovationSandboxHub`
 
 **Key Infrastructure State:**
+
 - CDK project fully initialized and configured
 - Yarn, TypeScript, ESLint all working
 - Bootstrap complete in us-west-2 region
@@ -88,6 +92,7 @@ So that deployment won't fail due to global bucket name conflicts.
 - **Next Step**: Begin Epic 2 infrastructure deployment
 
 **Documentation to Update if Bucket Name Changes:**
+
 - /infra/README.md (not yet created deployment sections, will be in Epic 3)
 - docs/infrastructure-architecture.md (Section 7: Data Architecture)
 - docs/epics.md (Epic 2, Story 2.2 bucket name)
@@ -95,9 +100,11 @@ So that deployment won't fail due to global bucket name conflicts.
 
 **AWS CLI Validation Available:**
 The previous story confirmed AWS CLI access works:
+
 ```bash
 aws sts get-caller-identity --profile NDX/InnovationSandboxHub
 ```
+
 This same profile will be used for bucket availability check.
 
 [Source: docs/sprint-artifacts/1-6-create-initial-infrastructure-readme.md#Dev-Agent-Record]
@@ -105,22 +112,26 @@ This same profile will be used for bucket availability check.
 ### Project Structure Notes
 
 **AWS Account Information** [Source: docs/sprint-artifacts/1-6-create-initial-infrastructure-readme.md]
+
 - Account ID: 568672915267
 - Region: us-west-2
 - Profile: NDX/InnovationSandboxHub
 - Bootstrap: Complete (CDKToolkit stack exists)
 
 **Bucket Availability Check Command** [Source: docs/epics.md#Story-2.1]
+
 ```bash
 aws s3api head-bucket --bucket ndx-static-prod --profile NDX/InnovationSandboxHub 2>&1
 ```
 
 **Expected Outcomes:**
+
 - **404 Not Found**: Bucket doesn't exist (desired outcome, proceed with Story 2.2)
 - **200 OK**: Bucket exists and we have access (investigate ownership)
 - **403 Forbidden**: Bucket exists but owned by another account (choose alternative name)
 
 **Alternative Naming Options if Unavailable:**
+
 1. Add unique suffix: `ndx-static-prod-568672915267` (using account ID)
 2. Add random suffix: `ndx-static-prod-a1b2c3`
 3. Use CDK auto-generated names: Let CDK append hash to logical ID
@@ -132,12 +143,14 @@ aws s3api head-bucket --bucket ndx-static-prod --profile NDX/InnovationSandboxHu
 This story implements a pre-mortem insight: validate bucket name availability BEFORE writing infrastructure code in Story 2.2, preventing wasted development effort and deployment failures.
 
 **Validation Approach:**
+
 1. Use AWS CLI `s3api head-bucket` command (faster than Console)
 2. Document outcome in story Dev Agent Record
 3. Update all affected documentation files if name changes
 4. Verify consistency across PRD, Architecture, Epics before marking story done
 
 **Quality Gate:**
+
 - Bucket name decision must be documented
 - All documentation files must reflect consistent bucket name
 - If name changes, rationale must be documented in architecture doc
@@ -202,31 +215,31 @@ Story 2.1 successfully validates S3 bucket name availability and implements a cr
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC #1 | Run AWS CLI to check bucket existence, handle both cases (404 or 200/403) | **IMPLEMENTED** | Story file Completion Notes #1: Command executed `aws s3api head-bucket --bucket ndx-static-prod --profile NDX/InnovationSandboxHub 2>&1`, returned 404 (Not Found). Case 1 outcome correctly handled. |
-| AC #2 | Document final bucket name decision in architecture doc | **IMPLEMENTED** | docs/infrastructure-architecture.md:405-409 - "Availability Validation" section documents validation date (2025-11-18), method (AWS CLI head-bucket), outcome (404), and decision (proceed with ndx-static-prod). |
-| AC #3 | If bucket exists, investigate ownership and determine control | **IMPLEMENTED** | AC was conditional. Bucket does NOT exist (404 returned), so ownership investigation was correctly not performed. Condition properly handled. |
+| AC#   | Description                                                               | Status          | Evidence                                                                                                                                                                                                          |
+| ----- | ------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC #1 | Run AWS CLI to check bucket existence, handle both cases (404 or 200/403) | **IMPLEMENTED** | Story file Completion Notes #1: Command executed `aws s3api head-bucket --bucket ndx-static-prod --profile NDX/InnovationSandboxHub 2>&1`, returned 404 (Not Found). Case 1 outcome correctly handled.            |
+| AC #2 | Document final bucket name decision in architecture doc                   | **IMPLEMENTED** | docs/infrastructure-architecture.md:405-409 - "Availability Validation" section documents validation date (2025-11-18), method (AWS CLI head-bucket), outcome (404), and decision (proceed with ndx-static-prod). |
+| AC #3 | If bucket exists, investigate ownership and determine control             | **IMPLEMENTED** | AC was conditional. Bucket does NOT exist (404 returned), so ownership investigation was correctly not performed. Condition properly handled.                                                                     |
 
 **Summary:** 3 of 3 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Verify bucket name availability | Complete | **VERIFIED** | Completion Notes #1: AWS CLI command executed with documented outcome (404). Task fully completed. |
-| Subtask 1.1: Run AWS CLI command | Complete | **VERIFIED** | Completion Notes #1 documents exact command and result |
-| Subtask 1.2: Document outcome | Complete | **VERIFIED** | Completion Notes #1-2 document 404 outcome and decision |
-| Subtask 1.3-1.5: Handle existence cases | Complete | **VERIFIED** | Case 1 (bucket doesn't exist) correctly handled, Cases 2-5 not applicable |
-| Task 2: Document bucket name decision | Complete | **VERIFIED** | docs/infrastructure-architecture.md:405-409 contains validation section |
-| Subtask 2.1: Update architecture doc | Complete | **VERIFIED** | Validation section added with all required details |
-| Subtask 2.2: Update epics.md if name changed | Complete | **VERIFIED** | Bucket name NOT changed (ndx-static-prod confirmed), no update needed - correctly skipped |
-| Subtask 2.3: Document rationale | Complete | **VERIFIED** | Rationale documented: "404 (Not Found), confirming bucket does not exist" |
-| Subtask 2.4: Update naming pattern if changed | Complete | **VERIFIED** | Naming pattern NOT changed, no update needed - correctly skipped |
-| Task 3: Verify consistency across docs | Complete | **VERIFIED** | Completion Notes #4: grep verification performed across PRD (5 refs), Epics (10 refs), Architecture |
-| Subtask 3.1: Confirm consistency | Complete | **VERIFIED** | Completion Notes list references found in each document |
-| Subtask 3.2: Update sprint-status if needed | Complete | **VERIFIED** | No changes needed (bucket name unchanged), correctly skipped |
-| Subtask 3.3: Verify no hardcoded names need updating | Complete | **VERIFIED** | All references confirmed consistent at ndx-static-prod |
+| Task                                                 | Marked As | Verified As  | Evidence                                                                                            |
+| ---------------------------------------------------- | --------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| Task 1: Verify bucket name availability              | Complete  | **VERIFIED** | Completion Notes #1: AWS CLI command executed with documented outcome (404). Task fully completed.  |
+| Subtask 1.1: Run AWS CLI command                     | Complete  | **VERIFIED** | Completion Notes #1 documents exact command and result                                              |
+| Subtask 1.2: Document outcome                        | Complete  | **VERIFIED** | Completion Notes #1-2 document 404 outcome and decision                                             |
+| Subtask 1.3-1.5: Handle existence cases              | Complete  | **VERIFIED** | Case 1 (bucket doesn't exist) correctly handled, Cases 2-5 not applicable                           |
+| Task 2: Document bucket name decision                | Complete  | **VERIFIED** | docs/infrastructure-architecture.md:405-409 contains validation section                             |
+| Subtask 2.1: Update architecture doc                 | Complete  | **VERIFIED** | Validation section added with all required details                                                  |
+| Subtask 2.2: Update epics.md if name changed         | Complete  | **VERIFIED** | Bucket name NOT changed (ndx-static-prod confirmed), no update needed - correctly skipped           |
+| Subtask 2.3: Document rationale                      | Complete  | **VERIFIED** | Rationale documented: "404 (Not Found), confirming bucket does not exist"                           |
+| Subtask 2.4: Update naming pattern if changed        | Complete  | **VERIFIED** | Naming pattern NOT changed, no update needed - correctly skipped                                    |
+| Task 3: Verify consistency across docs               | Complete  | **VERIFIED** | Completion Notes #4: grep verification performed across PRD (5 refs), Epics (10 refs), Architecture |
+| Subtask 3.1: Confirm consistency                     | Complete  | **VERIFIED** | Completion Notes list references found in each document                                             |
+| Subtask 3.2: Update sprint-status if needed          | Complete  | **VERIFIED** | No changes needed (bucket name unchanged), correctly skipped                                        |
+| Subtask 3.3: Verify no hardcoded names need updating | Complete  | **VERIFIED** | All references confirmed consistent at ndx-static-prod                                              |
 
 **Summary:** 13 of 13 completed tasks verified ✓
 
@@ -237,6 +250,7 @@ Story 2.1 successfully validates S3 bucket name availability and implements a cr
 ### Test Coverage and Gaps
 
 **Testing Performed:**
+
 - Manual validation via AWS CLI (appropriate for discovery/validation story)
 - Documentation consistency verification (grep across all docs)
 - No code implementation, therefore no unit/integration tests required
@@ -246,6 +260,7 @@ Story 2.1 successfully validates S3 bucket name availability and implements a cr
 ### Architectural Alignment
 
 **Fully aligned with architecture:**
+
 - Infrastructure Architecture naming convention followed (ndx-{resource}-{environment}) ✓
 - Bucket name decision documented in correct location (Section 7: Data Architecture) ✓
 - Pre-mortem insight successfully implemented (Story 2.1 Technical Notes) ✓
@@ -264,12 +279,14 @@ Story 2.1 successfully validates S3 bucket name availability and implements a cr
 ### Best-Practices and References
 
 **Documentation Best Practices:**
+
 - Validation decision documented with date, method, outcome, and rationale
 - Evidence trail maintained in story Completion Notes
 - Consistent bucket naming verified across all documentation
 - Pre-mortem risk mitigation successfully applied
 
 **References:**
+
 - [AWS CLI S3 API Documentation](https://docs.aws.amazon.com/cli/latest/reference/s3api/head-bucket.html)
 - [S3 Bucket Naming Rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html)
 

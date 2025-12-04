@@ -10,35 +10,35 @@
 // - URIs without file extension get /index.html appended
 
 function handler(event) {
-  var request = event.request;
-  var cookies = request.cookies || {};
-  var uri = request.uri;
+  var request = event.request
+  var cookies = request.cookies || {}
+  var uri = request.uri
 
   // Handle directory-style URLs for S3 compatibility
-  if (uri.endsWith('/')) {
-    request.uri = uri + 'index.html';
-  } else if (uri.indexOf('.') === -1) {
+  if (uri.endsWith("/")) {
+    request.uri = uri + "index.html"
+  } else if (uri.indexOf(".") === -1) {
     // No file extension - treat as directory
-    request.uri = uri + '/index.html';
+    request.uri = uri + "/index.html"
   }
 
   // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
-  var ndxCookie = cookies['NDX'];
+  var ndxCookie = cookies["NDX"]
 
-  if (ndxCookie && ndxCookie.value === 'legacy') {
+  if (ndxCookie && ndxCookie.value === "legacy") {
     // Use default cache behavior origin (old S3Origin) - no modification
-    return request;
+    return request
   }
 
   // Default: route to ndx-static-prod with OAC authentication
   request.origin = {
     s3: {
-      domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-      region: 'us-west-2',
-      authMethod: 'origin-access-control',
-      originAccessControlId: 'E3P8MA1G9Y5BYE'
-    }
-  };
+      domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+      region: "us-west-2",
+      authMethod: "origin-access-control",
+      originAccessControlId: "E3P8MA1G9Y5BYE",
+    },
+  }
 
-  return request;
+  return request
 }

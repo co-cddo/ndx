@@ -36,6 +36,7 @@ So that documentation evolves with the infrastructure and remains accurate.
    - **Update responsibility:** Developer making infrastructure changes updates README
 
 2. **And** document header includes:
+
    ```markdown
    **Last Updated:** 2025-11-18
    **Document Version:** 1.1
@@ -77,7 +78,7 @@ So that documentation evolves with the infrastructure and remains accurate.
 
 - [x] Task 4: Add Infrastructure Changes section (AC: #1, #3)
   - [x] Create new "Infrastructure Changes" section after "Deployment Process"
-  - [x] Explain when to run `cdk deploy` (when lib/*.ts files change)
+  - [x] Explain when to run `cdk deploy` (when lib/\*.ts files change)
   - [x] Explain when to run `yarn deploy` (when src/ content changes but infrastructure unchanged)
   - [x] Provide decision flowchart or clear criteria
   - [x] Include AWS profile in all command examples
@@ -128,6 +129,7 @@ So that documentation evolves with the infrastructure and remains accurate.
 **Living Documentation Strategy** [Source: docs/epics.md#Story-3.6-Technical-Notes]
 
 Documentation as living document, not one-time artifact:
+
 - Include version/date to track when last updated
 - Will be enhanced in Epic 3 with deployment script details
 - Architecture doc section 11 provides structure template
@@ -136,6 +138,7 @@ Documentation as living document, not one-time artifact:
 **Pre-Mortem Insight** [Source: docs/epics.md#Story-3.6]
 
 Documentation as one-time deliverable goes stale immediately:
+
 - Living document with version/date tracking
 - Maintenance section establishes update responsibility
 - Monthly review cadence or when infrastructure changes
@@ -144,6 +147,7 @@ Documentation as one-time deliverable goes stale immediately:
 **NFR-MAINT-5: Living Documentation** [Source: docs/sprint-artifacts/tech-spec-epic-3.md#NFR-MAINT-5]
 
 `/infra/README.md` includes:
+
 - Version and last updated date
 - Maintenance section establishes update responsibility
 - Monthly review cadence or when infrastructure changes
@@ -162,6 +166,7 @@ Documentation as one-time deliverable goes stale immediately:
 Story 3.5 added integration test documentation to README. Story 3.6 enhances with deployment automation details and establishes living document maintenance process.
 
 **Reuse Patterns:**
+
 - Follow existing documentation structure and style
 - Maintain AWS profile consistency in all command examples
 - Use same subsection patterns: purpose, commands, expected output
@@ -169,6 +174,7 @@ Story 3.5 added integration test documentation to README. Story 3.6 enhances wit
 - Preserve existing content quality
 
 **Foundation for Story 3.6:**
+
 - README structure established (sections 1-7 complete)
 - Integration test documentation is comprehensive
 - AWS profile pattern consistent throughout
@@ -180,6 +186,7 @@ Story 3.5 added integration test documentation to README. Story 3.6 enhances wit
 ### Current README Structure (Story 1.6 + Story 3.5)
 
 **Existing Sections:**
+
 1. Header with version 1.0 and last updated 2025-11-18
 2. Overview
 3. Prerequisites
@@ -191,6 +198,7 @@ Story 3.5 added integration test documentation to README. Story 3.6 enhances wit
 9. Additional Resources
 
 **Missing Sections to Add:**
+
 - Deployment Process (separate from infrastructure deployment)
 - Testing (reorganize from Development Workflow)
 - Infrastructure Changes (when to redeploy infrastructure vs files)
@@ -201,6 +209,7 @@ Story 3.5 added integration test documentation to README. Story 3.6 enhances wit
 **From Story 3.1 & 3.2** [Source: docs/epics.md#Story-3.1, #Story-3.2]
 
 Deployment automation:
+
 - Root package.json has `yarn deploy` script pointing to `scripts/deploy.sh`
 - Deploy script validates `_site/` exists before upload
 - Uses AWS CLI S3 sync with `--profile NDX/InnovationSandboxHub`
@@ -211,6 +220,7 @@ Deployment automation:
 **From Story 2.3** [Source: docs/infrastructure-architecture.md#Data-Architecture]
 
 Access pattern decision:
+
 - CloudFront required for site access
 - Site not publicly accessible in MVP
 - Files uploaded successfully but return 403 Forbidden
@@ -219,6 +229,7 @@ Access pattern decision:
 **From Story 3.7** [Source: docs/epics.md#Story-3.7]
 
 Post-deployment smoke test:
+
 - Validates files uploaded to S3
 - Reports site not publicly accessible (CloudFront required)
 - Smoke test command will be added to deploy.sh in Story 3.7
@@ -226,6 +237,7 @@ Post-deployment smoke test:
 ### Functional Requirements Coverage
 
 This story implements:
+
 - **FR18:** Infrastructure documented in README ✓
 - **FR19:** Deployment workflow documented ✓
 - **NFR-MAINT-5:** Complete setup instructions ✓
@@ -234,6 +246,7 @@ This story implements:
 ### Testing Standards
 
 **README Validation:**
+
 - All sections present and complete
 - All command examples use correct AWS profile
 - Markdown formatting valid
@@ -261,6 +274,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Implementation Plan:**
+
 1. Analyze current README structure (version 1.0) and identify gaps
 2. Update document header from version 1.0 to 1.1
 3. Reorganize Development Workflow section - keep Preview/Deploy, move testing out
@@ -272,6 +286,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 9. Validate README completeness and commit changes
 
 **Execution:**
+
 - Analyzed existing README structure (9 sections, version 1.0)
 - Updated document version header from 1.0 to 1.1
 - Reorganized Development Workflow: kept Preview/Deploy subsections, removed testing content
@@ -342,6 +357,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### File List
 
 **MODIFIED:**
+
 - infra/README.md - Enhanced with Testing, Deployment Process, Infrastructure Changes, and Maintenance sections. Updated version 1.0 → 1.1. Reorganized Development Workflow. All acceptance criteria satisfied.
 
 ---
@@ -362,28 +378,28 @@ Story 3.6 successfully implements all acceptance criteria with excellent documen
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | README includes new sections (Testing, Deployment Process, Infrastructure Changes, Maintenance) | IMPLEMENTED | infra/README.md:118-182 (Testing), 185-260 (Deployment Process), 263-331 (Infrastructure Changes), 334-373 (Maintenance) ✓ |
-| AC2 | Document header includes Last Updated: 2025-11-18, Document Version: 1.1, Review instruction | IMPLEMENTED | infra/README.md:3-5 (all three elements present) ✓ |
-| AC3 | All command examples use correct AWS profile (NDX/InnovationSandboxHub) | IMPLEMENTED | Verified all aws and cdk commands include --profile flag throughout README ✓ |
-| AC4 | README updated in git with commit message: "docs(infra): enhance README with deployment and maintenance" | IMPLEMENTED | Git commit db90262 verified with exact message ✓ |
+| AC# | Description                                                                                              | Status      | Evidence                                                                                                                   |
+| --- | -------------------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| AC1 | README includes new sections (Testing, Deployment Process, Infrastructure Changes, Maintenance)          | IMPLEMENTED | infra/README.md:118-182 (Testing), 185-260 (Deployment Process), 263-331 (Infrastructure Changes), 334-373 (Maintenance) ✓ |
+| AC2 | Document header includes Last Updated: 2025-11-18, Document Version: 1.1, Review instruction             | IMPLEMENTED | infra/README.md:3-5 (all three elements present) ✓                                                                         |
+| AC3 | All command examples use correct AWS profile (NDX/InnovationSandboxHub)                                  | IMPLEMENTED | Verified all aws and cdk commands include --profile flag throughout README ✓                                               |
+| AC4 | README updated in git with commit message: "docs(infra): enhance README with deployment and maintenance" | IMPLEMENTED | Git commit db90262 verified with exact message ✓                                                                           |
 
 **Summary:** 4 of 4 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Analyze current README structure and identify gaps | COMPLETED [x] | VERIFIED COMPLETE | Analysis completed, all gaps identified in completion notes |
-| Task 2: Add Deployment Process section | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:185-260 - Section added with all required subsections (Build, Deploy, Verify, Access Pattern) |
-| Task 3: Enhance Testing section | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:118-182 - Testing section created with Unit Tests, Linting, Integration Test subsections |
-| Task 4: Add Infrastructure Changes section | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:263-331 - Section added with decision flowchart and workflow guidance |
-| Task 5: Add Maintenance section | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:334-373 - Section added with version history, review cadence, update responsibility |
-| Task 6: Update document header | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:3-5 - Version 1.0 → 1.1, date updated, review instruction present |
-| Task 7: Verify all command examples use correct AWS profile | COMPLETED [x] | VERIFIED COMPLETE | All aws/cdk commands verified to include --profile NDX/InnovationSandboxHub |
-| Task 8: Validate README completeness | COMPLETED [x] | VERIFIED COMPLETE | All 12 sections present and properly structured |
-| Task 9: Commit README changes | COMPLETED [x] | VERIFIED COMPLETE | Git commit db90262 with exact message format |
+| Task                                                        | Marked As     | Verified As       | Evidence                                                                                                      |
+| ----------------------------------------------------------- | ------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| Task 1: Analyze current README structure and identify gaps  | COMPLETED [x] | VERIFIED COMPLETE | Analysis completed, all gaps identified in completion notes                                                   |
+| Task 2: Add Deployment Process section                      | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:185-260 - Section added with all required subsections (Build, Deploy, Verify, Access Pattern) |
+| Task 3: Enhance Testing section                             | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:118-182 - Testing section created with Unit Tests, Linting, Integration Test subsections      |
+| Task 4: Add Infrastructure Changes section                  | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:263-331 - Section added with decision flowchart and workflow guidance                         |
+| Task 5: Add Maintenance section                             | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:334-373 - Section added with version history, review cadence, update responsibility           |
+| Task 6: Update document header                              | COMPLETED [x] | VERIFIED COMPLETE | infra/README.md:3-5 - Version 1.0 → 1.1, date updated, review instruction present                             |
+| Task 7: Verify all command examples use correct AWS profile | COMPLETED [x] | VERIFIED COMPLETE | All aws/cdk commands verified to include --profile NDX/InnovationSandboxHub                                   |
+| Task 8: Validate README completeness                        | COMPLETED [x] | VERIFIED COMPLETE | All 12 sections present and properly structured                                                               |
+| Task 9: Commit README changes                               | COMPLETED [x] | VERIFIED COMPLETE | Git commit db90262 with exact message format                                                                  |
 
 **Summary:** 9 of 9 completed tasks verified, 0 questionable, 0 falsely marked complete ✓
 
@@ -398,6 +414,7 @@ This story is documentation-only. The "validation" is the completeness and accur
 **Architecture Compliance:** ✓ FULL COMPLIANCE
 
 All architectural constraints from infrastructure-architecture.md and tech-spec-epic-3.md satisfied:
+
 - ✓ Living documentation strategy implemented (version tracking, review cadence, update responsibility)
 - ✓ AWS profile consistency maintained (all commands use NDX/InnovationSandboxHub)
 - ✓ Documentation structure follows architecture doc section 11 template
@@ -406,6 +423,7 @@ All architectural constraints from infrastructure-architecture.md and tech-spec-
 - ✓ Integration test documentation from Story 3.5 preserved and enhanced
 
 **Functional Requirements Satisfied:**
+
 - FR18: Infrastructure documented in README ✓
 - FR19: Deployment workflow documented ✓
 - NFR-MAINT-5: Complete setup instructions with living document maintenance ✓
@@ -416,6 +434,7 @@ All architectural constraints from infrastructure-architecture.md and tech-spec-
 **Security Assessment:** ✓ EXCELLENT
 
 No security concerns identified:
+
 - All AWS commands properly use --profile flag (no credential exposure)
 - Documentation accurately reflects security posture (BLOCK_ALL public access)
 - CloudFront requirement properly documented for secure public access
@@ -423,6 +442,7 @@ No security concerns identified:
 ### Best Practices and References
 
 **Documentation Best Practices Applied:**
+
 - ✓ Clear heading hierarchy and consistent formatting
 - ✓ Code blocks with proper syntax highlighting
 - ✓ Copy-paste ready commands with all required flags
@@ -432,6 +452,7 @@ No security concerns identified:
 - ✓ Living document philosophy with update responsibility
 
 **Markdown Quality:**
+
 - ✓ Proper CommonMark formatting
 - ✓ No broken links or malformed code blocks
 - ✓ Logical section ordering and numbering
@@ -442,6 +463,7 @@ No security concerns identified:
 **No action items** - Story implementation is complete and approved.
 
 **Advisory Notes:**
+
 - Note: README version 1.1 establishes excellent foundation for future enhancements
 - Note: Living document maintenance process will help prevent documentation drift
 - Note: Clear decision flowchart for infrastructure vs file deployment will reduce operator errors

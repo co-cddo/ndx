@@ -1,16 +1,19 @@
 # ADR-026: Accessible Modal Pattern
 
 ## Status
+
 Accepted
 
 ## Context
 
 The AUP acceptance modal is the most critical UX moment in the Try Before You Buy flow. Users must:
+
 - Read the Acceptable Use Policy
 - Check the acceptance checkbox
 - Click Continue to request their sandbox
 
 The modal must be fully accessible per WCAG 2.2 AA requirements:
+
 - Screen reader announcements for state changes
 - Keyboard navigation (Tab, Escape)
 - Focus trap within modal
@@ -21,16 +24,18 @@ The modal must be fully accessible per WCAG 2.2 AA requirements:
 Implement a WCAG 2.2 AA compliant modal with these features:
 
 ### Focus Management
+
 ```typescript
 // Focus trap implementation
 const focusTrap = createFocusTrap(modal, {
   onEscape: () => closeModal(),
   initialFocus: cancelButton, // Safe default
-});
-focusTrap.activate();
+})
+focusTrap.activate()
 ```
 
 ### ARIA Attributes
+
 ```html
 <div
   id="aup-modal"
@@ -38,26 +43,28 @@ focusTrap.activate();
   aria-modal="true"
   aria-labelledby="aup-modal-title"
   aria-describedby="aup-modal-description"
->
+></div>
 ```
 
 ### Screen Reader Announcements
+
 ```typescript
-import { announce } from '../utils/aria-live';
+import { announce } from "../utils/aria-live"
 
 // On modal open
-announce('Request AWS Sandbox Access dialog opened');
+announce("Request AWS Sandbox Access dialog opened")
 
 // On checkbox change
 if (checked) {
-  announce('Acceptable Use Policy accepted. Continue button is now enabled.');
+  announce("Acceptable Use Policy accepted. Continue button is now enabled.")
 }
 
 // On loading state
-announce('Requesting your sandbox...');
+announce("Requesting your sandbox...")
 ```
 
 ### XSS Prevention
+
 Dynamic content uses `textContent` instead of `innerHTML` interpolation:
 
 ```typescript
@@ -77,6 +84,7 @@ showLoading(message = 'Loading...'): void {
 ## Consequences
 
 ### Positive
+
 - Full WCAG 2.2 AA compliance
 - Screen reader users get clear state announcements
 - Keyboard users can navigate and dismiss modal
@@ -84,17 +92,20 @@ showLoading(message = 'Loading...'): void {
 - XSS prevented through safe DOM manipulation
 
 ### Negative
+
 - Focus trap requires careful implementation
 - Must test with multiple screen readers (NVDA, VoiceOver, JAWS)
 - Modal complexity higher than simple alert()
 
 ### Neutral
+
 - GOV.UK Design System provides base styling
 - Custom accessibility utilities (focus-trap.ts, aria-live.ts) reusable
 
 ## Implementation
 
 ### Files
+
 - `src/try/ui/components/aup-modal.ts` - Main modal component
 - `src/try/ui/utils/focus-trap.ts` - Focus trap utility
 - `src/try/ui/utils/aria-live.ts` - Screen reader announcement utility
@@ -119,9 +130,7 @@ showLoading(message = 'Loading...'): void {
       </div>
       <div class="govuk-checkboxes">
         <input type="checkbox" id="aup-accept-checkbox" />
-        <label for="aup-accept-checkbox">
-          I have read and accept the Acceptable Use Policy
-        </label>
+        <label for="aup-accept-checkbox"> I have read and accept the Acceptable Use Policy </label>
       </div>
     </div>
     <div class="aup-modal__footer">
@@ -133,14 +142,16 @@ showLoading(message = 'Loading...'): void {
 ```
 
 ### Keyboard Interactions
-| Key | Action |
-|-----|--------|
-| Tab | Move focus forward within modal |
-| Shift+Tab | Move focus backward within modal |
-| Escape | Close modal (with confirmation if checkbox checked) |
-| Enter | Activate focused button |
-| Space | Toggle checkbox / activate button |
+
+| Key       | Action                                              |
+| --------- | --------------------------------------------------- |
+| Tab       | Move focus forward within modal                     |
+| Shift+Tab | Move focus backward within modal                    |
+| Escape    | Close modal (with confirmation if checkbox checked) |
+| Enter     | Activate focused button                             |
+| Space     | Toggle checkbox / activate button                   |
 
 ## Related ADRs
+
 - [ADR-017](ADR-017-try-button.md) - Try button opens modal
 - [ADR-032](ADR-032-user-friendly-error-messages.md) - Error display in modal

@@ -19,6 +19,7 @@ This comprehensive research explores modern approaches to adding minimal JavaScr
 The ecosystem has consolidated around three primary micro-libraries for static site enhancement:
 
 **Alpine.js** (15.2-16.3 KB gzipped)
+
 - Declarative, Vue-like reactive patterns directly in HTML
 - Code reduction: 70% fewer lines vs. imperative approaches (207 lines → 60 lines in real-world case study)
 - Best for: Prototyping, small projects, avoiding build steps, developers wanting React/Vue-style reactivity
@@ -26,6 +27,7 @@ The ecosystem has consolidated around three primary micro-libraries for static s
 - Bundle size growth tracked: v3.11.0 (14.04KB) → v3.14.9 (16.3KB gzipped)
 
 **Stimulus** (10.9 KB)
+
 - Imperative DOM manipulation with controller-based architecture
 - Designed for Turbo/Hotwire ecosystem integration
 - Best for: Rails applications, when using Turbo, small generic components, storing state in DOM
@@ -33,12 +35,14 @@ The ecosystem has consolidated around three primary micro-libraries for static s
 - Constraint: Intentionally designed around server-side HTML fragment morphing
 
 **Petite Vue** (~6 KB)
+
 - Minimal Vue subset for progressive enhancement
 - Designed specifically for "sprinkling islands of interactivity" on content-driven sites
 - Status: Limited documentation and examples as of 2024, not a priority for Vue core team
 - Use case: When Alpine's feature set is too much but basic reactivity is needed
 
 **Comparison Consensus (2024):**
+
 - Alpine chosen over Petite Vue due to larger community and active development
 - Alpine's bundle size now exceeds Stimulus, but provides "best of both worlds" between full frameworks and vanilla JS
 - General recommendation: Alpine for declarative patterns, Stimulus for tight Turbo integration
@@ -52,17 +56,20 @@ The ecosystem has consolidated around three primary micro-libraries for static s
 htmx reached the top of frontend framework categories in 2024, representing a paradigm shift toward HTML-first development.
 
 **Core Capabilities:**
+
 - Only 14KB (minified and gzipped) vs. React's 200KB+ bundles
 - AJAX, CSS transitions, WebSockets, Server-Sent Events via HTML attributes
 - `hx-boost` property: Automatically enhances all anchor tags and forms
 - Graceful degradation: Links/forms work without JavaScript (true progressive enhancement)
 
 **Real-World Application:**
+
 - Works with static site generators like Zola
 - Maintains state (e.g., audio player) during navigation without full page reloads
 - AJAX calls replace only page content, not entire page
 
 **Best Use Cases:**
+
 - Tight server coupling
 - Minimal JavaScript requirements
 - Rapid iteration
@@ -81,6 +88,7 @@ Web Components emerged as a mature, framework-agnostic solution for progressive 
 **Progressive Enhancement Pattern:**
 
 HTML Web Components follow "HTML-first" philosophy:
+
 - Function without JavaScript (content displays by default)
 - Enhance when JS available (add interactive behaviors)
 - Light DOM: HTML written directly, inherits global styles
@@ -99,36 +107,41 @@ HTML Web Components follow "HTML-first" philosophy:
 ```
 
 ```javascript
-customElements.define('pe-accordion', class extends HTMLElement {
-  constructor() {
-    super();
-    this.handler = function(event) {
-      if (!event.target.hasAttribute('open')) return;
-      let opened = this.querySelectorAll('details[open]');
-      for (let accordion of opened) {
-        if (accordion === event.target) continue;
-        accordion.removeAttribute('open');
+customElements.define(
+  "pe-accordion",
+  class extends HTMLElement {
+    constructor() {
+      super()
+      this.handler = function (event) {
+        if (!event.target.hasAttribute("open")) return
+        let opened = this.querySelectorAll("details[open]")
+        for (let accordion of opened) {
+          if (accordion === event.target) continue
+          accordion.removeAttribute("open")
+        }
       }
-    };
-  }
+    }
 
-  connectedCallback() {
-    this.addEventListener('toggle', this.handler, true);
-  }
+    connectedCallback() {
+      this.addEventListener("toggle", this.handler, true)
+    }
 
-  disconnectedCallback() {
-    this.removeEventListener('toggle', this.handler, true);
-  }
-});
+    disconnectedCallback() {
+      this.removeEventListener("toggle", this.handler, true)
+    }
+  },
+)
 ```
 
 **Key Benefits:**
+
 - Builds on native `<details>` and `<summary>` elements (work without JS)
 - Lifecycle callbacks (connectedCallback, disconnectedCallback) for resource management
 - CSS encapsulation eliminates naming conflicts (no BEM needed)
 - Framework-agnostic reusability
 
 **CSS Scoping Strategies:**
+
 1. Bundle CSS globally for baseline styles
 2. Use `adoptedStyleSheets` for JavaScript-scoped styles
 3. `::part()` pseudo-selector for Shadow DOM external styling
@@ -150,8 +163,8 @@ Native ES modules reached production-ready status across all modern browsers in 
 
 ```html
 <script type="module">
-  import { myFunction } from './module.js';
-  myFunction();
+  import { myFunction } from "./module.js"
+  myFunction()
 </script>
 ```
 
@@ -162,12 +175,14 @@ Native ES modules reached production-ready status across all modern browsers in 
 - **Full Paths:** Provide complete module paths, not bare imports (unless using import maps)
 
 **When Build Tools Still Add Value:**
+
 - Tree shaking (dead code elimination)
 - Minification
 - Advanced optimizations
 - Large-scale applications
 
 **Modern Frameworks Using Native Modules:**
+
 - **Vite:** Uses native ES modules during development for fast, efficient loading
 - **Astro:** Ships minimal JavaScript by default, leveraging native imports
 
@@ -185,24 +200,25 @@ Import Maps achieved cross-browser support in late 2023/early 2024, enabling pac
 
 ```html
 <script type="importmap">
-{
-  "imports": {
-    "react": "https://cdn.skypack.dev/react@17.0.1",
-    "dayjs": "https://cdn.skypack.dev/dayjs@1.11.5",
-    "lodash": "/node_modules/lodash-es/lodash.js"
+  {
+    "imports": {
+      "react": "https://cdn.skypack.dev/react@17.0.1",
+      "dayjs": "https://cdn.skypack.dev/dayjs@1.11.5",
+      "lodash": "/node_modules/lodash-es/lodash.js"
+    }
   }
-}
 </script>
 
 <script type="module">
-  import { debounce } from 'lodash';
-  import dayjs from 'dayjs';
+  import { debounce } from "lodash"
+  import dayjs from "dayjs"
 </script>
 ```
 
 **Advanced Features:**
 
 **Scoped Imports:** Different versions for different application sections
+
 ```json
 {
   "scopes": {
@@ -217,6 +233,7 @@ Import Maps achieved cross-browser support in late 2023/early 2024, enabling pac
 ```
 
 **Popular CDNs for 2024:**
+
 - **Skypack:** `https://cdn.skypack.dev/package-name`
 - **Unpkg:** `https://unpkg.com/package@version`
 - **JSPM:** `https://ga.jspm.io/npm:package@version`
@@ -225,6 +242,7 @@ Import Maps achieved cross-browser support in late 2023/early 2024, enabling pac
 **Browser Support:** All modern browsers as of late 2024. Polyfill available: ES Module Shims
 
 **Benefits:**
+
 - Eliminates bundler dependency for simple projects
 - Direct dependency management in HTML
 - Version control at URL level
@@ -242,20 +260,20 @@ Dynamic imports (ES2020) provide native code splitting without bundlers.
 
 ```javascript
 // Promise-based
-import('./module.js').then(module => {
-  module.functionName();
-});
+import("./module.js").then((module) => {
+  module.functionName()
+})
 
 // Async/await
 async function loadFeature() {
-  const module = await import('./admin-panel.js');
-  module.initializeAdmin();
+  const module = await import("./admin-panel.js")
+  module.initializeAdmin()
 }
 
 // Conditional loading
 if (user.isAdmin) {
-  const adminModule = await import('./admin.js');
-  adminModule.setupAdminUI();
+  const adminModule = await import("./admin.js")
+  adminModule.setupAdminUI()
 }
 ```
 
@@ -264,40 +282,44 @@ if (user.isAdmin) {
 **Common Patterns (2024):**
 
 **1. Route-Based Splitting:**
+
 ```javascript
 async function loadRoute(routeName) {
-  const route = await import(`./routes/${routeName}.js`);
-  route.render();
+  const route = await import(`./routes/${routeName}.js`)
+  route.render()
 }
 ```
 
 **2. Feature Flags:**
+
 ```javascript
 if (features.newCheckout) {
-  const checkout = await import('./new-checkout.js');
+  const checkout = await import("./new-checkout.js")
 } else {
-  const checkout = await import('./legacy-checkout.js');
+  const checkout = await import("./legacy-checkout.js")
 }
 ```
 
 **3. Intersection Observer + Dynamic Import:**
+
 ```javascript
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(async (entry) => {
     if (entry.isIntersecting) {
-      const widget = await import('./heavy-widget.js');
-      widget.initialize(entry.target);
-      observer.unobserve(entry.target);
+      const widget = await import("./heavy-widget.js")
+      widget.initialize(entry.target)
+      observer.unobserve(entry.target)
     }
-  });
-});
+  })
+})
 
-document.querySelectorAll('[data-lazy-widget]').forEach(el => {
-  observer.observe(el);
-});
+document.querySelectorAll("[data-lazy-widget]").forEach((el) => {
+  observer.observe(el)
+})
 ```
 
 **Best Practices:**
+
 - Only split code when chunks are "significantly large enough to make page load slow down"
 - Use for admin-only or rarely-used features
 - Preload critical components to avoid lazy-loading delays
@@ -314,36 +336,43 @@ Average JavaScript per page surged from 90KB (2010) to 650KB (2024), making opti
 **Top Optimization Techniques:**
 
 **1. Tree Shaking**
+
 - Removes dead code using ES2015 module static analysis
 - Enabled by default in Webpack production mode
 - Requires ES6 module syntax (not CommonJS)
 
 **2. Code Splitting**
+
 - Breaks bundles into smaller chunks loaded on demand
 - Reduces initial bundle size dramatically
 - Route-based and component-based strategies
 
 **3. Lazy Loading**
+
 - Defers non-critical components until needed
 - Reduces upfront code/resource requirements
 - Combine with Intersection Observer for viewport-based loading
 
 **4. Minification**
+
 - Removes whitespace, comments, unused code
 - Webpack's Terser plugin (automatic in production)
 - Modern bundlers apply by default
 
 **5. Bundle Analysis**
+
 - Tools: Webpack Bundle Analyzer, Codecov Bundle Analysis
 - Identify largest contributors to bundle size
 - For chart.js example: bundler choice affects output by 70%
 
 **6. Dependency Auditing**
+
 - Check library sizes before installing (bundlephobia.com)
 - Prefer smaller alternatives when possible
 - Remove unused dependencies
 
 **Framework Comparisons (2024 Benchmarks):**
+
 - htmx: 14KB
 - Alpine.js: 15.2-16.3KB
 - Stimulus: 10.9KB
@@ -358,28 +387,33 @@ Average JavaScript per page surged from 90KB (2010) to 650KB (2024), making opti
 ### 8. **Inline Scripts vs External Files - 2024 Performance Analysis**
 
 **Inline Script Advantages:**
+
 - Reduces HTTP requests (30-50% faster for small scripts)
 - Immediate execution during HTML parsing
 - No caching overhead for one-time scripts
 
 **External File Advantages:**
+
 - Browser caching across page loads
 - Can use `async` and `defer` attributes (inline scripts cannot)
 - Better maintainability and scalability
 - Improved security (CSP compliance)
 
 **Size Threshold Recommendations (2024):**
+
 - **Inline when:** 400-600 bytes or less (~6-8 lines of code)
 - **External when:** Larger than 600 bytes or reused across pages
 - **Maximum inline JS per page:** 10,000 bytes
 
 **Modern Best Practices:**
+
 - Favor external files for cacheability and modern loading strategies
 - Inline critical rendering path JavaScript (above-the-fold)
 - Use `defer` for non-critical external scripts
 - Inline small, page-specific enhancements
 
 **Async/Defer Attributes:**
+
 ```html
 <!-- Loads in parallel, executes ASAP (may block render) -->
 <script async src="analytics.js"></script>
@@ -390,7 +424,7 @@ Average JavaScript per page surged from 90KB (2010) to 650KB (2024), making opti
 <!-- Inline: no async/defer support -->
 <script>
   // Small page-specific code
-  document.querySelector('.menu').classList.add('active');
+  document.querySelector(".menu").classList.add("active")
 </script>
 ```
 
@@ -409,23 +443,23 @@ Attach single event listener to parent element instead of multiple listeners on 
 
 ```javascript
 // ✅ Efficient: One listener handles all buttons
-document.querySelector('.container').addEventListener('click', (event) => {
+document.querySelector(".container").addEventListener("click", (event) => {
   // Method 1: matches()
-  if (event.target.matches('.delete-btn')) {
-    deleteItem(event.target.closest('.item'));
+  if (event.target.matches(".delete-btn")) {
+    deleteItem(event.target.closest(".item"))
   }
 
   // Method 2: closest() for nested elements
-  const button = event.target.closest('.action-btn');
+  const button = event.target.closest(".action-btn")
   if (button) {
-    handleAction(button.dataset.action);
+    handleAction(button.dataset.action)
   }
-});
+})
 
 // ❌ Inefficient: Multiple listeners
-document.querySelectorAll('.delete-btn').forEach(btn => {
-  btn.addEventListener('click', deleteItem); // Added to each button
-});
+document.querySelectorAll(".delete-btn").forEach((btn) => {
+  btn.addEventListener("click", deleteItem) // Added to each button
+})
 ```
 
 **Advanced Pattern - Multiple Action Types:**
@@ -433,30 +467,30 @@ document.querySelectorAll('.delete-btn').forEach(btn => {
 ```javascript
 class DynamicList {
   constructor(container) {
-    this.container = container;
-    this.container.addEventListener('click', this.handleClick.bind(this));
+    this.container = container
+    this.container.addEventListener("click", this.handleClick.bind(this))
   }
 
   handleClick(event) {
-    const action = event.target.dataset.action;
+    const action = event.target.dataset.action
     const handlers = {
-      'delete': () => this.deleteItem(event.target),
-      'edit': () => this.editItem(event.target),
-      'archive': () => this.archiveItem(event.target)
-    };
+      delete: () => this.deleteItem(event.target),
+      edit: () => this.editItem(event.target),
+      archive: () => this.archiveItem(event.target),
+    }
 
     if (handlers[action]) {
-      handlers[action]();
+      handlers[action]()
     }
   }
 
   deleteItem(element) {
-    element.closest('.item').remove();
+    element.closest(".item").remove()
   }
 }
 
 // Initialize
-const list = new DynamicList(document.querySelector('.items'));
+const list = new DynamicList(document.querySelector(".items"))
 ```
 
 **Best Practices (2024):**
@@ -469,11 +503,13 @@ const list = new DynamicList(document.querySelector('.items'));
    - `event.target.closest(selector)`: Find nearest ancestor matching selector
 
 **When to Use:**
+
 - Dynamically added elements (AJAX-loaded content, infinite scroll)
 - Large lists or tables (hundreds of rows)
 - Repeated elements with similar handlers
 
 **When NOT to Use:**
+
 - Few static elements (overhead not justified)
 - Need to prevent default on specific elements only
 
@@ -486,8 +522,10 @@ const list = new DynamicList(document.querySelector('.items'));
 ### Alpine.js - Filtering and Search
 
 **Simple List Filter:**
+
 ```html
-<div x-data="{
+<div
+  x-data="{
   search: '',
   items: ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'],
   get filteredItems() {
@@ -495,12 +533,9 @@ const list = new DynamicList(document.querySelector('.items'));
       item.toLowerCase().includes(this.search.toLowerCase())
     );
   }
-}">
-  <input
-    x-model="search"
-    type="text"
-    placeholder="Search fruits..."
-  >
+}"
+>
+  <input x-model="search" type="text" placeholder="Search fruits..." />
 
   <ul>
     <template x-for="item in filteredItems" :key="item">
@@ -508,15 +543,15 @@ const list = new DynamicList(document.querySelector('.items'));
     </template>
   </ul>
 
-  <p x-show="filteredItems.length === 0" x-cloak>
-    No items found
-  </p>
+  <p x-show="filteredItems.length === 0" x-cloak>No items found</p>
 </div>
 ```
 
 **Table Filtering with Multiple Columns:**
+
 ```html
-<div x-data="{
+<div
+  x-data="{
   searchTerm: '',
   users: [
     { name: 'John Doe', email: 'john@example.com', role: 'Admin' },
@@ -532,8 +567,9 @@ const list = new DynamicList(document.querySelector('.items'));
       user.role.toLowerCase().includes(term)
     );
   }
-}">
-  <input x-model="searchTerm" placeholder="Search users...">
+}"
+>
+  <input x-model="searchTerm" placeholder="Search users..." />
 
   <table>
     <thead>
@@ -563,14 +599,10 @@ const list = new DynamicList(document.querySelector('.items'));
 ### Stimulus - Table Filter Controller
 
 **HTML:**
+
 ```html
 <div data-controller="filter">
-  <input
-    data-filter-target="input"
-    data-action="input->filter#update"
-    type="text"
-    placeholder="Filter results..."
-  >
+  <input data-filter-target="input" data-action="input->filter#update" type="text" placeholder="Filter results..." />
 
   <table>
     <tbody data-filter-target="container">
@@ -588,6 +620,7 @@ const list = new DynamicList(document.querySelector('.items'));
 ```
 
 **JavaScript Controller:**
+
 ```javascript
 import { Controller } from "@hotwired/stimulus"
 
@@ -595,21 +628,22 @@ export default class extends Controller {
   static targets = ["input", "item"]
 
   update() {
-    const searchTerm = this.inputTarget.value.toLowerCase();
+    const searchTerm = this.inputTarget.value.toLowerCase()
 
-    this.itemTargets.forEach(item => {
-      const text = item.dataset.filterable.toLowerCase();
-      const matches = text.includes(searchTerm);
+    this.itemTargets.forEach((item) => {
+      const text = item.dataset.filterable.toLowerCase()
+      const matches = text.includes(searchTerm)
 
-      item.style.display = matches ? '' : 'none';
+      item.style.display = matches ? "" : "none"
       // Or use classes:
       // item.classList.toggle('hidden', !matches);
-    });
+    })
   }
 }
 ```
 
 **Advanced: Multiple Column Search**
+
 ```javascript
 import { Controller } from "@hotwired/stimulus"
 
@@ -617,15 +651,18 @@ export default class extends Controller {
   static targets = ["input", "row"]
 
   filter() {
-    const term = this.inputTarget.value.toLowerCase();
+    const term = this.inputTarget.value.toLowerCase()
 
-    this.rowTargets.forEach(row => {
-      const cells = Array.from(row.querySelectorAll('td'));
-      const rowText = cells.map(cell => cell.textContent).join(' ').toLowerCase();
-      const visible = rowText.includes(term);
+    this.rowTargets.forEach((row) => {
+      const cells = Array.from(row.querySelectorAll("td"))
+      const rowText = cells
+        .map((cell) => cell.textContent)
+        .join(" ")
+        .toLowerCase()
+      const visible = rowText.includes(term)
 
-      row.classList.toggle('hidden', !visible);
-    });
+      row.classList.toggle("hidden", !visible)
+    })
   }
 }
 ```
@@ -639,11 +676,12 @@ export default class extends Controller {
 **Progressive Enhancement Pattern:**
 
 **HTML with DuckDuckGo Fallback:**
+
 ```html
 <form action="https://duckduckgo.com/" method="get" id="form-search">
   <label for="input-search">Search:</label>
-  <input type="text" name="q" id="input-search">
-  <input type="hidden" name="sites" value="yourdomain.com">
+  <input type="text" name="q" id="input-search" />
+  <input type="hidden" name="sites" value="yourdomain.com" />
   <button id="submit-search">Search</button>
 </form>
 
@@ -651,6 +689,7 @@ export default class extends Controller {
 ```
 
 **Search Index:**
+
 ```javascript
 // Generated at build time, embedded in page
 const searchIndex = [
@@ -659,132 +698,136 @@ const searchIndex = [
     date: "2024-01-15",
     url: "/posts/alpine-getting-started",
     content: "Alpine.js is a lightweight JavaScript framework...",
-    summary: "Learn the basics of Alpine.js for static sites"
+    summary: "Learn the basics of Alpine.js for static sites",
   },
   {
     title: "Web Components Guide",
     date: "2024-02-20",
     url: "/posts/web-components-guide",
     content: "Web Components provide encapsulated functionality...",
-    summary: "Building reusable components with Web Components"
-  }
-];
+    summary: "Building reusable components with Web Components",
+  },
+]
 ```
 
 **JavaScript Implementation:**
+
 ```javascript
-(function() {
-  'use strict';
+;(function () {
+  "use strict"
 
   // Get elements
-  const form = document.querySelector('#form-search');
-  const input = document.querySelector('#input-search');
-  const resultsContainer = document.querySelector('#search-results');
+  const form = document.querySelector("#form-search")
+  const input = document.querySelector("#input-search")
+  const resultsContainer = document.querySelector("#search-results")
 
-  if (!form || !input || !resultsContainer) return;
+  if (!form || !input || !resultsContainer) return
 
   // Prevent default form submission
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    performSearch();
-  });
+  form.addEventListener("submit", function (event) {
+    event.preventDefault()
+    performSearch()
+  })
 
   // Real-time search
-  let searchTimeout;
-  input.addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(performSearch, 300); // Debounce
-  });
+  let searchTimeout
+  input.addEventListener("input", function () {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(performSearch, 300) // Debounce
+  })
 
   function performSearch() {
-    const query = input.value.trim().toLowerCase();
+    const query = input.value.trim().toLowerCase()
 
     if (!query) {
-      resultsContainer.innerHTML = '';
-      return;
+      resultsContainer.innerHTML = ""
+      return
     }
 
-    const results = searchContent(query);
-    displayResults(results, query);
+    const results = searchContent(query)
+    displayResults(results, query)
   }
 
   function searchContent(query) {
-    const titleMatches = [];
-    const contentMatches = [];
-    const regex = new RegExp(query, 'gi');
+    const titleMatches = []
+    const contentMatches = []
+    const regex = new RegExp(query, "gi")
 
-    searchIndex.forEach(item => {
+    searchIndex.forEach((item) => {
       if (item.title.toLowerCase().includes(query)) {
-        titleMatches.push(item);
+        titleMatches.push(item)
       } else if (item.content.toLowerCase().includes(query)) {
-        contentMatches.push(item);
+        contentMatches.push(item)
       }
-    });
+    })
 
     // Prioritize title matches
-    return [...titleMatches, ...contentMatches];
+    return [...titleMatches, ...contentMatches]
   }
 
   function displayResults(results, query) {
     if (results.length === 0) {
-      resultsContainer.innerHTML = '<p>No results found</p>';
-      return;
+      resultsContainer.innerHTML = "<p>No results found</p>"
+      return
     }
 
-    const html = results.map(result => `
+    const html = results
+      .map(
+        (result) => `
       <article class="search-result">
         <time datetime="${result.date}">${formatDate(result.date)}</time>
         <h3><a href="${result.url}">${highlightMatch(result.title, query)}</a></h3>
         <p>${truncate(result.summary, 150)}</p>
       </article>
-    `).join('');
+    `,
+      )
+      .join("")
 
-    resultsContainer.innerHTML = html;
+    resultsContainer.innerHTML = html
   }
 
   function highlightMatch(text, query) {
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<mark>$1</mark>');
+    const regex = new RegExp(`(${query})`, "gi")
+    return text.replace(regex, "<mark>$1</mark>")
   }
 
   function truncate(text, length) {
-    return text.length > length
-      ? text.substring(0, length) + '...'
-      : text;
+    return text.length > length ? text.substring(0, length) + "..." : text
   }
 
   function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
   }
-})();
+})()
 ```
 
 **Optimized with MiniSearch Library:**
+
 ```javascript
-import MiniSearch from 'minisearch';
+import MiniSearch from "minisearch"
 
 const miniSearch = new MiniSearch({
-  fields: ['title', 'content', 'summary'],
-  storeFields: ['title', 'url', 'date', 'summary'],
+  fields: ["title", "content", "summary"],
+  storeFields: ["title", "url", "date", "summary"],
   searchOptions: {
     boost: { title: 2 }, // Title matches ranked higher
     fuzzy: 0.2,
-    prefix: true
-  }
-});
+    prefix: true,
+  },
+})
 
 // Index documents
-miniSearch.addAll(searchIndex);
+miniSearch.addAll(searchIndex)
 
 // Search
 function performSearch(query) {
-  const results = miniSearch.search(query);
-  displayResults(results);
+  const results = miniSearch.search(query)
+  displayResults(results)
 }
 ```
 
@@ -807,7 +850,7 @@ function performSearch(query) {
       required
       pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
       aria-describedby="email-error"
-    >
+    />
     <span id="email-error" class="error" aria-live="polite"></span>
   </div>
 
@@ -821,7 +864,7 @@ function performSearch(query) {
       minlength="8"
       pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$"
       aria-describedby="password-error"
-    >
+    />
     <span id="password-error" class="error" aria-live="polite"></span>
     <small>At least 8 characters with letters and numbers</small>
   </div>
@@ -831,104 +874,106 @@ function performSearch(query) {
 ```
 
 **JavaScript Enhancement:**
+
 ```javascript
 class FormValidator {
   constructor(form) {
-    this.form = form;
-    this.fields = form.querySelectorAll('input, textarea, select');
+    this.form = form
+    this.fields = form.querySelectorAll("input, textarea, select")
 
-    this.form.addEventListener('submit', this.handleSubmit.bind(this));
+    this.form.addEventListener("submit", this.handleSubmit.bind(this))
 
-    this.fields.forEach(field => {
-      field.addEventListener('blur', () => this.validateField(field));
-      field.addEventListener('input', () => this.clearError(field));
-    });
+    this.fields.forEach((field) => {
+      field.addEventListener("blur", () => this.validateField(field))
+      field.addEventListener("input", () => this.clearError(field))
+    })
   }
 
   handleSubmit(event) {
-    event.preventDefault();
+    event.preventDefault()
 
-    let isValid = true;
-    this.fields.forEach(field => {
+    let isValid = true
+    this.fields.forEach((field) => {
       if (!this.validateField(field)) {
-        isValid = false;
+        isValid = false
       }
-    });
+    })
 
     if (isValid) {
-      this.form.submit();
+      this.form.submit()
       // Or handle with AJAX
     } else {
-      const firstError = this.form.querySelector('.error:not(:empty)');
+      const firstError = this.form.querySelector(".error:not(:empty)")
       if (firstError) {
-        firstError.previousElementSibling.focus();
+        firstError.previousElementSibling.focus()
       }
     }
   }
 
   validateField(field) {
-    const errorElement = document.getElementById(`${field.id}-error`);
+    const errorElement = document.getElementById(`${field.id}-error`)
 
     // Check validity using native API
     if (!field.checkValidity()) {
-      const errorMessage = this.getErrorMessage(field);
-      this.showError(field, errorElement, errorMessage);
-      return false;
+      const errorMessage = this.getErrorMessage(field)
+      this.showError(field, errorElement, errorMessage)
+      return false
     }
 
     // Custom validation
-    if (field.id === 'password-confirm') {
-      const password = document.getElementById('password');
+    if (field.id === "password-confirm") {
+      const password = document.getElementById("password")
       if (field.value !== password.value) {
-        this.showError(field, errorElement, 'Passwords do not match');
-        return false;
+        this.showError(field, errorElement, "Passwords do not match")
+        return false
       }
     }
 
-    this.clearError(field);
-    return true;
+    this.clearError(field)
+    return true
   }
 
   getErrorMessage(field) {
     if (field.validity.valueMissing) {
-      return `${field.labels[0].textContent} is required`;
+      return `${field.labels[0].textContent} is required`
     }
     if (field.validity.typeMismatch) {
-      return `Please enter a valid ${field.type}`;
+      return `Please enter a valid ${field.type}`
     }
     if (field.validity.tooShort) {
-      return `Minimum length is ${field.minLength} characters`;
+      return `Minimum length is ${field.minLength} characters`
     }
     if (field.validity.patternMismatch) {
-      return field.title || 'Please match the requested format';
+      return field.title || "Please match the requested format"
     }
-    return 'Invalid input';
+    return "Invalid input"
   }
 
   showError(field, errorElement, message) {
-    errorElement.textContent = message;
-    field.setAttribute('aria-invalid', 'true');
-    field.classList.add('error');
+    errorElement.textContent = message
+    field.setAttribute("aria-invalid", "true")
+    field.classList.add("error")
   }
 
   clearError(field) {
-    const errorElement = document.getElementById(`${field.id}-error`);
-    errorElement.textContent = '';
-    field.setAttribute('aria-invalid', 'false');
-    field.classList.remove('error');
+    const errorElement = document.getElementById(`${field.id}-error`)
+    errorElement.textContent = ""
+    field.setAttribute("aria-invalid", "false")
+    field.classList.remove("error")
   }
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('signup-form');
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("signup-form")
   if (form) {
-    new FormValidator(form);
+    new FormValidator(form)
   }
-});
+})
 ```
 
 **Alpine.js Version:**
+
 ```html
 <form
   x-data="{
@@ -963,23 +1008,13 @@ document.addEventListener('DOMContentLoaded', () => {
 >
   <div>
     <label for="email">Email:</label>
-    <input
-      x-model="email"
-      @blur="validateEmail"
-      type="email"
-      id="email"
-    >
+    <input x-model="email" @blur="validateEmail" type="email" id="email" />
     <span x-show="errors.email" x-text="errors.email" class="error"></span>
   </div>
 
   <div>
     <label for="password">Password:</label>
-    <input
-      x-model="password"
-      @blur="validatePassword"
-      type="password"
-      id="password"
-    >
+    <input x-model="password" @blur="validatePassword" type="password" id="password" />
     <span x-show="errors.password" x-text="errors.password" class="error"></span>
   </div>
 
@@ -994,98 +1029,101 @@ document.addEventListener('DOMContentLoaded', () => {
 ### Dynamic UI Updates - MutationObserver
 
 **Watching for Added Content:**
+
 ```javascript
 class DynamicContentHandler {
   constructor(targetSelector) {
-    this.target = document.querySelector(targetSelector);
-    this.observer = new MutationObserver(this.handleMutations.bind(this));
+    this.target = document.querySelector(targetSelector)
+    this.observer = new MutationObserver(this.handleMutations.bind(this))
 
     this.observer.observe(this.target, {
-      childList: true,      // Watch for added/removed children
-      subtree: true,        // Watch all descendants
-      attributes: true,     // Watch attribute changes
-      attributeFilter: ['class', 'data-status']
-    });
+      childList: true, // Watch for added/removed children
+      subtree: true, // Watch all descendants
+      attributes: true, // Watch attribute changes
+      attributeFilter: ["class", "data-status"],
+    })
   }
 
   handleMutations(mutations) {
-    mutations.forEach(mutation => {
-      if (mutation.type === 'childList') {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === 1) { // Element node
-            this.initializeNewElement(node);
+    mutations.forEach((mutation) => {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) {
+            // Element node
+            this.initializeNewElement(node)
           }
-        });
+        })
       }
 
-      if (mutation.type === 'attributes') {
-        this.handleAttributeChange(mutation.target, mutation.attributeName);
+      if (mutation.type === "attributes") {
+        this.handleAttributeChange(mutation.target, mutation.attributeName)
       }
-    });
+    })
   }
 
   initializeNewElement(element) {
     // Auto-initialize components
-    if (element.matches('[data-component]')) {
-      const componentType = element.dataset.component;
-      this.loadComponent(componentType, element);
+    if (element.matches("[data-component]")) {
+      const componentType = element.dataset.component
+      this.loadComponent(componentType, element)
     }
 
     // Find nested components
-    element.querySelectorAll('[data-component]').forEach(el => {
-      const componentType = el.dataset.component;
-      this.loadComponent(componentType, el);
-    });
+    element.querySelectorAll("[data-component]").forEach((el) => {
+      const componentType = el.dataset.component
+      this.loadComponent(componentType, el)
+    })
   }
 
   async loadComponent(type, element) {
     try {
-      const module = await import(`./components/${type}.js`);
-      new module.default(element);
+      const module = await import(`./components/${type}.js`)
+      new module.default(element)
     } catch (error) {
-      console.error(`Failed to load component: ${type}`, error);
+      console.error(`Failed to load component: ${type}`, error)
     }
   }
 
   handleAttributeChange(element, attributeName) {
-    if (attributeName === 'data-status') {
-      element.classList.toggle('active', element.dataset.status === 'active');
+    if (attributeName === "data-status") {
+      element.classList.toggle("active", element.dataset.status === "active")
     }
   }
 
   disconnect() {
-    this.observer.disconnect();
+    this.observer.disconnect()
   }
 }
 
 // Usage
-const handler = new DynamicContentHandler('#app');
+const handler = new DynamicContentHandler("#app")
 ```
 
 **Auto-Save Form Example:**
+
 ```javascript
 const formObserver = new MutationObserver((mutations) => {
-  mutations.forEach(mutation => {
-    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
-      saveFormData();
+  mutations.forEach((mutation) => {
+    if (mutation.type === "attributes" && mutation.attributeName === "value") {
+      saveFormData()
     }
-  });
-});
+  })
+})
 
-const form = document.querySelector('form');
+const form = document.querySelector("form")
 formObserver.observe(form, {
   attributes: true,
   subtree: true,
-  attributeFilter: ['value']
-});
+  attributeFilter: ["value"],
+})
 
-let saveTimeout;
+let saveTimeout
 function saveFormData() {
-  clearTimeout(saveTimeout);
+  clearTimeout(saveTimeout)
   saveTimeout = setTimeout(() => {
-    const formData = new FormData(form);
-    localStorage.setItem('draft', JSON.stringify(Object.fromEntries(formData)));
-  }, 1000);
+    const formData = new FormData(form)
+    localStorage.setItem("draft", JSON.stringify(Object.fromEntries(formData)))
+  }, 1000)
 }
 ```
 
@@ -1098,24 +1136,26 @@ function saveFormData() {
 ```javascript
 class TabsComponent extends HTMLElement {
   constructor() {
-    super();
-    this.currentTab = 0;
+    super()
+    this.currentTab = 0
   }
 
   connectedCallback() {
-    this.render();
-    this.attachEventListeners();
-    this.showTab(this.currentTab);
+    this.render()
+    this.attachEventListeners()
+    this.showTab(this.currentTab)
   }
 
   render() {
-    const tabs = Array.from(this.querySelectorAll('[slot="tab"]'));
-    const panels = Array.from(this.querySelectorAll('[slot="panel"]'));
+    const tabs = Array.from(this.querySelectorAll('[slot="tab"]'))
+    const panels = Array.from(this.querySelectorAll('[slot="panel"]'))
 
     this.innerHTML = `
       <div class="tabs">
         <div class="tab-list" role="tablist">
-          ${tabs.map((tab, index) => `
+          ${tabs
+            .map(
+              (tab, index) => `
             <button
               role="tab"
               aria-selected="${index === 0}"
@@ -1125,9 +1165,13 @@ class TabsComponent extends HTMLElement {
             >
               ${tab.textContent}
             </button>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
-        ${panels.map((panel, index) => `
+        ${panels
+          .map(
+            (panel, index) => `
           <div
             role="tabpanel"
             id="panel-${index}"
@@ -1137,48 +1181,51 @@ class TabsComponent extends HTMLElement {
           >
             ${panel.innerHTML}
           </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
-    `;
+    `
   }
 
   attachEventListeners() {
-    this.querySelectorAll('.tab-button').forEach((button, index) => {
-      button.addEventListener('click', () => this.showTab(index));
-    });
+    this.querySelectorAll(".tab-button").forEach((button, index) => {
+      button.addEventListener("click", () => this.showTab(index))
+    })
 
     // Keyboard navigation
-    this.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        e.preventDefault();
-        const direction = e.key === 'ArrowRight' ? 1 : -1;
-        const tabCount = this.querySelectorAll('.tab-button').length;
-        this.currentTab = (this.currentTab + direction + tabCount) % tabCount;
-        this.showTab(this.currentTab);
+    this.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault()
+        const direction = e.key === "ArrowRight" ? 1 : -1
+        const tabCount = this.querySelectorAll(".tab-button").length
+        this.currentTab = (this.currentTab + direction + tabCount) % tabCount
+        this.showTab(this.currentTab)
       }
-    });
+    })
   }
 
   showTab(index) {
-    this.currentTab = index;
+    this.currentTab = index
 
-    this.querySelectorAll('.tab-button').forEach((button, i) => {
-      button.setAttribute('aria-selected', i === index);
-      button.classList.toggle('active', i === index);
-    });
+    this.querySelectorAll(".tab-button").forEach((button, i) => {
+      button.setAttribute("aria-selected", i === index)
+      button.classList.toggle("active", i === index)
+    })
 
-    this.querySelectorAll('.tab-panel').forEach((panel, i) => {
-      panel.hidden = i !== index;
-    });
+    this.querySelectorAll(".tab-panel").forEach((panel, i) => {
+      panel.hidden = i !== index
+    })
 
-    this.querySelector(`#tab-${index}`).focus();
+    this.querySelector(`#tab-${index}`).focus()
   }
 }
 
-customElements.define('tabs-component', TabsComponent);
+customElements.define("tabs-component", TabsComponent)
 ```
 
 **HTML Usage:**
+
 ```html
 <tabs-component>
   <span slot="tab">Overview</span>
@@ -1235,11 +1282,13 @@ Astro's islands approach (selective hydration) and Server Islands (server-render
 **Confidence & Limitations:**
 
 **Well-supported findings:**
+
 - Browser support for native modules and import maps (confirmed across MDN, Can I Use, multiple 2024 sources)
 - Bundle size comparisons (verified through bundlephobia.com, official docs, HTTP Archive data)
 - Progressive enhancement patterns (demonstrated across Web Components, htmx, multiple framework docs)
 
 **Areas with limitations:**
+
 - Petite Vue: Limited recent development and documentation (acknowledged by Vue team as not priority)
 - Performance benchmarks: Vary significantly by use case; Alpine's slowness in large loops may not affect typical static site usage
 - Future of micro-libraries: Trend is strong but ecosystem stability depends on continued maintenance
@@ -1247,30 +1296,35 @@ Astro's islands approach (selective hydration) and Server Islands (server-render
 ### Recommendations by Use Case
 
 **Choose Alpine.js when:**
+
 - Building interactive features (multi-step forms, data filtering, dynamic dashboards)
 - Team familiar with Vue/React patterns
 - Avoiding build tools entirely
 - Need rapid prototyping
 
 **Choose Stimulus when:**
+
 - Using Rails/Hotwire stack
 - Building small, reusable behaviors (dropdowns, toggles, form enhancements)
 - Prefer separation of HTML and JavaScript logic
 - State naturally lives in DOM
 
 **Choose htmx when:**
+
 - Server-rendered HTML fragments
 - Minimal client-side logic required
 - Progressive enhancement is critical
 - Working with any backend that outputs HTML
 
 **Choose Web Components when:**
+
 - Need framework-agnostic reusability
 - Want true encapsulation
 - Building design system components
 - Long-term maintainability priority
 
 **Choose Vanilla JS when:**
+
 - Very simple enhancements (show/hide, form validation)
 - Learning fundamentals
 - Maximum performance required
@@ -1319,6 +1373,7 @@ import InteractiveWidget from '../components/Widget.jsx'; // Can be hydrated
 ```
 
 **Astro Hydration Directives:**
+
 - `client:load`: Hydrate immediately on page load
 - `client:idle`: Hydrate when browser is idle (requestIdleCallback)
 - `client:visible`: Hydrate when component enters viewport (IntersectionObserver)
@@ -1336,7 +1391,7 @@ import InteractiveWidget from '../components/Widget.jsx'; // Can be hydrated
     <div data-island="add-to-cart" data-product-id="1">
       <!-- Progressively enhanced to interactive button -->
       <form action="/cart/add" method="post">
-        <input type="hidden" name="product_id" value="1">
+        <input type="hidden" name="product_id" value="1" />
         <button>Add to Cart</button>
       </form>
     </div>
@@ -1347,85 +1402,85 @@ import InteractiveWidget from '../components/Widget.jsx'; // Can be hydrated
 ```javascript
 // islands.js - Lazy load interactive components
 async function hydrateIslands() {
-  const islands = document.querySelectorAll('[data-island]');
+  const islands = document.querySelectorAll("[data-island]")
 
   islands.forEach(async (island) => {
-    const componentName = island.dataset.island;
+    const componentName = island.dataset.island
 
     // Intersection Observer for viewport-based hydration
     const observer = new IntersectionObserver(async (entries) => {
       entries.forEach(async (entry) => {
         if (entry.isIntersecting) {
-          const module = await import(`./islands/${componentName}.js`);
-          new module.default(island);
-          observer.unobserve(island);
+          const module = await import(`./islands/${componentName}.js`)
+          new module.default(island)
+          observer.unobserve(island)
         }
-      });
-    });
+      })
+    })
 
-    observer.observe(island);
-  });
+    observer.observe(island)
+  })
 }
 
 // Run on page load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', hydrateIslands);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", hydrateIslands)
 } else {
-  hydrateIslands();
+  hydrateIslands()
 }
 ```
 
 **Island Component Example:**
+
 ```javascript
 // islands/add-to-cart.js
 export default class AddToCart {
   constructor(element) {
-    this.element = element;
-    this.form = element.querySelector('form');
-    this.productId = element.dataset.productId;
+    this.element = element
+    this.form = element.querySelector("form")
+    this.productId = element.dataset.productId
 
-    this.enhance();
+    this.enhance()
   }
 
   enhance() {
     // Replace form submission with AJAX
-    this.form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await this.addToCart();
-    });
+    this.form.addEventListener("submit", async (e) => {
+      e.preventDefault()
+      await this.addToCart()
+    })
   }
 
   async addToCart() {
-    const response = await fetch('/api/cart/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: this.productId })
-    });
+    const response = await fetch("/api/cart/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: this.productId }),
+    })
 
     if (response.ok) {
-      this.showSuccess();
-      this.updateCartCount();
+      this.showSuccess()
+      this.updateCartCount()
     }
   }
 
   showSuccess() {
-    this.form.insertAdjacentHTML('afterend',
-      '<p class="success">Added to cart!</p>'
-    );
+    this.form.insertAdjacentHTML("afterend", '<p class="success">Added to cart!</p>')
   }
 
   async updateCartCount() {
-    const countElement = document.querySelector('#cart-count');
+    const countElement = document.querySelector("#cart-count")
     if (countElement) {
-      const response = await fetch('/api/cart/count');
-      const data = await response.json();
-      countElement.textContent = data.count;
+      const response = await fetch("/api/cart/count")
+      const data = await response.json()
+      countElement.textContent = data.count
     }
   }
 }
 ```
 
 **Benefits:**
+
 - Minimal JavaScript for content-heavy pages
 - SEO-friendly (content rendered server-side)
 - Fast initial load (static HTML)
@@ -1433,6 +1488,7 @@ export default class AddToCart {
 - Progressive enhancement by default
 
 **Performance Impact:**
+
 - Traditional SPA: Hydrate entire React/Vue tree (200KB+ JS)
 - Islands: Hydrate only interactive components (10-50KB JS)
 - Savings: 75-95% JavaScript reduction for typical static site
@@ -1466,15 +1522,15 @@ Is page JavaScript > 100KB?
 
 **Optimization Priority Matrix:**
 
-| Technique | Impact | Effort | When to Apply |
-|-----------|--------|--------|---------------|
-| Code Splitting | High | Medium | JS > 200KB |
-| Tree Shaking | High | Low | Using bundler |
-| Lazy Loading | High | Medium | Heavy components exist |
-| Minification | Medium | Low | Always (production) |
-| Import Maps | Medium | Low | No bundler, < 10 dependencies |
-| Micro-library | High | Medium | Rebuilding/starting fresh |
-| Islands Architecture | Very High | High | Static site with interactive sections |
+| Technique            | Impact    | Effort | When to Apply                         |
+| -------------------- | --------- | ------ | ------------------------------------- |
+| Code Splitting       | High      | Medium | JS > 200KB                            |
+| Tree Shaking         | High      | Low    | Using bundler                         |
+| Lazy Loading         | High      | Medium | Heavy components exist                |
+| Minification         | Medium    | Low    | Always (production)                   |
+| Import Maps          | Medium    | Low    | No bundler, < 10 dependencies         |
+| Micro-library        | High      | Medium | Rebuilding/starting fresh             |
+| Islands Architecture | Very High | High   | Static site with interactive sections |
 
 ---
 
@@ -1483,6 +1539,7 @@ Is page JavaScript > 100KB?
 **Content Security Policy Compatibility:**
 
 **Alpine.js CSP Build:**
+
 ```html
 <!-- Standard Alpine allows inline expressions -->
 <div x-data="{ count: 0 }">
@@ -1493,18 +1550,19 @@ Is page JavaScript > 100KB?
 <div x-data="counter"></div>
 
 <script>
-  document.addEventListener('alpine:init', () => {
-    Alpine.data('counter', () => ({
+  document.addEventListener("alpine:init", () => {
+    Alpine.data("counter", () => ({
       count: 0,
       increment() {
-        this.count++;
-      }
-    }));
-  });
+        this.count++
+      },
+    }))
+  })
 </script>
 ```
 
 **Stimulus (CSP-Friendly by Default):**
+
 ```html
 <!-- Controllers always in external files -->
 <div data-controller="counter">
@@ -1513,18 +1571,19 @@ Is page JavaScript > 100KB?
 ```
 
 **Web Components CSP Pattern:**
+
 ```javascript
 // All logic in external JS file
 class SafeComponent extends HTMLElement {
   constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
+    super()
+    this.attachShadow({ mode: "open" })
   }
 
   connectedCallback() {
     // Use template literal, not eval or Function constructor
-    this.shadowRoot.innerHTML = this.template;
-    this.attachEvents();
+    this.shadowRoot.innerHTML = this.template
+    this.attachEvents()
   }
 
   get template() {
@@ -1533,12 +1592,11 @@ class SafeComponent extends HTMLElement {
         button { /* styles */ }
       </style>
       <button id="action">Click me</button>
-    `;
+    `
   }
 
   attachEvents() {
-    this.shadowRoot.querySelector('#action')
-      .addEventListener('click', this.handleClick.bind(this));
+    this.shadowRoot.querySelector("#action").addEventListener("click", this.handleClick.bind(this))
   }
 
   handleClick() {
@@ -1546,10 +1604,11 @@ class SafeComponent extends HTMLElement {
   }
 }
 
-customElements.define('safe-component', SafeComponent);
+customElements.define("safe-component", SafeComponent)
 ```
 
 **CSP Headers for Enhanced Security:**
+
 ```
 Content-Security-Policy:
   default-src 'self';
@@ -1565,12 +1624,14 @@ Content-Security-Policy:
 ### Primary Documentation Sources
 
 **Framework Documentation:**
+
 - Alpine.js official docs - Context7 `/alpinejs/alpine` (373 code snippets, Benchmark Score: 89.5)
 - Stimulus official docs - Context7 `/hotwired/stimulus` (127 code snippets, Benchmark Score: 87.1)
 - MDN Web Components - https://developer.mozilla.org/en-US/docs/Web/Web_Components
 - htmx documentation - https://htmx.org/docs/
 
 **2024 Articles & Tutorials:**
+
 - "Alpine.js as a Stimulus alternative" - fpsvogel.com (2024) - Real-world comparison with 70% code reduction case study
 - "JS Import Maps" - 12daysofweb.dev (2024) - Comprehensive import maps guide
 - "Progressive enhancement of static sites with HTMX" - sverre.me/blog/progressive-enhancement (2024)
@@ -1578,31 +1639,37 @@ Content-Security-Policy:
 - "Islands Architecture - The Future of Performance-Optimized Web Development" - juniordev4life.com (2024)
 
 **Technical Guides:**
+
 - "How to create a vanilla JS search page for a static website" - gomakethings.com (Updated Jan 2024)
 - "Creating a progressively enhanced accordion with Web Components" - gomakethings.com
 - "HTML Web Components Make Progressive Enhancement and CSS Encapsulation Easier" - CSS-Tricks
 
 **Performance & Benchmarks:**
+
 - HTTP Archive JavaScript statistics (90KB in 2010 → 650KB in 2024)
 - Bundlephobia.com package size comparisons
 - Alpine.js performance discussions - GitHub alpinejs/alpine #2837, #3683
 
 **Browser Standards:**
+
 - "JavaScript import maps are now supported cross-browser" - web.dev/blog
 - "JavaScript modules" - MDN (ES modules guide)
 - "Understanding native JavaScript modules" - wanago.io (Feb 2024)
 
 **Event Delegation & Patterns:**
+
 - "Exploring Event Delegation Patterns in Modern JS" - DEV.to (2024)
 - "Mastering JavaScript Event Delegation" - DEV.to
 - Event Delegation - javascript.info (comprehensive guide)
 
 **Form Validation:**
+
 - Pristine.js documentation - pristine.js.org
 - "Client-Side Form Validation Using Vanilla JavaScript" - Stack Abuse
 - "How to Build and Validate Beautiful Forms" - FreeCodeCamp
 
 **Micro-Frontends & Islands:**
+
 - Astro Islands Architecture - docs.astro.build/en/concepts/islands
 - "Islands Architecture" - jasonformat.com (original concept)
 - "An Approach to Astro's Server Islands for Fast Micro-Frontends" - talent500.com (2024)
@@ -1684,6 +1751,7 @@ Content-Security-Policy:
 **Source:** HTTP/2 performance guides
 
 **Context Matters:**
+
 - **First visit:** Inline scripts faster (no request)
 - **Subsequent visits:** External scripts faster (cached)
 - **HTTP/2:** Request overhead negligible
@@ -1700,6 +1768,7 @@ Content-Security-Policy:
 **Source:** React, Vue documentation
 
 **Resolution:** False dichotomy. Both serve different use cases:
+
 - **htmx:** Content-driven sites, server-side logic, simple interactivity
 - **Frameworks:** Application-like experiences, complex state management, offline capabilities
 - **Hybrid:** Islands architecture combines both (Astro with React islands)
@@ -1709,6 +1778,7 @@ Content-Security-Policy:
 ## Research Methodology & Tool Usage
 
 **Tools Used:**
+
 - **Context7:** 2 library documentation lookups (Alpine.js, Stimulus)
 - **WebSearch:** 18 web searches performed
 - **WebFetch:** 4 specific pages fetched and analyzed
@@ -1717,6 +1787,7 @@ Content-Security-Policy:
 **Search Strategy:**
 
 **Most Productive Search Terms:**
+
 - "progressive enhancement modern JavaScript 2023 2024 static sites"
 - "Alpine.js vs Stimulus vs Petite Vue 2024 comparison"
 - "ES modules native browser JavaScript 2024 no build tools"
@@ -1724,6 +1795,7 @@ Content-Security-Policy:
 - "htmx static site enhancement 2024"
 
 **Primary Information Sources:**
+
 - Official documentation (Context7: Alpine.js, Stimulus)
 - Developer blogs (gomakethings.com, fpsvogel.com, CSS-Tricks)
 - Technical tutorials (DEV.to, Medium, 12daysofweb.dev)
@@ -1748,6 +1820,7 @@ Content-Security-Policy:
 **Research Depth:** Deep Research Mode (15 tool calls executed, comprehensive exploration across multiple sources)
 
 **Quality Assurance:**
+
 - Cross-referenced bundle sizes across multiple sources (bundlephobia.com, GitHub, official docs)
 - Verified browser support claims through MDN and Can I Use
 - Checked publication dates to ensure 2023-2024 relevance

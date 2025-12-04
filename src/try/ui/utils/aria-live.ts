@@ -8,7 +8,7 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-028|ADR-028: ARIA Live Regions}
  */
 
-let liveRegion: HTMLElement | null = null;
+let liveRegion: HTMLElement | null = null
 
 /**
  * Get or create the ARIA live region element.
@@ -16,21 +16,21 @@ let liveRegion: HTMLElement | null = null;
  */
 function getLiveRegion(): HTMLElement {
   if (liveRegion && document.body.contains(liveRegion)) {
-    return liveRegion;
+    return liveRegion
   }
 
-  liveRegion = document.createElement('div');
-  liveRegion.id = 'aria-live-region';
-  liveRegion.setAttribute('role', 'status');
-  liveRegion.setAttribute('aria-live', 'polite');
-  liveRegion.setAttribute('aria-atomic', 'true');
+  liveRegion = document.createElement("div")
+  liveRegion.id = "aria-live-region"
+  liveRegion.setAttribute("role", "status")
+  liveRegion.setAttribute("aria-live", "polite")
+  liveRegion.setAttribute("aria-atomic", "true")
 
   // Visually hidden but accessible to screen readers
   // Using GOV.UK Frontend's visually-hidden class (CSP compliant)
-  liveRegion.className = 'govuk-visually-hidden';
+  liveRegion.className = "govuk-visually-hidden"
 
-  document.body.appendChild(liveRegion);
-  return liveRegion;
+  document.body.appendChild(liveRegion)
+  return liveRegion
 }
 
 /**
@@ -46,19 +46,19 @@ function getLiveRegion(): HTMLElement {
  * announce('Loading AUP content...');
  * announce('Error: Failed to load content', 'assertive');
  */
-export function announce(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
-  const region = getLiveRegion();
+export function announce(message: string, priority: "polite" | "assertive" = "polite"): void {
+  const region = getLiveRegion()
 
   // Update aria-live attribute for priority
-  region.setAttribute('aria-live', priority);
+  region.setAttribute("aria-live", priority)
 
   // Clear and set content (ensures re-announcement)
-  region.textContent = '';
+  region.textContent = ""
 
   // Small delay to ensure screen readers pick up the change
   requestAnimationFrame(() => {
-    region.textContent = message;
-  });
+    region.textContent = message
+  })
 }
 
 /**
@@ -67,6 +67,6 @@ export function announce(message: string, priority: 'polite' | 'assertive' = 'po
  */
 export function clearAnnouncement(): void {
   if (liveRegion) {
-    liveRegion.textContent = '';
+    liveRegion.textContent = ""
   }
 }

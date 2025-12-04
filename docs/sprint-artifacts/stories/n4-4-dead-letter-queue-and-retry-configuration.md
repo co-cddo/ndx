@@ -11,60 +11,70 @@ So that no notification events are lost and ops can investigate failures.
 ## Acceptance Criteria
 
 **AC-4.1: Failed events sent to DLQ after retry attempts**
+
 - **Given** a Lambda invocation that throws an error
 - **When** EventBridge retry attempts are exhausted
 - **Then** the event is sent to the DLQ
 - **Verification:** Integration test
 
 **AC-4.2: DLQ message includes context**
+
 - **Given** a failed event arrives in DLQ
 - **When** ops inspects the message
 - **Then** it includes: original event payload, error context
 - **Verification:** DLQ message inspection
 
 **AC-4.3: DLQ retention is 14 days**
+
 - **Given** the DLQ SQS queue
 - **When** deployed via CDK
 - **Then** message retention period is 14 days
 - **Verification:** CDK assertion test
 
 **AC-4.4: DLQ encrypted at rest**
+
 - **Given** the DLQ SQS queue
 - **When** deployed via CDK
 - **Then** encryption is SQS_MANAGED
 - **Verification:** CDK assertion test
 
 **AC-4.5: Lambda retry configuration**
+
 - **Given** the Lambda function
 - **When** deployed via CDK
 - **Then** retryAttempts = 2 (EventBridge retries before DLQ)
 - **Verification:** CDK assertion test
 
 **AC-4.6: Queue name follows convention**
+
 - **Given** the DLQ SQS queue
 - **When** deployed via CDK
 - **Then** queue name is `ndx-notification-dlq`
 - **Verification:** CloudFormation output
 
 **AC-4.7: DLQ sends logged at ERROR level**
+
 - **Given** an event fails and is sent to DLQ
 - **When** the Lambda handler catches the error
 - **Then** it logs at ERROR level before re-throwing
 - **Verification:** Log inspection (already implemented in n4-3)
 
 **AC-4.8: Pre-deployment baseline healthy**
+
 - **Given** a production deployment
 - **When** DLQ is created
 - **Then** DLQ depth should be 0 (healthy state)
 - **Verification:** Manual verification
 
 **AC-4.9: Ops runbook documents DLQ purge**
+
 - **Given** DLQ approaches capacity (rare)
 - **When** ops needs to purge
 - **Then** runbook documents safe purge procedure
 - **Verification:** Documentation review
 
 **AC-4.10: IAM policy restricts DLQ access**
+
 - **Given** the DLQ IAM permissions
 - **When** reviewed
 - **Then** only Lambda has SendMessage; ops team has ReceiveMessage/DeleteMessage
@@ -129,10 +139,11 @@ So that no notification events are lost and ops can investigate failures.
 ## Architecture Reference
 
 From notification-architecture.md:
+
 ```typescript
-const dlq = new Queue(this, 'NotificationDLQ', {
-  queueName: 'ndx-notification-dlq',
+const dlq = new Queue(this, "NotificationDLQ", {
+  queueName: "ndx-notification-dlq",
   retentionPeriod: Duration.days(14),
   encryption: QueueEncryption.SQS_MANAGED,
-});
+})
 ```

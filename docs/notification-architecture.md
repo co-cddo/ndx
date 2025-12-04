@@ -13,6 +13,7 @@
 This architecture defines the serverless notification system for NDX, handling both user-facing emails via GOV.UK Notify and operational alerts via Slack. The design follows a **"one brain, two mouths"** pattern - a single Lambda function that processes Innovation Sandbox events and routes to the appropriate notification channel.
 
 **Key Architectural Decisions:**
+
 - Single `NotificationStack` (separate from static site infrastructure)
 - TypeScript Lambda with AWS Lambda Powertools
 - EventBridge subscription to existing ISB event bus (same account)
@@ -24,20 +25,20 @@ This architecture defines the serverless notification system for NDX, handling b
 
 ## Decision Summary
 
-| Category | Decision | Version | Rationale |
-|----------|----------|---------|-----------|
-| **Stack Strategy** | New `NotificationStack` | N/A | Separate lifecycle, isolated blast radius |
-| **Lambda Runtime** | Node.js 20.x + TypeScript | 20.x LTS | Consistency with CDK, shared tooling |
-| **Lambda Bundling** | CDK `NodejsFunction` | esbuild | Zero-config, tree-shaking |
-| **EventBridge** | ISB's existing bus | N/A | Same account, direct subscription |
-| **GOV.UK Notify** | `notifications-node-client` | Latest | Official GDS SDK |
-| **Slack** | Incoming Webhook URL | N/A | Simple, MVP-appropriate |
-| **DynamoDB Access** | Direct read-only | N/A | Same account, IAM permissions |
-| **Secrets** | Single JSON secret | N/A | `/ndx/notifications/credentials` |
-| **Idempotency** | Lambda Powertools | Latest | Built-in DynamoDB persistence |
-| **Logging** | Lambda Powertools Logger | Latest | Structured JSON, correlation IDs |
-| **Infra Alarms** | CloudWatch → AWS Chatbot | N/A | Native Slack integration |
-| **Testing** | Unit + Integration | Jest | DynamoDB Local for integration |
+| Category            | Decision                    | Version  | Rationale                                 |
+| ------------------- | --------------------------- | -------- | ----------------------------------------- |
+| **Stack Strategy**  | New `NotificationStack`     | N/A      | Separate lifecycle, isolated blast radius |
+| **Lambda Runtime**  | Node.js 20.x + TypeScript   | 20.x LTS | Consistency with CDK, shared tooling      |
+| **Lambda Bundling** | CDK `NodejsFunction`        | esbuild  | Zero-config, tree-shaking                 |
+| **EventBridge**     | ISB's existing bus          | N/A      | Same account, direct subscription         |
+| **GOV.UK Notify**   | `notifications-node-client` | Latest   | Official GDS SDK                          |
+| **Slack**           | Incoming Webhook URL        | N/A      | Simple, MVP-appropriate                   |
+| **DynamoDB Access** | Direct read-only            | N/A      | Same account, IAM permissions             |
+| **Secrets**         | Single JSON secret          | N/A      | `/ndx/notifications/credentials`          |
+| **Idempotency**     | Lambda Powertools           | Latest   | Built-in DynamoDB persistence             |
+| **Logging**         | Lambda Powertools Logger    | Latest   | Structured JSON, correlation IDs          |
+| **Infra Alarms**    | CloudWatch → AWS Chatbot    | N/A      | Native Slack integration                  |
+| **Testing**         | Unit + Integration          | Jest     | DynamoDB Local for integration            |
 
 ---
 
@@ -78,16 +79,16 @@ infra/
 
 ## FR Category to Architecture Mapping
 
-| PRD Category | Architecture Component | Files |
-|--------------|------------------------|-------|
-| EventBridge Integration | `NotificationStack` rules | `notification-stack.ts` |
-| Lambda Processing | Handler + Powertools | `handler.ts`, `validation.ts` |
-| DynamoDB Enrichment | Read-only queries | `enrichment.ts` |
-| GOV.UK Notify (18 event types) | Notify SDK wrapper | `notify-sender.ts`, `templates.ts` |
-| Slack Alerts (5 alert types) | Webhook wrapper | `slack-sender.ts`, `templates.ts` |
-| Error Handling | Classification + DLQ | `errors.ts`, stack DLQ |
-| Secrets Management | Secrets Manager | `notification-stack.ts` |
-| Monitoring | CloudWatch + Chatbot | `notification-stack.ts` |
+| PRD Category                   | Architecture Component    | Files                              |
+| ------------------------------ | ------------------------- | ---------------------------------- |
+| EventBridge Integration        | `NotificationStack` rules | `notification-stack.ts`            |
+| Lambda Processing              | Handler + Powertools      | `handler.ts`, `validation.ts`      |
+| DynamoDB Enrichment            | Read-only queries         | `enrichment.ts`                    |
+| GOV.UK Notify (18 event types) | Notify SDK wrapper        | `notify-sender.ts`, `templates.ts` |
+| Slack Alerts (5 alert types)   | Webhook wrapper           | `slack-sender.ts`, `templates.ts`  |
+| Error Handling                 | Classification + DLQ      | `errors.ts`, stack DLQ             |
+| Secrets Management             | Secrets Manager           | `notification-stack.ts`            |
+| Monitoring                     | CloudWatch + Chatbot      | `notification-stack.ts`            |
 
 ---
 
@@ -96,40 +97,46 @@ infra/
 ### Core Technologies
 
 **AWS CDK v2**
+
 - Extends existing infrastructure project
 - TypeScript for type-safe infrastructure
 
 **Node.js 20.x LTS**
+
 - Lambda runtime
 - Consistent with CDK tooling
 
 **AWS Lambda Powertools for TypeScript**
+
 ```bash
 yarn add @aws-lambda-powertools/logger @aws-lambda-powertools/idempotency @aws-lambda-powertools/metrics
 ```
+
 - Structured logging with correlation IDs
 - Built-in idempotency with DynamoDB
 - Custom CloudWatch metrics
 
 **GOV.UK Notify SDK**
+
 ```bash
 yarn add notifications-node-client
 ```
+
 - Official GDS-maintained client
 - Handles auth, retries, types
 
 ### AWS Services
 
-| Service | Purpose |
-|---------|---------|
-| EventBridge | Event subscription from ISB |
-| Lambda | Event processing |
-| DynamoDB | Idempotency table (Powertools-managed) |
-| DynamoDB (ISB) | Event enrichment (read-only access) |
-| SQS | Dead Letter Queue |
-| Secrets Manager | API credentials |
-| CloudWatch | Logs, metrics, alarms |
-| AWS Chatbot | Infra alerts to Slack |
+| Service         | Purpose                                |
+| --------------- | -------------------------------------- |
+| EventBridge     | Event subscription from ISB            |
+| Lambda          | Event processing                       |
+| DynamoDB        | Idempotency table (Powertools-managed) |
+| DynamoDB (ISB)  | Event enrichment (read-only access)    |
+| SQS             | Dead Letter Queue                      |
+| Secrets Manager | API credentials                        |
+| CloudWatch      | Logs, metrics, alarms                  |
+| AWS Chatbot     | Infra alerts to Slack                  |
 
 ---
 
@@ -140,22 +147,30 @@ yarn add notifications-node-client
 ```typescript
 // notification-stack.ts
 // ISB EventBus name pattern: ISB-{namespace}-ISBEventBus
-const namespace = 'prod';  // or from config
-const rule = new Rule(this, 'NotificationRule', {
-  eventBus: EventBus.fromEventBusName(this, 'ISBBus', `ISB-${namespace}-ISBEventBus`),
+const namespace = "prod" // or from config
+const rule = new Rule(this, "NotificationRule", {
+  eventBus: EventBus.fromEventBusName(this, "ISBBus", `ISB-${namespace}-ISBEventBus`),
   eventPattern: {
     detailType: [
       // User notifications (GOV.UK Notify)
-      'LeaseRequested', 'LeaseApproved', 'LeaseDenied',
-      'LeaseTerminated', 'LeaseFrozen',
-      'LeaseBudgetThresholdAlert', 'LeaseDurationThresholdAlert',
-      'LeaseFreezingThresholdAlert', 'LeaseBudgetExceeded', 'LeaseExpired',
+      "LeaseRequested",
+      "LeaseApproved",
+      "LeaseDenied",
+      "LeaseTerminated",
+      "LeaseFrozen",
+      "LeaseBudgetThresholdAlert",
+      "LeaseDurationThresholdAlert",
+      "LeaseFreezingThresholdAlert",
+      "LeaseBudgetExceeded",
+      "LeaseExpired",
       // Ops alerts (Slack)
-      'AccountCleanupFailed', 'AccountQuarantined', 'AccountDriftDetected',
+      "AccountCleanupFailed",
+      "AccountQuarantined",
+      "AccountDriftDetected",
     ],
   },
-});
-rule.addTarget(new LambdaFunction(notificationLambda));
+})
+rule.addTarget(new LambdaFunction(notificationLambda))
 ```
 
 ### Lambda → DynamoDB (Read-Only)
@@ -163,36 +178,34 @@ rule.addTarget(new LambdaFunction(notificationLambda));
 ```typescript
 // IAM policy - read-only access to ISB tables
 // Table names are imported from ISB CloudFormation exports
-role.addToPolicy(new PolicyStatement({
-  actions: ['dynamodb:GetItem', 'dynamodb:Query'],
-  resources: [
-    Fn.importValue(`ISB-${namespace}-LeaseTable`),
-    `${Fn.importValue(`ISB-${namespace}-LeaseTable`)}/index/*`,
-    Fn.importValue(`ISB-${namespace}-SandboxAccountTable`),
-    Fn.importValue(`ISB-${namespace}-LeaseTemplateTable`),
-  ],
-}));
+role.addToPolicy(
+  new PolicyStatement({
+    actions: ["dynamodb:GetItem", "dynamodb:Query"],
+    resources: [
+      Fn.importValue(`ISB-${namespace}-LeaseTable`),
+      `${Fn.importValue(`ISB-${namespace}-LeaseTable`)}/index/*`,
+      Fn.importValue(`ISB-${namespace}-SandboxAccountTable`),
+      Fn.importValue(`ISB-${namespace}-LeaseTemplateTable`),
+    ],
+  }),
+)
 ```
 
 ### Lambda → GOV.UK Notify
 
 ```typescript
 // notify-sender.ts
-import { NotifyClient } from 'notifications-node-client';
+import { NotifyClient } from "notifications-node-client"
 
 export class NotifySender {
-  private client: NotifyClient;
+  private client: NotifyClient
 
   constructor(apiKey: string) {
-    this.client = new NotifyClient(apiKey);
+    this.client = new NotifyClient(apiKey)
   }
 
   async send(params: NotifyParams): Promise<NotifyResponse> {
-    return this.client.sendEmail(
-      params.templateId,
-      params.email,
-      { personalisation: params.personalisation }
-    );
+    return this.client.sendEmail(params.templateId, params.email, { personalisation: params.personalisation })
   }
 }
 ```
@@ -206,13 +219,13 @@ export class SlackSender {
 
   async send(params: SlackParams): Promise<void> {
     const response = await fetch(this.webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(this.buildBlockKit(params)),
-    });
+    })
 
     if (!response.ok) {
-      throw this.classifyError(response.status);
+      throw this.classifyError(response.status)
     }
   }
 }
@@ -222,16 +235,16 @@ export class SlackSender {
 
 ```typescript
 // notification-stack.ts
-const alarmTopic = new Topic(this, 'AlarmTopic');
+const alarmTopic = new Topic(this, "AlarmTopic")
 
-new SlackChannelConfiguration(this, 'SlackChannel', {
-  slackChannelConfigurationName: 'ndx-infra-alerts',
-  slackWorkspaceId: 'TXXXXXXXX',
-  slackChannelId: 'CXXXXXXXX',
+new SlackChannelConfiguration(this, "SlackChannel", {
+  slackChannelConfigurationName: "ndx-infra-alerts",
+  slackWorkspaceId: "TXXXXXXXX",
+  slackChannelId: "CXXXXXXXX",
   notificationTopics: [alarmTopic],
-});
+})
 
-dlqDepthAlarm.addAlarmAction(new SnsAction(alarmTopic));
+dlqDepthAlarm.addAlarmAction(new SnsAction(alarmTopic))
 ```
 
 ---
@@ -242,38 +255,38 @@ dlqDepthAlarm.addAlarmAction(new SnsAction(alarmTopic));
 
 ```typescript
 // handler.ts
-import { makeIdempotent } from '@aws-lambda-powertools/idempotency';
-import { DynamoDBPersistenceLayer } from '@aws-lambda-powertools/idempotency/dynamodb';
-import { Logger } from '@aws-lambda-powertools/logger';
+import { makeIdempotent } from "@aws-lambda-powertools/idempotency"
+import { DynamoDBPersistenceLayer } from "@aws-lambda-powertools/idempotency/dynamodb"
+import { Logger } from "@aws-lambda-powertools/logger"
 
-const logger = new Logger({ serviceName: 'ndx-notifications' });
-const persistenceStore = new DynamoDBPersistenceLayer({ tableName: 'NdxIdempotency' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
+const persistenceStore = new DynamoDBPersistenceLayer({ tableName: "NdxIdempotency" })
 
 export const handler = makeIdempotent(
   async (event: EventBridgeEvent<string, ISBEventDetail>) => {
-    const eventId = event.id;
-    const eventType = event['detail-type'];
+    const eventId = event.id
+    const eventType = event["detail-type"]
 
-    logger.info('Processing event', { eventId, eventType });
+    logger.info("Processing event", { eventId, eventType })
 
     // 1. Validate schema
-    const validated = validateSchema(event);
+    const validated = validateSchema(event)
     if (!validated.success) {
-      throw new PermanentError('Invalid event schema', validated.errors);
+      throw new PermanentError("Invalid event schema", validated.errors)
     }
 
     // 2. Enrich from DynamoDB (if needed)
-    const enriched = await enrichIfNeeded(validated.data);
+    const enriched = await enrichIfNeeded(validated.data)
 
     // 3. Route to appropriate sender
     if (isUserNotification(eventType)) {
-      return notifySender.send(enriched);
+      return notifySender.send(enriched)
     } else {
-      return slackSender.send(enriched);
+      return slackSender.send(enriched)
     }
   },
-  { persistenceStore }
-);
+  { persistenceStore },
+)
 ```
 
 ### Error Classification
@@ -281,41 +294,47 @@ export const handler = makeIdempotent(
 ```typescript
 // errors.ts
 export class RetriableError extends Error {
-  readonly retriable = true;
-  constructor(message: string, public readonly retryAfter?: number) {
-    super(message);
+  readonly retriable = true
+  constructor(
+    message: string,
+    public readonly retryAfter?: number,
+  ) {
+    super(message)
   }
 }
 
 export class PermanentError extends Error {
-  readonly retriable = false;
-  constructor(message: string, public readonly details?: unknown) {
-    super(message);
+  readonly retriable = false
+  constructor(
+    message: string,
+    public readonly details?: unknown,
+  ) {
+    super(message)
   }
 }
 
 export class CriticalError extends Error {
-  readonly retriable = false;
-  readonly critical = true;
+  readonly retriable = false
+  readonly critical = true
   constructor(message: string) {
-    super(message);
+    super(message)
   }
 }
 
 export function classifyHttpError(status: number): Error {
   switch (status) {
     case 400:
-      return new PermanentError('Bad request - check payload');
+      return new PermanentError("Bad request - check payload")
     case 401:
     case 403:
-      return new CriticalError('Auth failed - check API key');
+      return new CriticalError("Auth failed - check API key")
     case 429:
-      return new RetriableError('Rate limited', 1000);
+      return new RetriableError("Rate limited", 1000)
     default:
       if (status >= 500) {
-        return new RetriableError('Service error');
+        return new RetriableError("Service error")
       }
-      return new PermanentError(`Unexpected status: ${status}`);
+      return new PermanentError(`Unexpected status: ${status}`)
   }
 }
 ```
@@ -325,77 +344,77 @@ export function classifyHttpError(status: number): Error {
 ```typescript
 // templates.ts
 export interface TemplateConfig {
-  channel: 'notify' | 'slack';
-  templateId?: string;  // For Notify
-  priority?: 'normal' | 'critical';  // For Slack
-  requiredFields: string[];
-  optionalFields?: string[];
+  channel: "notify" | "slack"
+  templateId?: string // For Notify
+  priority?: "normal" | "critical" // For Slack
+  requiredFields: string[]
+  optionalFields?: string[]
 }
 
 export const TEMPLATES: Record<string, TemplateConfig> = {
   // User notifications (GOV.UK Notify)
   LeaseApproved: {
-    channel: 'notify',
+    channel: "notify",
     templateId: process.env.NOTIFY_TEMPLATE_LEASE_APPROVED,
-    requiredFields: ['userName', 'accountId', 'ssoUrl', 'expiryDate'],
-    optionalFields: ['budgetLimit'],
+    requiredFields: ["userName", "accountId", "ssoUrl", "expiryDate"],
+    optionalFields: ["budgetLimit"],
   },
   LeaseExpiring: {
-    channel: 'notify',
+    channel: "notify",
     templateId: process.env.NOTIFY_TEMPLATE_LEASE_EXPIRING,
-    requiredFields: ['userName', 'accountId', 'expiryDate', 'hoursRemaining'],
+    requiredFields: ["userName", "accountId", "expiryDate", "hoursRemaining"],
   },
   BudgetThresholdReached: {
-    channel: 'notify',
+    channel: "notify",
     templateId: process.env.NOTIFY_TEMPLATE_BUDGET_WARNING,
-    requiredFields: ['userName', 'accountId', 'currentSpend', 'budgetLimit', 'percentUsed'],
+    requiredFields: ["userName", "accountId", "currentSpend", "budgetLimit", "percentUsed"],
   },
 
   // Ops alerts (Slack)
   AccountQuarantined: {
-    channel: 'slack',
-    priority: 'critical',
-    requiredFields: ['accountId', 'reason', 'quarantinedAt'],
+    channel: "slack",
+    priority: "critical",
+    requiredFields: ["accountId", "reason", "quarantinedAt"],
   },
   LeaseFrozen: {
-    channel: 'slack',
-    priority: 'critical',
-    requiredFields: ['accountId', 'reason', 'userEmail'],
+    channel: "slack",
+    priority: "critical",
+    requiredFields: ["accountId", "reason", "userEmail"],
   },
   DailySpendSummary: {
-    channel: 'slack',
-    priority: 'normal',
-    requiredFields: ['totalSpend', 'accountCount', 'topServices'],
+    channel: "slack",
+    priority: "normal",
+    requiredFields: ["totalSpend", "accountCount", "topServices"],
   },
-};
+}
 ```
 
 ### Enrichment Pattern
 
 ```typescript
 // enrichment.ts
-import { DynamoDBClient, GetItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, GetItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb"
 
-const client = new DynamoDBClient({});
+const client = new DynamoDBClient({})
 
 export async function enrichIfNeeded(event: ValidatedEvent): Promise<EnrichedEvent> {
-  const template = TEMPLATES[event.type];
-  const missing = findMissingFields(event, template.requiredFields);
+  const template = TEMPLATES[event.type]
+  const missing = findMissingFields(event, template.requiredFields)
 
   if (missing.length === 0) {
-    return event as EnrichedEvent;  // Event has everything we need
+    return event as EnrichedEvent // Event has everything we need
   }
 
   // Query DynamoDB for missing data
-  const enrichment = await queryEnrichmentData(event.leaseId, event.userEmail);
+  const enrichment = await queryEnrichmentData(event.leaseId, event.userEmail)
 
   // Validate we got required fields
-  const stillMissing = findMissingFields({ ...event, ...enrichment }, template.requiredFields);
+  const stillMissing = findMissingFields({ ...event, ...enrichment }, template.requiredFields)
   if (stillMissing.length > 0) {
-    throw new PermanentError(`Missing required fields after enrichment: ${stillMissing.join(', ')}`);
+    throw new PermanentError(`Missing required fields after enrichment: ${stillMissing.join(", ")}`)
   }
 
-  return { ...event, ...enrichment };
+  return { ...event, ...enrichment }
 }
 ```
 
@@ -405,17 +424,17 @@ export async function enrichIfNeeded(event: ValidatedEvent): Promise<EnrichedEve
 
 ### Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Stack class | PascalCase | `NotificationStack` |
-| Lambda handler | camelCase export | `export const handler` |
-| TypeScript files | kebab-case | `notify-sender.ts` |
-| Test files | `.test.ts` suffix | `notify-sender.test.ts` |
-| DynamoDB tables | PascalCase prefix | `NdxIdempotency` |
-| Secrets path | kebab-case path | `/ndx/notifications/credentials` |
-| EventBridge rules | kebab-case | `ndx-notify-lease-approved` |
-| CloudWatch alarms | kebab-case | `ndx-notification-dlq-depth` |
-| Env variables | SCREAMING_SNAKE | `NOTIFY_TEMPLATE_LEASE_APPROVED` |
+| Type              | Convention        | Example                          |
+| ----------------- | ----------------- | -------------------------------- |
+| Stack class       | PascalCase        | `NotificationStack`              |
+| Lambda handler    | camelCase export  | `export const handler`           |
+| TypeScript files  | kebab-case        | `notify-sender.ts`               |
+| Test files        | `.test.ts` suffix | `notify-sender.test.ts`          |
+| DynamoDB tables   | PascalCase prefix | `NdxIdempotency`                 |
+| Secrets path      | kebab-case path   | `/ndx/notifications/credentials` |
+| EventBridge rules | kebab-case        | `ndx-notify-lease-approved`      |
+| CloudWatch alarms | kebab-case        | `ndx-notification-dlq-depth`     |
+| Env variables     | SCREAMING_SNAKE   | `NOTIFY_TEMPLATE_LEASE_APPROVED` |
 
 ### Code Organization
 
@@ -428,7 +447,7 @@ export async function enrichIfNeeded(event: ValidatedEvent): Promise<EnrichedEve
 
 ```typescript
 // Always include correlation ID
-logger.info('message', { eventId, eventType, ...context });
+logger.info("message", { eventId, eventType, ...context })
 
 // Log levels:
 // ERROR - DLQ-worthy failures
@@ -456,23 +475,23 @@ logger.info('message', { eventId, eventType, ...context });
 
 **Table:** `NdxIdempotency`
 
-| Attribute | Type | Purpose |
-|-----------|------|---------|
-| id | String (PK) | Event ID hash |
-| expiration | Number | TTL timestamp |
-| status | String | INPROGRESS / COMPLETED |
-| data | String | Response data |
+| Attribute  | Type        | Purpose                |
+| ---------- | ----------- | ---------------------- |
+| id         | String (PK) | Event ID hash          |
+| expiration | Number      | TTL timestamp          |
+| status     | String      | INPROGRESS / COMPLETED |
+| data       | String      | Response data          |
 
 ### DynamoDB Access (ISB Tables - Read Only)
 
 Table names are dynamically resolved from CloudFormation exports: `ISB-{namespace}-{TableName}Table`
 
-| Table | Key(s) | Fields Used for Enrichment |
-|-------|--------|---------------------------|
-| LeaseTable | PK: `userEmail`, SK: `uuid` | originalLeaseTemplateName, awsAccountId, expirationDate, maxSpend, totalCostAccrued, status |
-| LeaseTable (GSI) | PK: `status`, SK: `originalLeaseTemplateUuid` | For querying leases by status |
-| SandboxAccountTable | PK: `awsAccountId` | name, email, status |
-| LeaseTemplateTable | PK: `uuid` | name, maxSpend, leaseDurationInHours |
+| Table               | Key(s)                                        | Fields Used for Enrichment                                                                  |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| LeaseTable          | PK: `userEmail`, SK: `uuid`                   | originalLeaseTemplateName, awsAccountId, expirationDate, maxSpend, totalCostAccrued, status |
+| LeaseTable (GSI)    | PK: `status`, SK: `originalLeaseTemplateUuid` | For querying leases by status                                                               |
+| SandboxAccountTable | PK: `awsAccountId`                            | name, email, status                                                                         |
+| LeaseTemplateTable  | PK: `uuid`                                    | name, maxSpend, leaseDurationInHours                                                        |
 
 See **ISB Integration** section for full table schemas.
 
@@ -487,34 +506,33 @@ The following security controls address vulnerabilities identified through adver
 #### P0 - Critical Controls
 
 **1. EventBridge Source Validation**
+
 ```typescript
 // handler.ts - Reject events from unauthorized sources
-const ALLOWED_SOURCES = ['innovation-sandbox'];
+const ALLOWED_SOURCES = ["innovation-sandbox"]
 
 export const handler = async (event: EventBridgeEvent<string, unknown>) => {
   if (!ALLOWED_SOURCES.includes(event.source)) {
-    logger.error('Rejected unauthorized event source', { source: event.source });
-    throw new SecurityError('Unauthorized event source');
+    logger.error("Rejected unauthorized event source", { source: event.source })
+    throw new SecurityError("Unauthorized event source")
   }
   // ... continue processing
-};
+}
 ```
 
 **2. Email Ownership Verification**
+
 ```typescript
 // enrichment.ts - Cross-check email against lease owner
-export async function verifyEmailOwnership(
-  leaseId: LeaseKey,
-  claimedEmail: string
-): Promise<void> {
-  const lease = await getLeaseByKey(leaseId);
+export async function verifyEmailOwnership(leaseId: LeaseKey, claimedEmail: string): Promise<void> {
+  const lease = await getLeaseByKey(leaseId)
   if (lease.userEmail.toLowerCase() !== claimedEmail.toLowerCase()) {
-    logger.error('Email mismatch detected', {
-      leaseEmail: '[REDACTED]',
-      claimedEmail: '[REDACTED]',
+    logger.error("Email mismatch detected", {
+      leaseEmail: "[REDACTED]",
+      claimedEmail: "[REDACTED]",
       leaseId: leaseId.uuid,
-    });
-    throw new SecurityError('Email does not match lease owner');
+    })
+    throw new SecurityError("Email does not match lease owner")
   }
 }
 ```
@@ -522,90 +540,92 @@ export async function verifyEmailOwnership(
 #### P1 - High Priority Controls
 
 **3. Reserved Concurrency (Blast Radius Limiting)**
+
 ```typescript
 // notification-stack.ts
-const notificationLambda = new NodejsFunction(this, 'Handler', {
+const notificationLambda = new NodejsFunction(this, "Handler", {
   // ... other config
-  reservedConcurrentExecutions: 10,  // Prevent account-wide exhaustion
-});
+  reservedConcurrentExecutions: 10, // Prevent account-wide exhaustion
+})
 ```
 
 **4. Circuit Breaker Pattern**
+
 ```typescript
 // errors.ts - Track failures and break circuit
 const CIRCUIT_BREAKER = {
   failures: 0,
   lastFailure: 0,
   threshold: 5,
-  resetMs: 60000,  // 1 minute
-};
+  resetMs: 60000, // 1 minute
+}
 
 export function checkCircuitBreaker(): void {
-  const now = Date.now();
+  const now = Date.now()
   if (now - CIRCUIT_BREAKER.lastFailure > CIRCUIT_BREAKER.resetMs) {
-    CIRCUIT_BREAKER.failures = 0;  // Reset after cooldown
+    CIRCUIT_BREAKER.failures = 0 // Reset after cooldown
   }
   if (CIRCUIT_BREAKER.failures >= CIRCUIT_BREAKER.threshold) {
-    throw new CircuitOpenError('Circuit breaker open - sending to DLQ');
+    throw new CircuitOpenError("Circuit breaker open - sending to DLQ")
   }
 }
 
 export function recordFailure(): void {
-  CIRCUIT_BREAKER.failures++;
-  CIRCUIT_BREAKER.lastFailure = Date.now();
+  CIRCUIT_BREAKER.failures++
+  CIRCUIT_BREAKER.lastFailure = Date.now()
 }
 ```
 
 #### P2 - Medium Priority Controls
 
 **5. Encrypted CloudWatch Logs**
+
 ```typescript
 // notification-stack.ts
-const kmsKey = new Key(this, 'LogsKey', {
-  description: 'KMS key for notification logs encryption',
+const kmsKey = new Key(this, "LogsKey", {
+  description: "KMS key for notification logs encryption",
   enableKeyRotation: true,
-});
+})
 
-const logGroup = new LogGroup(this, 'NotificationLogs', {
-  logGroupName: '/aws/lambda/ndx-notification',
+const logGroup = new LogGroup(this, "NotificationLogs", {
+  logGroupName: "/aws/lambda/ndx-notification",
   encryptionKey: kmsKey,
   retention: RetentionDays.ONE_MONTH,
-});
+})
 ```
 
 **6. Secrets Manager Resource Policy**
+
 ```typescript
 // notification-stack.ts - Restrict secret access to this Lambda only
-const secret = Secret.fromSecretNameV2(this, 'Creds', '/ndx/notifications/credentials');
+const secret = Secret.fromSecretNameV2(this, "Creds", "/ndx/notifications/credentials")
 
-secret.addToResourcePolicy(new PolicyStatement({
-  sid: 'RestrictToNotificationLambda',
-  effect: Effect.DENY,
-  principals: [new AnyPrincipal()],
-  actions: ['secretsmanager:GetSecretValue'],
-  conditions: {
-    ArnNotLike: {
-      'aws:PrincipalArn': notificationLambda.role!.roleArn,
+secret.addToResourcePolicy(
+  new PolicyStatement({
+    sid: "RestrictToNotificationLambda",
+    effect: Effect.DENY,
+    principals: [new AnyPrincipal()],
+    actions: ["secretsmanager:GetSecretValue"],
+    conditions: {
+      ArnNotLike: {
+        "aws:PrincipalArn": notificationLambda.role!.roleArn,
+      },
     },
-  },
-}));
+  }),
+)
 ```
 
 **7. Input Sanitization for Templates**
+
 ```typescript
 // templates.ts - Escape special characters in personalisation values
-export function sanitizePersonalisation(
-  values: Record<string, string>
-): Record<string, string> {
+export function sanitizePersonalisation(values: Record<string, string>): Record<string, string> {
   return Object.fromEntries(
     Object.entries(values).map(([key, value]) => [
       key,
-      value
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;'),
-    ])
-  );
+      value.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"),
+    ]),
+  )
 }
 ```
 
@@ -663,37 +683,37 @@ export function sanitizePersonalisation(
 
 ### Retry Strategy
 
-| Error Type | Action | Max Attempts |
-|------------|--------|--------------|
-| Retriable (429, 5xx, timeout) | Exponential backoff | 3 |
-| Permanent (400) | DLQ immediately | 1 |
-| Critical (401, 403) | DLQ + alarm | 1 |
+| Error Type                    | Action              | Max Attempts |
+| ----------------------------- | ------------------- | ------------ |
+| Retriable (429, 5xx, timeout) | Exponential backoff | 3            |
+| Permanent (400)               | DLQ immediately     | 1            |
+| Critical (401, 403)           | DLQ + alarm         | 1            |
 
 ### Dead Letter Queue
 
 ```typescript
 // notification-stack.ts
-const dlq = new Queue(this, 'NotificationDLQ', {
-  queueName: 'ndx-notification-dlq',
+const dlq = new Queue(this, "NotificationDLQ", {
+  queueName: "ndx-notification-dlq",
   retentionPeriod: Duration.days(14),
   encryption: QueueEncryption.SQS_MANAGED,
-});
+})
 
-const notificationLambda = new NodejsFunction(this, 'NotificationHandler', {
+const notificationLambda = new NodejsFunction(this, "NotificationHandler", {
   // ...
   deadLetterQueue: dlq,
-  retryAttempts: 2,  // EventBridge retries before DLQ
-});
+  retryAttempts: 2, // EventBridge retries before DLQ
+})
 ```
 
 ### Alarms
 
-| Alarm | Threshold | Action |
-|-------|-----------|--------|
-| DLQ depth > 0 | Any messages | AWS Chatbot → Slack |
-| Lambda errors | > 5 in 5 min | AWS Chatbot → Slack |
-| Zero notifications | 0 in 24 hours | AWS Chatbot → Slack |
-| Critical errors (401/403) | Any | AWS Chatbot → Slack |
+| Alarm                     | Threshold     | Action              |
+| ------------------------- | ------------- | ------------------- |
+| DLQ depth > 0             | Any messages  | AWS Chatbot → Slack |
+| Lambda errors             | > 5 in 5 min  | AWS Chatbot → Slack |
+| Zero notifications        | 0 in 24 hours | AWS Chatbot → Slack |
+| Critical errors (401/403) | Any           | AWS Chatbot → Slack |
 
 ---
 
@@ -701,26 +721,27 @@ const notificationLambda = new NodejsFunction(this, 'NotificationHandler', {
 
 ### Service Layers
 
-| Layer | Components | Responsibility |
-|-------|------------|----------------|
-| **Frontstage** | GOV.UK Notify emails, Slack messages | User/Ops visible outputs |
-| **Backstage** | Lambda, senders, enrichment, validation | Hidden processing |
-| **Support** | Secrets Manager, Idempotency, DLQ, Alarms, Chatbot | Operational infrastructure |
+| Layer          | Components                                         | Responsibility             |
+| -------------- | -------------------------------------------------- | -------------------------- |
+| **Frontstage** | GOV.UK Notify emails, Slack messages               | User/Ops visible outputs   |
+| **Backstage**  | Lambda, senders, enrichment, validation            | Hidden processing          |
+| **Support**    | Secrets Manager, Idempotency, DLQ, Alarms, Chatbot | Operational infrastructure |
 
 ### Identified Pain Points
 
-| Layer | Pain Point | Impact | Status |
-|-------|------------|--------|--------|
-| Frontstage | User doesn't know notification failed | Lost engagement | **Future: ISB UI confirmation** |
-| Frontstage | Slack messages lack actionable links | Ops must search manually | **Future: Deep links to ISB admin** |
-| Backstage | Enrichment adds latency (10-50ms) | Slight delay | Acceptable for MVP |
-| Backstage | Single Lambda = single failure domain | All notifications down | **Future: Split by channel** |
-| Support | DLQ requires manual inspection | Delayed recovery | **Future: Auto-retry Lambda** |
-| Support | No notification receipt confirmation | Unknown delivery status | **Future: Notify callbacks** |
+| Layer      | Pain Point                            | Impact                   | Status                              |
+| ---------- | ------------------------------------- | ------------------------ | ----------------------------------- |
+| Frontstage | User doesn't know notification failed | Lost engagement          | **Future: ISB UI confirmation**     |
+| Frontstage | Slack messages lack actionable links  | Ops must search manually | **Future: Deep links to ISB admin** |
+| Backstage  | Enrichment adds latency (10-50ms)     | Slight delay             | Acceptable for MVP                  |
+| Backstage  | Single Lambda = single failure domain | All notifications down   | **Future: Split by channel**        |
+| Support    | DLQ requires manual inspection        | Delayed recovery         | **Future: Auto-retry Lambda**       |
+| Support    | No notification receipt confirmation  | Unknown delivery status  | **Future: Notify callbacks**        |
 
 ### Future Enhancement Opportunities
 
 **Phase 2: Delivery Tracking**
+
 ```
 User ← Email
        ↓
@@ -730,6 +751,7 @@ GOV.UK Notify delivery callback → API Gateway → Track in DynamoDB
 ```
 
 **Phase 3: Interactive Slack**
+
 ```
 Ops ← Slack message with interactive buttons
        ↓
@@ -739,6 +761,7 @@ Slack → API Gateway → ISB Admin Actions
 ```
 
 **Phase 4: Channel Isolation**
+
 ```
 Current: EventBridge → Single Lambda → Notify/Slack
 
@@ -749,13 +772,13 @@ Future:  EventBridge → NotifyLambda → GOV.UK Notify
 
 ### Service Metrics
 
-| Metric | Target | Notes |
-|--------|--------|-------|
-| End-to-end latency | < 500ms | EventBridge → notification sent |
-| Frontstage touchpoints | 2 | Email + Slack (expandable) |
-| Backstage components | 5 | Modular for future split |
-| Support processes | 5 | Comprehensive coverage |
-| Failure recovery | < 24h | Manual DLQ review (automate in Phase 2) |
+| Metric                 | Target  | Notes                                   |
+| ---------------------- | ------- | --------------------------------------- |
+| End-to-end latency     | < 500ms | EventBridge → notification sent         |
+| Frontstage touchpoints | 2       | Email + Slack (expandable)              |
+| Backstage components   | 5       | Modular for future split                |
+| Support processes      | 5       | Comprehensive coverage                  |
+| Failure recovery       | < 24h   | Manual DLQ review (automate in Phase 2) |
 
 ---
 
@@ -763,49 +786,49 @@ Future:  EventBridge → NotifyLambda → GOV.UK Notify
 
 ### Monthly Cost Estimate (10,000 events/month baseline)
 
-| Category | Service | Monthly Cost |
-|----------|---------|--------------|
-| **Compute** | Lambda (256MB, 500ms avg) | $0.08 |
-| **Storage** | DynamoDB (Idempotency + reads) | $0.27 |
-| **Security** | Secrets Manager + KMS | $1.51 |
-| **Monitoring** | CloudWatch (Logs, Alarms, Metrics) | $2.40 |
-| **External** | GOV.UK Notify, Slack | $0.00 (free) |
-| | **Total** | **~$4.30/month** |
+| Category       | Service                            | Monthly Cost     |
+| -------------- | ---------------------------------- | ---------------- |
+| **Compute**    | Lambda (256MB, 500ms avg)          | $0.08            |
+| **Storage**    | DynamoDB (Idempotency + reads)     | $0.27            |
+| **Security**   | Secrets Manager + KMS              | $1.51            |
+| **Monitoring** | CloudWatch (Logs, Alarms, Metrics) | $2.40            |
+| **External**   | GOV.UK Notify, Slack               | $0.00 (free)     |
+|                | **Total**                          | **~$4.30/month** |
 
 ### Cost at Scale
 
 | Events/Month | Total Cost | Cost/Notification |
-|--------------|------------|-------------------|
-| 10,000 | ~$4.30 | $0.00043 |
-| 50,000 | ~$6.30 | $0.00013 |
-| 100,000 | ~$9.00 | $0.00009 |
-| 500,000 | ~$27.00 | $0.00005 |
+| ------------ | ---------- | ----------------- |
+| 10,000       | ~$4.30     | $0.00043          |
+| 50,000       | ~$6.30     | $0.00013          |
+| 100,000      | ~$9.00     | $0.00009          |
+| 500,000      | ~$27.00    | $0.00005          |
 
 ### Quantified Benefits
 
-| Benefit | Impact | Estimated Value |
-|---------|--------|-----------------|
-| Ops monitoring time saved | ~5 hours/week eliminated | $200/month |
-| Support ticket reduction | Fewer "why locked out" queries | $100/month |
-| User productivity | Faster access, work saved before expiry | $500/month |
-| **Total Monthly Benefit** | | **~$800/month** |
+| Benefit                   | Impact                                  | Estimated Value |
+| ------------------------- | --------------------------------------- | --------------- |
+| Ops monitoring time saved | ~5 hours/week eliminated                | $200/month      |
+| Support ticket reduction  | Fewer "why locked out" queries          | $100/month      |
+| User productivity         | Faster access, work saved before expiry | $500/month      |
+| **Total Monthly Benefit** |                                         | **~$800/month** |
 
 ### ROI Summary
 
-| Metric | Value |
-|--------|-------|
-| Monthly Cost | $4.30 |
-| Monthly Benefit | ~$800 |
-| **ROI** | **18,500%** |
-| Break-even | 1 prevented support ticket |
-| Cost per notification | < $0.001 |
+| Metric                | Value                      |
+| --------------------- | -------------------------- |
+| Monthly Cost          | $4.30                      |
+| Monthly Benefit       | ~$800                      |
+| **ROI**               | **18,500%**                |
+| Break-even            | 1 prevented support ticket |
+| Cost per notification | < $0.001                   |
 
 ### Cost Optimization (Not Recommended)
 
-| Opportunity | Savings | Trade-off |
-|-------------|---------|-----------|
-| Remove KMS log encryption | $1.00/month | Reduced PII protection |
-| Reduce CloudWatch retention | $0.20/month | Less historical data |
+| Opportunity                 | Savings     | Trade-off              |
+| --------------------------- | ----------- | ---------------------- |
+| Remove KMS log encryption   | $1.00/month | Reduced PII protection |
+| Reduce CloudWatch retention | $0.20/month | Less historical data   |
 
 **Verdict:** At $4.30/month, optimization effort exceeds potential savings. Keep all features.
 
@@ -815,55 +838,55 @@ Future:  EventBridge → NotifyLambda → GOV.UK Notify
 
 ### Strengths (Internal Positive)
 
-| Strength | Impact |
-|----------|--------|
-| Simple "One Brain" architecture | Easy to understand, debug, deploy |
-| Battle-tested AWS services | Low operational risk |
-| Official SDKs (Notify, AWS) | Maintained, documented, typed |
-| TypeScript consistency with CDK | Shared tooling and expertise |
-| Powertools (Logger, Idempotency) | Production-ready patterns for free |
-| Zero external costs | GOV.UK Notify + Slack webhooks free |
+| Strength                            | Impact                                             |
+| ----------------------------------- | -------------------------------------------------- |
+| Simple "One Brain" architecture     | Easy to understand, debug, deploy                  |
+| Battle-tested AWS services          | Low operational risk                               |
+| Official SDKs (Notify, AWS)         | Maintained, documented, typed                      |
+| TypeScript consistency with CDK     | Shared tooling and expertise                       |
+| Powertools (Logger, Idempotency)    | Production-ready patterns for free                 |
+| Zero external costs                 | GOV.UK Notify + Slack webhooks free                |
 | Security-first (Red Team validated) | Source validation, email ownership, encrypted logs |
-| ISB schemas documented from source | No guesswork on event formats |
+| ISB schemas documented from source  | No guesswork on event formats                      |
 
 ### Weaknesses (Internal Negative)
 
-| Weakness | Mitigation |
-|----------|------------|
-| Single point of failure | Future: split Lambda by channel |
-| No delivery confirmation | Future: Notify callbacks |
-| Manual DLQ processing | Future: auto-retry Lambda |
-| Solo developer knowledge | This documentation |
+| Weakness                 | Mitigation                      |
+| ------------------------ | ------------------------------- |
+| Single point of failure  | Future: split Lambda by channel |
+| No delivery confirmation | Future: Notify callbacks        |
+| Manual DLQ processing    | Future: auto-retry Lambda       |
+| Solo developer knowledge | This documentation              |
 
 ### Opportunities (External Positive)
 
-| Opportunity | Feasibility |
-|-------------|-------------|
-| Additional channels (SMS, Push, Teams) | High |
-| Interactive Slack buttons | Medium |
-| Delivery analytics via Notify callbacks | High |
-| Welsh language templates | High (Notify built-in) |
-| Notification preferences UI | Medium |
-| Cross-ISB reuse | High |
+| Opportunity                             | Feasibility            |
+| --------------------------------------- | ---------------------- |
+| Additional channels (SMS, Push, Teams)  | High                   |
+| Interactive Slack buttons               | Medium                 |
+| Delivery analytics via Notify callbacks | High                   |
+| Welsh language templates                | High (Notify built-in) |
+| Notification preferences UI             | Medium                 |
+| Cross-ISB reuse                         | High                   |
 
 ### Threats (External Negative)
 
-| Threat | Probability | Mitigation |
-|--------|-------------|------------|
-| ISB schema changes | High | Schema validation fails fast to DLQ |
-| GOV.UK Notify outage | Low | Retry + DLQ preserves for replay |
-| API key compromise | Low | Secrets Manager + resource policy |
-| Slack data residency (GDPR) | Medium | Review Slack compliance |
-| Team turnover | Medium | Comprehensive documentation |
+| Threat                      | Probability | Mitigation                          |
+| --------------------------- | ----------- | ----------------------------------- |
+| ISB schema changes          | High        | Schema validation fails fast to DLQ |
+| GOV.UK Notify outage        | Low         | Retry + DLQ preserves for replay    |
+| API key compromise          | Low         | Secrets Manager + resource policy   |
+| Slack data residency (GDPR) | Medium      | Review Slack compliance             |
+| Team turnover               | Medium      | Comprehensive documentation         |
 
 ### Recommended Actions
 
-| Priority | Action | Addresses |
-|----------|--------|-----------|
-| P0 | Complete architecture documentation | Weakness: Knowledge concentration |
-| P1 | Add Notify delivery callbacks | Opportunity: Analytics |
-| P2 | Implement DLQ auto-retry | Weakness: Manual processing |
-| P3 | Review Slack GDPR compliance | Threat: Data residency |
+| Priority | Action                              | Addresses                         |
+| -------- | ----------------------------------- | --------------------------------- |
+| P0       | Complete architecture documentation | Weakness: Knowledge concentration |
+| P1       | Add Notify delivery callbacks       | Opportunity: Analytics            |
+| P2       | Implement DLQ auto-retry            | Weakness: Manual processing       |
+| P3       | Review Slack GDPR compliance        | Threat: Data residency            |
 
 ---
 
@@ -871,13 +894,13 @@ Future:  EventBridge → NotifyLambda → GOV.UK Notify
 
 ### Primary Activities (Value Flow)
 
-| Stage | Input | Output | Value Added |
-|-------|-------|--------|-------------|
-| **1. Capture** | ISB events | Validated triggers | Security filtering, audit trail |
-| **2. Operations** | Triggers | Enriched payloads | Context (names, dates, URLs) |
-| **3. Delivery** | Payloads | Messages sent | Reliable transport to channels |
-| **4. Engagement** | Messages | User attention | Trust (GOV.UK brand), clarity |
-| **5. Action** | Attention | Business outcomes | Informed decisions, faster response |
+| Stage             | Input      | Output             | Value Added                         |
+| ----------------- | ---------- | ------------------ | ----------------------------------- |
+| **1. Capture**    | ISB events | Validated triggers | Security filtering, audit trail     |
+| **2. Operations** | Triggers   | Enriched payloads  | Context (names, dates, URLs)        |
+| **3. Delivery**   | Payloads   | Messages sent      | Reliable transport to channels      |
+| **4. Engagement** | Messages   | User attention     | Trust (GOV.UK brand), clarity       |
+| **5. Action**     | Attention  | Business outcomes  | Informed decisions, faster response |
 
 ### Value Transformation Example
 
@@ -891,31 +914,31 @@ OUT: { to: "user@gov.uk", personalisation: {
 
 ### End-to-End Conversion
 
-| Metric | Rate | Meaning |
-|--------|------|---------|
-| Event → Validated | 99% | 1% schema failures to DLQ |
-| Validated → Delivered | 99.5% | 0.5% failures, preserved for retry |
-| Delivered → Opened | ~65% | GOV.UK brand trust |
-| Opened → Action taken | ~40% | User acts on information |
-| **Event → Outcome** | **~28%** | Positive business outcome per event |
+| Metric                | Rate     | Meaning                             |
+| --------------------- | -------- | ----------------------------------- |
+| Event → Validated     | 99%      | 1% schema failures to DLQ           |
+| Validated → Delivered | 99.5%    | 0.5% failures, preserved for retry  |
+| Delivered → Opened    | ~65%     | GOV.UK brand trust                  |
+| Opened → Action taken | ~40%     | User acts on information            |
+| **Event → Outcome**   | **~28%** | Positive business outcome per event |
 
 ### Value Metrics
 
-| Metric | Value |
-|--------|-------|
-| Cost per event | < $0.001 |
-| Cost per outcome | < $0.004 |
-| Value per outcome | ~$0.80 (from ROI analysis) |
-| **Value multiplier** | **200x** (value/cost) |
+| Metric               | Value                      |
+| -------------------- | -------------------------- |
+| Cost per event       | < $0.001                   |
+| Cost per outcome     | < $0.004                   |
+| Value per outcome    | ~$0.80 (from ROI analysis) |
+| **Value multiplier** | **200x** (value/cost)      |
 
 ### Value Optimization Opportunities
 
-| Stage | Opportunity | Expected Impact |
-|-------|-------------|-----------------|
+| Stage      | Opportunity                        | Expected Impact        |
+| ---------- | ---------------------------------- | ---------------------- |
 | Operations | Richer context (org name, history) | Better personalization |
-| Delivery | SMS for critical alerts | Higher reach |
-| Engagement | A/B tested subject lines | +10-15% open rate |
-| Action | Interactive Slack buttons | +20% action rate |
+| Delivery   | SMS for critical alerts            | Higher reach           |
+| Engagement | A/B tested subject lines           | +10-15% open rate      |
+| Action     | Interactive Slack buttons          | +20% action rate       |
 
 ---
 
@@ -923,12 +946,12 @@ OUT: { to: "user@gov.uk", personalisation: {
 
 ### Lambda Configuration
 
-| Setting | Value | Rationale |
-|---------|-------|-----------|
-| Memory | 256 MB | Sufficient for SDK + JSON |
-| Timeout | 30 seconds | DynamoDB + external API + retries |
-| Reserved concurrency | None (default) | Allow scaling |
-| Provisioned concurrency | None (MVP) | Add if cold starts matter |
+| Setting                 | Value          | Rationale                         |
+| ----------------------- | -------------- | --------------------------------- |
+| Memory                  | 256 MB         | Sufficient for SDK + JSON         |
+| Timeout                 | 30 seconds     | DynamoDB + external API + retries |
+| Reserved concurrency    | None (default) | Allow scaling                     |
+| Provisioned concurrency | None (MVP)     | Add if cold starts matter         |
 
 ### Cold Start Mitigation
 
@@ -1045,11 +1068,13 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 **Decision:** Single Lambda with modular sender code ("one brain, two mouths").
 
 **Rationale:**
+
 - Simpler deployment and maintenance for solo developer
 - Shared validation, enrichment, error handling
 - Modular code allows future extraction to separate Lambdas
 
 **Consequences:**
+
 - Single blast radius (mitigated by good tests)
 - Must be careful with channel-specific error handling
 
@@ -1065,12 +1090,14 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 **Decision:** TypeScript (Node.js 20.x) instead of Python.
 
 **Rationale:**
+
 - Consistency with existing CDK codebase
 - Same ESLint, Jest, tsconfig tooling
 - Share types between CDK and Lambda
 - Team already knows TypeScript
 
 **Consequences:**
+
 - Slightly larger cold start than Python
 - notifications-node-client is official and maintained
 
@@ -1086,11 +1113,13 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 **Decision:** Use Lambda Powertools built-in idempotency with DynamoDB.
 
 **Rationale:**
+
 - Zero-config, proven pattern
 - Automatic TTL management
 - Integrates with existing Powertools (logger, metrics)
 
 **Consequences:**
+
 - Additional DynamoDB table (Powertools-managed)
 - Small latency overhead per invocation (~10ms)
 
@@ -1106,11 +1135,13 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 **Decision:** Read-only access (GetItem, Query only) to ISB tables.
 
 **Rationale:**
+
 - Principle of least privilege
 - Notification system should never modify ISB data
 - Reduces blast radius of bugs
 
 **Consequences:**
+
 - Cannot cache enrichment data in ISB tables
 - Must handle missing data gracefully
 
@@ -1126,11 +1157,13 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 **Decision:** CloudWatch Alarms → AWS Chatbot → Slack (not via notification Lambda).
 
 **Rationale:**
+
 - Separate from business notifications
 - Native AWS integration (no extra Lambda)
 - Works even if notification Lambda is broken
 
 **Consequences:**
+
 - Requires AWS Chatbot setup (one-time)
 - Two paths to Slack (Chatbot for infra, Lambda for ops)
 
@@ -1142,6 +1175,7 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 **Context:** Notification system processes events containing PII (emails) and sends to external services.
 
 **Decision:** Implement defense-in-depth security controls:
+
 - Validate EventBridge source before processing
 - Verify email ownership against DynamoDB before sending
 - Limit blast radius with reserved concurrency
@@ -1149,12 +1183,14 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 - Restrict secrets access via resource policy
 
 **Rationale:**
+
 - EventBridge in same account means any service could publish fake events
 - Email field in event could be manipulated to send to arbitrary addresses
 - Single compromised component shouldn't exhaust account resources
 - Logs are queryable and could expose PII without encryption
 
 **Consequences:**
+
 - Small latency overhead for ownership verification (~10ms DynamoDB call)
 - KMS costs for log encryption (~$1/month)
 - Circuit breaker may delay legitimate notifications during API outages
@@ -1163,20 +1199,20 @@ sam local invoke NotificationHandler -e test/events/lease-approved.json
 
 ## Risk Mitigations
 
-| Risk | Probability | Impact | Mitigation | Status |
-|------|-------------|--------|------------|--------|
-| Event schema changes | High | High | Schema validation, fail fast to DLQ | Designed |
-| Notification lost | High | High | DLQ, zero-notification alarm | Designed |
-| API key expires | Medium | High | Critical alarm on 401, rotation reminder | Designed |
-| Slack rate limit | High | Medium | Backoff, circuit breaker | **Enhanced** |
-| Duplicate notifications | Medium | Medium | Powertools idempotency | Designed |
-| DynamoDB enrichment fails | Medium | High | Required vs optional fields, fail loudly | Designed |
-| Wrong recipient | Low | High | Email ownership verification (P0) | **Mitigated** |
-| Unauthorized event injection | Medium | Critical | Source validation (P0) | **Mitigated** |
-| Account-wide Lambda exhaustion | Low | High | Reserved concurrency (P1) | **Mitigated** |
-| PII exposure in logs | Medium | Medium | KMS-encrypted CloudWatch Logs (P2) | **Mitigated** |
-| Secrets exfiltration | Low | Critical | Secrets Manager resource policy (P2) | **Mitigated** |
-| Template injection | Low | Medium | Input sanitization (P2) | **Mitigated** |
+| Risk                           | Probability | Impact   | Mitigation                               | Status        |
+| ------------------------------ | ----------- | -------- | ---------------------------------------- | ------------- |
+| Event schema changes           | High        | High     | Schema validation, fail fast to DLQ      | Designed      |
+| Notification lost              | High        | High     | DLQ, zero-notification alarm             | Designed      |
+| API key expires                | Medium      | High     | Critical alarm on 401, rotation reminder | Designed      |
+| Slack rate limit               | High        | Medium   | Backoff, circuit breaker                 | **Enhanced**  |
+| Duplicate notifications        | Medium      | Medium   | Powertools idempotency                   | Designed      |
+| DynamoDB enrichment fails      | Medium      | High     | Required vs optional fields, fail loudly | Designed      |
+| Wrong recipient                | Low         | High     | Email ownership verification (P0)        | **Mitigated** |
+| Unauthorized event injection   | Medium      | Critical | Source validation (P0)                   | **Mitigated** |
+| Account-wide Lambda exhaustion | Low         | High     | Reserved concurrency (P1)                | **Mitigated** |
+| PII exposure in logs           | Medium      | Medium   | KMS-encrypted CloudWatch Logs (P2)       | **Mitigated** |
+| Secrets exfiltration           | Low         | Critical | Secrets Manager resource policy (P2)     | **Mitigated** |
+| Template injection             | Low         | Medium   | Input sanitization (P2)                  | **Mitigated** |
 
 ---
 
@@ -1191,37 +1227,45 @@ This section documents the actual Innovation Sandbox schemas and resources disco
 
 ```typescript
 // notification-stack.ts - actual EventBridge subscription
-const rule = new Rule(this, 'NotificationRule', {
-  eventBus: EventBus.fromEventBusName(this, 'ISBBus', `ISB-${namespace}-ISBEventBus`),
+const rule = new Rule(this, "NotificationRule", {
+  eventBus: EventBus.fromEventBusName(this, "ISBBus", `ISB-${namespace}-ISBEventBus`),
   eventPattern: {
     detailType: [
-      'LeaseRequested', 'LeaseApproved', 'LeaseDenied',
-      'LeaseBudgetThresholdAlert', 'LeaseDurationThresholdAlert',
-      'LeaseFreezingThresholdAlert', 'LeaseBudgetExceeded',
-      'LeaseExpired', 'LeaseTerminated', 'LeaseFrozen',
-      'AccountCleanupFailed', 'AccountQuarantined', 'AccountDriftDetected',
+      "LeaseRequested",
+      "LeaseApproved",
+      "LeaseDenied",
+      "LeaseBudgetThresholdAlert",
+      "LeaseDurationThresholdAlert",
+      "LeaseFreezingThresholdAlert",
+      "LeaseBudgetExceeded",
+      "LeaseExpired",
+      "LeaseTerminated",
+      "LeaseFrozen",
+      "AccountCleanupFailed",
+      "AccountQuarantined",
+      "AccountDriftDetected",
     ],
   },
-});
+})
 ```
 
 ### ISB Event Types (from `events/index.ts`)
 
-| Constant | DetailType Value | Channel |
-|----------|------------------|---------|
-| `LeaseRequested` | LeaseRequested | Notify |
-| `LeaseApproved` | LeaseApproved | Notify |
-| `LeaseDenied` | LeaseDenied | Notify |
-| `LeaseTerminated` | LeaseTerminated | Notify |
-| `LeaseFrozen` | LeaseFrozen | Notify + Slack |
-| `LeaseBudgetThresholdBreachedAlert` | LeaseBudgetThresholdAlert | Notify |
-| `LeaseDurationThresholdBreachedAlert` | LeaseDurationThresholdAlert | Notify |
-| `LeaseFreezingThresholdBreachedAlert` | LeaseFreezingThresholdAlert | Notify |
-| `LeaseBudgetExceededAlert` | LeaseBudgetExceeded | Notify |
-| `LeaseExpiredAlert` | LeaseExpired | Notify |
-| `AccountCleanupFailure` | AccountCleanupFailed | Slack |
-| `AccountQuarantined` | AccountQuarantined | Slack |
-| `AccountDriftDetected` | AccountDriftDetected | Slack |
+| Constant                              | DetailType Value            | Channel        |
+| ------------------------------------- | --------------------------- | -------------- |
+| `LeaseRequested`                      | LeaseRequested              | Notify         |
+| `LeaseApproved`                       | LeaseApproved               | Notify         |
+| `LeaseDenied`                         | LeaseDenied                 | Notify         |
+| `LeaseTerminated`                     | LeaseTerminated             | Notify         |
+| `LeaseFrozen`                         | LeaseFrozen                 | Notify + Slack |
+| `LeaseBudgetThresholdBreachedAlert`   | LeaseBudgetThresholdAlert   | Notify         |
+| `LeaseDurationThresholdBreachedAlert` | LeaseDurationThresholdAlert | Notify         |
+| `LeaseFreezingThresholdBreachedAlert` | LeaseFreezingThresholdAlert | Notify         |
+| `LeaseBudgetExceededAlert`            | LeaseBudgetExceeded         | Notify         |
+| `LeaseExpiredAlert`                   | LeaseExpired                | Notify         |
+| `AccountCleanupFailure`               | AccountCleanupFailed        | Slack          |
+| `AccountQuarantined`                  | AccountQuarantined          | Slack          |
+| `AccountDriftDetected`                | AccountDriftDetected        | Slack          |
 
 ### ISB Event Schemas (Zod Definitions)
 
@@ -1232,7 +1276,7 @@ const rule = new Rule(this, 'NotificationRule', {
 export const LeaseKeySchema = z.object({
   userEmail: z.string().email(),
   uuid: z.string().uuid(),
-});
+})
 // Example: { userEmail: "user@gov.uk", uuid: "a1b2c3d4-..." }
 ```
 
@@ -1240,10 +1284,10 @@ export const LeaseKeySchema = z.object({
 
 ```typescript
 export const LeaseApprovedEventSchema = z.object({
-  leaseId: z.string(),  // Simple string (not LeaseKey)
-  approvedBy: z.union([z.string().email(), z.literal('AUTO_APPROVED')]),
+  leaseId: z.string(), // Simple string (not LeaseKey)
+  approvedBy: z.union([z.string().email(), z.literal("AUTO_APPROVED")]),
   userEmail: z.string().email(),
-});
+})
 // Template fields: userEmail, approvedBy
 ```
 
@@ -1251,11 +1295,11 @@ export const LeaseApprovedEventSchema = z.object({
 
 ```typescript
 export const LeaseRequestedEventSchema = z.object({
-  leaseId: LeaseKeySchema,  // { userEmail, uuid }
+  leaseId: LeaseKeySchema, // { userEmail, uuid }
   comments: z.string().max(1000).optional(),
   userEmail: z.string().email(),
   requiresManualApproval: z.boolean(),
-});
+})
 ```
 
 #### LeaseDeniedEvent
@@ -1265,41 +1309,46 @@ export const LeaseDeniedEventSchema = z.object({
   leaseId: z.string(),
   deniedBy: z.string().email(),
   userEmail: z.string().email(),
-});
+})
 ```
 
 #### LeaseFrozenEvent
 
 ```typescript
-export const LeaseFrozenReasonSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('Expired'), triggeredDurationThreshold: z.number(), leaseDurationInHours: z.number() }),
-  z.object({ type: z.literal('BudgetExceeded'), triggeredBudgetThreshold: z.number(), budget: z.number().optional(), totalSpend: z.number() }),
-  z.object({ type: z.literal('ManuallyFrozen'), comment: z.string().max(1000) }),
-]);
+export const LeaseFrozenReasonSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("Expired"), triggeredDurationThreshold: z.number(), leaseDurationInHours: z.number() }),
+  z.object({
+    type: z.literal("BudgetExceeded"),
+    triggeredBudgetThreshold: z.number(),
+    budget: z.number().optional(),
+    totalSpend: z.number(),
+  }),
+  z.object({ type: z.literal("ManuallyFrozen"), comment: z.string().max(1000) }),
+])
 
 export const LeaseFrozenEventSchema = z.object({
   leaseId: LeaseKeySchema,
-  accountId: z.string().regex(/^\d{12}$/),  // 12-digit AWS account ID
+  accountId: z.string().regex(/^\d{12}$/), // 12-digit AWS account ID
   reason: LeaseFrozenReasonSchema,
-});
+})
 ```
 
 #### LeaseTerminatedEvent
 
 ```typescript
-export const LeaseTerminatedReasonSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('Expired'), leaseDurationInHours: z.number() }),
-  z.object({ type: z.literal('BudgetExceeded'), budget: z.number().optional(), totalSpend: z.number() }),
-  z.object({ type: z.literal('ManuallyTerminated'), comment: z.string() }),
-  z.object({ type: z.literal('AccountQuarantined'), comment: z.string() }),
-  z.object({ type: z.literal('Ejected'), comment: z.string() }),
-]);
+export const LeaseTerminatedReasonSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("Expired"), leaseDurationInHours: z.number() }),
+  z.object({ type: z.literal("BudgetExceeded"), budget: z.number().optional(), totalSpend: z.number() }),
+  z.object({ type: z.literal("ManuallyTerminated"), comment: z.string() }),
+  z.object({ type: z.literal("AccountQuarantined"), comment: z.string() }),
+  z.object({ type: z.literal("Ejected"), comment: z.string() }),
+])
 
 export const LeaseTerminatedEventSchema = z.object({
   leaseId: LeaseKeySchema,
   accountId: z.string().regex(/^\d{12}$/),
   reason: LeaseTerminatedReasonSchema,
-});
+})
 ```
 
 #### LeaseBudgetThresholdBreachedAlert
@@ -1310,9 +1359,9 @@ export const LeaseBudgetThresholdTriggeredEventSchema = z.object({
   accountId: z.string().regex(/^\d{12}$/),
   budget: z.number().optional(),
   totalSpend: z.number(),
-  budgetThresholdTriggered: z.number(),  // e.g., 50, 75, 90 (percent)
-  actionRequested: z.enum(['notify', 'freeze', 'terminate']),
-});
+  budgetThresholdTriggered: z.number(), // e.g., 50, 75, 90 (percent)
+  actionRequested: z.enum(["notify", "freeze", "terminate"]),
+})
 ```
 
 #### AccountQuarantinedEvent
@@ -1321,7 +1370,7 @@ export const LeaseBudgetThresholdTriggeredEventSchema = z.object({
 export const AccountQuarantinedEventSchema = z.object({
   awsAccountId: z.string(),
   reason: z.string(),
-});
+})
 ```
 
 #### AccountCleanupFailureEvent
@@ -1333,7 +1382,7 @@ export const AccountCleanupFailureEventSchema = z.object({
     stateMachineExecutionArn: z.string(),
     stateMachineExecutionStartTime: z.string().datetime(),
   }),
-});
+})
 ```
 
 #### AccountDriftDetectedAlert
@@ -1341,9 +1390,9 @@ export const AccountCleanupFailureEventSchema = z.object({
 ```typescript
 export const AccountDriftEventSchema = z.object({
   accountId: z.string().regex(/^\d{12}$/),
-  actualOu: z.enum(['Available', 'Active', 'CleanUp', 'Quarantine', 'Frozen', 'Entry', 'Exit']).optional(),
-  expectedOu: z.enum(['Available', 'Active', 'CleanUp', 'Quarantine', 'Frozen', 'Entry', 'Exit']).optional(),
-});
+  actualOu: z.enum(["Available", "Active", "CleanUp", "Quarantine", "Frozen", "Entry", "Exit"]).optional(),
+  expectedOu: z.enum(["Available", "Active", "CleanUp", "Quarantine", "Frozen", "Entry", "Exit"]).optional(),
+})
 ```
 
 ### ISB DynamoDB Tables
@@ -1353,50 +1402,50 @@ Tables are created by CDK with generated names, exported via CloudFormation and 
 
 #### Lease Table
 
-| Attribute | Type | Key | Notes |
-|-----------|------|-----|-------|
-| `userEmail` | String | PK | User's email address |
-| `uuid` | String | SK | Lease UUID |
-| `status` | String | GSI-PK | PendingApproval, ApprovalDenied, Active, Frozen, Expired, BudgetExceeded, ManuallyTerminated, AccountQuarantined, Ejected |
-| `originalLeaseTemplateUuid` | String | GSI-SK | Reference to template used |
-| `originalLeaseTemplateName` | String | | Template display name |
-| `leaseDurationInHours` | Number | | How long the lease lasts |
-| `maxSpend` | Number | | Budget limit |
-| `budgetThresholds` | List | | Alert thresholds (e.g., [50, 75, 90]) |
-| `durationThresholds` | List | | Time-based thresholds |
-| `comments` | String | | User's request comments |
-| `awsAccountId` | String | | Assigned AWS account (when Active) |
-| `approvedBy` | String | | Approver email or 'AUTO_APPROVED' |
-| `startDate` | String | | ISO 8601 datetime |
-| `expirationDate` | String | | ISO 8601 datetime |
-| `lastCheckedDate` | String | | Last monitoring check |
-| `totalCostAccrued` | Number | | Current spend |
-| `endDate` | String | | When lease ended (Expired states) |
-| `ttl` | Number | | DynamoDB TTL for cleanup |
+| Attribute                   | Type   | Key    | Notes                                                                                                                     |
+| --------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `userEmail`                 | String | PK     | User's email address                                                                                                      |
+| `uuid`                      | String | SK     | Lease UUID                                                                                                                |
+| `status`                    | String | GSI-PK | PendingApproval, ApprovalDenied, Active, Frozen, Expired, BudgetExceeded, ManuallyTerminated, AccountQuarantined, Ejected |
+| `originalLeaseTemplateUuid` | String | GSI-SK | Reference to template used                                                                                                |
+| `originalLeaseTemplateName` | String |        | Template display name                                                                                                     |
+| `leaseDurationInHours`      | Number |        | How long the lease lasts                                                                                                  |
+| `maxSpend`                  | Number |        | Budget limit                                                                                                              |
+| `budgetThresholds`          | List   |        | Alert thresholds (e.g., [50, 75, 90])                                                                                     |
+| `durationThresholds`        | List   |        | Time-based thresholds                                                                                                     |
+| `comments`                  | String |        | User's request comments                                                                                                   |
+| `awsAccountId`              | String |        | Assigned AWS account (when Active)                                                                                        |
+| `approvedBy`                | String |        | Approver email or 'AUTO_APPROVED'                                                                                         |
+| `startDate`                 | String |        | ISO 8601 datetime                                                                                                         |
+| `expirationDate`            | String |        | ISO 8601 datetime                                                                                                         |
+| `lastCheckedDate`           | String |        | Last monitoring check                                                                                                     |
+| `totalCostAccrued`          | Number |        | Current spend                                                                                                             |
+| `endDate`                   | String |        | When lease ended (Expired states)                                                                                         |
+| `ttl`                       | Number |        | DynamoDB TTL for cleanup                                                                                                  |
 
 **GSI:** `StatusIndex` - PK: `status`, SK: `originalLeaseTemplateUuid`
 
 #### SandboxAccount Table
 
-| Attribute | Type | Key | Notes |
-|-----------|------|-----|-------|
-| `awsAccountId` | String | PK | 12-digit AWS account ID |
-| `email` | String | | Account email |
-| `name` | String | | Account alias (max 50 chars) |
-| `status` | String | | Available, Active, CleanUp, Quarantine, Frozen |
-| `driftAtLastScan` | Boolean | | Whether drift was detected |
-| `cleanupExecutionContext` | Map | | { stateMachineExecutionArn, stateMachineExecutionStartTime } |
+| Attribute                 | Type    | Key | Notes                                                        |
+| ------------------------- | ------- | --- | ------------------------------------------------------------ |
+| `awsAccountId`            | String  | PK  | 12-digit AWS account ID                                      |
+| `email`                   | String  |     | Account email                                                |
+| `name`                    | String  |     | Account alias (max 50 chars)                                 |
+| `status`                  | String  |     | Available, Active, CleanUp, Quarantine, Frozen               |
+| `driftAtLastScan`         | Boolean |     | Whether drift was detected                                   |
+| `cleanupExecutionContext` | Map     |     | { stateMachineExecutionArn, stateMachineExecutionStartTime } |
 
 #### LeaseTemplate Table
 
-| Attribute | Type | Key | Notes |
-|-----------|------|-----|-------|
-| `uuid` | String | PK | Template UUID |
-| `name` | String | | Display name |
-| `maxSpend` | Number | | Budget limit |
-| `budgetThresholds` | List | | Alert thresholds |
-| `durationThresholds` | List | | Time thresholds |
-| `leaseDurationInHours` | Number | | Default duration |
+| Attribute              | Type   | Key | Notes            |
+| ---------------------- | ------ | --- | ---------------- |
+| `uuid`                 | String | PK  | Template UUID    |
+| `name`                 | String |     | Display name     |
+| `maxSpend`             | Number |     | Budget limit     |
+| `budgetThresholds`     | List   |     | Alert thresholds |
+| `durationThresholds`   | List   |     | Time thresholds  |
+| `leaseDurationInHours` | Number |     | Default duration |
 
 ### Environment Variables Required
 
@@ -1414,15 +1463,17 @@ Tables are created by CDK with generated names, exported via CloudFormation and 
 
 ```typescript
 // notification-stack.ts - read-only access to ISB tables
-role.addToPolicy(new PolicyStatement({
-  actions: ['dynamodb:GetItem', 'dynamodb:Query'],
-  resources: [
-    Fn.importValue(`ISB-${namespace}-LeaseTable`),
-    `${Fn.importValue(`ISB-${namespace}-LeaseTable`)}/index/*`,
-    Fn.importValue(`ISB-${namespace}-SandboxAccountTable`),
-    Fn.importValue(`ISB-${namespace}-LeaseTemplateTable`),
-  ],
-}));
+role.addToPolicy(
+  new PolicyStatement({
+    actions: ["dynamodb:GetItem", "dynamodb:Query"],
+    resources: [
+      Fn.importValue(`ISB-${namespace}-LeaseTable`),
+      `${Fn.importValue(`ISB-${namespace}-LeaseTable`)}/index/*`,
+      Fn.importValue(`ISB-${namespace}-SandboxAccountTable`),
+      Fn.importValue(`ISB-${namespace}-LeaseTemplateTable`),
+    ],
+  }),
+)
 ```
 
 ---
@@ -1431,32 +1482,32 @@ role.addToPolicy(new PolicyStatement({
 
 ### User Notifications (GOV.UK Notify)
 
-| ISB Event Type | DetailType | GOV.UK Notify Template | Trigger |
-|----------------|------------|------------------------|---------|
-| LeaseRequested | LeaseRequested | Request confirmation | User submits sandbox request |
-| LeaseApproved | LeaseApproved | Welcome email | User granted sandbox access |
-| LeaseDenied | LeaseDenied | Denial email | Request rejected |
-| LeaseTerminated | LeaseTerminated | Termination email | Sandbox access ended (any reason) |
-| LeaseFrozen | LeaseFrozen | Freeze alert | Account frozen (budget/duration/manual) |
-| LeaseBudgetThresholdBreachedAlert | LeaseBudgetThresholdAlert | Budget warning | 50%/75%/90% spend threshold |
-| LeaseDurationThresholdBreachedAlert | LeaseDurationThresholdAlert | Time warning | Duration threshold breached |
-| LeaseFreezingThresholdBreachedAlert | LeaseFreezingThresholdAlert | Freeze imminent | About to be frozen |
-| LeaseBudgetExceededAlert | LeaseBudgetExceeded | Over budget | Budget fully exceeded |
-| LeaseExpiredAlert | LeaseExpired | Expiry notice | Lease duration ended |
+| ISB Event Type                      | DetailType                  | GOV.UK Notify Template | Trigger                                 |
+| ----------------------------------- | --------------------------- | ---------------------- | --------------------------------------- |
+| LeaseRequested                      | LeaseRequested              | Request confirmation   | User submits sandbox request            |
+| LeaseApproved                       | LeaseApproved               | Welcome email          | User granted sandbox access             |
+| LeaseDenied                         | LeaseDenied                 | Denial email           | Request rejected                        |
+| LeaseTerminated                     | LeaseTerminated             | Termination email      | Sandbox access ended (any reason)       |
+| LeaseFrozen                         | LeaseFrozen                 | Freeze alert           | Account frozen (budget/duration/manual) |
+| LeaseBudgetThresholdBreachedAlert   | LeaseBudgetThresholdAlert   | Budget warning         | 50%/75%/90% spend threshold             |
+| LeaseDurationThresholdBreachedAlert | LeaseDurationThresholdAlert | Time warning           | Duration threshold breached             |
+| LeaseFreezingThresholdBreachedAlert | LeaseFreezingThresholdAlert | Freeze imminent        | About to be frozen                      |
+| LeaseBudgetExceededAlert            | LeaseBudgetExceeded         | Over budget            | Budget fully exceeded                   |
+| LeaseExpiredAlert                   | LeaseExpired                | Expiry notice          | Lease duration ended                    |
 
 ### Ops Alerts (Slack)
 
-| ISB Event Type | DetailType | Priority | Slack Channel |
-|----------------|------------|----------|---------------|
-| AccountQuarantined | AccountQuarantined | Critical | #ndx-ops-alerts |
+| ISB Event Type        | DetailType           | Priority | Slack Channel   |
+| --------------------- | -------------------- | -------- | --------------- |
+| AccountQuarantined    | AccountQuarantined   | Critical | #ndx-ops-alerts |
 | AccountCleanupFailure | AccountCleanupFailed | Critical | #ndx-ops-alerts |
-| AccountDriftDetected | AccountDriftDetected | Critical | #ndx-ops-alerts |
-| LeaseFrozen | LeaseFrozen | Normal | #ndx-ops-alerts |
+| AccountDriftDetected  | AccountDriftDetected | Critical | #ndx-ops-alerts |
+| LeaseFrozen           | LeaseFrozen          | Normal   | #ndx-ops-alerts |
 
 ### Dual-Channel Events
 
-| Event | Notify | Slack | Notes |
-|-------|--------|-------|-------|
+| Event       | Notify            | Slack          | Notes                                          |
+| ----------- | ----------------- | -------------- | ---------------------------------------------- |
 | LeaseFrozen | User notification | Ops visibility | User gets freeze alert, ops see for monitoring |
 
 ---

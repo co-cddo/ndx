@@ -151,11 +151,11 @@ NotificationHandler (shared)
 
 ```typescript
 export interface SlackSendParams {
-  alertType: 'AccountQuarantined' | 'LeaseFrozen' | 'AccountCleanupFailed' | 'AccountDriftDetected';
-  accountId: string;
-  priority: 'critical' | 'normal';
-  details: Record<string, string | number | undefined>;
-  eventId: string;
+  alertType: "AccountQuarantined" | "LeaseFrozen" | "AccountCleanupFailed" | "AccountDriftDetected"
+  accountId: string
+  priority: "critical" | "normal"
+  details: Record<string, string | number | undefined>
+  eventId: string
 }
 
 export class SlackSender {
@@ -163,18 +163,18 @@ export class SlackSender {
 
   async send(params: SlackSendParams): Promise<void> {
     // 1. Get webhook URL from Secrets Manager (cached)
-    const webhookUrl = await this.getWebhookUrl();
+    const webhookUrl = await this.getWebhookUrl()
 
     // 2. Validate webhook URL
-    if (!webhookUrl || webhookUrl.trim() === '') {
-      throw new PermanentError('Webhook URL is empty');
+    if (!webhookUrl || webhookUrl.trim() === "") {
+      throw new PermanentError("Webhook URL is empty")
     }
 
     // 3. Build message (delegates to block-kit-builder in n6-2)
-    const payload = this.buildPayload(params);
+    const payload = this.buildPayload(params)
 
     // 4. POST with retry logic
-    const response = await this.postWithRetry(webhookUrl, payload);
+    const response = await this.postWithRetry(webhookUrl, payload)
 
     // 5. Verify response
     if (!response.ok) {
@@ -183,50 +183,50 @@ export class SlackSender {
   }
 
   private async postWithRetry(url: string, payload: object): Promise<Response> {
-    const delays = [100, 500, 1000];
-    let lastError: Error | undefined;
+    const delays = [100, 500, 1000]
+    let lastError: Error | undefined
 
     for (let attempt = 0; attempt <= 3; attempt++) {
       try {
         const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-          redirect: 'error', // EC-AC-3: Disable redirects
-        });
+          redirect: "error", // EC-AC-3: Disable redirects
+        })
 
         if (response.ok) {
-          const body = await response.json();
+          const body = await response.json()
           if (body.ok !== true) {
-            throw new PermanentError('Slack returned ok: false');
+            throw new PermanentError("Slack returned ok: false")
           }
-          return response;
+          return response
         }
 
         // Classify error
         if (response.status === 429 || response.status >= 500) {
           if (attempt < 3) {
-            await this.sleep(delays[attempt]);
-            continue;
+            await this.sleep(delays[attempt])
+            continue
           }
-          throw new RetriableError(`Rate limited after ${attempt + 1} attempts`);
+          throw new RetriableError(`Rate limited after ${attempt + 1} attempts`)
         }
 
         if (response.status === 401 || response.status === 403) {
-          throw new CriticalError('Webhook auth failed - URL may be revoked');
+          throw new CriticalError("Webhook auth failed - URL may be revoked")
         }
 
-        throw new PermanentError(`Unexpected status: ${response.status}`);
+        throw new PermanentError(`Unexpected status: ${response.status}`)
       } catch (error) {
         if (error instanceof TypeError) {
           // Network error
           if (attempt < 3) {
-            await this.sleep(delays[attempt]);
-            continue;
+            await this.sleep(delays[attempt])
+            continue
           }
-          throw new RetriableError('Network timeout after retries');
+          throw new RetriableError("Network timeout after retries")
         }
-        throw error;
+        throw error
       }
     }
   }
@@ -250,22 +250,22 @@ Attempt 4: Final retry
 
 ```typescript
 // CDK: notification-stack.ts
-const slackWebhookSecret = new secretsmanager.Secret(this, 'SlackWebhookSecret', {
-  secretName: '/ndx/notifications/slack-webhook',
-  description: 'Slack incoming webhook URL for ops alerts',
+const slackWebhookSecret = new secretsmanager.Secret(this, "SlackWebhookSecret", {
+  secretName: "/ndx/notifications/slack-webhook",
+  description: "Slack incoming webhook URL for ops alerts",
   generateSecretString: {
-    secretStringTemplate: JSON.stringify({ webhookUrl: 'PLACEHOLDER_REPLACE_ME' }),
-    generateStringKey: 'dummy', // Won't be used
+    secretStringTemplate: JSON.stringify({ webhookUrl: "PLACEHOLDER_REPLACE_ME" }),
+    generateStringKey: "dummy", // Won't be used
   },
-});
+})
 
 // Lambda fetches AWSCURRENT explicitly
 const response = await secretsManager.send(
   new GetSecretValueCommand({
-    SecretId: '/ndx/notifications/slack-webhook',
-    VersionStage: 'AWSCURRENT', // EC-AC-12
-  })
-);
+    SecretId: "/ndx/notifications/slack-webhook",
+    VersionStage: "AWSCURRENT", // EC-AC-12
+  }),
+)
 ```
 
 ### Project Structure
@@ -285,17 +285,17 @@ infra/lib/lambda/notification/
 
 ```bash
 SLACK_WEBHOOK_SECRET_ID=/ndx/notifications/slack-webhook
-SLACK_HEARTBEAT_ENABLED=true  # For daily synthetic test
+SLACK_HEARTBEAT_ENABLED=true # For daily synthetic test
 ```
 
 ### Metrics Published
 
-| Metric | Dimensions | Description |
-|--------|------------|-------------|
-| SlackMessageSent | alertType, priority | Successful sends |
-| SlackMessageFailed | alertType, reason | Failed sends |
-| SlackWebhookLatency | alertType | POST latency (ms) |
-| SlackRetryCount | alertType | Retry attempts |
+| Metric              | Dimensions          | Description       |
+| ------------------- | ------------------- | ----------------- |
+| SlackMessageSent    | alertType, priority | Successful sends  |
+| SlackMessageFailed  | alertType, reason   | Failed sends      |
+| SlackWebhookLatency | alertType           | POST latency (ms) |
+| SlackRetryCount     | alertType           | Retry attempts    |
 
 ### References
 
@@ -312,74 +312,79 @@ SLACK_HEARTBEAT_ENABLED=true  # For daily synthetic test
 
 ### AC Validation Summary
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC-1.1 | ✅ PASS | `slack-sender.ts:334-342` - POST with `Content-Type: application/json`. Test: lines 129-159 |
-| AC-1.2 | ✅ PASS | `slack-sender.ts:79-80,382-394` - `RETRY_DELAYS_MS = [100, 500, 1000]`. Test: lines 179-215 |
-| AC-1.3 | ✅ PASS | `slack-sender.ts:396-406,436-439` - RetriableError after max retries. Test: lines 217-249 |
-| AC-1.4 | ✅ PASS | `slack-sender.ts:409-412`, `errors.ts:122-124` - CriticalError for 401/403. Test: lines 252-280 |
-| AC-1.5 | ✅ PASS | `slack-sender.ts:413-440` - Network timeout (AbortError/TypeError) triggers retry. Test: lines 283-338 |
-| AC-1.6 | ✅ PASS | `slack-sender.ts:253-266` - INFO log with latency, SlackMessageSent metric. Test: lines 340-375 |
-| AC-1.7 | ✅ PASS | `slack-sender.ts:113-122` (redactWebhookUrl function). Test: lines 110-126, 378-443 |
-| AC-1.8 | ✅ PASS | `slack-sender.ts:336-338` - Content-Type header set. Test: lines 129-159 |
-| AC-NEW-1 | ⚠️ DEFERRED | Daily heartbeat documented for future EventBridge scheduled rule |
-| AC-NEW-2 | ✅ PASS | `notification-stack.ts:552-570` - SlackFailureAlarm → SNS backup alerting |
-| EC-AC-1 | ✅ PASS | `slack-sender.ts:212-215` - Validates non-empty webhook URL. Test: lines 446-485 |
-| EC-AC-3 | ✅ PASS | `slack-sender.ts:340` - `redirect: 'error'`. Test: lines 162-176 |
-| EC-AC-5 | ✅ PASS | `slack-sender.ts:349-363` - Verifies `{"ok": true}`. Test: lines 488-530 |
-| EC-AC-12 | ✅ PASS | `secrets.ts:94-98` - Explicit `VersionStage: 'AWSCURRENT'` |
-| IC-AC-1 | ✅ PASS | `notification-stack.ts:27,168-171` - Slack webhook secret path in IAM |
-| IC-AC-2 | ✅ PASS | Environment-based config in `config.ts` supports staging/prod separation |
-| UJ-AC-5 | ✅ PASS | Dev Notes documents "Lambda container cache, ~5 min TTL" |
-| BC-AC-1 | ✅ PASS | Dev Notes documents "<$5/month expected" |
-| SM-AC-10 | ✅ PASS | Dev Notes documents "reserved: 10" |
-| SM-AC-8 | ✅ PASS | `notification-stack.ts:137` - `tracing: lambda.Tracing.ACTIVE` |
-| SM-AC-9 | ✅ PASS | `notification-stack.ts:255-258` - Tags: project, environment, managedby, component |
-| TC-AC-2 | ✅ PASS | `notification-stack.ts:23,128` - `LAMBDA_MEMORY_MB = 512` |
-| TC-AC-3 | ✅ PASS | `notification-stack.ts:131-133` - `reservedConcurrentExecutions: 10` |
-| IC-AC-3 | ⚠️ DEFERRED | ISB team notification is deployment phase activity |
+| AC       | Status      | Evidence                                                                                               |
+| -------- | ----------- | ------------------------------------------------------------------------------------------------------ |
+| AC-1.1   | ✅ PASS     | `slack-sender.ts:334-342` - POST with `Content-Type: application/json`. Test: lines 129-159            |
+| AC-1.2   | ✅ PASS     | `slack-sender.ts:79-80,382-394` - `RETRY_DELAYS_MS = [100, 500, 1000]`. Test: lines 179-215            |
+| AC-1.3   | ✅ PASS     | `slack-sender.ts:396-406,436-439` - RetriableError after max retries. Test: lines 217-249              |
+| AC-1.4   | ✅ PASS     | `slack-sender.ts:409-412`, `errors.ts:122-124` - CriticalError for 401/403. Test: lines 252-280        |
+| AC-1.5   | ✅ PASS     | `slack-sender.ts:413-440` - Network timeout (AbortError/TypeError) triggers retry. Test: lines 283-338 |
+| AC-1.6   | ✅ PASS     | `slack-sender.ts:253-266` - INFO log with latency, SlackMessageSent metric. Test: lines 340-375        |
+| AC-1.7   | ✅ PASS     | `slack-sender.ts:113-122` (redactWebhookUrl function). Test: lines 110-126, 378-443                    |
+| AC-1.8   | ✅ PASS     | `slack-sender.ts:336-338` - Content-Type header set. Test: lines 129-159                               |
+| AC-NEW-1 | ⚠️ DEFERRED | Daily heartbeat documented for future EventBridge scheduled rule                                       |
+| AC-NEW-2 | ✅ PASS     | `notification-stack.ts:552-570` - SlackFailureAlarm → SNS backup alerting                              |
+| EC-AC-1  | ✅ PASS     | `slack-sender.ts:212-215` - Validates non-empty webhook URL. Test: lines 446-485                       |
+| EC-AC-3  | ✅ PASS     | `slack-sender.ts:340` - `redirect: 'error'`. Test: lines 162-176                                       |
+| EC-AC-5  | ✅ PASS     | `slack-sender.ts:349-363` - Verifies `{"ok": true}`. Test: lines 488-530                               |
+| EC-AC-12 | ✅ PASS     | `secrets.ts:94-98` - Explicit `VersionStage: 'AWSCURRENT'`                                             |
+| IC-AC-1  | ✅ PASS     | `notification-stack.ts:27,168-171` - Slack webhook secret path in IAM                                  |
+| IC-AC-2  | ✅ PASS     | Environment-based config in `config.ts` supports staging/prod separation                               |
+| UJ-AC-5  | ✅ PASS     | Dev Notes documents "Lambda container cache, ~5 min TTL"                                               |
+| BC-AC-1  | ✅ PASS     | Dev Notes documents "<$5/month expected"                                                               |
+| SM-AC-10 | ✅ PASS     | Dev Notes documents "reserved: 10"                                                                     |
+| SM-AC-8  | ✅ PASS     | `notification-stack.ts:137` - `tracing: lambda.Tracing.ACTIVE`                                         |
+| SM-AC-9  | ✅ PASS     | `notification-stack.ts:255-258` - Tags: project, environment, managedby, component                     |
+| TC-AC-2  | ✅ PASS     | `notification-stack.ts:23,128` - `LAMBDA_MEMORY_MB = 512`                                              |
+| TC-AC-3  | ✅ PASS     | `notification-stack.ts:131-133` - `reservedConcurrentExecutions: 10`                                   |
+| IC-AC-3  | ⚠️ DEFERRED | ISB team notification is deployment phase activity                                                     |
 
 **Result: 22/24 PASS, 2/24 DEFERRED (acceptable per story scope)**
 
 ### Code Quality Assessment
 
 **Architecture Alignment: ✅ EXCELLENT**
+
 - Follows "One Brain, Two Mouths" pattern from `notification-architecture.md`
 - SlackSender is a singleton matching NotifySender pattern
 - Proper error classification using shared `errors.ts`
 
 **Security Controls: ✅ EXCELLENT**
+
 - `redactWebhookUrl()` function prevents URL leakage in logs
 - `redirect: 'error'` prevents URL leak via redirect following
 - Response validation ensures `{"ok": true}` before success
 - Webhook URL never appears in structured logs (verified by tests)
 
 **Reliability: ✅ EXCELLENT**
+
 - Exponential backoff: 100ms → 500ms → 1000ms
 - 4 total attempts (initial + 3 retries) before throwing RetriableError
 - Proper error classification: RetriableError (429, 5xx, network), CriticalError (401/403), PermanentError (400)
 - CloudWatch alarm for Slack failures with SNS backup path
 
 **Test Coverage: ✅ EXCELLENT**
+
 - 30+ unit tests with AC traceability in comments
 - Tests cover all error scenarios, retry logic, and security validations
 - Mocking strategy properly isolates dependencies
 
 **Observability: ✅ EXCELLENT**
+
 - Metrics: SlackMessageSent, SlackMessageFailed, SlackWebhookLatency, SlackRetryCount
 - Structured logs with eventId, alertType, priority, latencyMs
 - X-Ray tracing enabled
 
 ### Files Changed
 
-| File | Lines | Change Type |
-|------|-------|-------------|
-| `infra/lib/lambda/notification/slack-sender.ts` | 470 | NEW |
-| `infra/lib/lambda/notification/slack-sender.test.ts` | 652 | NEW |
-| `infra/lib/lambda/notification/secrets.ts` | 181 | MODIFIED (+1 line) |
-| `infra/lib/lambda/notification/errors.ts` | 133 | EXISTING (no changes) |
-| `infra/lib/notification-stack.ts` | 722 | MODIFIED |
-| `infra/lib/notification-stack.test.ts` | ~800 | MODIFIED |
+| File                                                 | Lines | Change Type           |
+| ---------------------------------------------------- | ----- | --------------------- |
+| `infra/lib/lambda/notification/slack-sender.ts`      | 470   | NEW                   |
+| `infra/lib/lambda/notification/slack-sender.test.ts` | 652   | NEW                   |
+| `infra/lib/lambda/notification/secrets.ts`           | 181   | MODIFIED (+1 line)    |
+| `infra/lib/lambda/notification/errors.ts`            | 133   | EXISTING (no changes) |
+| `infra/lib/notification-stack.ts`                    | 722   | MODIFIED              |
+| `infra/lib/notification-stack.test.ts`               | ~800  | MODIFIED              |
 
 ### Test Results
 

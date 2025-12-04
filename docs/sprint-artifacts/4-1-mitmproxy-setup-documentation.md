@@ -11,6 +11,7 @@ so that I can quickly configure my local development environment and understand 
 ## Acceptance Criteria
 
 **AC1: Prerequisites section exists**
+
 - **Given** the documentation file exists at `/docs/development/local-try-setup.md`
 - **When** I read the Prerequisites section
 - **Then** it lists all required dependencies:
@@ -21,6 +22,7 @@ so that I can quickly configure my local development environment and understand 
   - Port 8080 and 8081 availability check instructions
 
 **AC2: Architecture diagram shows request flow**
+
 - **Given** I read the Architecture section
 - **When** I review the diagram or textual flow description
 - **Then** it clearly shows:
@@ -31,6 +33,7 @@ so that I can quickly configure my local development environment and understand 
   - NDX server (Eleventy) on localhost:8080
 
 **AC3: Configuration steps for macOS provided**
+
 - **Given** I am a macOS developer
 - **When** I follow the macOS configuration section
 - **Then** it includes step-by-step instructions for:
@@ -41,6 +44,7 @@ so that I can quickly configure my local development environment and understand 
   - Certificate trust setup (will be covered in Story 4.5, but referenced)
 
 **AC4: Configuration steps for Windows provided**
+
 - **Given** I am a Windows developer
 - **When** I follow the Windows configuration section
 - **Then** it includes step-by-step instructions for:
@@ -51,6 +55,7 @@ so that I can quickly configure my local development environment and understand 
   - Certificate trust setup (will be covered in Story 4.5, but referenced)
 
 **AC5: Configuration steps for Linux provided**
+
 - **Given** I am a Linux developer
 - **When** I follow the Linux configuration section
 - **Then** it includes step-by-step instructions for:
@@ -61,6 +66,7 @@ so that I can quickly configure my local development environment and understand 
   - Certificate trust setup (will be covered in Story 4.5, but referenced)
 
 **AC6: Troubleshooting section addresses common issues**
+
 - **Given** I encounter setup problems
 - **When** I read the Troubleshooting section
 - **Then** it includes solutions for common issues:
@@ -71,6 +77,7 @@ so that I can quickly configure my local development environment and understand 
   - **OAuth redirects not working**: Explanation that CloudFront domain must be preserved (addon script maintains domain)
 
 **AC7: Validation steps confirm correct setup**
+
 - **Given** I completed all configuration steps
 - **When** I read the Validation section
 - **Then** it includes verification steps:
@@ -116,6 +123,7 @@ so that I can quickly configure my local development environment and understand 
 ### Epic 4 Context
 
 This is the **foundation story** for Epic 4 (Local Development Infrastructure). Story 4.1 creates the documentation structure that subsequent stories will reference and build upon:
+
 - Story 4.2 will add addon script details
 - Story 4.3 will add npm script usage
 - Story 4.4 will add system proxy configuration
@@ -127,6 +135,7 @@ This is the **foundation story** for Epic 4 (Local Development Infrastructure). 
 ### Technical Design Notes
 
 **Request Flow Architecture:**
+
 ```
 Browser
   ↓
@@ -137,12 +146,14 @@ mitmproxy (localhost:8081)
 ```
 
 **Why This Approach:**
+
 - **Production Parity**: Real Innovation Sandbox API testing (authentication, leases, AUP)
 - **Fast Iteration**: Local UI changes hot-reload without rebuilding CloudFront distribution
 - **No Backend Mocking**: OAuth redirects, JWT tokens, API responses all production-authentic
 - **Brownfield Constraint**: Cannot modify Innovation Sandbox CloudFront distribution (external system)
 
 **Documentation Structure Rationale:**
+
 - **Prerequisites First**: Catch missing dependencies before configuration steps
 - **Platform-Specific Sections**: macOS/Windows/Linux developers have different installation paths
 - **Troubleshooting Upfront**: Common issues surfaced early (reduces support burden)
@@ -151,11 +162,13 @@ mitmproxy (localhost:8081)
 ### Architecture References
 
 **From architecture.md:**
+
 - **ADR-017**: Vanilla TypeScript (no framework) - mitmproxy enables local development workflow for TS compilation + Eleventy serving
 - **ADR-018**: esbuild for TypeScript compilation - local server serves compiled assets from `_site/`
 - **ADR-020**: Progressive enhancement pattern - static HTML first, JS enhances - works seamlessly with mitmproxy routing
 
 **From tech-spec-epic-4.md:**
+
 - **Detailed Design → Workflows**: Daily workflow diagram shows Terminal 1 (mitmproxy) + Terminal 2 (NDX server) + Browser
 - **NFR → Performance**: Setup validation < 1 second (Story 4.6 automates verification)
 - **NFR → Security**: CA certificate trust warnings (covered in Story 4.5), OAuth flow preserved (addon script design)
@@ -163,16 +176,19 @@ mitmproxy (localhost:8081)
 ### Project Structure Notes
 
 **New Documentation File:**
+
 - Path: `/docs/development/local-try-setup.md`
 - Purpose: Complete mitmproxy setup guide for Try feature development
 - Audience: NDX developers (internal team)
 - Scope: Epic 4 infrastructure only (authentication/UI components covered in Epic 5+)
 
 **Existing Documentation References:**
+
 - `docs/development-guide.md` - Node.js/Yarn setup (prerequisite reference)
 - Architecture documents already loaded (no file path conflicts)
 
 **Documentation Style:**
+
 - Follow GOV.UK plain English guidelines (simple language, short sentences)
 - Use step-by-step numbered instructions (easy to follow)
 - Include example commands with expected output
@@ -181,28 +197,33 @@ mitmproxy (localhost:8081)
 ### Alignment with Brownfield NDX System
 
 **Existing NDX Development Workflow:**
+
 - `yarn dev` starts Eleventy server on localhost:8080
 - `yarn build` compiles static site to `_site/`
 - No existing proxy setup (Epic 4 introduces mitmproxy)
 
 **Epic 4 Enhancement:**
+
 - New workflow: `yarn dev:proxy` (Story 4.3) + `yarn dev` (existing) + browser navigation to CloudFront domain
 - Minimal disruption: Developers working on non-Try features can continue using existing `yarn dev` workflow
 - Additive infrastructure: mitmproxy optional, only needed for Try feature local development
 
 **Port Allocation:**
+
 - Port 8080: Existing NDX server (unchanged)
 - Port 8081: New mitmproxy listener (avoids conflict)
 
 ### Testing Strategy
 
 **Documentation Testing (Story 4.1 Acceptance):**
+
 1. **Manual Review**: Read documentation end-to-end for clarity and completeness
 2. **Peer Review**: Another developer reviews for missing steps or unclear instructions
 3. **Platform Verification**: Test installation steps on at least one platform (macOS recommended due to team prevalence)
 4. **Acceptance Criteria Checklist**: Verify all 7 ACs addressed in documentation
 
 **Future Integration Testing (Post-Story 4.6):**
+
 - Automated validation script (`yarn validate-setup`) codifies prerequisite checks
 - End-to-end test: Fresh developer follows documentation from scratch, successfully starts local development environment
 
@@ -232,6 +253,7 @@ mitmproxy (localhost:8081)
 ### Debug Log References
 
 **Implementation Plan:**
+
 1. Created comprehensive documentation file at `/docs/development/local-try-setup.md`
 2. Organized content into clear sections: Overview, Prerequisites, Architecture, Installation (macOS/Windows/Linux), Troubleshooting, Validation
 3. Included ASCII diagram for request flow architecture
@@ -242,6 +264,7 @@ mitmproxy (localhost:8081)
 8. Verified all 7 acceptance criteria addressed
 
 **Key Design Decisions:**
+
 - Used table format for prerequisites (clear, scannable)
 - Included both pip and platform package manager installation options
 - Provided Windows PowerShell commands alongside Unix commands
@@ -252,6 +275,7 @@ mitmproxy (localhost:8081)
 ### Completion Notes List
 
 ✅ **Documentation Structure Complete:**
+
 - Created `/docs/development/local-try-setup.md` with comprehensive setup guide
 - All 7 acceptance criteria fully addressed
 - Platform-specific instructions for macOS, Windows, Linux
@@ -260,6 +284,7 @@ mitmproxy (localhost:8081)
 - Cross-references to Stories 4.2-4.6 where implementation incomplete
 
 ✅ **Acceptance Criteria Validation:**
+
 - **AC1:** Prerequisites section includes Python 3.8+, mitmproxy, Node.js 20.17.0, Yarn 4.5.0, port availability checks
 - **AC2:** Architecture diagram shows Browser → mitmproxy → localhost:8080 (UI) and CloudFront (API) with ASCII art
 - **AC3:** macOS installation steps with Homebrew and pip options, verification command
@@ -269,6 +294,7 @@ mitmproxy (localhost:8081)
 - **AC7:** Validation section includes dependency checks, port availability, automated script reference (Story 4.6)
 
 ✅ **Documentation Quality:**
+
 - Followed GOV.UK plain English guidelines (short sentences, clear headings, simple language)
 - Included copy-paste ready commands with expected output
 - Cross-platform command examples (macOS/Linux and Windows PowerShell)
@@ -278,9 +304,11 @@ mitmproxy (localhost:8081)
 ### File List
 
 **New Files:**
+
 - `docs/development/local-try-setup.md` - Complete mitmproxy setup documentation (AC1-AC7)
 
 **Modified Files:**
+
 - `docs/sprint-artifacts/4-1-mitmproxy-setup-documentation.md` - Story file (tasks marked complete, Dev Agent Record updated)
 - `docs/sprint-artifacts/sprint-status.yaml` - Story status updated (ready-for-dev → in-progress → review)
 
@@ -301,6 +329,7 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 ### Key Findings
 
 #### HIGH Severity (Fixed)
+
 - **[FIXED]** Documentation referenced non-existent `yarn dev` command instead of `yarn start`
   - **Location:** docs/development/local-try-setup.md:501, 536
   - **Impact:** Would block developers following documentation
@@ -311,15 +340,15 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 
 **✅ 7 of 7 acceptance criteria fully implemented**
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| **AC1** | Prerequisites section exists with all dependencies | ✅ IMPLEMENTED | docs/development/local-try-setup.md:44-52 (Prerequisites table), 55-70 (port availability) |
-| **AC2** | Architecture diagram shows request flow | ✅ IMPLEMENTED | docs/development/local-try-setup.md:76-103 (ASCII diagram with routing flow) |
-| **AC3** | macOS configuration steps provided | ✅ IMPLEMENTED | docs/development/local-try-setup.md:116-159 (macOS section with installation, verification, next steps) |
-| **AC4** | Windows configuration steps provided | ✅ IMPLEMENTED | docs/development/local-try-setup.md:163-198 (Windows section with python.org link, pip install, PowerShell) |
-| **AC5** | Linux configuration steps provided | ✅ IMPLEMENTED | docs/development/local-try-setup.md:202-258 (Linux section with Ubuntu/Debian, Fedora/RHEL, Arch) |
-| **AC6** | Troubleshooting section addresses common issues | ✅ IMPLEMENTED | docs/development/local-try-setup.md:263-427 (5 troubleshooting scenarios with resolutions) |
-| **AC7** | Validation steps confirm correct setup | ✅ IMPLEMENTED | docs/development/local-try-setup.md:432-557 (validation section with manual+automated steps) |
+| AC#     | Description                                        | Status         | Evidence                                                                                                    |
+| ------- | -------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
+| **AC1** | Prerequisites section exists with all dependencies | ✅ IMPLEMENTED | docs/development/local-try-setup.md:44-52 (Prerequisites table), 55-70 (port availability)                  |
+| **AC2** | Architecture diagram shows request flow            | ✅ IMPLEMENTED | docs/development/local-try-setup.md:76-103 (ASCII diagram with routing flow)                                |
+| **AC3** | macOS configuration steps provided                 | ✅ IMPLEMENTED | docs/development/local-try-setup.md:116-159 (macOS section with installation, verification, next steps)     |
+| **AC4** | Windows configuration steps provided               | ✅ IMPLEMENTED | docs/development/local-try-setup.md:163-198 (Windows section with python.org link, pip install, PowerShell) |
+| **AC5** | Linux configuration steps provided                 | ✅ IMPLEMENTED | docs/development/local-try-setup.md:202-258 (Linux section with Ubuntu/Debian, Fedora/RHEL, Arch)           |
+| **AC6** | Troubleshooting section addresses common issues    | ✅ IMPLEMENTED | docs/development/local-try-setup.md:263-427 (5 troubleshooting scenarios with resolutions)                  |
+| **AC7** | Validation steps confirm correct setup             | ✅ IMPLEMENTED | docs/development/local-try-setup.md:432-557 (validation section with manual+automated steps)                |
 
 **Detailed AC Validation:**
 
@@ -335,29 +364,30 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 
 **✅ 18 of 18 tasks verified complete**
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| **Task 1.1** | ✅ Complete | ✅ VERIFIED | Prerequisites table at lines 44-52 lists all required dependencies |
-| **Task 1.2** | ✅ Complete | ✅ VERIFIED | Architecture ASCII diagram at lines 76-103 shows complete request flow |
-| **Task 1.3** | ✅ Complete | ✅ VERIFIED | Overview section at lines 25-39 explains purpose and benefits |
-| **Task 2.1** | ✅ Complete | ✅ VERIFIED | macOS section complete (corrected yarn dev → yarn start during review) |
-| **Task 2.2** | ✅ Complete | ✅ VERIFIED | Windows section at lines 163-198 with python.org link, pip install |
-| **Task 2.3** | ✅ Complete | ✅ VERIFIED | Linux section at lines 202-258 with distribution-specific instructions |
-| **Task 2.4** | ✅ Complete | ✅ VERIFIED | All platforms include `mitmproxy --version` verification command |
-| **Task 3.1** | ✅ Complete | ✅ VERIFIED | Port conflict resolution at lines 265-306 with lsof/PowerShell commands |
-| **Task 3.2** | ✅ Complete | ✅ VERIFIED | PATH/virtual environment troubleshooting at lines 310-352 |
-| **Task 3.3** | ✅ Complete | ✅ VERIFIED | Appropriate references to Stories 4.4 and 4.5 throughout |
-| **Task 3.4** | ✅ Complete | ✅ VERIFIED | OAuth redirect preservation explained at lines 404-427 |
-| **Task 4.1** | ✅ Complete | ✅ VERIFIED | Dependency verification steps at lines 460-465 |
-| **Task 4.2** | ✅ Complete | ✅ VERIFIED | Port availability checks at lines 467-496 with cross-platform commands |
+| Task         | Marked As   | Verified As | Evidence                                                                     |
+| ------------ | ----------- | ----------- | ---------------------------------------------------------------------------- |
+| **Task 1.1** | ✅ Complete | ✅ VERIFIED | Prerequisites table at lines 44-52 lists all required dependencies           |
+| **Task 1.2** | ✅ Complete | ✅ VERIFIED | Architecture ASCII diagram at lines 76-103 shows complete request flow       |
+| **Task 1.3** | ✅ Complete | ✅ VERIFIED | Overview section at lines 25-39 explains purpose and benefits                |
+| **Task 2.1** | ✅ Complete | ✅ VERIFIED | macOS section complete (corrected yarn dev → yarn start during review)       |
+| **Task 2.2** | ✅ Complete | ✅ VERIFIED | Windows section at lines 163-198 with python.org link, pip install           |
+| **Task 2.3** | ✅ Complete | ✅ VERIFIED | Linux section at lines 202-258 with distribution-specific instructions       |
+| **Task 2.4** | ✅ Complete | ✅ VERIFIED | All platforms include `mitmproxy --version` verification command             |
+| **Task 3.1** | ✅ Complete | ✅ VERIFIED | Port conflict resolution at lines 265-306 with lsof/PowerShell commands      |
+| **Task 3.2** | ✅ Complete | ✅ VERIFIED | PATH/virtual environment troubleshooting at lines 310-352                    |
+| **Task 3.3** | ✅ Complete | ✅ VERIFIED | Appropriate references to Stories 4.4 and 4.5 throughout                     |
+| **Task 3.4** | ✅ Complete | ✅ VERIFIED | OAuth redirect preservation explained at lines 404-427                       |
+| **Task 4.1** | ✅ Complete | ✅ VERIFIED | Dependency verification steps at lines 460-465                               |
+| **Task 4.2** | ✅ Complete | ✅ VERIFIED | Port availability checks at lines 467-496 with cross-platform commands       |
 | **Task 4.3** | ✅ Complete | ✅ VERIFIED | End-to-end validation referenced at lines 525-555 with Story 4.3 placeholder |
-| **Task 4.4** | ✅ Complete | ✅ VERIFIED | Story 4.6 automated validation script referenced at lines 434-454 |
-| **Task 5.1** | ✅ Complete | ✅ VERIFIED | Documentation reviewed end-to-end, yarn dev→start correction applied |
-| **Task 5.2** | ✅ Complete | ✅ VERIFIED | All 7 ACs fully addressed with evidence |
+| **Task 4.4** | ✅ Complete | ✅ VERIFIED | Story 4.6 automated validation script referenced at lines 434-454            |
+| **Task 5.1** | ✅ Complete | ✅ VERIFIED | Documentation reviewed end-to-end, yarn dev→start correction applied         |
+| **Task 5.2** | ✅ Complete | ✅ VERIFIED | All 7 ACs fully addressed with evidence                                      |
 | **Task 5.3** | ✅ Complete | ✅ VERIFIED | Installation steps validated on macOS (mitmproxy v12.2.0, yarn start tested) |
-| **Task 5.4** | ✅ Complete | ✅ VERIFIED | This senior developer review serves as the peer review |
+| **Task 5.4** | ✅ Complete | ✅ VERIFIED | This senior developer review serves as the peer review                       |
 
 **Task Validation Notes:**
+
 - Task 5.3 testing revealed the `yarn dev` error, which was immediately corrected
 - Task 5.4 peer review completed through this systematic code review process
 - All tasks show clear evidence of completion in the documentation file
@@ -365,6 +395,7 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 ### Test Coverage and Gaps
 
 **Documentation Quality Testing:**
+
 - ✅ Manual end-to-end read-through completed
 - ✅ GOV.UK plain English compliance verified
 - ✅ Cross-platform commands validated (macOS testing performed)
@@ -376,14 +407,16 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 ### Architectural Alignment
 
 **Epic 4 Tech Spec Compliance:**
+
 - ✅ Aligns with tech-spec-epic-4.md workflows (Terminal 1: mitmproxy, Terminal 2: NDX server)
 - ✅ Port allocation correct (8080 for NDX, 8081 for mitmproxy)
 - ✅ Security considerations documented (CA certificate trust warnings, HTTPS interception implications)
 - ✅ Performance expectations set (validation < 1 second, proxy startup < 5 seconds)
 
 **Architecture Document Compliance:**
+
 - ✅ References ADR-017 (Vanilla TypeScript) - documentation explains mitmproxy enables local TS+Eleventy workflow
-- ✅ References ADR-018 (esbuild compilation) - local server serves compiled assets from _site/
+- ✅ References ADR-018 (esbuild compilation) - local server serves compiled assets from \_site/
 - ✅ References ADR-020 (Progressive enhancement) - static HTML approach compatible with proxy routing
 
 **No architectural violations identified.**
@@ -391,6 +424,7 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 ### Security Notes
 
 **Documentation Security:**
+
 - ✅ Appropriate warnings about CA certificate trust (lines 369-370: "Only trust on development machines, never production")
 - ✅ Clear explanation of HTTPS interception implications
 - ✅ Scoped proxy configuration (specific CloudFront domain only, not all traffic)
@@ -401,6 +435,7 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 ### Best-Practices and References
 
 **Documentation Standards:**
+
 - ✅ Follows GOV.UK plain English guidelines throughout
 - ✅ Consistent with existing development-guide.md structure and tone
 - ✅ Clear section hierarchy and navigation
@@ -408,6 +443,7 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 - ✅ Cross-platform inclusivity (macOS, Windows, Linux coverage)
 
 **References:**
+
 - [GOV.UK Content Design Guide](https://www.gov.uk/guidance/content-design/writing-for-gov-uk)
 - [mitmproxy Documentation](https://docs.mitmproxy.org/stable/)
 - [Python Packaging Guide](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
@@ -415,8 +451,10 @@ Story 4.1 successfully delivers comprehensive mitmproxy setup documentation for 
 ### Action Items
 
 **Code Changes Required:**
+
 - ✅ [High] Fix `yarn dev` → `yarn start` in validation examples (AC #7) [file: docs/development/local-try-setup.md:501, 536] - **COMPLETED DURING REVIEW**
 
 **Advisory Notes:**
+
 - Note: Consider adding screenshot or animated GIF of successful mitmproxy proxy routing in future iteration (visual aid for developers)
 - Note: Story 4.6 automated validation script will codify the manual checks documented in this story

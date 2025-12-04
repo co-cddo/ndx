@@ -22,36 +22,36 @@
  * - Uses existing SlackSender with webhook from Secrets Manager
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
-import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
-import { ScheduledEvent } from 'aws-lambda';
+import { Logger } from "@aws-lambda-powertools/logger"
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { ScheduledEvent } from "aws-lambda"
 import {
   SQSClient,
   ReceiveMessageCommand,
   GetQueueAttributesCommand,
   MessageSystemAttributeName,
-} from '@aws-sdk/client-sqs';
-import { SlackSender } from './slack-sender';
+} from "@aws-sdk/client-sqs"
+import { SlackSender } from "./slack-sender"
 
 // =============================================================================
 // Configuration
 // =============================================================================
 
-const logger = new Logger({ serviceName: 'ndx-notifications-dlq-digest' });
+const logger = new Logger({ serviceName: "ndx-notifications-dlq-digest" })
 const metrics = new Metrics({
-  namespace: 'ndx/notifications',
-  serviceName: 'ndx-notifications-dlq-digest',
-});
+  namespace: "ndx/notifications",
+  serviceName: "ndx-notifications-dlq-digest",
+})
 
-const sqsClient = new SQSClient({});
+const sqsClient = new SQSClient({})
 
 // Environment variable getters (exported for testability)
 export function getDLQUrl(): string {
-  return process.env.DLQ_URL || '';
+  return process.env.DLQ_URL || ""
 }
 
 export function getAWSRegion(): string {
-  return process.env.AWS_REGION || 'eu-west-2';
+  return process.env.AWS_REGION || "eu-west-2"
 }
 
 // =============================================================================
@@ -59,20 +59,20 @@ export function getAWSRegion(): string {
 // =============================================================================
 
 interface DLQMessageSummary {
-  totalMessages: number;
-  oldestMessageAge: number; // seconds
-  errorCategories: Map<string, number>;
-  eventTypeCategories: Map<string, number>;
-  sampleErrors: string[];
+  totalMessages: number
+  oldestMessageAge: number // seconds
+  errorCategories: Map<string, number>
+  eventTypeCategories: Map<string, number>
+  sampleErrors: string[]
 }
 
 interface DLQDigestPayload {
-  messageCount: number;
-  oldestMessageHours: number;
-  topErrors: Array<{ type: string; count: number }>;
-  topEventTypes: Array<{ type: string; count: number }>;
-  queueUrl: string;
-  consoleUrl: string;
+  messageCount: number
+  oldestMessageHours: number
+  topErrors: Array<{ type: string; count: number }>
+  topEventTypes: Array<{ type: string; count: number }>
+  queueUrl: string
+  consoleUrl: string
 }
 
 // =============================================================================
@@ -85,23 +85,23 @@ interface DLQDigestPayload {
 function buildDLQConsoleUrl(queueUrl: string, region: string): string {
   // Extract queue name from URL
   // Format: https://sqs.{region}.amazonaws.com/{account}/{queue-name}
-  const parts = queueUrl.split('/');
-  const queueName = parts[parts.length - 1];
-  const accountId = parts[parts.length - 2];
+  const parts = queueUrl.split("/")
+  const queueName = parts[parts.length - 1]
+  const accountId = parts[parts.length - 2]
 
-  return `https://${region}.console.aws.amazon.com/sqs/v3/home?region=${region}#/queues/https%3A%2F%2Fsqs.${region}.amazonaws.com%2F${accountId}%2F${queueName}`;
+  return `https://${region}.console.aws.amazon.com/sqs/v3/home?region=${region}#/queues/https%3A%2F%2Fsqs.${region}.amazonaws.com%2F${accountId}%2F${queueName}`
 }
 
 /**
  * Shape of a parsed DLQ message body for error extraction
  */
 interface DLQMessageBody {
-  errorType?: string;
-  error?: { name?: string; type?: string };
-  errorMessage?: string;
-  'detail-type'?: string;
-  detail?: { eventType?: string };
-  eventType?: string;
+  errorType?: string
+  error?: { name?: string; type?: string }
+  errorMessage?: string
+  "detail-type"?: string
+  detail?: { eventType?: string }
+  eventType?: string
 }
 
 /**
@@ -109,19 +109,19 @@ interface DLQMessageBody {
  */
 function parseErrorCategory(messageBody: string): string {
   try {
-    const parsed = JSON.parse(messageBody) as DLQMessageBody;
+    const parsed = JSON.parse(messageBody) as DLQMessageBody
     // Try to extract error type from various possible locations
-    if (parsed.errorType) return parsed.errorType;
-    if (parsed.error?.name) return parsed.error.name;
-    if (parsed.error?.type) return parsed.error.type;
+    if (parsed.errorType) return parsed.errorType
+    if (parsed.error?.name) return parsed.error.name
+    if (parsed.error?.type) return parsed.error.type
     if (parsed.errorMessage) {
       // Extract first few words as category
-      const firstLine = parsed.errorMessage.split('\n')[0];
-      return firstLine.substring(0, 50);
+      const firstLine = parsed.errorMessage.split("\n")[0]
+      return firstLine.substring(0, 50)
     }
-    return 'Unknown';
+    return "Unknown"
   } catch {
-    return 'ParseError';
+    return "ParseError"
   }
 }
 
@@ -130,14 +130,14 @@ function parseErrorCategory(messageBody: string): string {
  */
 function parseEventType(messageBody: string): string {
   try {
-    const parsed = JSON.parse(messageBody) as DLQMessageBody;
+    const parsed = JSON.parse(messageBody) as DLQMessageBody
     // Try to extract event type from various possible locations
-    if (parsed['detail-type']) return parsed['detail-type'];
-    if (parsed.detail?.eventType) return parsed.detail.eventType;
-    if (parsed.eventType) return parsed.eventType;
-    return 'Unknown';
+    if (parsed["detail-type"]) return parsed["detail-type"]
+    if (parsed.detail?.eventType) return parsed.detail.eventType
+    if (parsed.eventType) return parsed.eventType
+    return "Unknown"
   } catch {
-    return 'Unknown';
+    return "Unknown"
   }
 }
 
@@ -145,38 +145,29 @@ function parseEventType(messageBody: string): string {
  * Peek at DLQ messages without consuming them
  */
 async function peekDLQMessages(): Promise<DLQMessageSummary> {
-  const dlqUrl = getDLQUrl();
+  const dlqUrl = getDLQUrl()
   const summary: DLQMessageSummary = {
     totalMessages: 0,
     oldestMessageAge: 0,
     errorCategories: new Map(),
     eventTypeCategories: new Map(),
     sampleErrors: [],
-  };
+  }
 
   // First, get queue attributes to know total message count
   const attributesResponse = await sqsClient.send(
     new GetQueueAttributesCommand({
       QueueUrl: dlqUrl,
-      AttributeNames: [
-        'ApproximateNumberOfMessages',
-        'ApproximateNumberOfMessagesNotVisible',
-      ],
-    })
-  );
+      AttributeNames: ["ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible"],
+    }),
+  )
 
-  const visibleMessages = parseInt(
-    attributesResponse.Attributes?.ApproximateNumberOfMessages || '0',
-    10
-  );
-  const notVisibleMessages = parseInt(
-    attributesResponse.Attributes?.ApproximateNumberOfMessagesNotVisible || '0',
-    10
-  );
-  summary.totalMessages = visibleMessages + notVisibleMessages;
+  const visibleMessages = parseInt(attributesResponse.Attributes?.ApproximateNumberOfMessages || "0", 10)
+  const notVisibleMessages = parseInt(attributesResponse.Attributes?.ApproximateNumberOfMessagesNotVisible || "0", 10)
+  summary.totalMessages = visibleMessages + notVisibleMessages
 
   if (summary.totalMessages === 0) {
-    return summary;
+    return summary
   }
 
   // Receive messages with visibility timeout = 0 to peek without consuming
@@ -190,69 +181,61 @@ async function peekDLQMessages(): Promise<DLQMessageSummary> {
         MessageSystemAttributeName.SentTimestamp,
         MessageSystemAttributeName.ApproximateFirstReceiveTimestamp,
       ],
-    })
-  );
+    }),
+  )
 
-  const messages = receiveResponse.Messages || [];
+  const messages = receiveResponse.Messages || []
 
   for (const message of messages) {
     // Track oldest message age
     if (message.Attributes?.SentTimestamp) {
-      const sentTime = parseInt(message.Attributes.SentTimestamp, 10);
-      const ageSeconds = Math.floor((Date.now() - sentTime) / 1000);
+      const sentTime = parseInt(message.Attributes.SentTimestamp, 10)
+      const ageSeconds = Math.floor((Date.now() - sentTime) / 1000)
       if (ageSeconds > summary.oldestMessageAge) {
-        summary.oldestMessageAge = ageSeconds;
+        summary.oldestMessageAge = ageSeconds
       }
     }
 
     if (message.Body) {
       // Categorize error type
-      const errorCategory = parseErrorCategory(message.Body);
-      summary.errorCategories.set(
-        errorCategory,
-        (summary.errorCategories.get(errorCategory) || 0) + 1
-      );
+      const errorCategory = parseErrorCategory(message.Body)
+      summary.errorCategories.set(errorCategory, (summary.errorCategories.get(errorCategory) || 0) + 1)
 
       // Categorize event type
-      const eventType = parseEventType(message.Body);
-      summary.eventTypeCategories.set(
-        eventType,
-        (summary.eventTypeCategories.get(eventType) || 0) + 1
-      );
+      const eventType = parseEventType(message.Body)
+      summary.eventTypeCategories.set(eventType, (summary.eventTypeCategories.get(eventType) || 0) + 1)
 
       // Collect sample errors (up to 3)
       if (summary.sampleErrors.length < 3) {
-        const preview =
-          message.Body.substring(0, 200) +
-          (message.Body.length > 200 ? '...' : '');
-        summary.sampleErrors.push(preview);
+        const preview = message.Body.substring(0, 200) + (message.Body.length > 200 ? "..." : "")
+        summary.sampleErrors.push(preview)
       }
     }
   }
 
-  return summary;
+  return summary
 }
 
 /**
  * Build Slack message for DLQ digest
  */
 function buildDigestPayload(summary: DLQMessageSummary): DLQDigestPayload {
-  const dlqUrl = getDLQUrl();
-  const region = getAWSRegion();
+  const dlqUrl = getDLQUrl()
+  const region = getAWSRegion()
 
   // Convert maps to sorted arrays (top 3)
   const topErrors = Array.from(summary.errorCategories.entries())
     .map(([type, count]) => ({ type, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 3);
+    .slice(0, 3)
 
   const topEventTypes = Array.from(summary.eventTypeCategories.entries())
     .map(([type, count]) => ({ type, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 3);
+    .slice(0, 3)
 
-  const oldestMessageHours = Math.round(summary.oldestMessageAge / 3600);
-  const consoleUrl = buildDLQConsoleUrl(dlqUrl, region);
+  const oldestMessageHours = Math.round(summary.oldestMessageAge / 3600)
+  const consoleUrl = buildDLQConsoleUrl(dlqUrl, region)
 
   return {
     messageCount: summary.totalMessages,
@@ -261,51 +244,45 @@ function buildDigestPayload(summary: DLQMessageSummary): DLQDigestPayload {
     topEventTypes,
     queueUrl: dlqUrl,
     consoleUrl,
-  };
+  }
 }
 
 /**
  * Send DLQ digest to Slack
  */
 async function sendDigestToSlack(payload: DLQDigestPayload): Promise<void> {
-  const sender = await SlackSender.getInstance();
+  const sender = await SlackSender.getInstance()
 
   // Build details for the Slack message
   const details: Record<string, string | number | undefined> = {
-    'Total Messages': payload.messageCount,
-    'Oldest Message Age': `${payload.oldestMessageHours} hours`,
-    'Top Error Types': payload.topErrors
-      .map((e) => `${e.type}: ${e.count}`)
-      .join(', '),
-    'Top Event Types': payload.topEventTypes
-      .map((e) => `${e.type}: ${e.count}`)
-      .join(', '),
-  };
+    "Total Messages": payload.messageCount,
+    "Oldest Message Age": `${payload.oldestMessageHours} hours`,
+    "Top Error Types": payload.topErrors.map((e) => `${e.type}: ${e.count}`).join(", "),
+    "Top Event Types": payload.topEventTypes.map((e) => `${e.type}: ${e.count}`).join(", "),
+  }
 
   // Determine priority based on message count and age
-  const priority: 'critical' | 'normal' =
-    payload.messageCount > 10 || payload.oldestMessageHours > 48
-      ? 'critical'
-      : 'normal';
+  const priority: "critical" | "normal" =
+    payload.messageCount > 10 || payload.oldestMessageHours > 48 ? "critical" : "normal"
 
   await sender.send({
-    alertType: 'DLQDigest' as 'AccountQuarantined', // Cast for type compatibility
-    accountId: 'N/A',
+    alertType: "DLQDigest" as "AccountQuarantined", // Cast for type compatibility
+    accountId: "N/A",
     priority,
     details,
-    eventId: `dlq-digest-${new Date().toISOString().split('T')[0]}`,
+    eventId: `dlq-digest-${new Date().toISOString().split("T")[0]}`,
     actionLinks: [
       {
-        label: 'View DLQ in Console',
+        label: "View DLQ in Console",
         url: payload.consoleUrl,
-        style: 'primary',
+        style: "primary",
       },
       {
-        label: 'DLQ Runbook',
-        url: 'https://github.com/cddo/ndx/wiki/runbooks/dlq-investigation',
+        label: "DLQ Runbook",
+        url: "https://github.com/cddo/ndx/wiki/runbooks/dlq-investigation",
       },
     ],
-  });
+  })
 }
 
 // =============================================================================
@@ -321,63 +298,59 @@ async function sendDigestToSlack(payload: DLQDigestPayload): Promise<void> {
  * @param event - CloudWatch scheduled event
  */
 export async function handler(event: ScheduledEvent): Promise<void> {
-  const startTime = Date.now();
-  const dlqUrl = getDLQUrl();
+  const startTime = Date.now()
+  const dlqUrl = getDLQUrl()
 
-  logger.info('DLQ digest handler starting', {
+  logger.info("DLQ digest handler starting", {
     scheduledTime: event.time,
-    dlqUrl: dlqUrl ? 'configured' : 'missing',
-  });
+    dlqUrl: dlqUrl ? "configured" : "missing",
+  })
 
   if (!dlqUrl) {
-    logger.error('DLQ_URL environment variable not configured');
-    throw new Error('DLQ_URL environment variable not configured');
+    logger.error("DLQ_URL environment variable not configured")
+    throw new Error("DLQ_URL environment variable not configured")
   }
 
   try {
     // Peek at DLQ messages
-    const summary = await peekDLQMessages();
+    const summary = await peekDLQMessages()
 
-    logger.info('DLQ summary collected', {
+    logger.info("DLQ summary collected", {
       totalMessages: summary.totalMessages,
       oldestMessageAgeSeconds: summary.oldestMessageAge,
       errorCategories: summary.errorCategories.size,
-    });
+    })
 
     // Emit metrics
-    metrics.addMetric('DLQMessageCount', MetricUnit.Count, summary.totalMessages);
-    metrics.addMetric(
-      'DLQOldestMessageAge',
-      MetricUnit.Seconds,
-      summary.oldestMessageAge
-    );
+    metrics.addMetric("DLQMessageCount", MetricUnit.Count, summary.totalMessages)
+    metrics.addMetric("DLQOldestMessageAge", MetricUnit.Seconds, summary.oldestMessageAge)
 
     // Only send digest if there are messages in the DLQ
     if (summary.totalMessages > 0) {
-      const payload = buildDigestPayload(summary);
-      await sendDigestToSlack(payload);
+      const payload = buildDigestPayload(summary)
+      await sendDigestToSlack(payload)
 
-      logger.info('DLQ digest sent to Slack', {
+      logger.info("DLQ digest sent to Slack", {
         messageCount: payload.messageCount,
         oldestMessageHours: payload.oldestMessageHours,
-      });
+      })
 
-      metrics.addMetric('DLQDigestSent', MetricUnit.Count, 1);
+      metrics.addMetric("DLQDigestSent", MetricUnit.Count, 1)
     } else {
-      logger.info('No messages in DLQ, skipping digest');
-      metrics.addMetric('DLQDigestSkipped', MetricUnit.Count, 1);
+      logger.info("No messages in DLQ, skipping digest")
+      metrics.addMetric("DLQDigestSkipped", MetricUnit.Count, 1)
     }
 
-    const latencyMs = Date.now() - startTime;
-    metrics.addMetric('DLQDigestLatency', MetricUnit.Milliseconds, latencyMs);
+    const latencyMs = Date.now() - startTime
+    metrics.addMetric("DLQDigestLatency", MetricUnit.Milliseconds, latencyMs)
 
-    logger.info('DLQ digest handler completed', { latencyMs });
+    logger.info("DLQ digest handler completed", { latencyMs })
   } catch (error) {
-    logger.error('DLQ digest handler failed', { error });
-    metrics.addMetric('DLQDigestFailed', MetricUnit.Count, 1);
-    throw error;
+    logger.error("DLQ digest handler failed", { error })
+    metrics.addMetric("DLQDigestFailed", MetricUnit.Count, 1)
+    throw error
   } finally {
     // Flush metrics
-    metrics.publishStoredMetrics();
+    metrics.publishStoredMetrics()
   }
 }

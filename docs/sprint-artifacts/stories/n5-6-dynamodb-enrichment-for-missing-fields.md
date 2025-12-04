@@ -177,29 +177,29 @@ NotificationHandler (N-4)
 ```typescript
 // LeaseTable (PK: userEmail, SK: uuid)
 interface LeaseRecord {
-  userEmail: string;         // PK
-  uuid: string;              // SK
-  status: LeaseStatus;       // Active, Frozen, Terminated, etc.
-  templateName: string;      // Reference to LeaseTemplateTable
-  accountId: string;         // AWS account ID
-  expirationDate: string;    // ISO 8601 timestamp
-  maxSpend: number;          // Budget limit
-  totalCostAccrued: number;  // Current spend
-  lastModified?: string;     // For conflict detection
+  userEmail: string // PK
+  uuid: string // SK
+  status: LeaseStatus // Active, Frozen, Terminated, etc.
+  templateName: string // Reference to LeaseTemplateTable
+  accountId: string // AWS account ID
+  expirationDate: string // ISO 8601 timestamp
+  maxSpend: number // Budget limit
+  totalCostAccrued: number // Current spend
+  lastModified?: string // For conflict detection
 }
 
 // SandboxAccountTable (PK: accountId)
 interface SandboxAccountRecord {
-  accountId: string;         // AWS account ID
-  accountName: string;       // Human-readable name
-  ownerEmail: string;        // Owner's email for verification
+  accountId: string // AWS account ID
+  accountName: string // Human-readable name
+  ownerEmail: string // Owner's email for verification
 }
 
 // LeaseTemplateTable (PK: templateName)
 interface LeaseTemplateRecord {
-  templateName: string;      // e.g., "DataScience24h"
-  templateDescription: string;
-  leaseDurationInHours: number;
+  templateName: string // e.g., "DataScience24h"
+  templateDescription: string
+  leaseDurationInHours: number
 }
 ```
 
@@ -208,16 +208,16 @@ interface LeaseTemplateRecord {
 ```typescript
 // From tech-spec: enrichment.ts
 interface EnrichmentResult {
-  userName?: string;         // From LeaseTable (derived from email prefix)
-  accountId?: string;        // From LeaseTable
-  expiryDate?: string;       // From LeaseTable.expirationDate
-  budgetLimit?: number;      // From LeaseTable.maxSpend
-  currentSpend?: number;     // From LeaseTable.totalCostAccrued
-  templateName?: string;     // From LeaseTemplateTable
-  ssoUrl?: string;           // Constructed from config
-  timezone?: string;         // From user preferences (n5-10)
-  _conflict?: ConflictInfo;  // Internal: conflict detection
-  _lastModified?: string;    // Internal: staleness check
+  userName?: string // From LeaseTable (derived from email prefix)
+  accountId?: string // From LeaseTable
+  expiryDate?: string // From LeaseTable.expirationDate
+  budgetLimit?: number // From LeaseTable.maxSpend
+  currentSpend?: number // From LeaseTable.totalCostAccrued
+  templateName?: string // From LeaseTemplateTable
+  ssoUrl?: string // Constructed from config
+  timezone?: string // From user preferences (n5-10)
+  _conflict?: ConflictInfo // Internal: conflict detection
+  _lastModified?: string // Internal: staleness check
 }
 ```
 
@@ -238,6 +238,7 @@ interface EnrichmentResult {
 - **formatCurrency/formatUKDate**: Available for displaying enriched amounts/dates
 
 **Key Reuse Opportunities:**
+
 - `EnrichedData` interface from templates.ts:356-378
 - `detectEnrichmentConflict()` function from templates.ts:386-419
 - Error classes from errors.ts (PermanentError, RetriableError)
@@ -314,62 +315,63 @@ The implementation is comprehensive and well-structured. All MUST requirements a
 
 #### Core Enrichment (MUST) - 9/10 Verified
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| 6.1 | ✅ | `enrichment.ts:543-551` - `getMissingFields()` |
-| 6.2 | ✅ | `enrichment.ts:217-260` - `queryLeaseTable()` |
-| 6.3 | ✅ | `enrichment.ts:266-305` - `queryAccountTable()` |
-| 6.4 | ✅ | `enrichment.ts:311-350` - `queryLeaseTemplateTable()` |
-| 6.8 | ✅ | `enrichment.ts:740-773` - `validateEnrichedData()` throws PermanentError |
-| 6.9 | ✅ | `enrichment.ts:237-246` - Only uses GetItemCommand |
-| 6.11 | ✅ | `enrichment.ts:245,291,335` - ConsistentRead: true on all queries |
-| 6.14 | ✅ | `enrichment.ts:200-208` - `resetCircuitBreaker()` |
-| 6.18 | ⚠️ | Load test - infrastructure concern |
-| 6.38 | ✅ | `enrichment.ts:35,601-604` - 2-second timeout |
+| AC   | Status | Evidence                                                                 |
+| ---- | ------ | ------------------------------------------------------------------------ |
+| 6.1  | ✅     | `enrichment.ts:543-551` - `getMissingFields()`                           |
+| 6.2  | ✅     | `enrichment.ts:217-260` - `queryLeaseTable()`                            |
+| 6.3  | ✅     | `enrichment.ts:266-305` - `queryAccountTable()`                          |
+| 6.4  | ✅     | `enrichment.ts:311-350` - `queryLeaseTemplateTable()`                    |
+| 6.8  | ✅     | `enrichment.ts:740-773` - `validateEnrichedData()` throws PermanentError |
+| 6.9  | ✅     | `enrichment.ts:237-246` - Only uses GetItemCommand                       |
+| 6.11 | ✅     | `enrichment.ts:245,291,335` - ConsistentRead: true on all queries        |
+| 6.14 | ✅     | `enrichment.ts:200-208` - `resetCircuitBreaker()`                        |
+| 6.18 | ⚠️     | Load test - infrastructure concern                                       |
+| 6.38 | ✅     | `enrichment.ts:35,601-604` - 2-second timeout                            |
 
 #### Security (MUST) - 4/4 Verified
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| 6.19 | ✅ | `enrichment.ts:529` - `encodeURIComponent(accountId)` |
-| 6.21 | ✅ | `enrichment.ts:434-442` - `SECURITY ALERT` logging |
-| 6.26 | ✅ | `enrichment.ts:447-454` - `requiresManualApproval: true` |
-| 6.41 | ✅ | `enrichment.ts:617` - Only sets `_internalStatus` (internal prefix) |
+| AC   | Status | Evidence                                                            |
+| ---- | ------ | ------------------------------------------------------------------- |
+| 6.19 | ✅     | `enrichment.ts:529` - `encodeURIComponent(accountId)`               |
+| 6.21 | ✅     | `enrichment.ts:434-442` - `SECURITY ALERT` logging                  |
+| 6.26 | ✅     | `enrichment.ts:447-454` - `requiresManualApproval: true`            |
+| 6.41 | ✅     | `enrichment.ts:617` - Only sets `_internalStatus` (internal prefix) |
 
 #### Performance (SHOULD) - 6/6 Verified
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| 6.5 | ✅ | `enrichment.ts:607-677` - Promise.all parallel queries |
-| 6.6 | ✅ | `enrichment.ts:714-715` - EnrichmentLatency metric |
-| 6.10 | ✅ | `enrichment.ts:521-534` - SSO URL from config |
-| 6.12 | ✅ | `enrichment.ts:622` - lastModified checked |
-| 6.13 | ✅ | `enrichment.ts:460-484` - Budget discrepancy detection |
-| 6.33 | ✅ | `enrichment.test.ts:694-715` - Latency SLA test |
+| AC   | Status | Evidence                                               |
+| ---- | ------ | ------------------------------------------------------ |
+| 6.5  | ✅     | `enrichment.ts:607-677` - Promise.all parallel queries |
+| 6.6  | ✅     | `enrichment.ts:714-715` - EnrichmentLatency metric     |
+| 6.10 | ✅     | `enrichment.ts:521-534` - SSO URL from config          |
+| 6.12 | ✅     | `enrichment.ts:622` - lastModified checked             |
+| 6.13 | ✅     | `enrichment.ts:460-484` - Budget discrepancy detection |
+| 6.33 | ✅     | `enrichment.test.ts:694-715` - Latency SLA test        |
 
 #### Reliability (SHOULD) - 6/6 Verified
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| 6.7 | ✅ | `enrichment.ts:629-634` - Warning, continue with partial |
-| 6.16 | ✅ | `enrichment.ts:726-734` - Returns partial on error |
-| 6.17 | ✅ | `enrichment.ts:37-39` - Circuit breaker with 60s cooldown |
-| 6.29 | ✅ | `enrichment.ts:38` - 3 consecutive throttles threshold |
-| 6.39 | ✅ | `enrichment.ts:680-686` - Timeout returns partial data |
-| 6.40 | ✅ | `enrichment.ts:486-511` - 5-min staleness check |
+| AC   | Status | Evidence                                                  |
+| ---- | ------ | --------------------------------------------------------- |
+| 6.7  | ✅     | `enrichment.ts:629-634` - Warning, continue with partial  |
+| 6.16 | ✅     | `enrichment.ts:726-734` - Returns partial on error        |
+| 6.17 | ✅     | `enrichment.ts:37-39` - Circuit breaker with 60s cooldown |
+| 6.29 | ✅     | `enrichment.ts:38` - 3 consecutive throttles threshold    |
+| 6.39 | ✅     | `enrichment.ts:680-686` - Timeout returns partial data    |
+| 6.40 | ✅     | `enrichment.ts:486-511` - 5-min staleness check           |
 
 #### Conflict Detection (SHOULD) - 4/4 Verified
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| 6.20 | ✅ | `enrichment.ts:434-442` - Logs conflict details |
-| 6.22 | ✅ | `enrichment.ts:445` - EnrichmentConflict metric |
-| 6.27 | ✅ | `enrichment.ts:416-431` - Timestamp comparison |
-| 6.37 | ✅ | Same as 6.22 |
+| AC   | Status | Evidence                                        |
+| ---- | ------ | ----------------------------------------------- |
+| 6.20 | ✅     | `enrichment.ts:434-442` - Logs conflict details |
+| 6.22 | ✅     | `enrichment.ts:445` - EnrichmentConflict metric |
+| 6.27 | ✅     | `enrichment.ts:416-431` - Timestamp comparison  |
+| 6.37 | ✅     | Same as 6.22                                    |
 
 ### Code Quality
 
 **Strengths:**
+
 1. Well-documented with JSDoc and AC references
 2. Proper separation of concerns
 3. Comprehensive error handling with graceful degradation
@@ -377,6 +379,7 @@ The implementation is comprehensive and well-structured. All MUST requirements a
 5. Good test coverage with 46 tests
 
 **Follow-up Items:**
+
 - Contract tests against live ISB tables (ACs 6.44-6.47) - future work
 - Operations runbooks (ACs 6.23, 6.32) - future work
 - Infrastructure ACs (6.15, 6.28, 6.31, 6.34, 6.35) - CDK stack concern

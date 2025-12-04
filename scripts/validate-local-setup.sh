@@ -24,8 +24,8 @@ echo ""
 # ============================================================================
 # Check 1: mitmproxy installed (CRITICAL)
 # ============================================================================
-if command -v mitmproxy >/dev/null 2>&1; then
-  VERSION=$(mitmproxy --version 2>/dev/null | head -n 1 || echo "unknown version")
+if command -v mitmproxy > /dev/null 2>&1; then
+  VERSION=$(mitmproxy --version 2> /dev/null | head -n 1 || echo "unknown version")
   echo "✅ mitmproxy installed ($VERSION)"
 else
   echo "❌ mitmproxy not installed"
@@ -50,14 +50,14 @@ fi
 PORT_8080_IN_USE=false
 
 # Try lsof first (macOS/Linux)
-if command -v lsof >/dev/null 2>&1; then
-  if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null 2>&1; then
+if command -v lsof > /dev/null 2>&1; then
+  if lsof -Pi :8080 -sTCP:LISTEN -t > /dev/null 2>&1; then
     PORT_8080_IN_USE=true
   fi
 else
   # Fallback to netstat (Windows Git Bash, minimal Linux distros)
-  if command -v netstat >/dev/null 2>&1; then
-    if netstat -an 2>/dev/null | grep -E '(:8080|\.8080).*LISTEN' >/dev/null 2>&1; then
+  if command -v netstat > /dev/null 2>&1; then
+    if netstat -an 2> /dev/null | grep -E '(:8080|\.8080).*LISTEN' > /dev/null 2>&1; then
       PORT_8080_IN_USE=true
     fi
   else
@@ -79,14 +79,14 @@ fi
 PORT_8081_IN_USE=false
 
 # Try lsof first (macOS/Linux)
-if command -v lsof >/dev/null 2>&1; then
-  if lsof -Pi :8081 -sTCP:LISTEN -t >/dev/null 2>&1; then
+if command -v lsof > /dev/null 2>&1; then
+  if lsof -Pi :8081 -sTCP:LISTEN -t > /dev/null 2>&1; then
     PORT_8081_IN_USE=true
   fi
 else
   # Fallback to netstat (Windows Git Bash, minimal Linux distros)
-  if command -v netstat >/dev/null 2>&1; then
-    if netstat -an 2>/dev/null | grep -E '(:8081|\.8081).*LISTEN' >/dev/null 2>&1; then
+  if command -v netstat > /dev/null 2>&1; then
+    if netstat -an 2> /dev/null | grep -E '(:8081|\.8081).*LISTEN' > /dev/null 2>&1; then
       PORT_8081_IN_USE=true
     fi
   else

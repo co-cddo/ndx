@@ -12,6 +12,7 @@
 This document provides the complete epic and story breakdown for the NDX CloudFront Origin Routing project, decomposing the requirements from the [PRD](./prd.md) into implementable stories with full technical context from the [Architecture](./architecture.md).
 
 **Context Incorporated:**
+
 - ✅ PRD requirements (44 FRs, 35 NFRs)
 - ✅ Architecture technical decisions
 
@@ -20,6 +21,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 ## Functional Requirements Inventory
 
 ### CloudFront Origin Management
+
 - **FR1:** System can add `ndx-static-prod` S3 bucket as a new origin to CloudFront distribution E3THG4UHYDHVWP
 - **FR2:** System can configure Origin Access Control for new S3 origin matching security of existing S3Origin
 - **FR3:** System can define origin properties (connection timeout, read timeout, connection attempts) matching existing origins
@@ -28,6 +30,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR6:** System preserves API Gateway origin completely unchanged (endpoint, path, protocol, timeouts)
 
 ### Cookie-Based Routing Logic
+
 - **FR7:** System can inspect incoming HTTP requests for `Cookie` header
 - **FR8:** System can parse `Cookie` header to extract `NDX` cookie value
 - **FR9:** System routes requests to `ndx-static-prod` origin when `NDX` cookie value equals `true` (exact match, case-sensitive)
@@ -38,6 +41,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR14:** Routing function returns modified request with correct origin selection
 
 ### Routing Function Deployment
+
 - **FR15:** System can deploy CloudFront Function (Option A) or Lambda@Edge function (Option B) containing routing logic
 - **FR16:** Routing function code can be defined in CDK as part of infrastructure
 - **FR17:** Routing function can be attached to default cache behavior as viewer-request or origin-request function
@@ -45,6 +49,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR19:** CloudFront propagates function changes globally across all edge locations
 
 ### Cache Behavior Configuration
+
 - **FR20:** System preserves all existing cache policy settings (TTL, compression, HTTPS redirect)
 - **FR21:** System ensures cookies are forwarded to routing function (required for cookie inspection)
 - **FR22:** System preserves existing viewer protocol policy (redirect-to-https)
@@ -52,6 +57,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR24:** System preserves existing response headers policies if configured
 
 ### CDK Infrastructure Management
+
 - **FR25:** CDK code can import existing CloudFront distribution by ID (E3THG4UHYDHVWP)
 - **FR26:** CDK can modify CloudFront distribution configuration without recreating distribution
 - **FR27:** Infrastructure changes can be validated via `cdk synth` before deployment
@@ -60,6 +66,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR30:** CDK deployment is idempotent (re-running with no changes causes no AWS updates)
 
 ### Testing & Validation
+
 - **FR31:** CDK tests can validate new S3 origin is added to distribution configuration
 - **FR32:** CDK tests can validate API Gateway origin remains unchanged
 - **FR33:** CDK tests can validate routing function code is syntactically valid
@@ -67,6 +74,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR35:** System can execute smoke tests post-deployment (manual cookie setting and verification)
 
 ### Rollback & Safety
+
 - **FR36:** System can disable routing function via CloudFront configuration change
 - **FR37:** System can remove new S3 origin from distribution if rollback needed
 - **FR38:** System can revert to previous CloudFront configuration via CDK version control
@@ -74,6 +82,7 @@ This document provides the complete epic and story breakdown for the NDX CloudFr
 - **FR40:** CloudFormation automatically rolls back failed CloudFront configuration changes
 
 ### Operational Monitoring
+
 - **FR41:** CloudFront can emit metrics showing request counts per origin
 - **FR42:** CloudFront can emit error rate metrics for each origin separately
 - **FR43:** Routing function execution can be monitored via CloudWatch if needed (Lambda@Edge only)
@@ -120,13 +129,14 @@ So that we can modify its configuration without recreating the distribution or d
 **Given** the CDK stack `NdxStaticStack` exists in `infra/lib/ndx-stack.ts`
 **When** I add code to import the CloudFront distribution
 **Then** the stack includes:
-```typescript
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 
-const distribution = cloudfront.Distribution.fromDistributionAttributes(this, 'ImportedDistribution', {
-  distributionId: 'E3THG4UHYDHVWP',
-  domainName: 'd7roov8fndsis.cloudfront.net'
-});
+```typescript
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
+
+const distribution = cloudfront.Distribution.fromDistributionAttributes(this, "ImportedDistribution", {
+  distributionId: "E3THG4UHYDHVWP",
+  domainName: "d7roov8fndsis.cloudfront.net",
+})
 ```
 
 **And** running `cdk synth --profile NDX/InnovationSandboxHub` generates valid CloudFormation
@@ -137,6 +147,7 @@ const distribution = cloudfront.Distribution.fromDistributionAttributes(this, 'I
 **Prerequisites:** None (first story in epic)
 
 **Technical Notes:**
+
 - Use `Distribution.fromDistributionAttributes()` for importing (Architecture ADR-003)
 - Distribution ID: E3THG4UHYDHVWP (from PRD Infrastructure section)
 - Domain: d7roov8fndsis.cloudfront.net (from PRD Infrastructure section)
@@ -158,22 +169,24 @@ So that CloudFront can fetch content from this bucket for testers using cookie-b
 **Given** the CloudFront distribution is imported in CDK
 **When** I add the new S3 origin configuration
 **Then** the CDK stack includes:
-```typescript
-import * as s3 from 'aws-cdk-lib/aws-s3';
 
-const newOriginBucket = s3.Bucket.fromBucketName(this, 'NewOriginBucket', 'ndx-static-prod');
+```typescript
+import * as s3 from "aws-cdk-lib/aws-s3"
+
+const newOriginBucket = s3.Bucket.fromBucketName(this, "NewOriginBucket", "ndx-static-prod")
 
 const newOrigin = new origins.S3Origin(newOriginBucket, {
-  originId: 'ndx-static-prod-origin',
-  originAccessControlId: 'E3P8MA1G9Y5BYE',  // Reuse existing OAC
+  originId: "ndx-static-prod-origin",
+  originAccessControlId: "E3P8MA1G9Y5BYE", // Reuse existing OAC
   connectionAttempts: 3,
   connectionTimeout: cdk.Duration.seconds(10),
   readTimeout: cdk.Duration.seconds(30),
-  customHeaders: {}
-});
+  customHeaders: {},
+})
 ```
 
 **And** origin configuration matches existing S3Origin settings:
+
 - Connection attempts: 3
 - Connection timeout: 10 seconds
 - Read timeout: 30 seconds
@@ -188,6 +201,7 @@ const newOrigin = new origins.S3Origin(newOriginBucket, {
 **Prerequisites:** Story 1.1 (CloudFront distribution imported)
 
 **Technical Notes:**
+
 - Reuse existing OAC E3P8MA1G9Y5BYE for security consistency (Architecture ADR-002)
 - Origin ID naming: `ndx-static-prod-origin` (Architecture naming conventions)
 - S3 bucket `ndx-static-prod` already exists (deployed in Phase 1)
@@ -208,17 +222,20 @@ So that production traffic and API functionality remain completely unaffected.
 **Given** the new S3 origin has been added to CDK stack
 **When** I run `cdk diff --profile NDX/InnovationSandboxHub`
 **Then** the diff output shows:
+
 - New origin: `ndx-static-prod-origin` (addition)
 - Existing S3Origin: No changes
 - Existing API Gateway origin: No changes
 
 **And** existing S3Origin configuration is verified as unchanged:
+
 - Origin ID: `S3Origin`
 - Bucket: `ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky`
 - OAC: E3P8MA1G9Y5BYE
 - All timeout and connection settings identical
 
 **And** existing API Gateway origin is verified as unchanged:
+
 - Origin ID: `InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A`
 - Domain: `1ewlxhaey6.execute-api.us-west-2.amazonaws.com`
 - Path: `/prod`
@@ -230,6 +247,7 @@ So that production traffic and API functionality remain completely unaffected.
 **Prerequisites:** Story 1.2 (New S3 origin added)
 
 **Technical Notes:**
+
 - This is a VALIDATION story - no code changes, just verification
 - Critical for government service - FR5 and FR6 mandate existing origins unchanged
 - Use `cdk diff` to generate change preview before deployment
@@ -250,11 +268,13 @@ So that the new S3 origin exists in the distribution and is ready for routing co
 **Given** CDK diff shows only new origin addition (existing origins unchanged)
 **When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
 **Then** CloudFormation deployment succeeds with:
+
 - Stack status: UPDATE_COMPLETE
 - New origin added to distribution E3THG4UHYDHVWP
 - CloudFront propagates changes to all edge locations (~10-15 minutes)
 
 **And** post-deployment verification confirms:
+
 ```bash
 # Verify distribution status
 aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
@@ -273,6 +293,7 @@ aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSand
 **Prerequisites:** Story 1.3 (Existing origins verified unchanged)
 
 **Technical Notes:**
+
 - Zero-downtime deployment (NFR-REL-1) - CloudFront handles updates gracefully
 - CloudFormation automatically rolls back on failure (NFR-REL-2)
 - Propagation time: 10-15 minutes for global edge locations (NFR-PERF-6)
@@ -307,53 +328,56 @@ So that testers with `NDX=true` see content from the new S3 bucket while others 
 
 ```javascript
 function handler(event) {
-  var request = event.request;
-  var cookies = parseCookies(request.headers.cookie);
+  var request = event.request
+  var cookies = parseCookies(request.headers.cookie)
 
   // Route to new origin if NDX=true
-  if (cookies['NDX'] === 'true') {
+  if (cookies["NDX"] === "true") {
     request.origin = {
       s3: {
-        domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-        region: 'us-west-2',
-        authMethod: 'origin-access-control',
-        originAccessControlId: 'E3P8MA1G9Y5BYE'
-      }
-    };
+        domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+        region: "us-west-2",
+        authMethod: "origin-access-control",
+        originAccessControlId: "E3P8MA1G9Y5BYE",
+      },
+    }
   }
   // Else: request unchanged, routes to default S3Origin
 
-  return request;
+  return request
 }
 
 function parseCookies(cookieHeader) {
-  if (!cookieHeader) return {};
+  if (!cookieHeader) return {}
 
-  var cookies = {};
-  cookieHeader.value.split(';').forEach(function(cookie) {
-    var parts = cookie.split('=');
-    var key = parts[0].trim();
-    var value = parts[1] ? parts[1].trim() : '';
-    cookies[key] = value;
-  });
+  var cookies = {}
+  cookieHeader.value.split(";").forEach(function (cookie) {
+    var parts = cookie.split("=")
+    var key = parts[0].trim()
+    var value = parts[1] ? parts[1].trim() : ""
+    cookies[key] = value
+  })
 
-  return cookies;
+  return cookies
 }
 ```
 
 **And** function follows CloudFront Functions JavaScript constraints:
+
 - Uses `var` (not `const` or `let`)
 - No ES6 features (no arrow functions, template literals)
 - Code size < 1KB (well under 10KB limit)
 - No console.log (avoid execution cost)
 
 **And** function handles edge cases gracefully:
+
 - Missing cookie header: Returns empty cookies object
 - Malformed cookie: Parses what it can, empty for invalid
 - NDX cookie with non-"true" value: Routes to default origin
 - Missing NDX cookie: Routes to default origin
 
 **And** function uses exact string matching:
+
 - Cookie name: `NDX` (case-sensitive, exact)
 - Cookie value: `true` (case-sensitive, exact)
 - Not `ndx`, not `Ndx`, not `"true"`, not `1`
@@ -361,6 +385,7 @@ function parseCookies(cookieHeader) {
 **Prerequisites:** Story 1.4 (New origin deployed)
 
 **Technical Notes:**
+
 - CloudFront Functions use limited JavaScript runtime (no Node.js APIs)
 - Function executes at all 225+ edge locations (Architecture ADR-001)
 - Sub-millisecond execution expected (NFR-PERF-1)
@@ -383,37 +408,42 @@ So that I can verify correct routing behavior before deploying to production.
 **Then** tests cover all routing scenarios:
 
 **Test Case 1: Route to new origin when NDX=true**
+
 ```typescript
-const event = { request: { headers: { cookie: { value: 'NDX=true' } } } };
-const result = handler(event);
-expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
-expect(result.origin.s3.originAccessControlId).toBe('E3P8MA1G9Y5BYE');
+const event = { request: { headers: { cookie: { value: "NDX=true" } } } }
+const result = handler(event)
+expect(result.origin.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
+expect(result.origin.s3.originAccessControlId).toBe("E3P8MA1G9Y5BYE")
 ```
 
 **Test Case 2: Use default origin when cookie missing**
+
 ```typescript
-const event = { request: { headers: {} } };
-const result = handler(event);
-expect(result.origin).toBeUndefined(); // Request unchanged
+const event = { request: { headers: {} } }
+const result = handler(event)
+expect(result.origin).toBeUndefined() // Request unchanged
 ```
 
 **Test Case 3: Use default origin when NDX=false**
+
 ```typescript
-const event = { request: { headers: { cookie: { value: 'NDX=false' } } } };
-const result = handler(event);
-expect(result.origin).toBeUndefined();
+const event = { request: { headers: { cookie: { value: "NDX=false" } } } }
+const result = handler(event)
+expect(result.origin).toBeUndefined()
 ```
 
 **Test Case 4: Parse multiple cookies correctly**
+
 ```typescript
-const event = { request: { headers: { cookie: { value: 'session=abc123; NDX=true; other=xyz' } } } };
-const result = handler(event);
-expect(result.origin.s3.domainName).toBe('ndx-static-prod.s3.us-west-2.amazonaws.com');
+const event = { request: { headers: { cookie: { value: "session=abc123; NDX=true; other=xyz" } } } }
+const result = handler(event)
+expect(result.origin.s3.domainName).toBe("ndx-static-prod.s3.us-west-2.amazonaws.com")
 ```
 
 **Test Case 5: Handle malformed cookies gracefully**
+
 ```typescript
-const event = { request: { headers: { cookie: { value: 'invalid;;;NDX=true' } } } };
+const event = { request: { headers: { cookie: { value: "invalid;;;NDX=true" } } } }
 // Should still parse NDX=true successfully
 ```
 
@@ -424,6 +454,7 @@ const event = { request: { headers: { cookie: { value: 'invalid;;;NDX=true' } } 
 **Prerequisites:** Story 2.1 (CloudFront Function created)
 
 **Technical Notes:**
+
 - Use Jest testing framework (already configured in CDK project)
 - Test file location: `infra/test/cookie-router.test.ts`
 - Architecture section: "Testing Patterns" provides test examples
@@ -445,21 +476,22 @@ So that cookie inspection works while preserving cache effectiveness for non-coo
 **Then** the CDK stack includes:
 
 ```typescript
-const cachePolicy = new cloudfront.CachePolicy(this, 'NdxCookieRoutingPolicy', {
-  cachePolicyName: 'NdxCookieRoutingPolicy',
-  comment: 'Cache policy for NDX cookie-based routing',
-  defaultTtl: cdk.Duration.seconds(86400),        // 1 day
+const cachePolicy = new cloudfront.CachePolicy(this, "NdxCookieRoutingPolicy", {
+  cachePolicyName: "NdxCookieRoutingPolicy",
+  comment: "Cache policy for NDX cookie-based routing",
+  defaultTtl: cdk.Duration.seconds(86400), // 1 day
   minTtl: cdk.Duration.seconds(1),
-  maxTtl: cdk.Duration.seconds(31536000),         // 1 year
-  cookieBehavior: cloudfront.CacheCookieBehavior.whitelist('NDX'),
+  maxTtl: cdk.Duration.seconds(31536000), // 1 year
+  cookieBehavior: cloudfront.CacheCookieBehavior.whitelist("NDX"),
   queryStringBehavior: cloudfront.CacheQueryStringBehavior.all(),
   headerBehavior: cloudfront.CacheHeaderBehavior.none(),
   enableAcceptEncodingGzip: true,
-  enableAcceptEncodingBrotli: true
-});
+  enableAcceptEncodingBrotli: true,
+})
 ```
 
 **And** cache policy configuration includes:
+
 - Cookie behavior: Allowlist (not all cookies)
 - Allowlisted cookies: `['NDX']` only
 - Query strings: Forward all (preserve existing behavior)
@@ -467,6 +499,7 @@ const cachePolicy = new cloudfront.CachePolicy(this, 'NdxCookieRoutingPolicy', {
 - Compression: Gzip and Brotli enabled
 
 **And** cache effectiveness is preserved:
+
 - Users without NDX cookie: Share cache (optimal performance)
 - Users with NDX=true: Separate cache (small group)
 - Users with NDX=false: Share default cache
@@ -478,6 +511,7 @@ const cachePolicy = new cloudfront.CachePolicy(this, 'NdxCookieRoutingPolicy', {
 **Prerequisites:** Story 2.2 (Function tests passing)
 
 **Technical Notes:**
+
 - Modern CloudFront best practice: Cache Policies (not legacy cache behaviors)
 - Architecture ADR-004: Cache Policy rationale
 - Only NDX cookie forwarded, not all cookies (optimal caching)
@@ -501,23 +535,21 @@ So that the function is available for attachment to cache behaviors.
 **Then** the stack includes:
 
 ```typescript
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs"
+import * as path from "path"
 
-const functionCode = fs.readFileSync(
-  path.join(__dirname, 'functions/cookie-router.js'),
-  'utf8'
-);
+const functionCode = fs.readFileSync(path.join(__dirname, "functions/cookie-router.js"), "utf8")
 
-const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouterFunction', {
-  functionName: 'ndx-cookie-router',
+const cookieRouterFunction = new cloudfront.Function(this, "CookieRouterFunction", {
+  functionName: "ndx-cookie-router",
   code: cloudfront.FunctionCode.fromInline(functionCode),
-  comment: 'Routes requests based on NDX cookie value',
-  runtime: cloudfront.FunctionRuntime.JS_2_0
-});
+  comment: "Routes requests based on NDX cookie value",
+  runtime: cloudfront.FunctionRuntime.JS_2_0,
+})
 ```
 
 **And** function configuration specifies:
+
 - Function name: `ndx-cookie-router`
 - Runtime: JS_2_0 (CloudFront Functions JavaScript 2.0)
 - Code loaded from file system (not hardcoded inline)
@@ -531,6 +563,7 @@ const cookieRouterFunction = new cloudfront.Function(this, 'CookieRouterFunction
 **Prerequisites:** Story 2.3 (Cache Policy configured)
 
 **Technical Notes:**
+
 - CloudFront Functions runtime: JS_2_0 (latest as of 2025)
 - Code loaded via fs.readFileSync for maintainability
 - Function not yet attached to cache behavior (Story 2.5)
@@ -556,33 +589,38 @@ So that the function executes for all requests and routes based on cookie value.
 // Note: This requires using L1 (CFN) constructs since imported distribution
 // doesn't support L2 construct modifications directly
 
-const cfnDistribution = distribution.node.defaultChild as cloudfront.CfnDistribution;
+const cfnDistribution = distribution.node.defaultChild as cloudfront.CfnDistribution
 
-cfnDistribution.addPropertyOverride('DistributionConfig.DefaultCacheBehavior', {
-  TargetOriginId: 'S3Origin',  // Keep existing default
-  ViewerProtocolPolicy: 'redirect-to-https',
-  AllowedMethods: ['GET', 'HEAD', 'OPTIONS'],
-  CachedMethods: ['GET', 'HEAD'],
+cfnDistribution.addPropertyOverride("DistributionConfig.DefaultCacheBehavior", {
+  TargetOriginId: "S3Origin", // Keep existing default
+  ViewerProtocolPolicy: "redirect-to-https",
+  AllowedMethods: ["GET", "HEAD", "OPTIONS"],
+  CachedMethods: ["GET", "HEAD"],
   CachePolicyId: cachePolicy.cachePolicyId,
-  FunctionAssociations: [{
-    EventType: 'viewer-request',
-    FunctionARN: cookieRouterFunction.functionArn
-  }]
-});
+  FunctionAssociations: [
+    {
+      EventType: "viewer-request",
+      FunctionARN: cookieRouterFunction.functionArn,
+    },
+  ],
+})
 ```
 
 **And** cache behavior configuration preserves:
+
 - Viewer protocol policy: redirect-to-https (FR22)
 - Allowed methods: GET, HEAD, OPTIONS (FR23)
 - Target origin: S3Origin (default, function overrides when NDX=true)
 - Compression settings (inherited from cache policy)
 
 **And** function association specifies:
+
 - Event type: `viewer-request` (executes before cache lookup)
 - Function type: CloudFront Function (not Lambda@Edge)
 
 **And** API Gateway cache behaviors remain completely unchanged (FR13)
 **And** running `cdk diff` shows:
+
 - DefaultCacheBehavior: Modified (function + cache policy added)
 - API Gateway behaviors: No changes
 - Existing origins: No changes
@@ -590,6 +628,7 @@ cfnDistribution.addPropertyOverride('DistributionConfig.DefaultCacheBehavior', {
 **Prerequisites:** Story 2.4 (Function deployed)
 
 **Technical Notes:**
+
 - Use L1 (CFN) constructs for imported distribution modifications
 - Function executes at viewer-request stage (before cache)
 - Target origin remains S3Origin; function overrides when NDX=true
@@ -611,6 +650,7 @@ So that testers can access the new UI while production users remain unaffected.
 **Given** CDK stack includes function, cache policy, and cache behavior configuration
 **When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
 **Then** CloudFormation deployment succeeds:
+
 - Stack status: UPDATE_COMPLETE
 - CloudFront Function deployed globally
 - Cache Policy created
@@ -618,6 +658,7 @@ So that testers can access the new UI while production users remain unaffected.
 - CloudFront propagation completes (~10-15 minutes)
 
 **And** post-deployment validation without cookie succeeds:
+
 ```bash
 # Test without cookie (should route to existing S3Origin)
 curl -I https://d7roov8fndsis.cloudfront.net/
@@ -625,6 +666,7 @@ curl -I https://d7roov8fndsis.cloudfront.net/
 ```
 
 **And** post-deployment validation with cookie succeeds:
+
 ```bash
 # Set cookie in browser console
 document.cookie = "NDX=true; path=/"
@@ -634,6 +676,7 @@ document.cookie = "NDX=true; path=/"
 ```
 
 **And** cookie removal verification succeeds:
+
 ```bash
 # Clear cookie in browser console
 document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"
@@ -643,14 +686,16 @@ document.cookie = "NDX=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"
 ```
 
 **And** operational verification confirms:
+
 - Production site accessible (zero downtime - NFR-REL-1)
-- API endpoints functional (no disruption to /prod/* routes)
+- API endpoints functional (no disruption to /prod/\* routes)
 - CloudFront metrics show requests to both origins
 - No error rate increase
 
 **Prerequisites:** Story 2.5 (Function attached to cache behavior)
 
 **Technical Notes:**
+
 - Wait 10-15 minutes for CloudFront global propagation (NFR-PERF-6)
 - Smoke tests validate FR9, FR10, FR11 (cookie routing logic)
 - FR35: Post-deployment smoke tests required
@@ -684,23 +729,24 @@ So that unintended infrastructure changes are detected automatically.
 **Then** the test file includes:
 
 ```typescript
-import { App } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
-import { NdxStaticStack } from '../lib/ndx-stack';
+import { App } from "aws-cdk-lib"
+import { Template } from "aws-cdk-lib/assertions"
+import { NdxStaticStack } from "../lib/ndx-stack"
 
-describe('NdxStaticStack', () => {
-  test('CloudFront configuration snapshot', () => {
-    const app = new App();
-    const stack = new NdxStaticStack(app, 'TestStack');
-    const template = Template.fromStack(stack);
+describe("NdxStaticStack", () => {
+  test("CloudFront configuration snapshot", () => {
+    const app = new App()
+    const stack = new NdxStaticStack(app, "TestStack")
+    const template = Template.fromStack(stack)
 
-    expect(template.toJSON()).toMatchSnapshot();
-  });
-});
+    expect(template.toJSON()).toMatchSnapshot()
+  })
+})
 ```
 
 **And** running `yarn test` generates snapshot file in `__snapshots__/` directory
 **And** snapshot captures complete CloudFormation template including:
+
 - CloudFront distribution configuration
 - CloudFront Function resource
 - Cache Policy resource
@@ -715,6 +761,7 @@ describe('NdxStaticStack', () => {
 **Prerequisites:** Story 2.6 (Routing functionality deployed)
 
 **Technical Notes:**
+
 - Snapshot tests provide broad coverage with minimal code (FR31)
 - Catches ANY unintended CloudFormation changes
 - Jest `toMatchSnapshot()` creates snapshot files automatically
@@ -738,86 +785,95 @@ So that requirements are explicitly validated and violations caught early.
 **Then** tests validate critical properties:
 
 **Test 1: New S3 origin added with correct OAC**
-```typescript
-test('New S3 origin configured correctly', () => {
-  const template = Template.fromStack(stack);
 
-  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+```typescript
+test("New S3 origin configured correctly", () => {
+  const template = Template.fromStack(stack)
+
+  template.hasResourceProperties("AWS::CloudFront::Distribution", {
     DistributionConfig: {
-      Origins: expect.arrayContaining([{
-        Id: 'ndx-static-prod-origin',
-        DomainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-        S3OriginConfig: {
-          OriginAccessIdentity: '',
+      Origins: expect.arrayContaining([
+        {
+          Id: "ndx-static-prod-origin",
+          DomainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+          S3OriginConfig: {
+            OriginAccessIdentity: "",
+          },
+          OriginAccessControlId: "E3P8MA1G9Y5BYE",
         },
-        OriginAccessControlId: 'E3P8MA1G9Y5BYE'
-      }])
-    }
-  });
-});
+      ]),
+    },
+  })
+})
 ```
 
 **Test 2: API Gateway origin unchanged**
-```typescript
-test('API Gateway origin remains unchanged', () => {
-  const template = Template.fromStack(stack);
 
-  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+```typescript
+test("API Gateway origin remains unchanged", () => {
+  const template = Template.fromStack(stack)
+
+  template.hasResourceProperties("AWS::CloudFront::Distribution", {
     DistributionConfig: {
       Origins: expect.arrayContaining([
         expect.objectContaining({
-          DomainName: '1ewlxhaey6.execute-api.us-west-2.amazonaws.com',
-          CustomOriginConfig: expect.any(Object)
-        })
-      ])
-    }
-  });
-});
+          DomainName: "1ewlxhaey6.execute-api.us-west-2.amazonaws.com",
+          CustomOriginConfig: expect.any(Object),
+        }),
+      ]),
+    },
+  })
+})
 ```
 
 **Test 3: CloudFront Function created**
+
 ```typescript
-test('CloudFront Function configured', () => {
-  template.hasResourceProperties('AWS::CloudFront::Function', {
-    Name: 'ndx-cookie-router',
+test("CloudFront Function configured", () => {
+  template.hasResourceProperties("AWS::CloudFront::Function", {
+    Name: "ndx-cookie-router",
     FunctionConfig: {
-      Runtime: 'cloudfront-js-2.0'
-    }
-  });
-});
+      Runtime: "cloudfront-js-2.0",
+    },
+  })
+})
 ```
 
 **Test 4: Cache Policy with NDX cookie allowlist**
+
 ```typescript
-test('Cache Policy forwards NDX cookie only', () => {
-  template.hasResourceProperties('AWS::CloudFront::CachePolicy', {
+test("Cache Policy forwards NDX cookie only", () => {
+  template.hasResourceProperties("AWS::CloudFront::CachePolicy", {
     CachePolicyConfig: {
-      Name: 'NdxCookieRoutingPolicy',
+      Name: "NdxCookieRoutingPolicy",
       ParametersInCacheKeyAndForwardedToOrigin: {
         CookiesConfig: {
-          CookieBehavior: 'whitelist',
-          Cookies: ['NDX']
-        }
-      }
-    }
-  });
-});
+          CookieBehavior: "whitelist",
+          Cookies: ["NDX"],
+        },
+      },
+    },
+  })
+})
 ```
 
 **Test 5: Default cache behavior has function attached**
+
 ```typescript
-test('Function attached to default cache behavior', () => {
-  template.hasResourceProperties('AWS::CloudFront::Distribution', {
+test("Function attached to default cache behavior", () => {
+  template.hasResourceProperties("AWS::CloudFront::Distribution", {
     DistributionConfig: {
       DefaultCacheBehavior: {
-        FunctionAssociations: [{
-          EventType: 'viewer-request',
-          FunctionARN: expect.stringContaining('ndx-cookie-router')
-        }]
-      }
-    }
-  });
-});
+        FunctionAssociations: [
+          {
+            EventType: "viewer-request",
+            FunctionARN: expect.stringContaining("ndx-cookie-router"),
+          },
+        ],
+      },
+    },
+  })
+})
 ```
 
 **And** all tests pass with current configuration
@@ -827,6 +883,7 @@ test('Function attached to default cache behavior', () => {
 **Prerequisites:** Story 3.1 (Snapshot tests created)
 
 **Technical Notes:**
+
 - Fine-grained assertions complement snapshots (Architecture ADR-005)
 - Explicit validation of security-critical properties (NFR-SEC-1)
 - FR31-34: Test validation requirements
@@ -911,6 +968,7 @@ echo "4. Clear cookie and verify revert to existing site"
 
 **And** script is executable: `chmod +x infra/test/integration.sh`
 **And** running integration test validates:
+
 - Distribution status is "Deployed"
 - All three origins exist
 - New origin `ndx-static-prod-origin` is configured
@@ -922,6 +980,7 @@ echo "4. Clear cookie and verify revert to existing site"
 **Prerequisites:** Story 3.2 (Assertion tests created)
 
 **Technical Notes:**
+
 - Integration test validates real AWS deployment (Architecture ADR-005)
 - Catches issues unit tests miss (permissions, quotas, region availability)
 - Uses AWS CLI to query actual deployed resources
@@ -945,12 +1004,14 @@ So that the team can quickly revert changes if routing issues are discovered.
 **Then** the documentation includes three-tier rollback approach:
 
 **Option 1: Disable Function (Fastest - < 5 minutes)**
-```markdown
+
+````markdown
 ## Rollback Option 1: Disable Function (Recommended)
 
 **When to use:** Routing logic causing issues, need immediate revert
 
 **Steps:**
+
 1. Edit `lib/ndx-stack.ts`
 2. Comment out function association:
    ```typescript
@@ -959,14 +1020,18 @@ So that the team can quickly revert changes if routing issues are discovered.
    //   FunctionARN: cookieRouterFunction.functionArn
    // }]
    ```
+````
+
 3. Deploy: `cdk deploy --profile NDX/InnovationSandboxHub`
 4. Propagation: ~5-10 minutes
 5. Result: All traffic routes to existing S3Origin
 
 **Validation:**
+
 - Test with NDX=true cookie (should still see existing site)
 - Production traffic unaffected
-```
+
+````
 
 **Option 2: Git Revert (Medium - 5-10 minutes)**
 ```markdown
@@ -983,15 +1048,17 @@ So that the team can quickly revert changes if routing issues are discovered.
 **Validation:**
 - Check git history: `git log`
 - Verify CDK diff shows revert: `cdk diff`
-```
+````
 
 **Option 3: Remove Origin (Slowest - 15 minutes)**
+
 ```markdown
 ## Rollback Option 3: Remove Origin and Function
 
 **When to use:** Complete rollback including origin removal
 
 **Steps:**
+
 1. Edit `lib/ndx-stack.ts`
 2. Remove new origin configuration
 3. Remove CloudFront Function definition
@@ -1003,6 +1070,7 @@ So that the team can quickly revert changes if routing issues are discovered.
 ```
 
 **And** each option documents:
+
 - When to use this approach
 - Exact steps to execute
 - Expected timeline
@@ -1014,6 +1082,7 @@ So that the team can quickly revert changes if routing issues are discovered.
 **Prerequisites:** Story 3.3 (Integration test created)
 
 **Technical Notes:**
+
 - Three-tier approach: fastest to most complete (Architecture: "Rollback Procedures")
 - Option 1 preferred: Quickest, least disruptive (FR36)
 - FR36-40: Rollback and safety requirements
@@ -1037,10 +1106,12 @@ So that any team member can operate the routing infrastructure confidently.
 **Then** the README includes new sections:
 
 **Section: CloudFront Cookie-Based Routing**
+
 ```markdown
 ## CloudFront Cookie-Based Routing
 
 ### Overview
+
 The NDX CloudFront distribution uses cookie-based routing to enable safe testing of new UI versions.
 
 - **Cookie Name:** `NDX` (case-sensitive)
@@ -1051,6 +1122,7 @@ The NDX CloudFront distribution uses cookie-based routing to enable safe testing
   - API routes: Unaffected (API Gateway origin unchanged)
 
 ### How to Test New UI
+
 1. Open browser DevTools Console
 2. Set cookie: `document.cookie = "NDX=true; path=/"`
 3. Browse to https://d7roov8fndsis.cloudfront.net/
@@ -1059,10 +1131,12 @@ The NDX CloudFront distribution uses cookie-based routing to enable safe testing
 ```
 
 **Section: Deployment Process**
-```markdown
+
+````markdown
 ## Deployment Process
 
 ### Pre-Deployment Checklist
+
 - [ ] All tests pass: `yarn test`
 - [ ] Linting clean: `yarn lint`
 - [ ] CDK diff reviewed: `cdk diff --profile NDX/InnovationSandboxHub`
@@ -1070,17 +1144,21 @@ The NDX CloudFront distribution uses cookie-based routing to enable safe testing
 - [ ] Team notified of deployment window
 
 ### Deploy
+
 ```bash
 cd infra
 cdk deploy --profile NDX/InnovationSandboxHub
 ```
+````
 
 ### Post-Deployment Validation
+
 - Wait 10-15 minutes for global propagation
 - Run integration test: `test/integration.sh`
 - Manual cookie test (see "How to Test New UI" above)
 - Check CloudWatch metrics for errors
-```
+
+````
 
 **Section: Monitoring**
 ```markdown
@@ -1097,8 +1175,9 @@ cdk deploy --profile NDX/InnovationSandboxHub
 ```bash
 aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
 # Output: "Deployed" when changes are live
-```
-```
+````
+
+````
 
 **Section: Troubleshooting**
 ```markdown
@@ -1119,9 +1198,10 @@ aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSand
 - CDK snapshot mismatch: Review diff, update with `yarn test -u` if intentional
 - Integration test fails: Check AWS CLI authentication and permissions
 - Unit tests fail: Review cookie parsing logic changes
-```
+````
 
 **And** README includes:
+
 - Clear operational procedures
 - Copy-paste commands
 - Troubleshooting steps with solutions
@@ -1133,6 +1213,7 @@ aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSand
 **Prerequisites:** Story 3.4 (Rollback procedures documented)
 
 **Technical Notes:**
+
 - FR18, FR19: Deployment and operational documentation requirements
 - NFR-OPS-3: Post-deployment validation steps documented
 - NFR-OPS-5: CloudFront metrics accessibility
@@ -1235,6 +1316,7 @@ fi
 **And** script output clearly shows which checks passed/failed
 
 **And** add to `package.json`:
+
 ```json
 {
   "scripts": {
@@ -1248,6 +1330,7 @@ fi
 **Prerequisites:** Story 3.5 (README updated)
 
 **Technical Notes:**
+
 - Automates pre-deployment checklist from Story 3.5
 - Prevents common deployment errors (tests fail, lint errors, AWS auth issues)
 - FR16: Tests must pass before deployment
@@ -1260,52 +1343,52 @@ fi
 
 ## FR Coverage Matrix
 
-| FR | Description | Epic | Stories |
-|----|-------------|------|---------|
-| FR1 | Add ndx-static-prod as new origin to E3THG4UHYDHVWP | Epic 1 | Story 1.2 |
-| FR2 | Configure OAC for new origin | Epic 1 | Story 1.2 |
-| FR3 | Define origin properties matching existing | Epic 1 | Story 1.2 |
-| FR4 | Reference existing distribution in CDK | Epic 1 | Story 1.1 |
-| FR5 | Preserve existing S3Origin unchanged | Epic 1 | Story 1.3 |
-| FR6 | Preserve API Gateway origin unchanged | Epic 1 | Story 1.3 |
-| FR7 | Inspect Cookie header | Epic 2 | Story 2.1 |
-| FR8 | Parse Cookie header for NDX value | Epic 2 | Story 2.1 |
-| FR9 | Route to new origin when NDX=true | Epic 2 | Story 2.1, 2.6 |
-| FR10 | Route to existing origin when cookie missing | Epic 2 | Story 2.1, 2.6 |
-| FR11 | Route to existing origin when NDX≠true | Epic 2 | Story 2.1, 2.6 |
-| FR12 | Execute routing for default cache behavior | Epic 2 | Story 2.5 |
-| FR13 | NOT execute for API Gateway routes | Epic 2 | Story 2.5 |
-| FR14 | Return modified request with origin | Epic 2 | Story 2.1 |
-| FR15 | Deploy CloudFront Function | Epic 2 | Story 2.4 |
-| FR16 | Define function code in CDK | Epic 2 | Story 2.4 |
-| FR17 | Attach function to cache behavior | Epic 2 | Story 2.5 |
-| FR18 | Function deployment in CDK update | Epic 2 | Story 2.6 |
-| FR19 | Propagate function globally | Epic 2 | Story 2.6 |
-| FR20 | Preserve cache policy settings | Epic 2 | Story 2.3 |
-| FR21 | Forward cookies to function | Epic 2 | Story 2.3 |
-| FR22 | Preserve viewer protocol policy | Epic 2 | Story 2.5 |
-| FR23 | Preserve allowed HTTP methods | Epic 2 | Story 2.5 |
-| FR24 | Preserve response headers policies | Epic 2 | Story 2.5 |
-| FR25 | Import distribution by ID | Epic 1 | Story 1.1 |
-| FR26 | Modify without recreating | Epic 1 | Story 1.1, 1.4 |
-| FR27 | Validate via cdk synth | Epic 1 | Story 1.1, 1.2 |
-| FR28 | Preview via cdk diff | Epic 1 | Story 1.2, 1.3 |
-| FR29 | Deploy via cdk deploy with zero downtime | Epic 1 | Story 1.4 |
-| FR30 | Idempotent deployment | Epic 1 | Story 1.4 |
-| FR31 | CDK tests validate new origin | Epic 3 | Story 3.2 |
-| FR32 | CDK tests validate API Gateway unchanged | Epic 3 | Story 3.2 |
-| FR33 | Validate function code syntax | Epic 3 | Story 2.2, 3.1 |
-| FR34 | Validate cache behavior config | Epic 3 | Story 3.2 |
-| FR35 | Smoke tests post-deployment | Epic 3 | Story 2.6, 3.3 |
-| FR36 | Disable function for rollback | Epic 3 | Story 3.4 |
-| FR37 | Remove origin for rollback | Epic 3 | Story 3.4 |
-| FR38 | Revert via version control | Epic 3 | Story 3.4 |
-| FR39 | Investigate failures via CloudFormation | Epic 3 | Story 3.3, 3.5 |
-| FR40 | Automatic CloudFormation rollback | Epic 1, Epic 2 | Story 1.4, 2.6 |
-| FR41 | Metrics for request counts per origin | Epic 3 | Story 3.5 |
-| FR42 | Metrics for error rates per origin | Epic 3 | Story 3.5 |
-| FR43 | Monitor function execution (optional) | Epic 3 | Story 3.5 |
-| FR44 | Log routing decisions (optional) | Epic 3 | Story 3.5 |
+| FR   | Description                                         | Epic           | Stories        |
+| ---- | --------------------------------------------------- | -------------- | -------------- |
+| FR1  | Add ndx-static-prod as new origin to E3THG4UHYDHVWP | Epic 1         | Story 1.2      |
+| FR2  | Configure OAC for new origin                        | Epic 1         | Story 1.2      |
+| FR3  | Define origin properties matching existing          | Epic 1         | Story 1.2      |
+| FR4  | Reference existing distribution in CDK              | Epic 1         | Story 1.1      |
+| FR5  | Preserve existing S3Origin unchanged                | Epic 1         | Story 1.3      |
+| FR6  | Preserve API Gateway origin unchanged               | Epic 1         | Story 1.3      |
+| FR7  | Inspect Cookie header                               | Epic 2         | Story 2.1      |
+| FR8  | Parse Cookie header for NDX value                   | Epic 2         | Story 2.1      |
+| FR9  | Route to new origin when NDX=true                   | Epic 2         | Story 2.1, 2.6 |
+| FR10 | Route to existing origin when cookie missing        | Epic 2         | Story 2.1, 2.6 |
+| FR11 | Route to existing origin when NDX≠true              | Epic 2         | Story 2.1, 2.6 |
+| FR12 | Execute routing for default cache behavior          | Epic 2         | Story 2.5      |
+| FR13 | NOT execute for API Gateway routes                  | Epic 2         | Story 2.5      |
+| FR14 | Return modified request with origin                 | Epic 2         | Story 2.1      |
+| FR15 | Deploy CloudFront Function                          | Epic 2         | Story 2.4      |
+| FR16 | Define function code in CDK                         | Epic 2         | Story 2.4      |
+| FR17 | Attach function to cache behavior                   | Epic 2         | Story 2.5      |
+| FR18 | Function deployment in CDK update                   | Epic 2         | Story 2.6      |
+| FR19 | Propagate function globally                         | Epic 2         | Story 2.6      |
+| FR20 | Preserve cache policy settings                      | Epic 2         | Story 2.3      |
+| FR21 | Forward cookies to function                         | Epic 2         | Story 2.3      |
+| FR22 | Preserve viewer protocol policy                     | Epic 2         | Story 2.5      |
+| FR23 | Preserve allowed HTTP methods                       | Epic 2         | Story 2.5      |
+| FR24 | Preserve response headers policies                  | Epic 2         | Story 2.5      |
+| FR25 | Import distribution by ID                           | Epic 1         | Story 1.1      |
+| FR26 | Modify without recreating                           | Epic 1         | Story 1.1, 1.4 |
+| FR27 | Validate via cdk synth                              | Epic 1         | Story 1.1, 1.2 |
+| FR28 | Preview via cdk diff                                | Epic 1         | Story 1.2, 1.3 |
+| FR29 | Deploy via cdk deploy with zero downtime            | Epic 1         | Story 1.4      |
+| FR30 | Idempotent deployment                               | Epic 1         | Story 1.4      |
+| FR31 | CDK tests validate new origin                       | Epic 3         | Story 3.2      |
+| FR32 | CDK tests validate API Gateway unchanged            | Epic 3         | Story 3.2      |
+| FR33 | Validate function code syntax                       | Epic 3         | Story 2.2, 3.1 |
+| FR34 | Validate cache behavior config                      | Epic 3         | Story 3.2      |
+| FR35 | Smoke tests post-deployment                         | Epic 3         | Story 2.6, 3.3 |
+| FR36 | Disable function for rollback                       | Epic 3         | Story 3.4      |
+| FR37 | Remove origin for rollback                          | Epic 3         | Story 3.4      |
+| FR38 | Revert via version control                          | Epic 3         | Story 3.4      |
+| FR39 | Investigate failures via CloudFormation             | Epic 3         | Story 3.3, 3.5 |
+| FR40 | Automatic CloudFormation rollback                   | Epic 1, Epic 2 | Story 1.4, 2.6 |
+| FR41 | Metrics for request counts per origin               | Epic 3         | Story 3.5      |
+| FR42 | Metrics for error rates per origin                  | Epic 3         | Story 3.5      |
+| FR43 | Monitor function execution (optional)               | Epic 3         | Story 3.5      |
+| FR44 | Log routing decisions (optional)                    | Epic 3         | Story 3.5      |
 
 **Coverage Validation:** All 44 FRs mapped to stories ✓
 
@@ -1326,6 +1409,7 @@ fi
 This epic breakdown transforms the NDX CloudFront Origin Routing PRD into 16 bite-sized, implementable stories across 3 epics. All 44 functional requirements and 35 non-functional requirements are covered with full architectural context.
 
 **Key Strengths:**
+
 - **Surgical infrastructure change:** Minimal risk, focused scope, preserves production stability
 - **Vertical slicing:** Each story delivers complete functionality, not just one layer
 - **Clear prerequisites:** Sequential dependencies only (no forward references)
@@ -1337,12 +1421,14 @@ This epic breakdown transforms the NDX CloudFront Origin Routing PRD into 16 bit
 - **Government service standards:** Zero downtime, auditability, reversibility
 
 **Implementation Approach:**
+
 1. Execute stories sequentially within each epic
 2. Each story is sized for single developer session completion
 3. All tests must pass before moving to next story
 4. Documentation updated continuously, not at the end
 
 **Context for Phase 4:**
+
 - PRD provides functional requirements (WHAT capabilities)
 - Architecture provides technical decisions (HOW to implement with ADRs)
 - Epics provide tactical implementation plan (STORY-BY-STORY breakdown)
@@ -1378,6 +1464,7 @@ _For implementation: Each story contains complete acceptance criteria, prerequis
 This section provides the complete epic and story breakdown for the NDX Try Before You Buy feature, enabling government users to request and access temporary AWS sandbox environments directly from the NDX catalogue.
 
 **Features Covered:**
+
 - Self-service AWS sandbox requests from NDX catalogue
 - Authentication and session management
 - Try sessions dashboard
@@ -1385,11 +1472,13 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - GOV.UK Design System integration
 
 **Context Incorporated:**
+
 - ✅ PRD requirements (79 FRs, 47 NFRs)
 - ✅ Architecture ADRs (37 ADRs fully referenced across all epic stories)
 - ✅ UX Design specifications (5 user journeys, component specs, design patterns)
 
 **Enhancement Status:**
+
 - ✅ Epic 4 (Local Development Infrastructure): Architecture context added (6 stories)
 - ✅ Epic 5 (Authentication Foundation): Architecture + UX context added (10 stories)
 - ✅ Epic 6 (Try Button & Lease Request): Architecture + UX context added (12 stories, CRITICAL ADR-026 Modal)
@@ -1403,6 +1492,7 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 ## Functional Requirements Inventory - Feature 2
 
 ### Authentication & Session Management (10 FRs)
+
 - **FR-TRY-1:** System can detect if user is authenticated by checking sessionStorage for `isb-jwt` token
 - **FR-TRY-2:** System can initiate OAuth login by redirecting to `/api/auth/login`
 - **FR-TRY-3:** System can extract JWT token from URL query parameter after OAuth redirect
@@ -1415,6 +1505,7 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-10:** System sends `Authorization: Bearer {token}` header with all Innovation Sandbox API requests
 
 ### User Interface - Sign In/Out (5 FRs)
+
 - **FR-TRY-11:** System displays "Sign in" button in top-right navigation when user not authenticated
 - **FR-TRY-12:** System displays "Sign out" button in top-right navigation when user authenticated
 - **FR-TRY-13:** Sign in button triggers OAuth redirect to `/api/auth/login`
@@ -1422,6 +1513,7 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-15:** System uses GOV.UK Design System button styling for sign in/out buttons
 
 ### Innovation Sandbox API Integration (9 FRs)
+
 - **FR-TRY-16:** System can call `GET /api/auth/login/status` to check authentication status
 - **FR-TRY-17:** System can parse user session data (email, displayName, userName, roles)
 - **FR-TRY-18:** System can call `GET /api/leases?userEmail={email}` to retrieve user's leases
@@ -1433,6 +1525,7 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-24:** System redirects to login if API returns 401 unauthorized response
 
 ### Try Page (/try) (5 FRs)
+
 - **FR-TRY-25:** System can render `/try` page route
 - **FR-TRY-26:** System displays "Sign in to view your try sessions" message when unauthenticated
 - **FR-TRY-27:** System displays "Sign in" button on /try page when unauthenticated
@@ -1440,6 +1533,7 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-29:** System renders empty state message if user has no leases
 
 ### Try Sessions Display (8 FRs)
+
 - **FR-TRY-30:** System displays sessions table with columns: Template Name, AWS Account ID, Expiry, Budget, Status
 - **FR-TRY-31:** System formats expiry as relative time for past sessions
 - **FR-TRY-32:** System formats expiry as absolute date/time for future expirations
@@ -1450,12 +1544,14 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-37:** System visually distinguishes active sessions from expired/terminated
 
 ### Active Session Management (4 FRs)
+
 - **FR-TRY-38:** System displays "Launch AWS Console" button for sessions with status "Active"
 - **FR-TRY-39:** Launch button opens AWS SSO portal in new tab with correct URL format
 - **FR-TRY-40:** System displays remaining lease duration for active sessions
 - **FR-TRY-41:** System does not show launch button for Expired/Terminated/Failed sessions
 
 ### Catalogue Integration (7 FRs)
+
 - **FR-TRY-42:** System can parse `try` metadata field from product page YAML frontmatter
 - **FR-TRY-43:** System can parse `try_id` metadata field (lease template UUID)
 - **FR-TRY-44:** System adds "Try Before You Buy" tag to products with `try` metadata
@@ -1465,6 +1561,7 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-48:** Try button uses govukButton macro with `isStartButton: true`
 
 ### Try Button & Lease Request Modal (17 FRs)
+
 - **FR-TRY-49:** Clicking "Try" button checks authentication status first
 - **FR-TRY-50:** If unauthenticated, Try button initiates OAuth sign-in flow
 - **FR-TRY-51:** If authenticated, Try button displays lease request modal overlay
@@ -1484,12 +1581,14 @@ This section provides the complete epic and story breakdown for the NDX Try Befo
 - **FR-TRY-65:** Modal closes on successful lease request or after error handling
 
 ### Responsive Design & Mobile Support (4 FRs)
+
 - **FR-TRY-66:** All try-related UI elements responsive for mobile/tablet viewports (320px+ width)
 - **FR-TRY-67:** Sessions table adapts to mobile (stacked cards or horizontal scroll)
 - **FR-TRY-68:** Modal overlay adapts to mobile viewport
 - **FR-TRY-69:** Sign in/out buttons accessible on mobile nav
 
 ### Accessibility (WCAG 2.2) (10 FRs)
+
 - **FR-TRY-70:** All interactive elements keyboard navigable
 - **FR-TRY-71:** Focus indicators visible for keyboard navigation
 - **FR-TRY-72:** Modal can be closed with Escape key
@@ -1552,18 +1651,21 @@ So that I can intercept CloudFront API requests and redirect them to local NDX s
 **Then** the documentation includes:
 
 **Section: Prerequisites**
+
 - Python 3.8+ installed
 - mitmproxy installed: `pip install mitmproxy`
 - NDX node server can run on localhost:8080
 - Innovation Sandbox CloudFront domain: `https://d7roov8fndsis.cloudfront.net`
 
 **Section: How mitmproxy Works for Try Development**
+
 - mitmproxy acts as transparent proxy intercepting CloudFront domain requests
 - UI requests (HTML, CSS, JS) → forward to localhost:8080 (local NDX server)
 - API requests (`/api/*`) → pass through to real CloudFront (Innovation Sandbox backend)
 - Enables local UI development with real backend API
 
 **Section: Architecture Diagram**
+
 ```
 Browser Request → mitmproxy (localhost:8081)
                       ↓
@@ -1577,6 +1679,7 @@ localhost:8080               CloudFront
 ```
 
 **Section: Configuration Steps**
+
 1. Install mitmproxy: `pip install mitmproxy`
 2. Create addon script: `scripts/mitmproxy-addon.py` (Story 4.2)
 3. Configure system proxy settings to use localhost:8081
@@ -1590,12 +1693,14 @@ localhost:8080               CloudFront
 **Prerequisites:** None (first story in epic)
 
 **Technical Notes:**
+
 - mitmproxy listens on localhost:8081 (avoids clash with NDX server on 8080)
 - Transparent proxy intercepts specific domain only
 - Does NOT intercept all traffic (minimally invasive)
 - System proxy settings revert when mitmproxy stopped
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint)
   - Local server runs Eleventy build output on port 8080
   - mitmproxy routes UI requests to local build (hot-reload workflow)
@@ -1606,6 +1711,7 @@ localhost:8080               CloudFront
 - **Output:** `/docs/development/local-try-setup.md` comprehensive setup guide
 
 **UX Design Context:**
+
 - **Developer Experience:** Fast iteration on UI changes without backend mocking
 - **Production Parity:** Tests against real Innovation Sandbox API (catches integration issues early)
 
@@ -1653,6 +1759,7 @@ addons = [request]
 ```
 
 **And** script handles edge cases:
+
 - Root path (`/`) forwards to localhost:8080
 - Static assets (`/assets/*`) forward to localhost:8080
 - Product pages (`/catalogue/*`) forward to localhost:8080
@@ -1666,6 +1773,7 @@ addons = [request]
 **Prerequisites:** Story 4.1 (Documentation created)
 
 **Technical Notes:**
+
 - mitmproxy addon API: `http.HTTPFlow` object
 - `flow.request.pretty_host` for domain matching
 - Modify `scheme`, `host`, `port` for local forwarding
@@ -1673,6 +1781,7 @@ addons = [request]
 - No authentication token manipulation needed (OAuth redirects work)
 
 **Architecture Context:**
+
 - **Routing Logic:**
   - UI routes (`/`, `/catalogue/*`, `/try`, static assets): Forward to localhost:8080
   - API routes (`/api/*`): Pass through to CloudFront unchanged
@@ -1683,6 +1792,7 @@ addons = [request]
 - **Script Location:** `scripts/mitmproxy-addon.py` version-controlled with codebase
 
 **UX Design Context:**
+
 - **Developer Experience:** Simple Python script, minimal configuration
 - **Debugging:** mitmproxy console shows all intercepted requests (UI vs API routing visible)
 
@@ -1709,12 +1819,14 @@ So that I can quickly start local development environment.
 ```
 
 **And** running `yarn dev:proxy` starts mitmproxy with:
+
 - Listen port: 8081
 - Mode: transparent proxy
 - Addon script: scripts/mitmproxy-addon.py
 - Configuration directory: ~/.mitmproxy
 
 **And** console output shows:
+
 - Proxy server running on localhost:8081
 - Addon loaded: mitmproxy-addon.py
 - Waiting for requests
@@ -1724,6 +1836,7 @@ So that I can quickly start local development environment.
 **Prerequisites:** Story 4.2 (Addon script created)
 
 **Technical Notes:**
+
 - `--listen-port 8081` avoids clash with NDX server on 8080
 - `--mode transparent` enables domain interception
 - `-s` flag specifies addon script path
@@ -1731,6 +1844,7 @@ So that I can quickly start local development environment.
 - May need to trust mitmproxy CA certificate for HTTPS interception
 
 **Architecture Context:**
+
 - **npm Script:** `yarn dev:proxy` starts mitmproxy with correct configuration
 - **Port 8081:** mitmproxy listener (avoids conflict with NDX server on 8080)
 - **Transparent Mode:** Intercepts CloudFront domain requests without browser extension
@@ -1741,6 +1855,7 @@ So that I can quickly start local development environment.
   - Browser: Navigate to CloudFront domain (proxied to localhost)
 
 **UX Design Context:**
+
 - **Developer Experience:** Single command to start proxy (`yarn dev:proxy`)
 - **Clean Shutdown:** Press `q` in mitmproxy console to stop cleanly
 
@@ -1759,6 +1874,7 @@ So that browser traffic routes through mitmproxy.
 **Then** the documentation includes proxy configuration for macOS, Windows, Linux:
 
 **macOS: System Preferences**
+
 ```
 1. Open System Preferences → Network
 2. Select active network (Wi-Fi or Ethernet)
@@ -1769,6 +1885,7 @@ So that browser traffic routes through mitmproxy.
 ```
 
 **Windows: Internet Options**
+
 ```
 1. Open Control Panel → Internet Options
 2. Click Connections → LAN Settings
@@ -1778,6 +1895,7 @@ So that browser traffic routes through mitmproxy.
 ```
 
 **Linux: GNOME Settings**
+
 ```
 1. Open Settings → Network → Network Proxy
 2. Select "Manual"
@@ -1787,21 +1905,25 @@ So that browser traffic routes through mitmproxy.
 ```
 
 **And** documentation includes instructions to bypass proxy for non-CloudFront domains:
+
 - Add bypass list: `localhost, 127.0.0.1, *.local`
 - Only CloudFront domain routed through proxy
 
 **And** documentation includes revert instructions:
+
 - Set proxy to "Off" or "Direct" when not developing Try features
 
 **Prerequisites:** Story 4.3 (Run configuration created)
 
 **Technical Notes:**
+
 - System proxy settings affect all browsers
 - Can alternatively use browser-specific proxy extensions (FoxyProxy)
 - mitmproxy must be running before enabling system proxy
 - Revert proxy settings to avoid routing all traffic when not developing
 
 **Architecture Context:**
+
 - **System-Wide Proxy:** All browsers route through localhost:8081 when enabled
 - **Bypass List:** Ensure `localhost, 127.0.0.1, *.local` bypassed (prevents proxying local traffic)
 - **Platform-Specific:** macOS (System Preferences), Windows (Internet Options), Linux (GNOME Settings)
@@ -1809,6 +1931,7 @@ So that browser traffic routes through mitmproxy.
 - **Revert When Done:** Disable system proxy when not developing Try features (avoid routing all traffic)
 
 **UX Design Context:**
+
 - **Developer Experience:** One-time setup per machine
 - **Documentation:** Platform-specific instructions in `/docs/development/local-try-setup.md`
 
@@ -1827,6 +1950,7 @@ So that I can intercept HTTPS requests without browser warnings.
 **Then** the documentation includes certificate trust instructions:
 
 **macOS: Keychain Access**
+
 ```
 1. Open ~/.mitmproxy/mitmproxy-ca-cert.pem
 2. Keychain Access opens automatically
@@ -1836,6 +1960,7 @@ So that I can intercept HTTPS requests without browser warnings.
 ```
 
 **Windows: Certificate Manager**
+
 ```
 1. Open ~/.mitmproxy/mitmproxy-ca-cert.pem
 2. Install Certificate → Current User → Place in "Trusted Root Certification Authorities"
@@ -1843,17 +1968,20 @@ So that I can intercept HTTPS requests without browser warnings.
 ```
 
 **Linux: ca-certificates**
+
 ```
 1. sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/mitmproxy.crt
 2. sudo update-ca-certificates
 ```
 
 **And** documentation warns about certificate trust implications:
+
 - Only trust certificate on development machines
 - Never trust mitmproxy certificate in production
 - Certificate enables mitmproxy to decrypt HTTPS traffic
 
 **And** validation instructions provided:
+
 1. Browse to `https://d7roov8fndsis.cloudfront.net`
 2. No SSL warnings should appear
 3. UI content loads from localhost:8080
@@ -1862,12 +1990,14 @@ So that I can intercept HTTPS requests without browser warnings.
 **Prerequisites:** Story 4.4 (Proxy configuration documented)
 
 **Technical Notes:**
+
 - mitmproxy auto-generates CA certificate on first run
 - Certificate path: `~/.mitmproxy/mitmproxy-ca-cert.pem`
 - Without trust, browser shows "Your connection is not private" warnings
 - Certificate trust is per-machine, not per-browser (system-wide)
 
 **Architecture Context:**
+
 - **HTTPS Interception:** CloudFront domain uses HTTPS (mitmproxy must decrypt to route)
 - **CA Certificate:** mitmproxy auto-generates on first run (`~/.mitmproxy/mitmproxy-ca-cert.pem`)
 - **Platform-Specific Trust:**
@@ -1878,6 +2008,7 @@ So that I can intercept HTTPS requests without browser warnings.
 - **Validation:** Browse to CloudFront domain, verify no SSL warnings, UI loads from localhost
 
 **UX Design Context:**
+
 - **Developer Experience:** One-time certificate trust per machine
 - **Security Notice:** Documentation warns about trusting only on dev machines
 - **Validation Steps:** Clear instructions to verify setup working after trust
@@ -1929,7 +2060,7 @@ fi
 # Check 3: NDX server can start on port 8080
 echo ""
 echo "✓ Checking if port 8080 is available for NDX server..."
-if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null ; then
+if lsof -Pi :8080 -sTCP:LISTEN -t > /dev/null; then
   echo "⚠️  Port 8080 already in use (NDX server may already be running)"
 else
   echo "✅ Port 8080 available"
@@ -1938,7 +2069,7 @@ fi
 # Check 4: Port 8081 available for mitmproxy
 echo ""
 echo "✓ Checking if port 8081 is available for mitmproxy..."
-if lsof -Pi :8081 -sTCP:LISTEN -t >/dev/null ; then
+if lsof -Pi :8081 -sTCP:LISTEN -t > /dev/null; then
   echo "⚠️  Port 8081 already in use (mitmproxy may already be running)"
 else
   echo "✅ Port 8081 available"
@@ -1981,12 +2112,14 @@ fi
 **Prerequisites:** Story 4.5 (Certificate trust documented)
 
 **Technical Notes:**
+
 - Validation prevents common setup issues (missing dependencies, port conflicts)
 - Runs before starting development (fast feedback)
 - Detects already-running services (mitmproxy, NDX server)
 - Epic 4 preventive measure from Pre-mortem Analysis (User acceptance #9)
 
 **Architecture Context:**
+
 - **Validation Checks:**
   - mitmproxy installation (`command -v mitmproxy`)
   - Addon script exists (`scripts/mitmproxy-addon.py`)
@@ -1998,6 +2131,7 @@ fi
 - **Pre-mortem Preventive Measure:** Epic 4 validation prevents "works on my machine" issues
 
 **UX Design Context:**
+
 - **Developer Experience:** Automated validation script (no manual checklist)
 - **Clear Output:** ✅/❌ status for each check, actionable error messages
 - **Next Steps Guidance:** Script shows exact commands to run after validation passes
@@ -2034,6 +2168,7 @@ So that I can authenticate to access Try features.
 **And** the button has accessible text: "Sign out"
 
 **And** sign in/out buttons are:
+
 - Keyboard navigable (tab index)
 - Screen reader accessible (ARIA labels)
 - Responsive on mobile (visible in mobile nav)
@@ -2042,6 +2177,7 @@ So that I can authenticate to access Try features.
 **Prerequisites:** Epic 4 complete (local dev environment ready)
 
 **Technical Notes:**
+
 - Check sessionStorage client-side: `sessionStorage.getItem('isb-jwt')`
 - Use GOV.UK Design System button macro (already integrated in NDX)
 - Nunjucks template: Check JWT existence in layout template
@@ -2049,6 +2185,7 @@ So that I can authenticate to access Try features.
 - Accessibility: FR-TRY-70, FR-TRY-71 (keyboard navigation, focus indicators)
 
 **Architecture Context:**
+
 - **ADR-024:** Authentication state management using event-driven pattern
   - Implement `AuthState` class with subscribe/notify pattern
   - Multiple components react to auth state changes (nav links, try buttons, /try page)
@@ -2057,6 +2194,7 @@ So that I can authenticate to access Try features.
 - **Module:** `src/try/auth/session-storage.ts` - JWT token storage utilities
 
 **UX Design Context:**
+
 - **Component:** Authentication State Indicator (UX Section 6.2 Component 5)
 - **Placement:** Top-right navigation in GOV.UK header (consistent across all pages)
 - **Signed Out:** "Sign in" link visible (blue underlined link, GOV.UK standard)
@@ -2082,6 +2220,7 @@ So that I can authenticate using AWS credentials.
 **And** after successful AWS authentication, I am redirected back to NDX with JWT token in URL query parameter
 
 **And** the redirect flow preserves:
+
 - Original page context (return URL if needed)
 - HTTPS security
 - No errors logged in console
@@ -2089,6 +2228,7 @@ So that I can authenticate using AWS credentials.
 **Prerequisites:** Story 5.1 (Sign in button exists)
 
 **Technical Notes:**
+
 - Sign in button href: `/api/auth/login`
 - Innovation Sandbox OAuth endpoint handles redirect automatically
 - OAuth redirects to callback URL with token
@@ -2097,6 +2237,7 @@ So that I can authenticate using AWS credentials.
 - OAuth flow is external to NDX (handled by Innovation Sandbox backend)
 
 **Architecture Context:**
+
 - **ADR-023:** OAuth callback page pattern
   - Dedicated `/callback` page handles OAuth redirect (not home page)
   - Callback page extracts token, stores in sessionStorage, then redirects to intended destination
@@ -2107,6 +2248,7 @@ So that I can authenticate using AWS credentials.
   - Production cross-gov SSO maintains OAuth 2.0 compatibility (no code changes)
 
 **UX Design Context:**
+
 - **User Journey:** Authentication Sign In (UX Section 5.1 Journey 1, Steps 1-2)
 - **Step 1:** User clicks "Sign in" → Redirect to `/api/auth/login`
 - **Step 2:** OAuth redirect to Innovation Sandbox login page (external to NDX)
@@ -2129,25 +2271,25 @@ So that I can store the token for authenticated API calls.
 
 ```javascript
 function extractTokenFromURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
+  const urlParams = new URLSearchParams(window.location.search)
+  const token = urlParams.get("token")
 
   if (token) {
     // Store token in sessionStorage
-    sessionStorage.setItem('isb-jwt', token);
+    sessionStorage.setItem("isb-jwt", token)
 
     // Clean up URL (remove token from query params)
-    const cleanURL = window.location.pathname;
-    window.history.replaceState({}, document.title, cleanURL);
+    const cleanURL = window.location.pathname
+    window.history.replaceState({}, document.title, cleanURL)
 
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 // Run on page load
-document.addEventListener('DOMContentLoaded', extractTokenFromURL);
+document.addEventListener("DOMContentLoaded", extractTokenFromURL)
 ```
 
 **And** token extraction runs on every page load
@@ -2159,6 +2301,7 @@ document.addEventListener('DOMContentLoaded', extractTokenFromURL);
 **Prerequisites:** Story 5.2 (OAuth redirect flow)
 
 **Technical Notes:**
+
 - URLSearchParams API for query parameter parsing
 - `window.history.replaceState()` removes token from URL without reload
 - sessionStorage vs localStorage: sessionStorage preferred (FR-TRY-8, FR-TRY-9)
@@ -2166,6 +2309,7 @@ document.addEventListener('DOMContentLoaded', extractTokenFromURL);
 - Token cleanup prevents token exposure in browser history
 
 **Architecture Context:**
+
 - **ADR-023:** OAuth callback page pattern implementation
   - `/callback` page dedicated to token extraction (not mixed with main page logic)
   - Extract token → Store in sessionStorage → Clean URL → Redirect to original destination
@@ -2179,6 +2323,7 @@ document.addEventListener('DOMContentLoaded', extractTokenFromURL);
   - Token never logged to console or analytics
 
 **UX Design Context:**
+
 - **User Journey:** Authentication Sign In (UX Section 5.1 Journey 1, Step 3)
 - **Token extraction:** Brief loading indicator "Signing you in..."
 - **URL cleanup:** Token removed from address bar before user sees final page
@@ -2209,6 +2354,7 @@ So that I don't need to sign in again when opening NDX in a new tab.
 **Prerequisites:** Story 5.3 (Token extraction implemented)
 
 **Technical Notes:**
+
 - sessionStorage behavior: persists across tabs, NOT across browser restarts
 - This is DESIRED behavior per PRD (temporary authentication)
 - Production cross-gov SSO may have different session persistence (handled at SSO layer)
@@ -2217,6 +2363,7 @@ So that I don't need to sign in again when opening NDX in a new tab.
 - Validate behavior in browser DevTools → Application → Session Storage
 
 **Architecture Context:**
+
 - **ADR-024:** Authentication state management with event-driven pattern
   - AuthState notifies all subscribers when auth status changes (login, logout, token refresh)
   - Components subscribe to auth state changes: nav links, try buttons, /try page
@@ -2227,6 +2374,7 @@ So that I don't need to sign in again when opening NDX in a new tab.
   - No server-side session needed: Stateless JWT approach (scalability)
 
 **UX Design Context:**
+
 - **Pattern:** sessionStorage for JWT token (UX Section 7.1 Authentication State Management)
 - **User Expectation:** "Sign in once, use across tabs" (multi-tab workflow support)
 - **Security Consideration:** Browser close = automatic sign out (government shared devices)
@@ -2249,14 +2397,14 @@ So that I can end my session and clear my authentication.
 ```javascript
 function signOut() {
   // Clear JWT token
-  sessionStorage.removeItem('isb-jwt');
+  sessionStorage.removeItem("isb-jwt")
 
   // Redirect to home page
-  window.location.href = '/';
+  window.location.href = "/"
 }
 
 // Attach to sign out button
-document.getElementById('sign-out-button').addEventListener('click', signOut);
+document.getElementById("sign-out-button").addEventListener("click", signOut)
 ```
 
 **And** I am redirected to home page (`/`)
@@ -2267,6 +2415,7 @@ document.getElementById('sign-out-button').addEventListener('click', signOut);
 **Prerequisites:** Story 5.4 (sessionStorage persistence validated)
 
 **Technical Notes:**
+
 - `sessionStorage.removeItem('isb-jwt')` clears token
 - Redirect to home prevents user confusion (clear state transition)
 - FR-TRY-7, FR-TRY-14 covered
@@ -2274,6 +2423,7 @@ document.getElementById('sign-out-button').addEventListener('click', signOut);
 - Production SSO may require SSO logout endpoint call (handle in future iteration)
 
 **Architecture Context:**
+
 - **ADR-024:** Authentication state management with event-driven notifications
   - Sign out triggers AuthState.notify() to all subscribers
   - Nav links, try buttons, /try page react to sign out event
@@ -2285,6 +2435,7 @@ document.getElementById('sign-out-button').addEventListener('click', signOut);
 - **Future:** ADR-017 Production cross-gov SSO logout endpoint (abstracted in auth-provider interface)
 
 **UX Design Context:**
+
 - **User Journey:** Authentication Sign Out (UX Section 5.1 Journey 1 - Sign Out Flow)
 - **Step 1:** User clicks "Sign out" link
 - **Step 2:** Clear JWT from sessionStorage
@@ -2309,30 +2460,31 @@ So that backend can authenticate requests and return user-specific data.
 
 ```javascript
 function callISBAPI(endpoint, options = {}) {
-  const token = sessionStorage.getItem('isb-jwt');
+  const token = sessionStorage.getItem("isb-jwt")
 
   const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers
-  };
+    "Content-Type": "application/json",
+    ...options.headers,
+  }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   return fetch(endpoint, {
     ...options,
-    headers
-  });
+    headers,
+  })
 }
 
 // Example usage
-callISBAPI('/api/leases?userEmail=user@example.com')
-  .then(response => response.json())
-  .then(data => console.log(data));
+callISBAPI("/api/leases?userEmail=user@example.com")
+  .then((response) => response.json())
+  .then((data) => console.log(data))
 ```
 
 **And** API helper function handles:
+
 - Adding Authorization header when token exists
 - NOT adding header when token missing (unauthenticated requests)
 - Preserving other headers passed in options
@@ -2344,6 +2496,7 @@ callISBAPI('/api/leases?userEmail=user@example.com')
 **Prerequisites:** Story 5.5 (Sign out functionality)
 
 **Technical Notes:**
+
 - Bearer token format per OAuth 2.0 standard
 - FR-TRY-6, FR-TRY-10 covered
 - Centralized helper function prevents duplication
@@ -2351,6 +2504,7 @@ callISBAPI('/api/leases?userEmail=user@example.com')
 - Story 5.8 will handle 401 responses (automatic re-authentication)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client with authentication interceptor
   - Single `api-client.ts` module handles all Innovation Sandbox API calls
   - Automatic Authorization header injection (DRY principle)
@@ -2361,6 +2515,7 @@ callISBAPI('/api/leases?userEmail=user@example.com')
 - **Security:** NFR-TRY-SEC-2 (HTTPS only), NFR-TRY-SEC-6 (secure token transmission)
 
 **UX Design Context:**
+
 - **Pattern:** All API calls use centralized client (prevents authorization bugs)
 - **Security:** Bearer token never logged to console or exposed in UI (UX Section 7.1)
 - **Error Handling:** 401 responses trigger automatic re-authentication (seamless UX)
@@ -2393,29 +2548,30 @@ So that I can verify token validity and retrieve user session data.
 ```javascript
 async function checkAuthStatus() {
   try {
-    const response = await callISBAPI('/api/auth/login/status');
+    const response = await callISBAPI("/api/auth/login/status")
 
     if (response.ok) {
-      const userData = await response.json();
+      const userData = await response.json()
       return {
         authenticated: true,
-        user: userData
-      };
+        user: userData,
+      }
     } else if (response.status === 401) {
       // Token invalid or expired
-      return { authenticated: false };
+      return { authenticated: false }
     } else {
-      console.error('Auth status check failed:', response.status);
-      return { authenticated: false };
+      console.error("Auth status check failed:", response.status)
+      return { authenticated: false }
     }
   } catch (error) {
-    console.error('Auth status check error:', error);
-    return { authenticated: false };
+    console.error("Auth status check error:", error)
+    return { authenticated: false }
   }
 }
 ```
 
 **And** function returns object with:
+
 - `authenticated: true/false`
 - `user: { email, displayName, userName, roles }` (if authenticated)
 
@@ -2425,12 +2581,14 @@ async function checkAuthStatus() {
 **Prerequisites:** Story 5.6 (Authorization header injection)
 
 **Technical Notes:**
+
 - FR-TRY-16, FR-TRY-17 covered
 - Use this to validate token before showing authenticated UI
 - Response data used for personalization (display name in UI)
 - 401 handling preparation for Story 5.8 (automatic re-authentication)
 
 **Architecture Context:**
+
 - **ADR-021:** API client `checkAuthStatus()` method
   - Returns typed response: `{ authenticated: boolean; user?: UserData }`
   - Used by AuthState to validate token on page load
@@ -2439,6 +2597,7 @@ async function checkAuthStatus() {
 - **API Endpoint:** `GET /api/auth/login/status` (Innovation Sandbox backend)
 
 **UX Design Context:**
+
 - **Usage:** Validate token before showing authenticated UI (prevents flash of wrong state)
 - **User Data:** Display user email/name in navigation (optional - UX Section 6.2 Component 5)
 - **Graceful Failure:** Network errors don't break page - show unauthenticated state
@@ -2456,35 +2615,35 @@ So that I can re-authenticate without manual intervention.
 **Given** I have expired or invalid JWT token in sessionStorage
 **When** I make API request that returns 401 Unauthorized
 **Then** client-side code:
+
 1. Clears sessionStorage (remove invalid token)
 2. Redirects to `/api/auth/login` (OAuth flow)
 
 ```javascript
 function callISBAPI(endpoint, options = {}) {
-  const token = sessionStorage.getItem('isb-jwt');
+  const token = sessionStorage.getItem("isb-jwt")
 
   const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers
-  };
+    "Content-Type": "application/json",
+    ...options.headers,
+  }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   return fetch(endpoint, {
     ...options,
-    headers
-  })
-  .then(response => {
+    headers,
+  }).then((response) => {
     // Handle 401 Unauthorized
     if (response.status === 401) {
-      sessionStorage.removeItem('isb-jwt');
-      window.location.href = '/api/auth/login';
-      throw new Error('Unauthorized - redirecting to login');
+      sessionStorage.removeItem("isb-jwt")
+      window.location.href = "/api/auth/login"
+      throw new Error("Unauthorized - redirecting to login")
     }
-    return response;
-  });
+    return response
+  })
 }
 ```
 
@@ -2496,6 +2655,7 @@ function callISBAPI(endpoint, options = {}) {
 **Prerequisites:** Story 5.7 (Auth status check API)
 
 **Technical Notes:**
+
 - FR-TRY-23, FR-TRY-24 covered
 - Global 401 handler in API helper function (DRY)
 - Clear invalid token prevents infinite loops
@@ -2504,6 +2664,7 @@ function callISBAPI(endpoint, options = {}) {
 - Session continuity: User doesn't lose context (same page reload)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized 401 handling in API client
   - All API calls automatically handle 401 responses
   - Clear invalid token → Redirect to OAuth → Return to original page
@@ -2514,6 +2675,7 @@ function callISBAPI(endpoint, options = {}) {
   - Seamless user experience (no stale UI)
 
 **UX Design Context:**
+
 - **User Journey:** Error Handling Flow #2 (UX Section 5.1 Journey 5)
 - **Automatic Re-authentication:** "Your session has expired. Signing you in again..."
 - **No User Action Required:** Seamless redirect → re-auth → return to original page
@@ -2533,6 +2695,7 @@ So that I know I need to sign in to access Try features.
 **Given** I am NOT authenticated (no JWT in sessionStorage)
 **When** I navigate to `/try` page
 **Then** I see empty state message:
+
 - Heading: "Sign in to view your try sessions"
 - Body text: "You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments."
 - "Sign in" button (GOV.UK Design System)
@@ -2542,6 +2705,7 @@ So that I know I need to sign in to access Try features.
 **And** I see my try sessions (not empty state)
 
 **And** empty state uses GOV.UK Design System components:
+
 - Heading: `govukHeading` (size: l)
 - Body text: `govukBody`
 - Button: `govukButton` (isStartButton: true)
@@ -2549,6 +2713,7 @@ So that I know I need to sign in to access Try features.
 **Prerequisites:** Story 5.8 (401 handling implemented)
 
 **Technical Notes:**
+
 - FR-TRY-26, FR-TRY-27 covered
 - Template logic: Check sessionStorage in client-side JavaScript or server-side (if rendering)
 - Empty state UX best practice: Clear call-to-action
@@ -2556,6 +2721,7 @@ So that I know I need to sign in to access Try features.
 - Return URL preservation: OAuth callback returns to `/try` page
 
 **Architecture Context:**
+
 - **Module:** `src/try/pages/try-page.ts` - /try page component
   - Checks AuthState on page load
   - Renders empty state if unauthenticated
@@ -2565,6 +2731,7 @@ So that I know I need to sign in to access Try features.
   - Automatically updates when user signs in (no manual reload needed)
 
 **UX Design Context:**
+
 - **User Journey:** Try Sessions Dashboard (UX Section 5.1 Journey 3 - Branch A: User NOT authenticated)
 - **Empty State:** "Sign in to view your try sessions" (UX Section 5.1 Journey 3, Step 1)
 - **CTA Button:** "Sign in" button (GOV.UK start button, green)
@@ -2586,21 +2753,25 @@ So that authentication components meet WCAG 2.2 AA standards.
 **Then** tests validate:
 
 **Test 1: Keyboard Navigation**
+
 - Sign in/out buttons focusable via Tab key
 - Enter key activates buttons
 - Focus indicators visible (WCAG 2.2 AA contrast ratio)
 
 **Test 2: Screen Reader Accessibility**
+
 - Buttons have accessible labels
 - Empty state heading announced correctly
 - Button purpose clear from label alone
 
 **Test 3: Color Contrast**
+
 - Button text meets WCAG 2.2 AA contrast ratio (4.5:1)
 - Focus indicators meet contrast requirements
 - Empty state text readable
 
 **Test 4: ARIA Compliance**
+
 - Buttons have appropriate roles
 - No ARIA violations detected
 
@@ -2611,6 +2782,7 @@ So that authentication components meet WCAG 2.2 AA standards.
 **Prerequisites:** Story 5.9 (Empty state UI complete)
 
 **Technical Notes:**
+
 - Automated testing per Pre-mortem preventive measure #3 (user acceptance)
 - Use axe-core for automated WCAG validation
 - CI integration prevents accessibility regressions
@@ -2619,6 +2791,7 @@ So that authentication components meet WCAG 2.2 AA standards.
 - Epic 8 will provide comprehensive accessibility audit
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (enforced in Epic 8, started in Epic 5)
   - Cannot merge PR without passing Pa11y tests
   - Prevents accessibility regressions from Day 1
@@ -2628,6 +2801,7 @@ So that authentication components meet WCAG 2.2 AA standards.
 - **Testing:** `test/accessibility/auth-a11y.test.ts` - Auth component accessibility tests
 
 **UX Design Context:**
+
 - **WCAG 2.2 Compliance:** Section 8.1 - Target AA minimum, AAA where feasible
 - **Keyboard Navigation:** All auth components keyboard accessible (UX Section 8.3)
 - **Screen Reader:** ARIA labels, focus management, accessible names (UX Principle 6)
@@ -2660,18 +2834,21 @@ So that we validate user flows before development starts.
 **Then** the following UX elements are validated:
 
 **UX Element 1: "Try Before You Buy" Tag Placement**
+
 - Tag appears on product cards in catalogue listing
 - Tag appears on product detail pages
 - Tag uses GOV.UK Design System tag component
 - Tag color/styling clearly distinguishes from other tags
 
 **UX Element 2: "Try this now for 24 hours" Button**
+
 - Button placement on product detail page (below description? sidebar?)
 - Button uses GOV.UK Start Button (`isStartButton: true`)
 - Button disabled state if user already has max leases (discoverable in Story 6.8)
 - Button text clear and actionable
 
 **UX Element 3: Lease Request Modal Layout**
+
 - Modal overlay with AUP content
 - Scrollable AUP text (long content)
 - Checkbox: "I accept the Acceptable Use Policy"
@@ -2679,11 +2856,13 @@ So that we validate user flows before development starts.
 - Clear visual hierarchy (AUP → Checkbox → Buttons)
 
 **UX Element 4: Link from /try Page to Tryable Products**
+
 - Placement of link on /try page (empty state? always visible?)
 - Link text: "Browse tryable products in catalogue"
 - Filters catalogue to show only tryable products
 
 **And** UX review includes accessibility considerations:
+
 - Keyboard navigation flow through modal
 - Focus management (modal focus trap)
 - Screen reader experience (ARIA labels for tag, button, modal)
@@ -2694,6 +2873,7 @@ So that we validate user flows before development starts.
 **Prerequisites:** Epic 5 complete (Story 5.10)
 
 **Technical Notes:**
+
 - GATE story from Pre-mortem preventive measure #7 (user acceptance)
 - UX review prevents costly rework during implementation
 - Collaborative session: Product owner, UX designer, developers
@@ -2701,6 +2881,7 @@ So that we validate user flows before development starts.
 - Output: Documented UX decisions for Stories 6.1-6.11
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible modal pattern (CRITICAL - full spec needed before Story 6.6)
   - Focus trap implementation requirements
   - Keyboard navigation (Tab, Shift+Tab, Escape)
@@ -2709,6 +2890,7 @@ So that we validate user flows before development starts.
 - **ADR-032:** User-friendly error messages (review error templates for lease request failures)
 
 **UX Design Context:**
+
 - **Component Specs:** AUP Acceptance Modal (UX Section 6.2 Component 2) - MUST REVIEW
   - Modal anatomy: Summary box, scrollable AUP, checkbox, buttons
   - Desktop vs mobile layout (max-width 600px desktop, full-screen mobile)
@@ -2741,10 +2923,12 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **Then** 11ty build process parses metadata:
+
 - `try` field (boolean): Indicates product is tryable
 - `try_id` field (UUID string): Lease template UUID for Innovation Sandbox API
 
 **And** parsed metadata available in Nunjucks templates:
+
 ```nunjucks
 {% if try %}
   <!-- Product is tryable -->
@@ -2758,6 +2942,7 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 **Prerequisites:** Story 6.0 (UX Review Checkpoint complete)
 
 **Technical Notes:**
+
 - FR-TRY-42, FR-TRY-43 covered
 - 11ty frontmatter parsing via `eleventy-plugin-syntaxhighlight` or custom plugin
 - UUID format validation: `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
@@ -2765,6 +2950,7 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 - Example tryable product: AWS Innovation Sandbox (sandbox environment for AWS services)
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint - no framework)
   - Frontmatter parsing uses 11ty's built-in gray-matter parser
   - Data available in Nunjucks templates via `page.data` object
@@ -2772,6 +2958,7 @@ try_id: "550e8400-e29b-41d4-a716-446655440000"
 - **Data Flow:** YAML frontmatter → 11ty parser → Nunjucks template context → HTML output
 
 **UX Design Context:**
+
 - **Metadata:** `try: true` makes product discoverable via "Try Before You Buy" tag
 - **Metadata:** `try_id` (lease template UUID) required for API lease request
 - **User Discovery:** Products with `try: true` get green "Try Before You Buy" tag in catalogue
@@ -2797,11 +2984,13 @@ So that users can filter catalogue by tryable products.
 ```
 
 **And** tag appears in:
+
 - Product card in catalogue listing
 - Product detail page
 - Tag filter sidebar
 
 **And** tag uses GOV.UK Design System tag component:
+
 ```nunjucks
 {{ govukTag({
   text: "Try Before You Buy",
@@ -2810,6 +2999,7 @@ So that users can filter catalogue by tryable products.
 ```
 
 **And** tag styling:
+
 - Green background (govuk-tag--green)
 - Clear contrast with other tags (blue for product category tags)
 - Consistent placement across all product views
@@ -2817,6 +3007,7 @@ So that users can filter catalogue by tryable products.
 **Prerequisites:** Story 6.1 (Metadata parsing)
 
 **Technical Notes:**
+
 - FR-TRY-42, FR-TRY-44, FR-TRY-45 covered
 - GOV.UK Design System tag component already integrated
 - Green color chosen for positive action (tryable = good for users)
@@ -2824,6 +3015,7 @@ So that users can filter catalogue by tryable products.
 - Tag addition happens at build time (static site generation)
 
 **Architecture Context:**
+
 - **ADR-015:** Static site generation (build-time tag injection)
   - Tags generated during 11ty build, not at runtime
   - No client-side JavaScript needed for tag display
@@ -2831,6 +3023,7 @@ So that users can filter catalogue by tryable products.
 - **GOV.UK Component:** `govukTag` macro with `classes: "govuk-tag--green"`
 
 **UX Design Context:**
+
 - **Component:** Session Status Badge pattern (UX Section 6.2 Component 3) - adapted for product tags
 - **Color:** Green (`govuk-tag--green`) - positive action, tryable products (UX Section 3.1)
 - **Placement:** Product card (top-right) and product detail page (near title)
@@ -2864,6 +3057,7 @@ So that I can quickly find products I can try immediately.
 **Prerequisites:** Story 6.2 (Tag generation)
 
 **Technical Notes:**
+
 - FR-TRY-46 covered
 - Existing 11ty catalogue filtering logic handles this (no new code needed)
 - Tag slug: "try-before-you-buy" (URL-friendly)
@@ -2871,6 +3065,7 @@ So that I can quickly find products I can try immediately.
 - Accessibility: Filter controls keyboard navigable, screen reader accessible
 
 **Architecture Context:**
+
 - **Brownfield:** Existing catalogue filter system (no new filtering code)
   - Tag-based filtering already implemented in NDX catalogue
   - "Try Before You Buy" tag automatically appears in filter sidebar
@@ -2878,6 +3073,7 @@ So that I can quickly find products I can try immediately.
 - **URL State:** Filter persists via query param `?tags=try-before-you-buy`
 
 **UX Design Context:**
+
 - **User Discovery:** Primary way users find tryable products in catalogue
 - **Filter Sidebar:** "Try Before You Buy" tag with product count (e.g., "(3)")
 - **Persistence:** Filter state survives page refresh (URL query param)
@@ -2896,12 +3092,14 @@ So that I can quickly request sandbox access.
 **Given** I am on a product detail page with `try: true` metadata
 **When** the page renders
 **Then** I see "Try this now for 24 hours" button:
+
 - Placement: Below product description, above "Contact" section
 - Styling: GOV.UK Start Button (`govukButton` with `isStartButton: true`)
 - Text: "Try this now for 24 hours"
 - Icon: Arrow icon (→) indicating action
 
 **And** button includes:
+
 ```nunjucks
 {{ govukButton({
   text: "Try this now for 24 hours",
@@ -2914,6 +3112,7 @@ So that I can quickly request sandbox access.
 ```
 
 **And** button has data attributes:
+
 - `data-module="try-button"`: For JavaScript event handler
 - `data-try-id="{{ try_id }}"`: Lease template UUID for API call
 
@@ -2922,6 +3121,7 @@ So that I can quickly request sandbox access.
 **Prerequisites:** Story 6.3 (Tag filter)
 
 **Technical Notes:**
+
 - FR-TRY-47, FR-TRY-48 covered
 - GOV.UK Start Button: Green with arrow icon (prominent call-to-action)
 - data-try-id passed to JavaScript for lease request (Story 6.7)
@@ -2929,6 +3129,7 @@ So that I can quickly request sandbox access.
 - Accessibility: Button keyboard focusable, screen reader accessible
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla client-side JavaScript (no framework)
   - Event listener attached via `data-module="try-button"` pattern
   - GOV.UK Frontend JavaScript pattern (existing in NDX)
@@ -2936,6 +3137,7 @@ So that I can quickly request sandbox access.
 - **Data Attributes:** `data-try-id="{{ try_id }}"` - lease template UUID for API call
 
 **UX Design Context:**
+
 - **Component:** Try Button (UX Section 6.2 Component 4)
 - **Placement:** Below product description, above "Access" section (validated in UX review)
 - **Styling:** GOV.UK Start Button - green, arrow icon (→), prominent CTA
@@ -2958,22 +3160,22 @@ So that unauthenticated users are redirected to sign in first.
 **Then** client-side JavaScript checks authentication:
 
 ```javascript
-document.querySelectorAll('[data-module="try-button"]').forEach(button => {
-  button.addEventListener('click', async function(event) {
-    event.preventDefault();
+document.querySelectorAll('[data-module="try-button"]').forEach((button) => {
+  button.addEventListener("click", async function (event) {
+    event.preventDefault()
 
-    const tryId = this.getAttribute('data-try-id');
-    const token = sessionStorage.getItem('isb-jwt');
+    const tryId = this.getAttribute("data-try-id")
+    const token = sessionStorage.getItem("isb-jwt")
 
     if (!token) {
       // User not authenticated - redirect to sign in
-      window.location.href = '/api/auth/login';
+      window.location.href = "/api/auth/login"
     } else {
       // User authenticated - show lease request modal
-      showLeaseRequestModal(tryId);
+      showLeaseRequestModal(tryId)
     }
-  });
-});
+  })
+})
 ```
 
 **And** unauthenticated users redirected to `/api/auth/login`
@@ -2983,17 +3185,20 @@ document.querySelectorAll('[data-module="try-button"]').forEach(button => {
 **Prerequisites:** Story 6.4 (Try button rendered)
 
 **Technical Notes:**
+
 - FR-TRY-49, FR-TRY-50 covered
 - Reuse authentication check from Epic 5
 - OAuth callback returns to product page (preserves context)
 - Try button click initiates modal flow (Story 6.6-6.9)
 
 **Architecture Context:**
+
 - **ADR-024:** AuthState integration - check `AuthState.isAuthenticated()` before showing modal
 - **Module:** Reuse `src/try/auth/auth-provider.ts` - `isAuthenticated()` method
 - **OAuth Flow:** Unauthenticated users → `/api/auth/login` → Return to product page → Auto-show modal
 
 **UX Design Context:**
+
 - **User Journey:** Try Request Flow (UX Section 5.1 Journey 2, Steps 2-3)
 - **Branch A (Unauthenticated):** Redirect to OAuth → Return to product page → Open AUP modal
 - **Branch B (Authenticated):** Open AUP modal immediately
@@ -3015,12 +3220,14 @@ So that I can review AUP and request sandbox access.
 **Then** I see modal overlay with:
 
 **Modal Structure:**
+
 - Dark overlay background (semi-transparent black)
 - White modal box (centered on screen)
 - Modal header: "Request AWS Sandbox Access"
 - Close button (X) in top-right corner
 
 **Modal Content Sections:**
+
 1. **Lease Details:**
    - "Duration: 24 hours"
    - "Maximum Budget: $50"
@@ -3039,6 +3246,7 @@ So that I can review AUP and request sandbox access.
    - "Continue" button (primary style, disabled until checkbox checked)
 
 **And** modal uses GOV.UK Design System components:
+
 - Modal overlay: Custom (GOV.UK doesn't have modal component, use accessible pattern)
 - Buttons: `govukButton` macro
 - Checkbox: `govukCheckboxes` macro
@@ -3046,6 +3254,7 @@ So that I can review AUP and request sandbox access.
 **Prerequisites:** Story 6.5 (Auth check on Try button)
 
 **Technical Notes:**
+
 - FR-TRY-51, FR-TRY-52, FR-TRY-53, FR-TRY-56 covered
 - Modal HTML injected into page dynamically (JavaScript)
 - Accessibility: Focus trap (modal only), Escape key closes modal (Story 6.9)
@@ -3053,6 +3262,7 @@ So that I can review AUP and request sandbox access.
 - Checkbox state controls Continue button (Story 6.8)
 
 **Architecture Context:**
+
 - **ADR-026: CRITICAL - Accessible Modal Pattern (MUST IMPLEMENT FULLY)**
 
   **Focus Management:**
@@ -3093,9 +3303,11 @@ So that I can review AUP and request sandbox access.
 - **Module:** `src/try/ui/utils/aria-live.ts` - ARIA live region announcements
 
 **UX Design Context:**
+
 - **Component Spec:** AUP Acceptance Modal (UX Section 6.2 Component 2) - FULL IMPLEMENTATION
 
   **Modal Anatomy (Desktop):**
+
   ```
   ┌─────────────────────────────────────────────────────────────┐
   │ [X] Close                 (top-right, optional)             │
@@ -3191,17 +3403,17 @@ So that I understand terms before requesting sandbox access.
 ```javascript
 async function fetchAUP() {
   try {
-    const response = await callISBAPI('/api/configurations');
-    const config = await response.json();
-    return config.aup;
+    const response = await callISBAPI("/api/configurations")
+    const config = await response.json()
+    return config.aup
   } catch (error) {
-    console.error('Failed to fetch AUP:', error);
-    return 'Unable to load Acceptable Use Policy. Please try again later.';
+    console.error("Failed to fetch AUP:", error)
+    return "Unable to load Acceptable Use Policy. Please try again later."
   }
 }
 
 async function showLeaseRequestModal(tryId) {
-  const aup = await fetchAUP();
+  const aup = await fetchAUP()
 
   // Render modal with AUP text
   const modalHTML = `
@@ -3213,15 +3425,15 @@ async function showLeaseRequestModal(tryId) {
 
         <h3>Acceptable Use Policy</h3>
         <div class="aup-container" style="max-height: 400px; overflow-y: auto;">
-          ${aup.replace(/\n/g, '<br>')}
+          ${aup.replace(/\n/g, "<br>")}
         </div>
 
         <!-- Checkbox and buttons (Story 6.8) -->
       </div>
     </div>
-  `;
+  `
 
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.body.insertAdjacentHTML("beforeend", modalHTML)
 }
 ```
 
@@ -3232,6 +3444,7 @@ async function showLeaseRequestModal(tryId) {
 **Prerequisites:** Story 6.6 (Modal UI structure)
 
 **Technical Notes:**
+
 - FR-TRY-21, FR-TRY-54, FR-TRY-55 covered
 - AUP text returned as plain text with newlines (convert to <br> for HTML)
 - Scrollable container: `overflow-y: auto`, `max-height: 400px`
@@ -3239,6 +3452,7 @@ async function showLeaseRequestModal(tryId) {
 - Accessibility: AUP container focusable for keyboard scrolling
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client - Use `callISBAPI('/api/configurations')`
 - **API Endpoint:** `GET /api/configurations` (Innovation Sandbox backend)
 - **Response Type:** `{ aup: string; maxLeases: number; leaseDuration: number }`
@@ -3248,6 +3462,7 @@ async function showLeaseRequestModal(tryId) {
 - **Caching:** No caching - fetch fresh AUP each modal open (policy may update)
 
 **UX Design Context:**
+
 - **Component:** AUP modal scrollable container (UX Section 6.2 Component 2)
 - **Max Height:** 300px desktop (not 400px - UX spec is 300px), adaptive on mobile
 - **Scroll Indicator:** Visual cue if content exceeds visible area
@@ -3279,23 +3494,22 @@ So that I explicitly consent before requesting sandbox access.
 **And** JavaScript handles checkbox state:
 
 ```javascript
-const aupCheckbox = document.getElementById('aup-checkbox');
-const continueButton = document.getElementById('modal-continue-button');
+const aupCheckbox = document.getElementById("aup-checkbox")
+const continueButton = document.getElementById("modal-continue-button")
 
 // Initial state: Button disabled
-continueButton.disabled = true;
+continueButton.disabled = true
 
 // Listen for checkbox changes
-aupCheckbox.addEventListener('change', function() {
-  continueButton.disabled = !this.checked;
-});
+aupCheckbox.addEventListener("change", function () {
+  continueButton.disabled = !this.checked
+})
 ```
 
 **And** disabled button has accessible ARIA attributes:
+
 ```html
-<button id="modal-continue-button" disabled aria-disabled="true">
-  Continue
-</button>
+<button id="modal-continue-button" disabled aria-disabled="true">Continue</button>
 ```
 
 **And** clicking "Cancel" button closes modal without action
@@ -3304,6 +3518,7 @@ aupCheckbox.addEventListener('change', function() {
 **Prerequisites:** Story 6.7 (AUP fetched and displayed)
 
 **Technical Notes:**
+
 - FR-TRY-57, FR-TRY-58 covered
 - GOV.UK Design System disabled button styling
 - Accessibility: Disabled state announced to screen readers
@@ -3311,6 +3526,7 @@ aupCheckbox.addEventListener('change', function() {
 - Continue button triggers lease request (Story 6.9)
 
 **Architecture Context:**
+
 - **ADR-012:** Custom Element event handling - checkbox change triggers button state update
 - **Module:** `src/try/ui/components/aup-modal.ts` - Checkbox event listener in AUPModal class
 - **Reactive State:** Checkbox checked → Button enabled (no dark patterns - user must actively check)
@@ -3318,6 +3534,7 @@ aupCheckbox.addEventListener('change', function() {
   - `aria-live="polite"` region: "Continue button enabled" when checkbox checked
 
 **UX Design Context:**
+
 - **Component:** AUP Modal states (UX Section 6.2 Component 2 - Modal States)
 - **Default State:** Continue button disabled (grey), checkbox unchecked (UX Principle 3 - no dark patterns)
 - **Checked State:** Continue button enabled (green GOV.UK primary button)
@@ -3342,48 +3559,52 @@ So that I can receive AWS sandbox environment.
 
 ```javascript
 async function requestLease(tryId) {
-  const continueButton = document.getElementById('modal-continue-button');
+  const continueButton = document.getElementById("modal-continue-button")
 
   // Show loading state
-  continueButton.disabled = true;
-  continueButton.textContent = 'Requesting...';
+  continueButton.disabled = true
+  continueButton.textContent = "Requesting..."
 
   try {
-    const response = await callISBAPI('/api/leases', {
-      method: 'POST',
+    const response = await callISBAPI("/api/leases", {
+      method: "POST",
       body: JSON.stringify({
         leaseTemplateId: tryId,
-        acceptedAUP: true
-      })
-    });
+        acceptedAUP: true,
+      }),
+    })
 
     if (response.ok) {
       // Success: Navigate to /try page
-      window.location.href = '/try';
+      window.location.href = "/try"
     } else if (response.status === 409) {
       // Conflict: Max leases exceeded
-      alert('You have reached the maximum number of active sandbox leases (5). Please terminate an existing lease before requesting a new one.');
-      window.location.href = '/try';
+      alert(
+        "You have reached the maximum number of active sandbox leases (5). Please terminate an existing lease before requesting a new one.",
+      )
+      window.location.href = "/try"
     } else {
       // Other error
-      const error = await response.json();
-      alert(`Request failed: ${error.message || 'Unknown error'}`);
+      const error = await response.json()
+      alert(`Request failed: ${error.message || "Unknown error"}`)
     }
   } catch (error) {
-    console.error('Lease request error:', error);
-    alert('Failed to request sandbox access. Please try again later.');
+    console.error("Lease request error:", error)
+    alert("Failed to request sandbox access. Please try again later.")
   } finally {
     // Close modal
-    closeModal();
+    closeModal()
   }
 }
 ```
 
 **And** request includes:
+
 - `leaseTemplateId`: UUID from Try button `data-try-id`
 - `acceptedAUP`: true (user consent)
 
 **And** response handling:
+
 - **200 OK:** Navigate to `/try` page (shows new lease)
 - **409 Conflict:** Alert user "Max leases exceeded", redirect to `/try`
 - **Other errors:** Alert user with error message, close modal
@@ -3394,6 +3615,7 @@ async function requestLease(tryId) {
 **Prerequisites:** Story 6.8 (Checkbox state management)
 
 **Technical Notes:**
+
 - FR-TRY-22, FR-TRY-59, FR-TRY-60, FR-TRY-61, FR-TRY-62, FR-TRY-63, FR-TRY-64, FR-TRY-65 covered
 - POST /api/leases payload: `{ leaseTemplateId: string, acceptedAUP: boolean }`
 - 409 Conflict: Max leases = 5 (returned from API configuration)
@@ -3401,6 +3623,7 @@ async function requestLease(tryId) {
 - JavaScript alert for errors (acceptable for MVP, can improve UX later)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client `POST /api/leases`
 - **API Endpoint:** `POST /api/leases` - Create new lease
 - **Request Type:** `{ leaseTemplateId: string; acceptedAUP: boolean }`
@@ -3415,6 +3638,7 @@ async function requestLease(tryId) {
 - **Timeout:** NFR-TRY-PERF-2 - 10 second timeout for API call
 
 **UX Design Context:**
+
 - **User Journey:** Try Request Flow (UX Section 5.1 Journey 2, Steps 4-6)
 - **Step 4:** User clicks Continue → Show loading state
 - **Step 5:** Lease request submitted → API call in progress
@@ -3440,6 +3664,7 @@ So that new lease requests appear in /try page immediately.
 
 **Given** I am authenticated and on a tryable product page
 **When** I complete end-to-end Try flow:
+
 1. Click "Try this now for 24 hours" button
 2. Modal opens with AUP
 3. Check AUP checkbox
@@ -3448,6 +3673,7 @@ So that new lease requests appear in /try page immediately.
 6. Navigated to `/try` page
 
 **Then** I see my new lease in the sessions table:
+
 - Template Name: Product name
 - AWS Account ID: Assigned account ID
 - Expiry: 24 hours from now
@@ -3456,6 +3682,7 @@ So that new lease requests appear in /try page immediately.
 - Launch button: Visible if status "Active"
 
 **And** integration test validates:
+
 - Lease appears immediately (no page refresh needed)
 - Lease data matches expected format
 - Session table sorting works (newest first)
@@ -3464,6 +3691,7 @@ So that new lease requests appear in /try page immediately.
 **Prerequisites:** Story 6.9 (Lease request submission)
 
 **Technical Notes:**
+
 - Integration story from Pre-mortem preventive measure #4 (user acceptance)
 - Validates Epic 6 → Epic 7 handoff
 - End-to-end test: Catalogue → Modal → API → Dashboard
@@ -3471,6 +3699,7 @@ So that new lease requests appear in /try page immediately.
 - Validates data flow correctness (lease appears in /try page)
 
 **Architecture Context:**
+
 - **ADR-004:** Integration tests run before Pa11y tests (layered testing)
 - **Testing:** `test/integration/epic-6-7-handoff.test.ts` - End-to-end flow validation
 - **Test Stack:** Playwright for browser automation + real Innovation Sandbox API (staging environment)
@@ -3485,6 +3714,7 @@ So that new lease requests appear in /try page immediately.
 - **Cleanup:** Delete test lease after test completes (idempotent tests)
 
 **UX Design Context:**
+
 - **User Journey:** Complete Try Request Flow (UX Section 5.1 Journey 2 - all steps)
 - **Validation:** User completes entire flow < 30 seconds (UX Principle 2 - friction-free)
 - **Success Criteria:** New lease visible immediately without page refresh
@@ -3505,12 +3735,14 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 **Then** tests validate:
 
 **Test 1: Try Button Accessibility**
+
 - Button keyboard focusable
 - Button has accessible label
 - Start button icon has ARIA hidden (decorative)
 - Focus indicator visible
 
 **Test 2: Modal Accessibility**
+
 - Modal overlay has ARIA role="dialog"
 - Modal has accessible name (aria-labelledby)
 - Focus trap works (tab cycles within modal)
@@ -3518,11 +3750,13 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 - Close button (X) keyboard accessible
 
 **Test 3: AUP Checkbox**
+
 - Checkbox keyboard focusable
 - Label associated with checkbox (for attribute)
 - Checkbox state announced to screen readers
 
 **Test 4: Modal Buttons**
+
 - Cancel/Continue buttons keyboard accessible
 - Disabled state announced (aria-disabled)
 - Button purpose clear from labels
@@ -3533,6 +3767,7 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 **Prerequisites:** Story 6.10 (Integration testing complete)
 
 **Technical Notes:**
+
 - Accessibility testing per Pre-mortem preventive measure #3
 - Use axe-core for automated validation
 - Modal focus trap: FR-TRY-72, FR-TRY-73
@@ -3540,6 +3775,7 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 - Full manual accessibility audit in Epic 8
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (cannot merge PR without passing)
 - **ADR-004:** Pa11y integration for WCAG 2.2 AA validation
   - Zero violations allowed for AA compliance
@@ -3555,6 +3791,7 @@ So that catalogue integration meets WCAG 2.2 AA standards.
 - **Failure Mode:** PR blocked if ANY WCAG 2.2 AA violations detected
 
 **UX Design Context:**
+
 - **WCAG 2.2 Compliance:** Section 8.1 - AA minimum for all Epic 6 components
 - **Keyboard Navigation:** All Try flow components keyboard accessible (UX Section 8.3)
 - **Screen Reader:** NVDA/VoiceOver can complete full flow (validated in Epic 8)
@@ -3586,15 +3823,18 @@ So that I can manage my AWS sandbox access in one place.
 **Then** I see page layout with:
 
 **Page Header:**
+
 - Heading: "Your try sessions" (govukHeading, size: l)
 - Subheading: "Manage your AWS sandbox environments"
 
 **Page Content:**
+
 - Sessions table (Story 7.2)
 - Empty state if no leases (Epic 5, Story 5.9)
 - Link to catalogue filter (Story 7.9)
 
 **And** page uses GOV.UK Design System layout:
+
 - Full-width container
 - Main content area
 - Consistent navigation (header/footer)
@@ -3604,6 +3844,7 @@ So that I can manage my AWS sandbox access in one place.
 **Prerequisites:** Epic 6 complete (Story 6.11)
 
 **Technical Notes:**
+
 - FR-TRY-25, FR-TRY-28 covered
 - 11ty page: `/source/try.njk` or `/source/try/index.njk`
 - Layout template: extends base GOV.UK layout
@@ -3611,12 +3852,14 @@ So that I can manage my AWS sandbox access in one place.
 - Empty state already implemented (Epic 5, Story 5.9)
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint - no framework)
 - **Module:** `src/try/pages/try-page.ts` - /try page component initialization
 - **ADR-024:** AuthState subscription - page subscribes to auth state changes, shows empty state if unauthenticated
 - **Page Structure:** Standard GOV.UK layout with main content area
 
 **UX Design Context:**
+
 - **User Journey:** Try Sessions Dashboard (UX Section 5.1 Journey 3)
 - **Page Title:** "Your try sessions" - clear ownership (UX Principle 1 - ownership clarity)
 - **Navigation:** Consistent GOV.UK header/footer across all pages
@@ -3640,33 +3883,34 @@ So that I can track my active and expired sessions.
 async function loadUserLeases() {
   try {
     // Get user email from auth status
-    const authStatus = await checkAuthStatus();
-    const userEmail = authStatus.user.email;
+    const authStatus = await checkAuthStatus()
+    const userEmail = authStatus.user.email
 
     // Fetch leases
-    const response = await callISBAPI(`/api/leases?userEmail=${encodeURIComponent(userEmail)}`);
-    const leases = await response.json();
+    const response = await callISBAPI(`/api/leases?userEmail=${encodeURIComponent(userEmail)}`)
+    const leases = await response.json()
 
     // Render sessions table
-    renderSessionsTable(leases);
+    renderSessionsTable(leases)
   } catch (error) {
-    console.error('Failed to load leases:', error);
-    showErrorMessage('Unable to load your try sessions. Please refresh the page.');
+    console.error("Failed to load leases:", error)
+    showErrorMessage("Unable to load your try sessions. Please refresh the page.")
   }
 }
 
 // Run on page load
-document.addEventListener('DOMContentLoaded', loadUserLeases);
+document.addEventListener("DOMContentLoaded", loadUserLeases)
 ```
 
 **And** API response contains array of leases:
+
 ```json
 [
   {
     "uuid": "lease-uuid-1",
     "status": "Active",
     "awsAccountId": "123456789012",
-    "maxSpend": 50.00,
+    "maxSpend": 50.0,
     "totalCostAccrued": 12.3456,
     "expirationDate": "2025-11-23T14:30:00Z",
     "leaseTemplate": {
@@ -3683,6 +3927,7 @@ document.addEventListener('DOMContentLoaded', loadUserLeases);
 **Prerequisites:** Story 7.1 (/try page created)
 
 **Technical Notes:**
+
 - FR-TRY-18, FR-TRY-19 covered
 - GET /api/leases requires userEmail query parameter
 - User email obtained from auth status check (Epic 5)
@@ -3690,6 +3935,7 @@ document.addEventListener('DOMContentLoaded', loadUserLeases);
 - Authorization header included (Epic 5 API helper)
 
 **Architecture Context:**
+
 - **ADR-021:** Centralized API client `GET /api/leases?userEmail={email}`
 - **API Endpoint:** `GET /api/leases` - Fetch user's leases
 - **Query Param:** `userEmail` (required) - filters leases by user
@@ -3699,6 +3945,7 @@ document.addEventListener('DOMContentLoaded', loadUserLeases);
 - **Error Handling:** ADR-032 - "Unable to load your try sessions. Please refresh the page."
 
 **UX Design Context:**
+
 - **User Journey:** Try Sessions Dashboard (UX Section 5.1 Journey 3, Step 2)
 - **Loading State:** Skeleton screen shows 3 table rows with grey bars (UX Section 6.2 Component 6)
 - **Empty State:** "Sign in to view your try sessions" if unauthenticated (Epic 5 Story 5.9)
@@ -3718,11 +3965,12 @@ So that I can quickly scan session details.
 **When** sessions table renders
 **Then** I see GOV.UK Design System table with columns:
 
-| Template Name | AWS Account ID | Expiry | Budget | Status |
-|---------------|----------------|--------|--------|--------|
-| AWS Innovation Sandbox | 123456789012 | In 23 hours | $12.3456 / $50.00 | Active |
+| Template Name          | AWS Account ID | Expiry      | Budget            | Status |
+| ---------------------- | -------------- | ----------- | ----------------- | ------ |
+| AWS Innovation Sandbox | 123456789012   | In 23 hours | $12.3456 / $50.00 | Active |
 
 **And** table uses `govukTable` macro:
+
 ```nunjucks
 {{ govukTable({
   head: [
@@ -3737,6 +3985,7 @@ So that I can quickly scan session details.
 ```
 
 **And** table features:
+
 - Responsive on mobile (horizontal scroll or stacked cards)
 - Sortable by creation date (newest first)
 - Clear visual distinction between active and expired sessions
@@ -3744,6 +3993,7 @@ So that I can quickly scan session details.
 **Prerequisites:** Story 7.2 (Leases data fetched)
 
 **Technical Notes:**
+
 - FR-TRY-30, FR-TRY-36 covered
 - GOV.UK table component: responsive by default
 - Mobile adaptation: Consider card view for better UX
@@ -3751,6 +4001,7 @@ So that I can quickly scan session details.
 - Session distinction: Story 7.4 (status badges)
 
 **Architecture Context:**
+
 - **ADR-027: CRITICAL - Responsive Table Transformation Pattern (ONS Style)**
 
   **Desktop Table (≥769px):**
@@ -3768,6 +4019,7 @@ So that I can quickly scan session details.
   - Card styling: GOV.UK panel or card component adapted
 
   **HTML Structure (Same markup, CSS transforms it):**
+
   ```html
   <table class="govuk-table sessions-table">
     <thead class="govuk-table__head">
@@ -3794,10 +4046,16 @@ So that I can quickly scan session details.
   ```
 
   **CSS Transformation (Mobile <769px):**
+
   ```css
   @media (max-width: 768px) {
-    .sessions-table thead { display: none; }
-    .sessions-table, .sessions-table tbody, .sessions-table tr, .sessions-table td {
+    .sessions-table thead {
+      display: none;
+    }
+    .sessions-table,
+    .sessions-table tbody,
+    .sessions-table tr,
+    .sessions-table td {
       display: block;
     }
     .sessions-table tr {
@@ -3830,6 +4088,7 @@ So that I can quickly scan session details.
   ```
 
   **Mobile Card Layout (validated - labels inline):**
+
   ```
   ┌─ Session Card ──────────────────────────┐
   │                          [Active] 🟢    │ (Status top-right)
@@ -3848,6 +4107,7 @@ So that I can quickly scan session details.
 - **Module:** `src/try/ui/components/sessions-table.ts` - Table rendering logic
 
 **UX Design Context:**
+
 - **Component:** Sessions Table (UX Section 6.2 Component 1) - FULL IMPLEMENTATION
 - **Desktop (≥769px):** Traditional table with 6 columns
 - **Mobile (<769px):** Stacked cards with labels inline with values (validated decision)
@@ -3871,43 +4131,49 @@ So that I can quickly identify active vs. expired sessions.
 **Then** I see color-coded status badge using `govukTag`:
 
 **Status: Active**
+
 - Badge color: Green (govuk-tag--green)
 - Text: "Active"
 
 **Status: Pending**
+
 - Badge color: Blue (govuk-tag--blue)
 - Text: "Pending"
 
 **Status: Expired**
+
 - Badge color: Grey (govuk-tag--grey)
 - Text: "Expired"
 
 **Status: Terminated**
+
 - Badge color: Red (govuk-tag--red)
 - Text: "Terminated"
 
 **Status: Failed**
+
 - Badge color: Red (govuk-tag--red)
 - Text: "Failed"
 
 **And** JavaScript generates badge HTML:
+
 ```javascript
 function renderStatusBadge(status) {
   const badgeConfig = {
-    Active: 'govuk-tag--green',
-    Pending: 'govuk-tag--blue',
-    Expired: 'govuk-tag--grey',
-    Terminated: 'govuk-tag--red',
-    Failed: 'govuk-tag--red'
-  };
+    Active: "govuk-tag--green",
+    Pending: "govuk-tag--blue",
+    Expired: "govuk-tag--grey",
+    Terminated: "govuk-tag--red",
+    Failed: "govuk-tag--red",
+  }
 
-  const tagClass = badgeConfig[status] || '';
+  const tagClass = badgeConfig[status] || ""
 
   return `
     <span class="govuk-tag ${tagClass}">
       ${status}
     </span>
-  `;
+  `
 }
 ```
 
@@ -3917,6 +4183,7 @@ function renderStatusBadge(status) {
 **Prerequisites:** Story 7.3 (Sessions table rendered)
 
 **Technical Notes:**
+
 - FR-TRY-35, FR-TRY-77 covered
 - GOV.UK Design System tag component (color-coded)
 - Accessibility: Color + text (not color-only)
@@ -3924,11 +4191,13 @@ function renderStatusBadge(status) {
 - Visual distinction: FR-TRY-37 covered
 
 **Architecture Context:**
+
 - **Module:** `src/try/ui/utils/status-badge.ts` - Status badge rendering utility
 - **ADR-008:** Color + text labels (WCAG 1.4.1 - not color-only indication)
 - **GOV.UK Component:** `govuk-tag` with modifier classes (`--green`, `--blue`, `--grey`, `--red`)
 
 **UX Design Context:**
+
 - **Component:** Session Status Badge (UX Section 6.2 Component 3)
 - **Color Mapping:** Green (Active), Blue (Pending), Grey (Expired), Red (Terminated/Failed)
 - **Accessibility:** Text + color convey status (WCAG 1.4.1 - UX Section 8.1)
@@ -3949,43 +4218,46 @@ So that I know when my sessions will expire.
 **Then** I see formatted expiry:
 
 **For future expirations (not yet expired):**
+
 - Format: Relative time (e.g., "In 23 hours", "In 45 minutes")
 - Uses `timeago.js` or similar library
 
 **For past expirations (already expired):**
+
 - Format: Absolute date/time (e.g., "22 Nov 2025, 14:30")
 - Uses UK date format (day month year)
 
 **And** JavaScript formats expiry:
+
 ```javascript
 function formatExpiry(expirationDate) {
-  const expiry = new Date(expirationDate);
-  const now = new Date();
+  const expiry = new Date(expirationDate)
+  const now = new Date()
 
   if (expiry > now) {
     // Future: Relative time
-    return formatRelativeTime(expiry, now);
+    return formatRelativeTime(expiry, now)
   } else {
     // Past: Absolute date/time
-    return expiry.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return expiry.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
   }
 }
 
 function formatRelativeTime(future, now) {
-  const diffMs = future - now;
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const diffMs = future - now
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
   if (diffHours > 0) {
-    return `In ${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+    return `In ${diffHours} hour${diffHours > 1 ? "s" : ""}`
   } else {
-    return `In ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+    return `In ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`
   }
 }
 ```
@@ -3996,6 +4268,7 @@ function formatRelativeTime(future, now) {
 **Prerequisites:** Story 7.4 (Status badges)
 
 **Technical Notes:**
+
 - FR-TRY-31, FR-TRY-32 covered
 - ISO 8601 date format from API: "2025-11-23T14:30:00Z"
 - UK date format: DD MMM YYYY, HH:MM
@@ -4003,12 +4276,14 @@ function formatRelativeTime(future, now) {
 - Auto-refresh: setInterval every 60 seconds (update relative times)
 
 **Architecture Context:**
+
 - **Module:** `src/try/ui/utils/date-formatter.ts` - Date/time formatting utilities
 - **Library:** `date-fns` for date manipulation (lightweight alternative to moment.js)
 - **Auto-refresh:** `setInterval` updates relative times every 60 seconds (performance: minimal CPU)
 - **Locale:** UK date format (`en-GB`) per government standard
 
 **UX Design Context:**
+
 - **Format:** Relative for future ("In 23 hours"), Absolute for past ("22 Nov 2025, 14:30")
 - **User Benefit:** Easy to understand "In X hours" vs. interpreting timestamps
 - **Accessibility:** Screen reader announces time clearly (ARIA label with full date/time)
@@ -4028,45 +4303,50 @@ So that I can track how much of my sandbox budget I've used.
 **Then** I see formatted budget:
 
 **Format:** `$XX.XXXX / $YY.YY`
+
 - Cost accrued: 4 decimal places (e.g., $12.3456)
 - Max spend: 2 decimal places (e.g., $50.00)
 
 **And** JavaScript formats budget:
+
 ```javascript
 function formatBudget(totalCostAccrued, maxSpend) {
-  const costFormatted = totalCostAccrued.toFixed(4);
-  const maxFormatted = maxSpend.toFixed(2);
+  const costFormatted = totalCostAccrued.toFixed(4)
+  const maxFormatted = maxSpend.toFixed(2)
 
-  return `$${costFormatted} / $${maxFormatted}`;
+  return `$${costFormatted} / $${maxFormatted}`
 }
 ```
 
 **And** budget display includes:
+
 - Clear separator: " / " between accrued and max
 - Currency symbol: "$" (USD)
 - Precision: 4 decimals for accrued (AWS billing precision), 2 for max
 
 **And** screen reader announces budget clearly:
+
 ```html
-<span aria-label="Budget: $12.35 used of $50 maximum">
-  $12.3456 / $50.00
-</span>
+<span aria-label="Budget: $12.35 used of $50 maximum"> $12.3456 / $50.00 </span>
 ```
 
 **Prerequisites:** Story 7.5 (Expiry formatting)
 
 **Technical Notes:**
+
 - FR-TRY-33, FR-TRY-34, FR-TRY-75 covered
 - AWS billing precision: 4 decimal places (microdollars)
 - Max spend typically: $50 (from lease template)
 - Accessibility: ARIA label for screen readers (clear pronunciation)
 
 **Architecture Context:**
+
 - **Module:** `src/try/ui/utils/currency-formatter.ts` - Budget formatting utility
 - **Precision:** Cost accrued 4 decimals (AWS microdollar precision), Max spend 2 decimals
 - **Format:** `$XX.XXXX / $YY.YY` (clear separator)
 
 **UX Design Context:**
+
 - **User Value:** Track spend at AWS precision level (costs accrue in tiny increments)
 - **Format:** Clear separator "/" between accrued and max
 - **Accessibility:** ARIA label "Budget: $12.35 used of $50 maximum" for screen readers
@@ -4086,29 +4366,32 @@ So that I can quickly access my sandbox environment.
 **Then** I see "Launch AWS Console" button in Actions column:
 
 **Button Appearance:**
+
 - Text: "Launch AWS Console"
 - Styling: GOV.UK primary button (govukButton)
 - Icon: External link icon (indicating opens new tab)
 
 **And** button opens AWS SSO portal in new tab:
+
 ```javascript
 function renderLaunchButton(status, awsAccountId) {
-  if (status !== 'Active') {
-    return ''; // No button for non-active sessions
+  if (status !== "Active") {
+    return "" // No button for non-active sessions
   }
 
-  const ssoURL = `https://YOUR-SSO-PORTAL.awsapps.com/start#/`;
+  const ssoURL = `https://YOUR-SSO-PORTAL.awsapps.com/start#/`
 
   return `
     <a href="${ssoURL}" target="_blank" rel="noopener noreferrer" class="govuk-button">
       Launch AWS Console
       <svg class="govuk-button__icon" aria-hidden="true">...</svg>
     </a>
-  `;
+  `
 }
 ```
 
 **And** button NOT shown for sessions with status:
+
 - Pending (not ready yet)
 - Expired (access revoked)
 - Terminated (access revoked)
@@ -4120,19 +4403,22 @@ function renderLaunchButton(status, awsAccountId) {
 **Prerequisites:** Story 7.6 (Budget display)
 
 **Technical Notes:**
+
 - FR-TRY-38, FR-TRY-39, FR-TRY-41 covered
 - AWS SSO portal URL: Configured in Story 7.11
-- target="_blank" opens new tab
+- target="\_blank" opens new tab
 - rel="noopener noreferrer" for security
 - External link icon: SVG icon from GOV.UK Design System
 
 **Architecture Context:**
+
 - **Module:** `src/try/ui/components/launch-button.ts` - Launch button rendering
 - **Security:** `rel="noopener noreferrer"` prevents tabnabbing attack
 - **Link Target:** Opens AWS SSO portal in new tab (user stays logged in to NDX)
 - **Conditional:** Only rendered for status "Active" (not Pending/Expired/Terminated/Failed)
 
 **UX Design Context:**
+
 - **Button Text:** "Launch AWS Console" - clear action (UX Section 6.2 Component 1)
 - **External Link:** Icon indicates opens new tab
 - **New Tab:** Users keep NDX /try page open (can return to check other sessions)
@@ -4154,29 +4440,32 @@ So that I know how much time I have left.
 **Then** I see remaining duration below expiry date:
 
 **Display Format:**
+
 - Primary: Expiry date/time (from Story 7.5)
 - Secondary: Remaining duration in parentheses
 
 **Example:**
+
 ```
 In 23 hours (Remaining: 23h 15m)
 ```
 
 **And** JavaScript calculates remaining duration:
+
 ```javascript
 function formatRemainingDuration(expirationDate) {
-  const expiry = new Date(expirationDate);
-  const now = new Date();
-  const diffMs = expiry - now;
+  const expiry = new Date(expirationDate)
+  const now = new Date()
+  const diffMs = expiry - now
 
   if (diffMs <= 0) {
-    return 'Expired';
+    return "Expired"
   }
 
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  const hours = Math.floor(diffMs / (1000 * 60 * 60))
+  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
 
-  return `${hours}h ${minutes}m`;
+  return `${hours}h ${minutes}m`
 }
 ```
 
@@ -4186,6 +4475,7 @@ function formatRemainingDuration(expirationDate) {
 **Prerequisites:** Story 7.7 (Launch button)
 
 **Technical Notes:**
+
 - FR-TRY-40 covered
 - Combines with Story 7.5 expiry formatting
 - Auto-refresh with setInterval (update every 60 seconds)
@@ -4193,11 +4483,13 @@ function formatRemainingDuration(expirationDate) {
 - Not shown for expired/terminated sessions (already expired)
 
 **Architecture Context:**
+
 - **Module:** Reuse `src/try/ui/utils/date-formatter.ts` (Story 7.5)
 - **Auto-refresh:** Same `setInterval` as Story 7.5 (performance: single timer for all relative times)
 - **Conditional:** Only display for Active sessions with future expiration
 
 **UX Design Context:**
+
 - **Format:** "Remaining: 23h 15m" in parentheses below expiry
 - **User Value:** Immediate visibility of time left (no mental calculation)
 - **Display Rule:** Active sessions only (Pending/Expired don't need remaining time)
@@ -4217,6 +4509,7 @@ So that I can discover and request more sandbox environments.
 **Then** I see link to catalogue filter:
 
 **Link Placement:**
+
 - Below sessions table (or in empty state)
 - Text: "Browse tryable products in the catalogue"
 - Uses GOV.UK link styling
@@ -4226,23 +4519,27 @@ So that I can discover and request more sandbox environments.
 **And** link keyboard accessible and screen reader friendly
 
 **And** link appears in both states:
+
 - When user has leases (below table)
 - When user has no leases (in empty state)
 
 **Prerequisites:** Story 7.8 (Remaining duration display)
 
 **Technical Notes:**
+
 - Catalogue integration from Journey Mapping (user feedback #2)
 - Links /try page back to catalogue discovery
 - Encourages exploration of additional tryable products
 - GOV.UK link component (accessible by default)
 
 **Architecture Context:**
+
 - **Module:** Static link in `/try` page template
 - **URL:** `/catalogue/?tags=try-before-you-buy` (uses Epic 6 tag filter)
 - **Placement:** Below sessions table OR in empty state
 
 **UX Design Context:**
+
 - **User Journey:** Circular discovery flow (UX Section 5.1 Journey 3 → Journey 1)
 - **Link Text:** "Browse tryable products in the catalogue" - clear action
 - **Placement:** Always visible (encourages exploration of more products)
@@ -4263,6 +4560,7 @@ So that I understand how to use Try Before You Buy feature.
 **Then** I see guidance panel:
 
 **Panel Content:**
+
 - Heading: "Get started with Try Before You Buy"
 - Body text: "Browse the catalogue to find products you can try. Each sandbox gives you 24 hours of access with a $50 budget."
 - Steps:
@@ -4273,6 +4571,7 @@ So that I understand how to use Try Before You Buy feature.
 - Link: "Browse tryable products" → `/catalogue/?tags=try-before-you-buy`
 
 **And** panel uses GOV.UK Design System:
+
 - Panel component or inset text
 - Numbered list for steps
 - Clear call-to-action link
@@ -4282,6 +4581,7 @@ So that I understand how to use Try Before You Buy feature.
 **Prerequisites:** Story 7.9 (Catalogue link)
 
 **Technical Notes:**
+
 - First-time user experience improvement
 - Clarifies Try Before You Buy workflow
 - Encourages action (browse catalogue)
@@ -4289,11 +4589,13 @@ So that I understand how to use Try Before You Buy feature.
 - Conditional rendering: Show only if leases.length === 0
 
 **Architecture Context:**
+
 - **Module:** Conditional rendering in `/try` page template
 - **Condition:** Only show if `leases.length === 0` (empty state)
 - **GOV.UK Component:** Panel or inset text for guidance
 
 **UX Design Context:**
+
 - **User Journey:** First-time user onboarding (UX Section 5.1 Journey 3 - empty state guidance)
 - **Content:** 4-step workflow explanation (browse → click try → accept AUP → launch)
 - **CTA:** "Browse tryable products" link → catalogue filter
@@ -4315,27 +4617,29 @@ So that users are directed to correct SSO portal for their sandbox accounts.
 
 ```javascript
 // config.js or environment variable
-const AWS_SSO_PORTAL_URL = process.env.AWS_SSO_PORTAL_URL || 'https://YOUR-SSO-PORTAL.awsapps.com/start#/';
+const AWS_SSO_PORTAL_URL = process.env.AWS_SSO_PORTAL_URL || "https://YOUR-SSO-PORTAL.awsapps.com/start#/"
 ```
 
 **And** launch button uses configured URL:
+
 ```javascript
 function renderLaunchButton(status, awsAccountId) {
-  if (status !== 'Active') {
-    return '';
+  if (status !== "Active") {
+    return ""
   }
 
-  const ssoURL = AWS_SSO_PORTAL_URL;
+  const ssoURL = AWS_SSO_PORTAL_URL
 
   return `
     <a href="${ssoURL}" target="_blank" rel="noopener noreferrer" class="govuk-button">
       Launch AWS Console
     </a>
-  `;
+  `
 }
 ```
 
 **And** configuration documented in README:
+
 - Environment variable: `AWS_SSO_PORTAL_URL`
 - Default value for development
 - Production value for deployment
@@ -4343,18 +4647,21 @@ function renderLaunchButton(status, awsAccountId) {
 **Prerequisites:** Story 7.10 (First-time user guidance)
 
 **Technical Notes:**
+
 - AWS SSO portal URL format: `https://{portal-name}.awsapps.com/start#/`
 - Portal name specific to Innovation Sandbox deployment
 - Environment variable for flexibility (dev vs. prod)
 - Story 7.7 uses this configuration for launch button
 
 **Architecture Context:**
+
 - **Module:** `src/try/config.ts` - Centralized configuration (reuse from Epic 5)
 - **Environment Variable:** `AWS_SSO_PORTAL_URL`
 - **Default:** Development placeholder URL
 - **Production:** Set via environment variable in deployment
 
 **UX Design Context:**
+
 - **Deployment:** Different SSO portals for dev/staging/prod environments
 - **Configuration:** Simple environment variable (no code changes between environments)
 
@@ -4373,6 +4680,7 @@ So that all epics integrate correctly end-to-end.
 **Then** I validate complete flow:
 
 **Journey Steps:**
+
 1. **Unauthenticated User Discovery:**
    - Browse catalogue → See "Try Before You Buy" tag
    - Click tag filter → See only tryable products
@@ -4407,6 +4715,7 @@ So that all epics integrate correctly end-to-end.
    - See "Sign in" button
 
 **And** end-to-end test validates:
+
 - All UI transitions work
 - API calls succeed
 - Data persists correctly
@@ -4416,6 +4725,7 @@ So that all epics integrate correctly end-to-end.
 **Prerequisites:** Story 7.11 (SSO URL configured)
 
 **Technical Notes:**
+
 - Integration story from Pre-mortem preventive measure #4
 - Validates Epic 5 → Epic 6 → Epic 7 integration
 - Manual test execution (Playwright automation in future)
@@ -4423,12 +4733,14 @@ So that all epics integrate correctly end-to-end.
 - Tests real Innovation Sandbox API (not mocked)
 
 **Architecture Context:**
+
 - **ADR-004:** End-to-end integration testing (layered testing strategy)
 - **Testing:** Manual walkthrough of complete user journey (Epic 5 → 6 → 7)
 - **Test Stack:** Playwright for future automation + real Innovation Sandbox API (staging)
 - **Validation:** All UI transitions, API calls, data persistence, auth flows
 
 **UX Design Context:**
+
 - **Complete Flow:** All 5 user journeys tested end-to-end (UX Section 5.1)
 - **Success Criteria:** User completes flow in < 30 seconds (UX Principle 2 - friction-free)
 - **Integration Points:** Catalogue → Modal → Dashboard seamless transitions
@@ -4448,27 +4760,32 @@ So that dashboard meets WCAG 2.2 AA standards.
 **Then** tests validate:
 
 **Test 1: Page Structure**
+
 - Heading hierarchy correct (h1 → h2 → h3)
 - Landmark regions defined (main, navigation)
 - Skip to main content link present
 
 **Test 2: Sessions Table**
+
 - Table has accessible headers (th scope)
 - Table caption or aria-label present
 - Data cells associated with headers
 
 **Test 3: Status Badges**
+
 - Color contrast meets WCAG 2.2 AA (4.5:1)
 - Status conveyed by text, not color alone
 - ARIA labels for screen readers
 
 **Test 4: Launch Button**
+
 - Button keyboard focusable
 - Button has accessible label
 - External link announced to screen readers
 - Focus indicator visible
 
 **Test 5: Empty State**
+
 - Guidance panel has clear heading
 - Links keyboard accessible
 - Content readable by screen readers
@@ -4479,6 +4796,7 @@ So that dashboard meets WCAG 2.2 AA standards.
 **Prerequisites:** Story 7.12 (End-to-end validation)
 
 **Technical Notes:**
+
 - Accessibility testing per Pre-mortem preventive measure #3
 - Use axe-core for automated validation
 - Table accessibility: FR-TRY-74 (ARIA labels)
@@ -4486,6 +4804,7 @@ So that dashboard meets WCAG 2.2 AA standards.
 - Full manual accessibility audit in Epic 8
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (cannot merge PR without passing)
 - **ADR-004:** Pa11y integration for WCAG 2.2 AA validation
   - Zero violations allowed for AA compliance
@@ -4495,6 +4814,7 @@ So that dashboard meets WCAG 2.2 AA standards.
 - **CI Integration:** GitHub Actions runs Pa11y on every PR
 
 **UX Design Context:**
+
 - **WCAG 2.2 Compliance:** Section 8.1 - AA minimum for all Epic 7 components
 - **Table Accessibility:** Headers with `scope`, ARIA labels, keyboard sortable
 - **Color Contrast:** Status badges meet 4.5:1 minimum (WCAG 2.2 AA)
@@ -4528,6 +4848,7 @@ So that I can identify and remediate issues early, preventing compounding violat
 **Then** I identify and document:
 
 **Automated Scan (axe-core/pa11y):**
+
 - Color contrast violations (WCAG 2.2 Level A/AA/AAA)
 - Missing ARIA labels
 - Form label associations
@@ -4536,6 +4857,7 @@ So that I can identify and remediate issues early, preventing compounding violat
 - Keyboard navigation barriers
 
 **Manual Testing:**
+
 - Screen reader experience (NVDA/JAWS/VoiceOver)
 - Keyboard-only navigation
 - Focus management
@@ -4543,12 +4865,14 @@ So that I can identify and remediate issues early, preventing compounding violat
 - Error messaging clarity
 
 **And** audit results documented in `/docs/accessibility-audit.md`:
+
 - Violations categorized by severity (Critical/High/Medium/Low)
 - WCAG 2.2 success criteria referenced
 - Remediation recommendations
 - Estimated effort for fixes
 
 **And** critical violations remediated immediately:
+
 - Color contrast failures (govuk-frontend usually compliant)
 - Missing alt text on images
 - Broken keyboard navigation
@@ -4556,6 +4880,7 @@ So that I can identify and remediate issues early, preventing compounding violat
 **Prerequisites:** None (Epic 4, Story 4.1) - Runs in parallel
 
 **Technical Notes:**
+
 - Pre-mortem preventive measure #1 (early brownfield audit)
 - Identifies existing issues before adding new features
 - Prevents compounding accessibility debt
@@ -4564,12 +4889,14 @@ So that I can identify and remediate issues early, preventing compounding violat
 - GOV.UK Design System components usually compliant (validate integration)
 
 **Architecture Context:**
+
 - **ADR-004:** Early brownfield audit prevents compounding accessibility debt
 - **Tools:** axe DevTools browser extension + pa11y-ci CLI
 - **Output:** `/docs/accessibility-audit.md` with severity-categorized violations
 - **Immediate Remediation:** Critical violations fixed before Epic 5 starts
 
 **UX Design Context:**
+
 - **Audit Scope:** Existing NDX pages (catalogue, product pages, home, navigation)
 - **WCAG 2.2 Compliance:** UX Section 8.1 - AA minimum target
 - **GOV.UK Components:** Usually WCAG compliant (validate correct usage)
@@ -4589,6 +4916,7 @@ So that we catch violations before deployment.
 **Then** CI runs automated tests:
 
 **Test Suite:**
+
 ```yaml
 # .github/workflows/accessibility.yml
 name: Accessibility Tests
@@ -4603,7 +4931,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
       - name: Install dependencies
         run: yarn install
       - name: Build site
@@ -4613,17 +4941,14 @@ jobs:
 ```
 
 **And** pa11y-ci configuration includes:
+
 ```json
 {
   "defaults": {
     "standard": "WCAG2AA",
     "timeout": 10000
   },
-  "urls": [
-    "http://localhost:8080/",
-    "http://localhost:8080/catalogue/",
-    "http://localhost:8080/try"
-  ]
+  "urls": ["http://localhost:8080/", "http://localhost:8080/catalogue/", "http://localhost:8080/try"]
 }
 ```
 
@@ -4634,6 +4959,7 @@ jobs:
 **Prerequisites:** Story 8.1 (Brownfield audit) - Existing issues documented/remediated
 
 **Technical Notes:**
+
 - Pre-mortem preventive measure #3 (automated a11y tests in CI)
 - Catches violations before merge to main
 - WCAG 2.2 Level AA standard
@@ -4642,6 +4968,7 @@ jobs:
 - Fast feedback loop for developers
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (CRITICAL)
   - PR blocked if ANY WCAG 2.2 AA violations detected
   - Zero tolerance policy for accessibility regressions
@@ -4652,6 +4979,7 @@ jobs:
 - **Test URLs:** /, /catalogue/, /try (all key pages)
 
 **UX Design Context:**
+
 - **Quality Gate:** No PR merges without passing accessibility tests
 - **Developer Experience:** Immediate feedback on violations (shift-left testing)
 - **Compliance:** Continuous WCAG 2.2 AA compliance (not just end-of-project audit)
@@ -4671,6 +4999,7 @@ So that we validate compliance before release.
 **Then** I validate WCAG 2.2 success criteria:
 
 **Level A (Must Pass - 30 criteria):**
+
 - 1.1.1 Non-text Content: Alt text for images/icons
 - 1.3.1 Info and Relationships: Semantic HTML, ARIA labels
 - 2.1.1 Keyboard: All functionality keyboard accessible
@@ -4679,6 +5008,7 @@ So that we validate compliance before release.
 - 4.1.2 Name, Role, Value: Form inputs labeled
 
 **Level AA (Must Pass - 20 criteria):**
+
 - 1.4.3 Contrast (Minimum): 4.5:1 for text, 3:1 for UI components
 - 1.4.5 Images of Text: Avoid text in images (use real text)
 - 2.4.6 Headings and Labels: Descriptive headings
@@ -4686,11 +5016,13 @@ So that we validate compliance before release.
 - 3.2.4 Consistent Identification: UI components consistent across pages
 
 **Level AAA (Optional - 28 criteria):**
+
 - 1.4.6 Contrast (Enhanced): 7:1 for text
 - 2.4.8 Location: Breadcrumbs or location indicators
 - 3.1.5 Reading Level: Plain English (UK government standard)
 
 **And** audit covers all Try feature components:
+
 - Sign in/out buttons (Epic 5)
 - Try button and modal (Epic 6)
 - Sessions table and launch button (Epic 7)
@@ -4702,6 +5034,7 @@ So that we validate compliance before release.
 **Prerequisites:** Story 8.2 (CI tests running)
 
 **Technical Notes:**
+
 - WCAG 2.2 released October 2023 (latest standard)
 - FR-TRY-76 requires Level AA minimum
 - GOV.UK services aim for AAA where possible
@@ -4709,6 +5042,7 @@ So that we validate compliance before release.
 - Tools: axe DevTools, WAVE, Lighthouse, manual testing
 
 **Architecture Context:**
+
 - **ADR-004:** Pa11y integration for automated WCAG 2.2 scanning
   - Scans all Try feature pages (product pages, /try, modals)
   - Detects ~30% of WCAG violations automatically (manual testing for rest)
@@ -4721,6 +5055,7 @@ So that we validate compliance before release.
 - **Output:** `/docs/wcag-compliance-report.md` with all 50 AA criteria checked
 
 **UX Design Context:**
+
 - **WCAG 2.2 Target:** UX Section 8.1 - AA minimum, AAA where feasible
 - **Component Audit Coverage:**
   - Epic 5: Sign in/out buttons, empty states
@@ -4744,6 +5079,7 @@ So that we ensure correct implementation and accessibility inheritance.
 **Then** I validate:
 
 **Component Checklist:**
+
 - ✓ Buttons: `govukButton` macro used correctly
 - ✓ Tags: `govukTag` macro for status badges
 - ✓ Table: `govukTable` macro for sessions table
@@ -4754,6 +5090,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - ✓ Layout: GOV.UK grid system used
 
 **And** component parameters validated:
+
 - Buttons have accessible labels
 - Tags have correct color classes
 - Table has headers with scope attributes
@@ -4761,6 +5098,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - Headings follow hierarchy (h1 → h2 → h3)
 
 **And** custom components (modal) follow GOV.UK patterns:
+
 - Color palette: GOV.UK colors only
 - Typography: GOV.UK font stack
 - Spacing: GOV.UK spacing scale
@@ -4772,6 +5110,7 @@ So that we ensure correct implementation and accessibility inheritance.
 **Prerequisites:** Story 8.3 (WCAG audit)
 
 **Technical Notes:**
+
 - GOV.UK Design System: https://design-system.service.gov.uk/
 - Components inherently accessible (if used correctly)
 - Custom modal needs careful ARIA implementation (no GOV.UK modal component)
@@ -4779,6 +5118,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - FR-TRY-15 requires GOV.UK Design System usage
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint)
   - Must use GOV.UK Nunjucks macros (not React/Vue components)
   - `govukButton`, `govukTag`, `govukTable`, `govukCheckboxes` macros
@@ -4793,6 +5133,7 @@ So that we ensure correct implementation and accessibility inheritance.
 - **Output:** `/docs/govuk-component-audit.md` with component checklist
 
 **UX Design Context:**
+
 - **Design System:** UX Section 6.0 - GOV.UK Design System v5.x required
 - **Component Specs:** UX Section 6.2 specifies exact GOV.UK components to use
   - Component 1: Sessions Table (govukTable macro)
@@ -4817,6 +5158,7 @@ So that I can access sandbox management from my phone/tablet.
 **Then** I validate responsiveness for:
 
 **Viewport Sizes:**
+
 - Mobile: 320px - 767px width
 - Tablet: 768px - 1023px width
 - Desktop: 1024px+ width
@@ -4824,32 +5166,38 @@ So that I can access sandbox management from my phone/tablet.
 **Component Responsiveness:**
 
 **Sign In/Out Buttons (Epic 5):**
+
 - Visible in mobile navigation (not hidden)
 - Accessible in collapsed menu (if applicable)
 - Touch-friendly size (min 44x44px)
 
 **Try Button (Epic 6):**
+
 - Button full-width on mobile (easier to tap)
 - Text readable on small screens
 - Icon appropriately sized
 
 **Lease Request Modal (Epic 6):**
+
 - Modal adapts to mobile viewport (not cut off)
 - AUP text scrollable on mobile
 - Checkbox/buttons touch-friendly
 - Modal closable on mobile (X button or Escape key)
 
 **Sessions Table (Epic 7):**
+
 - **Option A:** Horizontal scroll (table intact)
 - **Option B:** Stacked cards (one session per card)
 - All data visible (not truncated)
 - Launch button accessible on mobile
 
 **Empty States:**
+
 - Guidance text readable on mobile
 - Links touch-friendly
 
 **And** manual testing on real devices:
+
 - iOS: Safari (iPhone/iPad)
 - Android: Chrome (various screen sizes)
 - No horizontal scroll (except intentional table scroll)
@@ -4860,6 +5208,7 @@ So that I can access sandbox management from my phone/tablet.
 **Prerequisites:** Story 8.4 (GOV.UK component audit)
 
 **Technical Notes:**
+
 - FR-TRY-66, FR-TRY-67, FR-TRY-68, FR-TRY-69 covered
 - GOV.UK Design System is mobile-first by default
 - Test on real devices (not just browser DevTools)
@@ -4867,6 +5216,7 @@ So that I can access sandbox management from my phone/tablet.
 - Consider card view for mobile sessions table (better UX than scroll)
 
 **Architecture Context:**
+
 - **ADR-008:** Mobile-first CSS approach (GOV.UK default)
   - Breakpoints: 320px (mobile), 768px (tablet), 1024px (desktop)
   - Base styles for mobile, media queries for larger screens
@@ -4882,6 +5232,7 @@ So that I can access sandbox management from my phone/tablet.
 - **Output:** `/docs/responsive-design-validation.md` with device test results
 
 **UX Design Context:**
+
 - **Mobile Breakpoints:** UX Section 6.2 Component Specifications
   - Mobile: <640px (full-width buttons, stacked layouts)
   - Tablet: 640px-1023px (hybrid layout)
@@ -4908,12 +5259,14 @@ So that we ensure fast, secure user experience.
 **Then** I validate:
 
 **Performance (Lighthouse):**
+
 - Performance score: ≥90
 - First Contentful Paint: <1.5s
 - Time to Interactive: <3s
 - Cumulative Layout Shift: <0.1
 
 **Security:**
+
 - JWT tokens NOT logged to console
 - JWT tokens NOT exposed in URLs (cleaned after extraction)
 - sessionStorage used correctly (not localStorage for sensitive data)
@@ -4922,12 +5275,14 @@ So that we ensure fast, secure user experience.
 - HTTPS enforced (redirect HTTP to HTTPS)
 
 **API Calls:**
-- Authorization header included (all /api/* requests)
+
+- Authorization header included (all /api/\* requests)
 - 401 responses handled (automatic re-auth)
 - CORS configured correctly (Innovation Sandbox API)
 - Error handling prevents information leakage
 
 **And** Lighthouse audit run on:
+
 - /try page (authenticated and unauthenticated)
 - Product page with Try button
 - Lease request modal
@@ -4938,6 +5293,7 @@ So that we ensure fast, secure user experience.
 **Prerequisites:** Story 8.5 (Mobile validation)
 
 **Technical Notes:**
+
 - Lighthouse: Chrome DevTools or CI integration
 - Performance budget: GOV.UK recommendation
 - JWT security: sessionStorage (temporary), never log tokens
@@ -4945,6 +5301,7 @@ So that we ensure fast, secure user experience.
 - HTTPS: CloudFront enforces (redirect-to-https viewer protocol policy)
 
 **Architecture Context:**
+
 - **ADR-016:** sessionStorage for JWT tokens (security consideration)
   - JWT never logged to console (no console.log in production code)
   - JWT cleared on browser close (sessionStorage clears automatically)
@@ -4954,7 +5311,7 @@ So that we ensure fast, secure user experience.
   - Token never visible in address bar after extraction
   - Prevents token exposure in screenshots, shared URLs
 - **ADR-021:** Centralized API client with Authorization header injection
-  - Validates Authorization header present on all /api/* requests
+  - Validates Authorization header present on all /api/\* requests
   - 401 responses trigger automatic re-auth (redirect to sign in)
 - **Performance Target:** Lighthouse score ≥90 (GOV.UK standard)
   - First Contentful Paint <1.5s, Time to Interactive <3s
@@ -4963,6 +5320,7 @@ So that we ensure fast, secure user experience.
 - **Output:** `/docs/performance-security-audit.md` with Lighthouse + OWASP ZAP results
 
 **UX Design Context:**
+
 - **Security:** UX Section 7.1 Authentication State Management
   - sessionStorage choice balances security (browser close = sign out) + UX (multi-tab persistence)
   - No visible tokens in UI, URLs, or console logs
@@ -4985,11 +5343,13 @@ So that I can access all features without a mouse.
 **Then** I can complete all user flows:
 
 **Flow 1: Sign In**
+
 - Tab to "Sign in" button
 - Press Enter → Redirected to OAuth
 - After auth, tab to navigation → See "Sign out" button
 
 **Flow 2: Request Lease**
+
 - Tab to "Try Before You Buy" tag filter
 - Press Enter → Catalogue filtered
 - Tab to product card → Press Enter → Product page
@@ -5001,12 +5361,14 @@ So that I can access all features without a mouse.
   - Press Escape → Modal closes (alternative to Cancel button)
 
 **Flow 3: Launch Sandbox**
+
 - Tab to /try page link
 - Press Enter → Navigate to /try page
 - Tab to sessions table → Arrow keys navigate rows (optional)
 - Tab to "Launch AWS Console" button → Press Enter → Opens AWS portal
 
 **Flow 4: Sign Out**
+
 - Tab to "Sign out" button → Press Enter → Signed out
 
 **And** focus indicators visible at all times (WCAG 2.2 Level AA)
@@ -5017,6 +5379,7 @@ So that I can access all features without a mouse.
 **Prerequisites:** Story 8.6 (Performance/security validation)
 
 **Technical Notes:**
+
 - FR-TRY-70, FR-TRY-71, FR-TRY-72, FR-TRY-73 covered
 - Modal focus trap: Critical for accessibility (prevent focus escaping modal)
 - Escape key closes modal (keyboard shortcut)
@@ -5024,6 +5387,7 @@ So that I can access all features without a mouse.
 - Tab order: HTML source order (avoid CSS visual reordering that breaks tab order)
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible Modal Pattern - Focus Management (CRITICAL)
   - **Focus trap:** Tab key cycles within modal only (no escape to background)
   - **Focus on open:** Automatically move focus to first interactive element (AUP checkbox)
@@ -5038,6 +5402,7 @@ So that I can access all features without a mouse.
 - **Tab Order Validation:** HTML source order matches visual order (no CSS reordering issues)
 
 **UX Design Context:**
+
 - **User Journeys:** UX Section 5.1 - All 5 journeys must be keyboard-navigable
   - Journey 1: Authentication Sign In (Tab to "Sign in", Enter)
   - Journey 2: Lease Request (Tab through filters, product, Try button, modal, submit)
@@ -5063,16 +5428,19 @@ So that I can access all features through audio feedback.
 **Then** I hear clear announcements:
 
 **Sign In/Out Buttons:**
+
 - Button role announced
 - Button label: "Sign in" or "Sign out"
 - Button state: Focused/Not focused
 
 **Try Button:**
+
 - Button role announced
 - Button label: "Try this now for 24 hours"
 - Start button icon decorative (aria-hidden)
 
 **Lease Request Modal:**
+
 - Dialog role announced: "Dialog: Request AWS Sandbox Access"
 - AUP heading: "Acceptable Use Policy"
 - Checkbox label: "I accept the Acceptable Use Policy"
@@ -5081,6 +5449,7 @@ So that I can access all features through audio feedback.
 - Continue button state: Disabled/Enabled
 
 **Sessions Table:**
+
 - Table role announced
 - Table caption: "Your try sessions"
 - Column headers: Template Name, AWS Account ID, Expiry, Budget, Status
@@ -5089,15 +5458,15 @@ So that I can access all features through audio feedback.
 - Budget: "Budget: $12.35 used of $50 maximum" (clear pronunciation)
 
 **Empty States:**
+
 - Heading: "Sign in to view your try sessions"
 - Guidance text read clearly
 - Links announced with purpose
 
 **And** ARIA labels used where needed:
+
 ```html
-<span aria-label="Budget: $12.35 used of $50 maximum">
-  $12.3456 / $50.00
-</span>
+<span aria-label="Budget: $12.35 used of $50 maximum"> $12.3456 / $50.00 </span>
 
 <div role="dialog" aria-labelledby="modal-title" aria-modal="true">
   <h2 id="modal-title">Request AWS Sandbox Access</h2>
@@ -5106,6 +5475,7 @@ So that I can access all features through audio feedback.
 ```
 
 **And** manual testing with 3 screen readers:
+
 - NVDA (Windows)
 - JAWS (Windows)
 - VoiceOver (macOS/iOS)
@@ -5113,6 +5483,7 @@ So that I can access all features through audio feedback.
 **Prerequisites:** Story 8.7 (Keyboard navigation testing)
 
 **Technical Notes:**
+
 - FR-TRY-74, FR-TRY-75, FR-TRY-79 covered
 - ARIA labels: Supplement visual information for screen readers
 - aria-hidden: Hide decorative icons from screen readers
@@ -5121,6 +5492,7 @@ So that I can access all features through audio feedback.
 - Table accessibility: th scope="col", caption or aria-label
 
 **Architecture Context:**
+
 - **ADR-026:** Accessible Modal Pattern - ARIA Attributes (CRITICAL)
   - `role="dialog"` on modal container
   - `aria-modal="true"` prevents screen reader navigating outside modal
@@ -5140,6 +5512,7 @@ So that I can access all features through audio feedback.
 - **Decorative Icons:** `aria-hidden="true"` on Try button start icon
 
 **UX Design Context:**
+
 - **Screen Reader Testing:** UX Section 8.1 WCAG 2.2 compliance requires testing with 3 screen readers
   - NVDA (Windows, free)
   - JAWS (Windows, enterprise standard)
@@ -5169,12 +5542,14 @@ So that I always know where I am on the page.
 **Then** I see clear focus indicators on all interactive elements:
 
 **Focus Indicator Requirements:**
+
 - Visible outline or border around focused element
 - Contrast ratio: 3:1 minimum against background (WCAG 2.2 Level AA)
 - Consistent style across all elements
 - Not removed by CSS (no `outline: none` without replacement)
 
 **Elements with Focus Indicators:**
+
 - Sign in/out buttons
 - "Try Before You Buy" tag filter
 - "Try this now" button
@@ -5186,6 +5561,7 @@ So that I always know where I am on the page.
 - All navigation links
 
 **And** focus indicator uses GOV.UK Design System default:
+
 ```css
 /* GOV.UK focus indicator */
 :focus {
@@ -5202,6 +5578,7 @@ So that I always know where I am on the page.
 **Prerequisites:** Story 8.8 (Screen reader testing)
 
 **Technical Notes:**
+
 - FR-TRY-71 covered (focus indicators visible)
 - GOV.UK Design System provides focus styles automatically
 - Custom CSS must not override (validate no `outline: none`)
@@ -5210,6 +5587,7 @@ So that I always know where I am on the page.
 - Focus order: Determined by HTML source order (not CSS visual order)
 
 **Architecture Context:**
+
 - **GOV.UK Focus Indicator (default):** Yellow outline + black shadow
   ```css
   :focus {
@@ -5228,6 +5606,7 @@ So that I always know where I am on the page.
 - **Dynamic Content:** Focus NOT lost during AJAX content loading (preserve focus reference)
 
 **UX Design Context:**
+
 - **Focus Indicator Standard:** GOV.UK Design System default (yellow + black)
   - Visible on all interactive elements (buttons, links, checkboxes, inputs)
   - Consistent across all components (no custom overrides)
@@ -5257,12 +5636,14 @@ So that I know when something goes wrong and how to fix it.
 **Then** I see and hear error message:
 
 **Visual Error Display:**
+
 - GOV.UK error message component
 - Red left border (govuk-error-message class)
 - Error text clearly visible
 - Error associated with failed element (ARIA)
 
 **Screen Reader Announcement:**
+
 - ARIA live region announces error immediately
 - Error message descriptive (not just "Error")
 - Remediation guidance included
@@ -5270,14 +5651,16 @@ So that I know when something goes wrong and how to fix it.
 **Error Scenarios:**
 
 **1. Lease Request Failure (409 Max Leases):**
+
 ```html
 <div role="alert" aria-live="assertive">
-  You have reached the maximum number of active sandbox leases (5).
-  Please terminate an existing lease before requesting a new one.
+  You have reached the maximum number of active sandbox leases (5). Please terminate an existing lease before requesting
+  a new one.
 </div>
 ```
 
 **2. API Failure (Network Error):**
+
 ```html
 <div role="alert" aria-live="assertive">
   Failed to load your try sessions. Please check your connection and refresh the page.
@@ -5285,13 +5668,13 @@ So that I know when something goes wrong and how to fix it.
 ```
 
 **3. Authentication Failure (401):**
+
 ```html
-<div role="alert" aria-live="assertive">
-  Your session has expired. Redirecting to sign in...
-</div>
+<div role="alert" aria-live="assertive">Your session has expired. Redirecting to sign in...</div>
 ```
 
 **And** error messages use GOV.UK error pattern:
+
 - Clear, concise language
 - Action-oriented (tell user what to do)
 - No technical jargon
@@ -5303,6 +5686,7 @@ So that I know when something goes wrong and how to fix it.
 **Prerequisites:** Story 8.9 (Focus indicators)
 
 **Technical Notes:**
+
 - FR-TRY-79 covered (ARIA live regions for errors)
 - ARIA live regions: Announce dynamic content to screen readers
 - aria-live="assertive": Immediate announcement (interrupts screen reader)
@@ -5310,6 +5694,7 @@ So that I know when something goes wrong and how to fix it.
 - Error text: Plain English, action-oriented (UK government standard)
 
 **Architecture Context:**
+
 - **ADR-028:** ARIA live regions for error announcements (CRITICAL)
   - `role="alert"` with `aria-live="assertive"` for immediate interruption
   - Screen readers announce errors instantly (don't wait for focus)
@@ -5329,6 +5714,7 @@ So that I know when something goes wrong and how to fix it.
 - **Module:** `src/try/utils/error-handler.ts` - Centralized error message formatting
 
 **UX Design Context:**
+
 - **Error Strategy:** UX Section 7.4 Success/Error Notification Strategy
   - Immediate announcement via ARIA live regions
   - Clear, actionable guidance (not just "Error")
@@ -5358,12 +5744,14 @@ So that we meet UK government accessibility standards before release.
 **Then** I certify compliance with:
 
 **WCAG 2.2 Level A (30 criteria) - All Pass:**
+
 - ✓ Perceivable: Text alternatives, adaptable, distinguishable
 - ✓ Operable: Keyboard accessible, enough time, navigable
 - ✓ Understandable: Readable, predictable, input assistance
 - ✓ Robust: Compatible with assistive technologies
 
 **WCAG 2.2 Level AA (20 criteria) - All Pass:**
+
 - ✓ Contrast (Minimum): 4.5:1 text, 3:1 UI components
 - ✓ Resize Text: 200% zoom without loss of functionality
 - ✓ Reflow: No horizontal scroll at 320px width
@@ -5371,34 +5759,41 @@ So that we meet UK government accessibility standards before release.
 - ✓ Label in Name: Accessible names match visible labels
 
 **WCAG 2.2 Level AAA (Optional - Best Effort):**
+
 - ✓ Contrast (Enhanced): 7:1 where possible (GOV.UK achieves this)
 - ✓ Reading Level: Plain English (UK government standard)
 
 **And** compliance certification includes:
 
 **1. Accessibility Statement (Public):**
+
 ```markdown
 # Accessibility Statement for NDX Try Before You Buy
 
 This website is run by the Cabinet Office. We want as many people as possible to be able to use this website.
 
 ## Compliance Status
+
 This website is fully compliant with the Web Content Accessibility Guidelines version 2.2 AA standard.
 
 ## Testing
+
 We regularly test this website using:
+
 - Automated testing with axe-core and pa11y
 - Manual testing with NVDA, JAWS, and VoiceOver
 - Keyboard-only navigation testing
 - Mobile device testing (iOS/Android)
 
 ## Feedback
+
 If you have difficulty using this website, contact us: [contact details]
 
 Last updated: [Date]
 ```
 
 **2. Internal Compliance Report:**
+
 - All WCAG 2.2 success criteria checked
 - Testing methodology documented
 - Evidence of compliance (screenshots, test results)
@@ -5410,6 +5805,7 @@ Last updated: [Date]
 **Prerequisites:** Story 8.10 (Error messaging accessibility)
 
 **Technical Notes:**
+
 - UK government requirement: WCAG 2.2 Level AA minimum
 - GOV.UK services must publish accessibility statement
 - Compliance statement template: https://www.gov.uk/guidance/accessibility-requirements-for-public-sector-websites-and-apps
@@ -5417,6 +5813,7 @@ Last updated: [Date]
 - Ongoing compliance: CI tests prevent regressions (Story 8.2)
 
 **Architecture Context:**
+
 - **ADR-037:** Mandatory accessibility testing gate (ongoing compliance)
   - CI pipeline blocks PRs with WCAG violations (Story 8.2)
   - Prevents accessibility regressions after initial certification
@@ -5438,6 +5835,7 @@ Last updated: [Date]
   - Reading Level: Plain English (UK government standard)
 
 **UX Design Context:**
+
 - **WCAG 2.2 Target:** UX Section 8.1 - Level AA minimum, AAA where feasible
 - **Accessibility Statement Required:** UK government public sector requirement
   - Published at `/accessibility` route
@@ -5457,87 +5855,87 @@ Last updated: [Date]
 
 ## FR Coverage Matrix - Feature 2
 
-| FR | Description | Epic | Stories |
-|----|-------------|------|---------|
-| FR-TRY-1 | Detect authentication (sessionStorage check) | Epic 5 | Story 5.1 |
-| FR-TRY-2 | Initiate OAuth login redirect | Epic 5 | Story 5.2 |
-| FR-TRY-3 | Extract JWT from URL | Epic 5 | Story 5.3 |
-| FR-TRY-4 | Store JWT in sessionStorage | Epic 5 | Story 5.3 |
-| FR-TRY-5 | Clean up URL after token extraction | Epic 5 | Story 5.3 |
-| FR-TRY-6 | Retrieve JWT for API calls | Epic 5 | Story 5.6 |
-| FR-TRY-7 | Clear JWT on sign-out | Epic 5 | Story 5.5 |
-| FR-TRY-8 | Persist auth across tabs | Epic 5 | Story 5.4 |
-| FR-TRY-9 | Clear auth on browser restart | Epic 5 | Story 5.4 |
-| FR-TRY-10 | Send Authorization header | Epic 5 | Story 5.6 |
-| FR-TRY-11 | Display "Sign in" when unauthenticated | Epic 5 | Story 5.1 |
-| FR-TRY-12 | Display "Sign out" when authenticated | Epic 5 | Story 5.1 |
-| FR-TRY-13 | Sign in triggers OAuth redirect | Epic 5 | Story 5.2 |
-| FR-TRY-14 | Sign out clears sessionStorage | Epic 5 | Story 5.5 |
-| FR-TRY-15 | Use GOV.UK button styling | Epic 5 | Story 5.1 |
-| FR-TRY-16 | Check auth status API | Epic 5 | Story 5.7 |
-| FR-TRY-17 | Parse user session data | Epic 5 | Story 5.7 |
-| FR-TRY-18 | Retrieve user leases | Epic 7 | Story 7.2 |
-| FR-TRY-19 | Parse lease data | Epic 7 | Story 7.2 |
-| FR-TRY-20 | Get lease templates | Epic 6 | Story 6.1 |
-| FR-TRY-21 | Get AUP from configurations | Epic 6 | Story 6.7 |
-| FR-TRY-22 | Request new lease | Epic 6 | Story 6.9 |
-| FR-TRY-23 | Handle API errors | Epic 5 | Story 5.8 |
-| FR-TRY-24 | Redirect to login on 401 | Epic 5 | Story 5.8 |
-| FR-TRY-25 | Render /try page route | Epic 7 | Story 7.1 |
-| FR-TRY-26 | Show unauthenticated message | Epic 5 | Story 5.9 |
-| FR-TRY-27 | Show sign in button on /try | Epic 5 | Story 5.9 |
-| FR-TRY-28 | Fetch and display leases | Epic 7 | Story 7.1, 7.2 |
-| FR-TRY-29 | Empty state if no leases | Epic 5 | Story 5.9 |
-| FR-TRY-30 | Sessions table columns | Epic 7 | Story 7.3 |
-| FR-TRY-31 | Relative time for past expiry | Epic 7 | Story 7.5 |
-| FR-TRY-32 | Absolute time for future expiry | Epic 7 | Story 7.5 |
-| FR-TRY-33 | Budget format | Epic 7 | Story 7.6 |
-| FR-TRY-34 | Cost accrued 4 decimals | Epic 7 | Story 7.6 |
-| FR-TRY-35 | Status badge color coding | Epic 7 | Story 7.4 |
-| FR-TRY-36 | Sort sessions by date | Epic 7 | Story 7.3 |
-| FR-TRY-37 | Distinguish active/expired | Epic 7 | Story 7.4 |
-| FR-TRY-38 | Launch button for Active | Epic 7 | Story 7.7 |
-| FR-TRY-39 | Launch opens AWS portal | Epic 7 | Story 7.7 |
-| FR-TRY-40 | Remaining lease duration | Epic 7 | Story 7.8 |
-| FR-TRY-41 | No launch for expired | Epic 7 | Story 7.7 |
-| FR-TRY-42 | Parse try metadata | Epic 6 | Story 6.1 |
-| FR-TRY-43 | Parse try_id metadata | Epic 6 | Story 6.1 |
-| FR-TRY-44 | Generate Try tag | Epic 6 | Story 6.2 |
-| FR-TRY-45 | Render tag in filters | Epic 6 | Story 6.2 |
-| FR-TRY-46 | Filter by Try tag | Epic 6 | Story 6.3 |
-| FR-TRY-47 | Render Try button | Epic 6 | Story 6.4 |
-| FR-TRY-48 | Use govukButton isStartButton | Epic 6 | Story 6.4 |
-| FR-TRY-49 | Check auth before modal | Epic 6 | Story 6.5 |
-| FR-TRY-50 | Redirect if unauthenticated | Epic 6 | Story 6.5 |
-| FR-TRY-51 | Display modal overlay | Epic 6 | Story 6.6 |
-| FR-TRY-52 | Modal shows duration | Epic 6 | Story 6.6 |
-| FR-TRY-53 | Modal shows budget | Epic 6 | Story 6.6 |
-| FR-TRY-54 | Fetch AUP text | Epic 6 | Story 6.7 |
-| FR-TRY-55 | Scrollable AUP container | Epic 6 | Story 6.7 |
-| FR-TRY-56 | AUP checkbox required | Epic 6 | Story 6.6 |
-| FR-TRY-57 | Disable Continue until checked | Epic 6 | Story 6.8 |
-| FR-TRY-58 | Cancel closes modal | Epic 6 | Story 6.8 |
-| FR-TRY-59 | Continue requests lease | Epic 6 | Story 6.9 |
-| FR-TRY-60 | Loading indicator | Epic 6 | Story 6.9 |
-| FR-TRY-61 | Navigate to /try on success | Epic 6 | Story 6.9 |
-| FR-TRY-62 | Alert on 409 error | Epic 6 | Story 6.9 |
-| FR-TRY-63 | Redirect on 409 error | Epic 6 | Story 6.9 |
-| FR-TRY-64 | Alert on other errors | Epic 6 | Story 6.9 |
-| FR-TRY-65 | Close modal after request | Epic 6 | Story 6.9 |
-| FR-TRY-66 | Responsive UI (320px+) | Epic 8 | Story 8.5 |
-| FR-TRY-67 | Sessions table mobile | Epic 8 | Story 8.5 |
-| FR-TRY-68 | Modal mobile adaptation | Epic 8 | Story 8.5 |
-| FR-TRY-69 | Sign in/out mobile nav | Epic 8 | Story 8.5 |
-| FR-TRY-70 | Keyboard navigation | Epic 8 | Story 8.7 |
-| FR-TRY-71 | Focus indicators | Epic 8 | Story 8.9 |
-| FR-TRY-72 | Escape closes modal | Epic 8 | Story 8.7 |
-| FR-TRY-73 | Modal focus trap | Epic 8 | Story 8.7 |
-| FR-TRY-74 | Status ARIA labels | Epic 8 | Story 8.8 |
-| FR-TRY-75 | Budget ARIA labels | Epic 8 | Story 8.6, 8.8 |
-| FR-TRY-76 | Color contrast WCAG 2.2 AA | Epic 8 | Story 8.3 |
-| FR-TRY-77 | Color + text for status | Epic 7, Epic 8 | Story 7.4, 8.8 |
-| FR-TRY-78 | Form labels associated | Epic 8 | Story 8.8 |
-| FR-TRY-79 | ARIA live regions | Epic 8 | Story 8.10 |
+| FR        | Description                                  | Epic           | Stories        |
+| --------- | -------------------------------------------- | -------------- | -------------- |
+| FR-TRY-1  | Detect authentication (sessionStorage check) | Epic 5         | Story 5.1      |
+| FR-TRY-2  | Initiate OAuth login redirect                | Epic 5         | Story 5.2      |
+| FR-TRY-3  | Extract JWT from URL                         | Epic 5         | Story 5.3      |
+| FR-TRY-4  | Store JWT in sessionStorage                  | Epic 5         | Story 5.3      |
+| FR-TRY-5  | Clean up URL after token extraction          | Epic 5         | Story 5.3      |
+| FR-TRY-6  | Retrieve JWT for API calls                   | Epic 5         | Story 5.6      |
+| FR-TRY-7  | Clear JWT on sign-out                        | Epic 5         | Story 5.5      |
+| FR-TRY-8  | Persist auth across tabs                     | Epic 5         | Story 5.4      |
+| FR-TRY-9  | Clear auth on browser restart                | Epic 5         | Story 5.4      |
+| FR-TRY-10 | Send Authorization header                    | Epic 5         | Story 5.6      |
+| FR-TRY-11 | Display "Sign in" when unauthenticated       | Epic 5         | Story 5.1      |
+| FR-TRY-12 | Display "Sign out" when authenticated        | Epic 5         | Story 5.1      |
+| FR-TRY-13 | Sign in triggers OAuth redirect              | Epic 5         | Story 5.2      |
+| FR-TRY-14 | Sign out clears sessionStorage               | Epic 5         | Story 5.5      |
+| FR-TRY-15 | Use GOV.UK button styling                    | Epic 5         | Story 5.1      |
+| FR-TRY-16 | Check auth status API                        | Epic 5         | Story 5.7      |
+| FR-TRY-17 | Parse user session data                      | Epic 5         | Story 5.7      |
+| FR-TRY-18 | Retrieve user leases                         | Epic 7         | Story 7.2      |
+| FR-TRY-19 | Parse lease data                             | Epic 7         | Story 7.2      |
+| FR-TRY-20 | Get lease templates                          | Epic 6         | Story 6.1      |
+| FR-TRY-21 | Get AUP from configurations                  | Epic 6         | Story 6.7      |
+| FR-TRY-22 | Request new lease                            | Epic 6         | Story 6.9      |
+| FR-TRY-23 | Handle API errors                            | Epic 5         | Story 5.8      |
+| FR-TRY-24 | Redirect to login on 401                     | Epic 5         | Story 5.8      |
+| FR-TRY-25 | Render /try page route                       | Epic 7         | Story 7.1      |
+| FR-TRY-26 | Show unauthenticated message                 | Epic 5         | Story 5.9      |
+| FR-TRY-27 | Show sign in button on /try                  | Epic 5         | Story 5.9      |
+| FR-TRY-28 | Fetch and display leases                     | Epic 7         | Story 7.1, 7.2 |
+| FR-TRY-29 | Empty state if no leases                     | Epic 5         | Story 5.9      |
+| FR-TRY-30 | Sessions table columns                       | Epic 7         | Story 7.3      |
+| FR-TRY-31 | Relative time for past expiry                | Epic 7         | Story 7.5      |
+| FR-TRY-32 | Absolute time for future expiry              | Epic 7         | Story 7.5      |
+| FR-TRY-33 | Budget format                                | Epic 7         | Story 7.6      |
+| FR-TRY-34 | Cost accrued 4 decimals                      | Epic 7         | Story 7.6      |
+| FR-TRY-35 | Status badge color coding                    | Epic 7         | Story 7.4      |
+| FR-TRY-36 | Sort sessions by date                        | Epic 7         | Story 7.3      |
+| FR-TRY-37 | Distinguish active/expired                   | Epic 7         | Story 7.4      |
+| FR-TRY-38 | Launch button for Active                     | Epic 7         | Story 7.7      |
+| FR-TRY-39 | Launch opens AWS portal                      | Epic 7         | Story 7.7      |
+| FR-TRY-40 | Remaining lease duration                     | Epic 7         | Story 7.8      |
+| FR-TRY-41 | No launch for expired                        | Epic 7         | Story 7.7      |
+| FR-TRY-42 | Parse try metadata                           | Epic 6         | Story 6.1      |
+| FR-TRY-43 | Parse try_id metadata                        | Epic 6         | Story 6.1      |
+| FR-TRY-44 | Generate Try tag                             | Epic 6         | Story 6.2      |
+| FR-TRY-45 | Render tag in filters                        | Epic 6         | Story 6.2      |
+| FR-TRY-46 | Filter by Try tag                            | Epic 6         | Story 6.3      |
+| FR-TRY-47 | Render Try button                            | Epic 6         | Story 6.4      |
+| FR-TRY-48 | Use govukButton isStartButton                | Epic 6         | Story 6.4      |
+| FR-TRY-49 | Check auth before modal                      | Epic 6         | Story 6.5      |
+| FR-TRY-50 | Redirect if unauthenticated                  | Epic 6         | Story 6.5      |
+| FR-TRY-51 | Display modal overlay                        | Epic 6         | Story 6.6      |
+| FR-TRY-52 | Modal shows duration                         | Epic 6         | Story 6.6      |
+| FR-TRY-53 | Modal shows budget                           | Epic 6         | Story 6.6      |
+| FR-TRY-54 | Fetch AUP text                               | Epic 6         | Story 6.7      |
+| FR-TRY-55 | Scrollable AUP container                     | Epic 6         | Story 6.7      |
+| FR-TRY-56 | AUP checkbox required                        | Epic 6         | Story 6.6      |
+| FR-TRY-57 | Disable Continue until checked               | Epic 6         | Story 6.8      |
+| FR-TRY-58 | Cancel closes modal                          | Epic 6         | Story 6.8      |
+| FR-TRY-59 | Continue requests lease                      | Epic 6         | Story 6.9      |
+| FR-TRY-60 | Loading indicator                            | Epic 6         | Story 6.9      |
+| FR-TRY-61 | Navigate to /try on success                  | Epic 6         | Story 6.9      |
+| FR-TRY-62 | Alert on 409 error                           | Epic 6         | Story 6.9      |
+| FR-TRY-63 | Redirect on 409 error                        | Epic 6         | Story 6.9      |
+| FR-TRY-64 | Alert on other errors                        | Epic 6         | Story 6.9      |
+| FR-TRY-65 | Close modal after request                    | Epic 6         | Story 6.9      |
+| FR-TRY-66 | Responsive UI (320px+)                       | Epic 8         | Story 8.5      |
+| FR-TRY-67 | Sessions table mobile                        | Epic 8         | Story 8.5      |
+| FR-TRY-68 | Modal mobile adaptation                      | Epic 8         | Story 8.5      |
+| FR-TRY-69 | Sign in/out mobile nav                       | Epic 8         | Story 8.5      |
+| FR-TRY-70 | Keyboard navigation                          | Epic 8         | Story 8.7      |
+| FR-TRY-71 | Focus indicators                             | Epic 8         | Story 8.9      |
+| FR-TRY-72 | Escape closes modal                          | Epic 8         | Story 8.7      |
+| FR-TRY-73 | Modal focus trap                             | Epic 8         | Story 8.7      |
+| FR-TRY-74 | Status ARIA labels                           | Epic 8         | Story 8.8      |
+| FR-TRY-75 | Budget ARIA labels                           | Epic 8         | Story 8.6, 8.8 |
+| FR-TRY-76 | Color contrast WCAG 2.2 AA                   | Epic 8         | Story 8.3      |
+| FR-TRY-77 | Color + text for status                      | Epic 7, Epic 8 | Story 7.4, 8.8 |
+| FR-TRY-78 | Form labels associated                       | Epic 8         | Story 8.8      |
+| FR-TRY-79 | ARIA live regions                            | Epic 8         | Story 8.10     |
 
 **Coverage Validation:** All 79 FRs mapped to stories ✓
 
@@ -5560,6 +5958,7 @@ Last updated: [Date]
 This epic breakdown transforms the NDX Try Before You Buy PRD into 52 bite-sized, implementable stories across 5 epics. All 79 functional requirements are covered with full architectural context and accessibility built-in throughout.
 
 **Key Strengths:**
+
 - **Risk-first sequencing:** Most technically risky epics first (local dev, auth foundation)
 - **UX checkpoint:** Gate story validates design before implementation (Epic 6)
 - **Accessibility throughout:** Built-in NFRs + comprehensive Epic 8 validation
@@ -5571,12 +5970,14 @@ This epic breakdown transforms the NDX Try Before You Buy PRD into 52 bite-sized
 - **BDD acceptance criteria:** Given/When/Then format for all stories
 
 **Implementation Approach:**
+
 1. Execute stories sequentially within each epic
 2. Each story is sized for single developer session completion
 3. All tests must pass before moving to next story
 4. Accessibility validated continuously, not just at the end
 
 **Context for Phase 4:**
+
 - PRD provides functional requirements (WHAT capabilities)
 - Architecture provides technical decisions (HOW to implement - in progress for cross-gov SSO)
 - Epics provide tactical implementation plan (STORY-BY-STORY breakdown)
@@ -5595,4 +5996,3 @@ Create sprint status file from Feature 2 epics and begin Phase 4 implementation.
 _For implementation: Each story contains complete acceptance criteria, prerequisites, and technical notes for autonomous development agent execution._
 
 ---
-

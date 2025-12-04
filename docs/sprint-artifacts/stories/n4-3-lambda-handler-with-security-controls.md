@@ -11,96 +11,112 @@ So that only legitimate ISB events trigger notifications.
 ## Acceptance Criteria
 
 **AC-3.1: Handler validates event.source is in allowed list**
+
 - **Given** an EventBridge event arrives at the Lambda
 - **When** the handler processes the event
 - **Then** it validates `event.source` is in allowed list (`['innovation-sandbox']`)
 - **Verification:** Unit test
 
 **AC-3.1.1: Red Team security test for source validation**
+
 - **Given** a handler receives an event
 - **When** the event has `source: 'attacker-service'`
 - **Then** the handler rejects with SecurityError logged
 - **Verification:** Unit test + Red Team
 
 **AC-3.2: Unauthorized sources rejected with SecurityError logged**
+
 - **Given** an event with an unauthorized source
 - **When** the handler validates the source
 - **Then** a SecurityError is logged and the event is rejected
 - **Verification:** Unit test + log inspection
 
 **AC-3.3: Lambda Powertools Logger configured**
+
 - **Given** the Lambda handler
 - **When** it processes events
 - **Then** Lambda Powertools Logger is configured with service name `ndx-notifications`
 - **Verification:** Log inspection
 
 **AC-3.4: Structured JSON logs include required fields**
+
 - **Given** an event is processed
 - **When** logging occurs
 - **Then** structured JSON logs include: eventId, eventType, processing status
 - **Verification:** Log inspection
 
 **AC-3.5: Lambda has correct resource configuration**
+
 - **Given** the Lambda function
 - **When** deployed via CDK
 - **Then** it has 256MB memory, 30s timeout, Node.js 20.x runtime
 - **Verification:** CDK assertion test (already passing from n4-1)
 
 **AC-3.6: Reserved concurrency = 10**
+
 - **Given** the Lambda function
 - **When** deployed via CDK
 - **Then** reserved concurrency is set to 10 (blast radius limiting per Devil's Advocate)
 - **Verification:** CDK assertion test
 
 **AC-3.6.1: Load test validates reserved concurrency**
+
 - **Given** a staging environment
 - **When** 10 concurrent events are processed
 - **Then** the system sustains load without throttling errors
 - **Verification:** Load test (staging)
 
 **AC-3.6.2: Handler timeout protection**
+
 - **Given** the Lambda function
 - **When** an event takes > 30s to process
 - **Then** the Lambda is killed (prevents slow event DoS)
 - **Verification:** Unit test + Red Team
 
 **AC-3.7: SuspiciousEmailDomain metric emitted**
+
 - **Given** an event is processed
 - **When** the user email domain is not `.gov.uk`
 - **Then** a `SuspiciousEmailDomain` metric is emitted (defense in depth for N-5)
 - **Verification:** Unit test + Red Team
 
 **AC-3.7.1: SuspiciousEmailDomain metric unit test**
+
 - **Given** a handler receives an event
 - **When** the event has a non-.gov.uk email
 - **Then** `SuspiciousEmailDomain` metric is incremented
 - **Verification:** Unit test + Red Team
 
 **AC-3.8: Log levels follow conventions**
+
 - **Given** the handler processes events
 - **When** logging occurs
 - **Then** log levels are: ERROR for DLQ-worthy, WARN for retries, INFO for success
 - **Verification:** Log inspection
 
 **AC-3.8.1: Log injection prevention**
+
 - **Given** a handler receives an event
 - **When** the event has newline in detail-type
 - **Then** logs structured JSON with escaped newline (no injection)
 - **Verification:** Unit test + Red Team
 
 **AC-3.9: Idempotency key derived from event.id**
+
 - **Given** duplicate events arrive
 - **When** the handler processes them
 - **Then** idempotency key is derived from `event.id` (EventBridge-provided)
 - **Verification:** Unit test + Devil's Advocate
 
 **AC-3.9.1: Idempotency documentation**
+
 - **Given** the handler code
 - **When** reviewed
 - **Then** code comment documents why event.id is required (duplicate notifications = security issue)
 - **Verification:** Code review + RCA
 
 **AC-3.10: PII redaction in logs**
+
 - **Given** a security event with email addresses
 - **When** logging occurs
 - **Then** email addresses are logged as `[REDACTED]`

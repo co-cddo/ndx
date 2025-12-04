@@ -2,7 +2,7 @@
 lib/**/*.js
 lib/**/*.d.ts
 lib/**/*.js.map
-!lib/functions/cookie-router.js  # This is source code, not compiled
+!lib/functions/cookie-router.js # This is source code, not compiled
 
 test/**/*.js
 test/**/*.d.ts

@@ -15,7 +15,8 @@ import { test, expect } from "@playwright/test"
  */
 
 test.describe("OAuth Callback Flow - Token Extraction", () => {
-  const TEST_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+  const TEST_TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
   const TOKEN_KEY = "isb-jwt"
   const RETURN_URL_KEY = "auth-return-to"
 
@@ -57,7 +58,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
   test("AC #3: Redirect to return URL after token extraction", async ({ page }) => {
     // Capture console messages for debugging
-    page.on('console', msg => console.log('BROWSER:', msg.text()))
+    page.on("console", (msg) => console.log("BROWSER:", msg.text()))
 
     // Set up return URL in sessionStorage (simulating user came from catalogue page)
     await page.goto("/")
@@ -71,7 +72,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
       ({ key, url }) => {
         sessionStorage.setItem(key, url)
       },
-      { key: RETURN_URL_KEY, url: returnURL }
+      { key: RETURN_URL_KEY, url: returnURL },
     )
 
     // Navigate to homepage with token (OAuth callback)
@@ -140,7 +141,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     await page.goto("/?token=")
 
     // Wait for page to load and any redirects to complete
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState("networkidle")
 
     // Should stay on or redirect to home page (URL may or may not have query string)
     const currentURL = page.url()
@@ -158,7 +159,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     await page.goto("/?token=%20%20%20") // URL-encoded spaces
 
     // Wait for page to load and any redirects to complete
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState("networkidle")
 
     // Should stay on or redirect to home page
     const currentURL = page.url()
@@ -185,7 +186,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
       ({ key, url }) => {
         sessionStorage.setItem(key, url)
       },
-      { key: RETURN_URL_KEY, url: returnURL }
+      { key: RETURN_URL_KEY, url: returnURL },
     )
 
     // Step 2: OAuth callback returns with token (redirects to homepage)

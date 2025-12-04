@@ -37,18 +37,21 @@ So that we can modify its configuration without recreating the distribution or d
 ### Architecture Patterns and Constraints
 
 **Import Pattern (Architecture ADR-003):**
+
 - Use `Distribution.fromDistributionAttributes()` for importing existing CloudFront distribution
 - This is a READ operation only - no modifications to distribution yet
 - Import creates reference without managing resource lifecycle
 - Enables subsequent stories to add origins and configure cache behaviors
 
 **Distribution Details (PRD Infrastructure Section):**
+
 - Distribution ID: E3THG4UHYDHVWP
 - Domain: d7roov8fndsis.cloudfront.net
 - Account: 568672915267
 - Region: us-west-2
 
 **Security Model:**
+
 - No changes to existing security configuration in this story
 - Existing OAC (E3P8MA1G9Y5BYE) remains untouched
 - All origins remain unchanged
@@ -56,26 +59,25 @@ So that we can modify its configuration without recreating the distribution or d
 ### Project Structure Notes
 
 **File Location:**
+
 - CDK stack: `infra/lib/ndx-stack.ts` (existing file to be modified)
 - This is the first story - no previous files to reference
 - Foundation for Stories 1.2-1.4
 
 **Expected Code Pattern:**
+
 ```typescript
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
 
 // In NdxStaticStack constructor:
-const distribution = cloudfront.Distribution.fromDistributionAttributes(
-  this,
-  'ImportedDistribution',
-  {
-    distributionId: 'E3THG4UHYDHVWP',
-    domainName: 'd7roov8fndsis.cloudfront.net'
-  }
-);
+const distribution = cloudfront.Distribution.fromDistributionAttributes(this, "ImportedDistribution", {
+  distributionId: "E3THG4UHYDHVWP",
+  domainName: "d7roov8fndsis.cloudfront.net",
+})
 ```
 
 **Validation Approach:**
+
 - Run `cdk synth` to verify template generation
 - Check synthesized template does NOT create new distribution
 - Verify TypeScript compiles cleanly
@@ -84,21 +86,25 @@ const distribution = cloudfront.Distribution.fromDistributionAttributes(
 ### References
 
 **Technical Specification:**
+
 - [Source: docs/sprint-artifacts/tech-spec-epic-1.md#Story-1.1]
 - Implementation details: Lines 53-75
 - Validation criteria: Lines 71-74
 
 **Architecture:**
+
 - [Source: docs/architecture.md#ADR-003]
 - Single CDK Stack pattern
 - CloudFront import best practices
 
 **PRD Requirements:**
+
 - [Source: docs/prd.md#FR25-FR27]
 - FR25: Import distribution by ID
 - FR27: Validate via cdk synth
 
 **Epic Context:**
+
 - [Source: docs/epics.md#Story-1.1]
 - Lines 112-147
 - Prerequisites: None (first story)
@@ -121,6 +127,7 @@ No debug logs required - implementation was straightforward.
 ### Completion Notes List
 
 **Implementation Summary:**
+
 - Added CloudFront import statement to `infra/lib/ndx-stack.ts`
 - Imported existing distribution E3THG4UHYDHVWP using `Distribution.fromDistributionAttributes()`
 - Fixed ESLint errors related to TypeScript type safety (`tryGetContext` type casting)
@@ -133,6 +140,7 @@ No debug logs required - implementation was straightforward.
   6. TypeScript compilation succeeds with zero errors - PASS
 
 **Validation Results:**
+
 - `yarn build`: SUCCESS (no TypeScript errors)
 - `cdk synth --profile NDX/InnovationSandboxHub`: SUCCESS
 - CloudFormation template contains only S3 bucket resource
@@ -140,6 +148,7 @@ No debug logs required - implementation was straightforward.
 - ESLint errors in ndx-stack.ts resolved (test file errors are pre-existing)
 
 **Notes:**
+
 - Distribution reference not stored in variable to avoid unused-vars ESLint error
 - Reference will be recreated in Story 1.2 when adding new origin
 - Implementation follows ADR-003 import pattern exactly as specified
@@ -147,6 +156,7 @@ No debug logs required - implementation was straightforward.
 ### File List
 
 **Modified:**
+
 - `/Users/cns/httpdocs/cddo/ndx/infra/lib/ndx-stack.ts` - Added CloudFront distribution import
 
 ## Change Log
@@ -169,14 +179,14 @@ No blocking issues. One minor observation about distribution variable not being 
 
 ### Acceptance Criteria Coverage
 
-| AC | Description | Status | Evidence |
-|----|-------------|--------|----------|
-| AC #1 | Distribution imported via `fromDistributionAttributes()` | IMPLEMENTED | ndx-stack.ts:45-52 |
-| AC #2 | Distribution ID: E3THG4UHYDHVWP, Domain: d7roov8fndsis.cloudfront.net | IMPLEMENTED | ndx-stack.ts:49-50 |
-| AC #3 | `cdk synth` generates valid CloudFormation | IMPLEMENTED | CDK synth executed successfully, valid template |
-| AC #4 | No new distribution resource in template | IMPLEMENTED | grep confirms 0 CloudFront::Distribution resources |
-| AC #5 | Distribution variable available | PARTIAL ⚠️ | Reference created but not stored (intentional, see note) |
-| AC #6 | TypeScript compilation succeeds | IMPLEMENTED | yarn build and yarn test pass |
+| AC    | Description                                                           | Status      | Evidence                                                 |
+| ----- | --------------------------------------------------------------------- | ----------- | -------------------------------------------------------- |
+| AC #1 | Distribution imported via `fromDistributionAttributes()`              | IMPLEMENTED | ndx-stack.ts:45-52                                       |
+| AC #2 | Distribution ID: E3THG4UHYDHVWP, Domain: d7roov8fndsis.cloudfront.net | IMPLEMENTED | ndx-stack.ts:49-50                                       |
+| AC #3 | `cdk synth` generates valid CloudFormation                            | IMPLEMENTED | CDK synth executed successfully, valid template          |
+| AC #4 | No new distribution resource in template                              | IMPLEMENTED | grep confirms 0 CloudFront::Distribution resources       |
+| AC #5 | Distribution variable available                                       | PARTIAL ⚠️  | Reference created but not stored (intentional, see note) |
+| AC #6 | TypeScript compilation succeeds                                       | IMPLEMENTED | yarn build and yarn test pass                            |
 
 **Summary:** 5 of 6 ACs fully implemented, 1 partial (AC #5 intentionally deferred to Story 1.2)
 
@@ -184,11 +194,11 @@ No blocking issues. One minor observation about distribution variable not being 
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Import CloudFront distribution | COMPLETED | COMPLETED ✓ | ndx-stack.ts:40-52 shows complete import with correct IDs |
+| Task                              | Marked As | Verified As | Evidence                                                    |
+| --------------------------------- | --------- | ----------- | ----------------------------------------------------------- |
+| Import CloudFront distribution    | COMPLETED | COMPLETED ✓ | ndx-stack.ts:40-52 shows complete import with correct IDs   |
 | Validate CloudFormation synthesis | COMPLETED | COMPLETED ✓ | CDK synth successful, no CloudFront::Distribution in output |
-| Verify TypeScript compilation | COMPLETED | COMPLETED ✓ | yarn build and yarn test both pass, no TS errors |
+| Verify TypeScript compilation     | COMPLETED | COMPLETED ✓ | yarn build and yarn test both pass, no TS errors            |
 
 **Summary:** 3 of 3 completed tasks verified, 0 questionable, 0 falsely marked complete
 
@@ -197,11 +207,13 @@ No blocking issues. One minor observation about distribution variable not being 
 ### Test Coverage and Gaps
 
 **Current Tests:**
+
 - Snapshot test validates complete CloudFormation template (PASS)
 - S3 bucket configuration assertion test (PASS)
 - Both tests in `lib/ndx-stack.test.ts` pass successfully
 
 **Coverage Assessment:**
+
 - Import operation is passive (no CloudFormation resource created), snapshot test captures this correctly
 - No specific CloudFront import test needed since import creates reference only (Story 1.2 will add origin tests)
 - Test coverage appropriate for this story's scope
@@ -211,23 +223,27 @@ No blocking issues. One minor observation about distribution variable not being 
 ### Architectural Alignment
 
 **ADR-003 Compliance:** ✓ PASS
+
 - Follows single CDK Stack pattern as specified
 - Uses `Distribution.fromDistributionAttributes()` for import-only approach
 - No resource lifecycle management (import creates reference only)
 - Matches architecture specification exactly
 
 **Tech Spec Compliance:** ✓ PASS
+
 - Implementation matches tech-spec-epic-1.md Story 1.1 section (lines 53-75)
 - All validation criteria from tech spec met
 - Distribution ID and domain correct as documented
 
 **Security (NFR-SEC-1):** ✓ PASS
+
 - No changes to existing security configuration
 - Existing OAC (E3P8MA1G9Y5BYE) untouched
 - All origins remain unchanged
 - No public access introduced
 
 **Zero Downtime (NFR-REL-1):** ✓ PASS
+
 - Import-only operation, no deployment in this story
 - No risk to production environment
 - Story 1.4 will handle actual deployment
@@ -239,15 +255,18 @@ No security concerns. This story performs read-only import of existing CloudFron
 ### Best Practices and References
 
 **AWS CDK Best Practices:**
+
 - Import existing resources using `fromXAttributes()` methods ✓
 - Store CDK construct references for later use (deferred to Story 1.2 intentionally)
 - Use TypeScript strict mode for type safety ✓
 
 **CloudFront Documentation:**
+
 - [Importing existing distributions in CDK](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront.Distribution.html#static-fromwbrdistributionwbrattributesscope-id-attrs)
 - Distribution ID format validated: E3THG4UHYDHVWP ✓
 
 **Project Architecture:**
+
 - ADR-003: Single CDK Stack approach followed ✓
 - Code comments reference architecture decisions appropriately ✓
 
@@ -256,6 +275,7 @@ No security concerns. This story performs read-only import of existing CloudFron
 **Code Changes Required:** None
 
 **Advisory Notes:**
+
 - Note: Story 1.2 will need to recreate the distribution reference to add new origin (already acknowledged in dev notes)
 - Note: Consider fixing pre-existing ESLint errors in test file (Stack ID suffix warnings) in future cleanup
 - Note: Excellent code documentation - maintain this standard in subsequent stories

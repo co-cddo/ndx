@@ -25,7 +25,7 @@
 # - No automated cleanup to preserve working state
 # - Manual cleanup not recommended (production distribution)
 
-set -e  # Exit immediately if any command fails
+set -e # Exit immediately if any command fails
 
 PROFILE="NDX/InnovationSandboxHub"
 DISTRIBUTION_ID="E3THG4UHYDHVWP"
@@ -110,7 +110,7 @@ if ! cdk deploy --profile "$PROFILE" --require-approval never 2>&1 | tee /tmp/cd
     --profile "$PROFILE" \
     --max-items 10 \
     --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].[Timestamp,ResourceType,ResourceStatus,ResourceStatusReason]' \
-    --output table 2>/dev/null || echo "Could not retrieve stack events"
+    --output table 2> /dev/null || echo "Could not retrieve stack events"
 
   exit 1
 fi

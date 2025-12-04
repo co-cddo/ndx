@@ -10,19 +10,19 @@
  * @see docs/sprint-artifacts/stories/n7-1-dynamodb-integration-setup.md
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
+import { Logger } from "@aws-lambda-powertools/logger"
 
-const logger = new Logger({ serviceName: 'ndx-notifications' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
 
 // =============================================================================
 // Constants
 // =============================================================================
 
 /** AC-7.1.12: Maximum DynamoDB item size (128KB with buffer) */
-const MAX_RECORD_SIZE_BYTES = 128 * 1024;
+const MAX_RECORD_SIZE_BYTES = 128 * 1024
 
 /** Fields to filter out before passing to templates (AC-7.1.16) */
-const FILTERED_FIELDS = ['meta', 'comments', 'approvedBy'] as const;
+const FILTERED_FIELDS = ["meta", "comments", "approvedBy"] as const
 
 // =============================================================================
 // Types
@@ -33,9 +33,9 @@ const FILTERED_FIELDS = ['meta', 'comments', 'approvedBy'] as const;
  * Contains audit timestamps and schema versioning
  */
 export interface LeaseRecordMeta {
-  lastEditTime?: string;
-  createdTime?: string;
-  schemaVersion?: string | number;
+  lastEditTime?: string
+  createdTime?: string
+  schemaVersion?: string | number
 }
 
 /**
@@ -43,9 +43,9 @@ export interface LeaseRecordMeta {
  * Defines spending alert thresholds for the lease
  */
 export interface BudgetThreshold {
-  threshold?: number;
-  percentage?: number;
-  alertEnabled?: boolean;
+  threshold?: number
+  percentage?: number
+  alertEnabled?: boolean
 }
 
 /**
@@ -56,45 +56,45 @@ export interface BudgetThreshold {
  */
 export interface FullLeaseRecord {
   // Primary Key (AC-7.1.1)
-  userEmail: string;
-  uuid: string;
+  userEmail: string
+  uuid: string
 
   // Required string fields (AC-7.1.13)
-  status: string;
-  expirationDate: string;
-  approvedBy: string;
-  awsAccountId: string;
-  createdBy: string;
-  originalLeaseTemplateUuid: string;
-  startDate: string;
-  originalLeaseTemplateName: string;
-  lastCheckedDate: string;
-  endDate: string;
+  status: string
+  expirationDate: string
+  approvedBy: string
+  awsAccountId: string
+  createdBy: string
+  originalLeaseTemplateUuid: string
+  startDate: string
+  originalLeaseTemplateName: string
+  lastCheckedDate: string
+  endDate: string
 
   // Required numeric fields (AC-7.1.14)
-  leaseDurationInHours: number;
-  totalCostAccrued: number;
-  maxSpend: number;
-  ttl: number; // Unix timestamp for auto-deletion (AC-7.1.15)
+  leaseDurationInHours: number
+  totalCostAccrued: number
+  maxSpend: number
+  ttl: number // Unix timestamp for auto-deletion (AC-7.1.15)
 
   // Complex fields
-  meta: LeaseRecordMeta;
-  budgetThresholds: BudgetThreshold[];
-  comments: string;
+  meta: LeaseRecordMeta
+  budgetThresholds: BudgetThreshold[]
+  comments: string
 }
 
 /**
  * AC-7.1.16: Filtered lease record safe for template personalization
  * Excludes sensitive/internal fields: meta, comments, approvedBy
  */
-export type SafeLeaseRecord = Omit<FullLeaseRecord, typeof FILTERED_FIELDS[number]>;
+export type SafeLeaseRecord = Omit<FullLeaseRecord, (typeof FILTERED_FIELDS)[number]>
 
 /**
  * Validation result with details
  */
 export interface ValidationResult {
-  valid: boolean;
-  errors: string[];
+  valid: boolean
+  errors: string[]
 }
 
 // =============================================================================
@@ -111,27 +111,27 @@ export interface ValidationResult {
 export function validateRecordSize(record: unknown): boolean {
   // Handle null/undefined gracefully - they're empty and within limits
   if (record === null || record === undefined) {
-    return true;
+    return true
   }
 
   try {
-    const jsonSize = Buffer.byteLength(JSON.stringify(record), 'utf8');
+    const jsonSize = Buffer.byteLength(JSON.stringify(record), "utf8")
 
     if (jsonSize >= MAX_RECORD_SIZE_BYTES) {
-      logger.warn('LeaseRecord exceeds size limit', {
+      logger.warn("LeaseRecord exceeds size limit", {
         sizeBytes: jsonSize,
         limitBytes: MAX_RECORD_SIZE_BYTES,
         sizeMB: (jsonSize / 1024 / 1024).toFixed(2),
-      });
-      return false;
+      })
+      return false
     }
 
-    return true;
+    return true
   } catch (error) {
-    logger.error('Failed to validate record size', {
+    logger.error("Failed to validate record size", {
       error: error instanceof Error ? error.message : String(error),
-    });
-    return false;
+    })
+    return false
   }
 }
 
@@ -145,11 +145,11 @@ export function validateRecordSize(record: unknown): boolean {
 export function isRecordExpired(ttl: number | undefined): boolean {
   if (ttl === undefined) {
     // No TTL means no expiration
-    return false;
+    return false
   }
 
-  const currentTime = Math.floor(Date.now() / 1000); // Convert to seconds
-  return ttl < currentTime;
+  const currentTime = Math.floor(Date.now() / 1000) // Convert to seconds
+  return ttl < currentTime
 }
 
 /**
@@ -160,70 +160,65 @@ export function isRecordExpired(ttl: number | undefined): boolean {
  * @returns ValidationResult with errors if any
  */
 export function validateLeaseRecord(record: Partial<FullLeaseRecord>): ValidationResult {
-  const errors: string[] = [];
+  const errors: string[] = []
 
   // AC-7.1.13: Validate required string fields
   const stringFields: (keyof FullLeaseRecord)[] = [
-    'userEmail',
-    'uuid',
-    'status',
-    'expirationDate',
-    'approvedBy',
-    'awsAccountId',
-    'createdBy',
-    'originalLeaseTemplateUuid',
-    'startDate',
-    'originalLeaseTemplateName',
-    'lastCheckedDate',
-    'endDate',
-    'comments',
-  ];
+    "userEmail",
+    "uuid",
+    "status",
+    "expirationDate",
+    "approvedBy",
+    "awsAccountId",
+    "createdBy",
+    "originalLeaseTemplateUuid",
+    "startDate",
+    "originalLeaseTemplateName",
+    "lastCheckedDate",
+    "endDate",
+    "comments",
+  ]
 
   for (const field of stringFields) {
-    const value = record[field];
-    if (value !== undefined && typeof value !== 'string') {
-      errors.push(`Field '${field}' must be a string, got ${typeof value}`);
+    const value = record[field]
+    if (value !== undefined && typeof value !== "string") {
+      errors.push(`Field '${field}' must be a string, got ${typeof value}`)
     }
   }
 
   // AC-7.1.14: Validate required numeric fields
-  const numericFields: (keyof FullLeaseRecord)[] = [
-    'leaseDurationInHours',
-    'totalCostAccrued',
-    'maxSpend',
-    'ttl',
-  ];
+  const numericFields: (keyof FullLeaseRecord)[] = ["leaseDurationInHours", "totalCostAccrued", "maxSpend", "ttl"]
 
   for (const field of numericFields) {
-    const value = record[field];
-    if (value !== undefined && typeof value !== 'number') {
-      errors.push(`Field '${field}' must be a number, got ${typeof value}`);
+    const value = record[field]
+    if (value !== undefined && typeof value !== "number") {
+      errors.push(`Field '${field}' must be a number, got ${typeof value}`)
     }
 
     // Additional validation: numbers should not be NaN or Infinity
-    if (typeof value === 'number' && (!Number.isFinite(value))) {
-      errors.push(`Field '${field}' must be a finite number, got ${value}`);
+    if (typeof value === "number" && !Number.isFinite(value)) {
+      errors.push(`Field '${field}' must be a finite number, got ${value}`)
     }
   }
 
   // Validate meta object if present
   if (record.meta !== undefined) {
-    if (typeof record.meta !== 'object' || record.meta === null) {
-      errors.push(`Field 'meta' must be an object, got ${typeof record.meta}`);
+    if (typeof record.meta !== "object" || record.meta === null) {
+      errors.push(`Field 'meta' must be an object, got ${typeof record.meta}`)
     }
   }
 
   // Validate budgetThresholds is an array if present
   if (record.budgetThresholds !== undefined) {
     if (!Array.isArray(record.budgetThresholds)) {
-      errors.push(`Field 'budgetThresholds' must be an array, got ${typeof record.budgetThresholds}`);
+      errors.push(`Field 'budgetThresholds' must be an array, got ${typeof record.budgetThresholds}`)
     }
   }
 
   return {
     valid: errors.length === 0,
     errors,
-  };
+  }
 }
 
 /**
@@ -234,15 +229,15 @@ export function validateLeaseRecord(record: Partial<FullLeaseRecord>): Validatio
  * @returns SafeLeaseRecord without filtered fields
  */
 export function filterForTemplates(record: FullLeaseRecord): SafeLeaseRecord {
-  const { meta: _meta, comments: _comments, approvedBy: _approvedBy, ...safeRecord } = record;
+  const { meta: _meta, comments: _comments, approvedBy: _approvedBy, ...safeRecord } = record
 
-  logger.debug('Filtered sensitive fields for template', {
+  logger.debug("Filtered sensitive fields for template", {
     originalFieldCount: Object.keys(record).length,
     filteredFieldCount: Object.keys(safeRecord).length,
     removedFields: FILTERED_FIELDS,
-  });
+  })
 
-  return safeRecord;
+  return safeRecord
 }
 
 /**
@@ -253,13 +248,13 @@ export function filterForTemplates(record: FullLeaseRecord): SafeLeaseRecord {
  * @returns String fingerprint of field names and types
  */
 export function generateSchemaFingerprint(record: Partial<FullLeaseRecord>): string {
-  const fields = Object.keys(record).sort();
+  const fields = Object.keys(record).sort()
   const types = fields.map((key) => {
-    const value = record[key as keyof FullLeaseRecord];
-    return `${key}:${typeof value}`;
-  });
+    const value = record[key as keyof FullLeaseRecord]
+    return `${key}:${typeof value}`
+  })
 
-  return types.join('|');
+  return types.join("|")
 }
 
 /**
@@ -268,24 +263,24 @@ export function generateSchemaFingerprint(record: Partial<FullLeaseRecord>): str
  */
 export function getExpectedFieldNames(): string[] {
   return [
-    'userEmail',
-    'uuid',
-    'status',
-    'expirationDate',
-    'approvedBy',
-    'awsAccountId',
-    'createdBy',
-    'originalLeaseTemplateUuid',
-    'startDate',
-    'originalLeaseTemplateName',
-    'lastCheckedDate',
-    'endDate',
-    'leaseDurationInHours',
-    'totalCostAccrued',
-    'maxSpend',
-    'ttl',
-    'meta',
-    'budgetThresholds',
-    'comments',
-  ];
+    "userEmail",
+    "uuid",
+    "status",
+    "expirationDate",
+    "approvedBy",
+    "awsAccountId",
+    "createdBy",
+    "originalLeaseTemplateUuid",
+    "startDate",
+    "originalLeaseTemplateName",
+    "lastCheckedDate",
+    "endDate",
+    "leaseDurationInHours",
+    "totalCostAccrued",
+    "maxSpend",
+    "ttl",
+    "meta",
+    "budgetThresholds",
+    "comments",
+  ]
 }

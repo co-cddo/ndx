@@ -18,7 +18,7 @@ Running the entire test suite on every commit wastes time and resources. Smart t
 
 ```typescript
 // tests/e2e/checkout.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test"
 
 /**
  * Tag-based test organization
@@ -30,48 +30,48 @@ import { test, expect } from '@playwright/test';
  * - @p3: Nice-to-have (cosmetic, non-critical)
  */
 
-test.describe('Checkout Flow', () => {
+test.describe("Checkout Flow", () => {
   // P0 + Smoke: Must run on every commit
-  test('@smoke @p0 should complete purchase with valid payment', async ({ page }) => {
-    await page.goto('/checkout');
-    await page.getByTestId('card-number').fill('4242424242424242');
-    await page.getByTestId('submit-payment').click();
+  test("@smoke @p0 should complete purchase with valid payment", async ({ page }) => {
+    await page.goto("/checkout")
+    await page.getByTestId("card-number").fill("4242424242424242")
+    await page.getByTestId("submit-payment").click()
 
-    await expect(page.getByTestId('order-confirmation')).toBeVisible();
-  });
+    await expect(page.getByTestId("order-confirmation")).toBeVisible()
+  })
 
   // P0 but not smoke: Run pre-merge
-  test('@regression @p0 should handle payment decline gracefully', async ({ page }) => {
-    await page.goto('/checkout');
-    await page.getByTestId('card-number').fill('4000000000000002'); // Decline card
-    await page.getByTestId('submit-payment').click();
+  test("@regression @p0 should handle payment decline gracefully", async ({ page }) => {
+    await page.goto("/checkout")
+    await page.getByTestId("card-number").fill("4000000000000002") // Decline card
+    await page.getByTestId("submit-payment").click()
 
-    await expect(page.getByTestId('payment-error')).toBeVisible();
-    await expect(page.getByTestId('payment-error')).toContainText('declined');
-  });
+    await expect(page.getByTestId("payment-error")).toBeVisible()
+    await expect(page.getByTestId("payment-error")).toContainText("declined")
+  })
 
   // P1 + Smoke: Important but not critical
-  test('@smoke @p1 should apply discount code', async ({ page }) => {
-    await page.goto('/checkout');
-    await page.getByTestId('promo-code').fill('SAVE10');
-    await page.getByTestId('apply-promo').click();
+  test("@smoke @p1 should apply discount code", async ({ page }) => {
+    await page.goto("/checkout")
+    await page.getByTestId("promo-code").fill("SAVE10")
+    await page.getByTestId("apply-promo").click()
 
-    await expect(page.getByTestId('discount-applied')).toBeVisible();
-  });
+    await expect(page.getByTestId("discount-applied")).toBeVisible()
+  })
 
   // P2: Run in full regression only
-  test('@regression @p2 should remember saved payment methods', async ({ page }) => {
-    await page.goto('/checkout');
-    await expect(page.getByTestId('saved-cards')).toBeVisible();
-  });
+  test("@regression @p2 should remember saved payment methods", async ({ page }) => {
+    await page.goto("/checkout")
+    await expect(page.getByTestId("saved-cards")).toBeVisible()
+  })
 
   // P3: Low priority, run nightly or weekly
-  test('@nightly @p3 should display checkout page analytics', async ({ page }) => {
-    await page.goto('/checkout');
-    const analyticsEvents = await page.evaluate(() => (window as any).__ANALYTICS__);
-    expect(analyticsEvents).toBeDefined();
-  });
-});
+  test("@nightly @p3 should display checkout page analytics", async ({ page }) => {
+    await page.goto("/checkout")
+    const analyticsEvents = await page.evaluate(() => (window as any).__ANALYTICS__)
+    expect(analyticsEvents).toBeDefined()
+  })
+})
 ```
 
 **package.json scripts**:
@@ -95,49 +95,49 @@ test.describe('Checkout Flow', () => {
 
 ```javascript
 // cypress/e2e/checkout.cy.ts
-describe('Checkout Flow', { tags: ['@checkout'] }, () => {
-  it('should complete purchase', { tags: ['@smoke', '@p0'] }, () => {
-    cy.visit('/checkout');
-    cy.get('[data-cy="card-number"]').type('4242424242424242');
-    cy.get('[data-cy="submit-payment"]').click();
-    cy.get('[data-cy="order-confirmation"]').should('be.visible');
-  });
+describe("Checkout Flow", { tags: ["@checkout"] }, () => {
+  it("should complete purchase", { tags: ["@smoke", "@p0"] }, () => {
+    cy.visit("/checkout")
+    cy.get('[data-cy="card-number"]').type("4242424242424242")
+    cy.get('[data-cy="submit-payment"]').click()
+    cy.get('[data-cy="order-confirmation"]').should("be.visible")
+  })
 
-  it('should handle decline', { tags: ['@regression', '@p0'] }, () => {
-    cy.visit('/checkout');
-    cy.get('[data-cy="card-number"]').type('4000000000000002');
-    cy.get('[data-cy="submit-payment"]').click();
-    cy.get('[data-cy="payment-error"]').should('be.visible');
-  });
-});
+  it("should handle decline", { tags: ["@regression", "@p0"] }, () => {
+    cy.visit("/checkout")
+    cy.get('[data-cy="card-number"]').type("4000000000000002")
+    cy.get('[data-cy="submit-payment"]').click()
+    cy.get('[data-cy="payment-error"]').should("be.visible")
+  })
+})
 
 // cypress.config.ts
 export default defineConfig({
   e2e: {
     env: {
-      grepTags: process.env.GREP_TAGS || '',
+      grepTags: process.env.GREP_TAGS || "",
       grepFilterSpecs: true,
     },
     setupNodeEvents(on, config) {
-      require('@cypress/grep/src/plugin')(config);
-      return config;
+      require("@cypress/grep/src/plugin")(config)
+      return config
     },
   },
-});
+})
 ```
 
 **Usage**:
 
 ```bash
 # Playwright
-npm run test:smoke                    # Run all @smoke tests
-npm run test:p0                       # Run all P0 tests
-npm run test -- --grep "@smoke.*@p0"  # Run tests with BOTH tags
+npm run test:smoke                   # Run all @smoke tests
+npm run test:p0                      # Run all P0 tests
+npm run test -- --grep "@smoke.*@p0" # Run tests with BOTH tags
 
 # Cypress (with @cypress/grep plugin)
 npx cypress run --env grepTags="@smoke"
-npx cypress run --env grepTags="@p0+@smoke"  # AND logic
-npx cypress run --env grepTags="@p0 @p1"     # OR logic
+npx cypress run --env grepTags="@p0+@smoke" # AND logic
+npx cypress run --env grepTags="@p0 @p1"    # OR logic
 ```
 
 **Key Points**:
@@ -178,7 +178,7 @@ case "$PATTERN" in
     echo "📦 Running checkout-related tests"
     npx playwright test --grep-files="**/checkout*"
     ;;
-  "**/auth*"|"**/login*"|"**/signup*")
+  "**/auth*" | "**/login*" | "**/signup*")
     echo "🔐 Running authentication tests"
     npx playwright test --grep-files="**/auth*|**/login*|**/signup*"
     ;;
@@ -205,7 +205,7 @@ esac
 
 ```typescript
 // playwright.config.ts
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test"
 
 export default defineConfig({
   // ... other config
@@ -213,27 +213,27 @@ export default defineConfig({
   // Project-based organization
   projects: [
     {
-      name: 'smoke',
+      name: "smoke",
       testMatch: /.*smoke.*\.spec\.ts/,
       retries: 0,
     },
     {
-      name: 'e2e',
+      name: "e2e",
       testMatch: /tests\/e2e\/.*\.spec\.ts/,
       retries: 2,
     },
     {
-      name: 'integration',
+      name: "integration",
       testMatch: /tests\/integration\/.*\.spec\.ts/,
       retries: 1,
     },
     {
-      name: 'component',
+      name: "component",
       testMatch: /tests\/component\/.*\.spec\.ts/,
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
-});
+})
 ```
 
 **Advanced pattern matching**:
@@ -245,29 +245,29 @@ export default defineConfig({
  * Usage: npm run test:component UserProfile,Settings
  */
 
-import { execSync } from 'child_process';
+import { execSync } from "child_process"
 
-const components = process.argv[2]?.split(',') || [];
+const components = process.argv[2]?.split(",") || []
 
 if (components.length === 0) {
-  console.error('❌ No components specified');
-  console.log('Usage: npm run test:component UserProfile,Settings');
-  process.exit(1);
+  console.error("❌ No components specified")
+  console.log("Usage: npm run test:component UserProfile,Settings")
+  process.exit(1)
 }
 
 // Convert component names to glob patterns
-const patterns = components.map((comp) => `**/*${comp}*.spec.ts`).join(' ');
+const patterns = components.map((comp) => `**/*${comp}*.spec.ts`).join(" ")
 
-console.log(`🧩 Running tests for components: ${components.join(', ')}`);
-console.log(`Patterns: ${patterns}`);
+console.log(`🧩 Running tests for components: ${components.join(", ")}`)
+console.log(`Patterns: ${patterns}`)
 
 try {
   execSync(`npx playwright test ${patterns}`, {
-    stdio: 'inherit',
-    env: { ...process.env, CI: 'false' },
-  });
+    stdio: "inherit",
+    env: { ...process.env, CI: "false" },
+  })
 } catch (error) {
-  process.exit(1);
+  process.exit(1)
 }
 ```
 
@@ -340,24 +340,24 @@ RUN_ALL_TESTS=false
 while IFS= read -r file; do
   case "$file" in
     # Changed test files: run them directly
-    *.spec.ts|*.spec.js|*.test.ts|*.test.js|*.cy.ts|*.cy.js)
+    *.spec.ts | *.spec.js | *.test.ts | *.test.js | *.cy.ts | *.cy.js)
       DIRECT_TEST_FILES+=("$file")
       ;;
 
     # Critical config changes: run ALL tests
-    package.json|package-lock.json|playwright.config.ts|cypress.config.ts|tsconfig.json|.github/workflows/*)
+    package.json | package-lock.json | playwright.config.ts | cypress.config.ts | tsconfig.json | .github/workflows/*)
       echo "⚠️  Critical file changed: $file"
       RUN_ALL_TESTS=true
       break
       ;;
 
     # Component changes: find related tests
-    src/components/*.tsx|src/components/*.jsx)
+    src/components/*.tsx | src/components/*.jsx)
       COMPONENT_NAME=$(basename "$file" | sed 's/\.[^.]*$//')
       echo "🧩 Component changed: $COMPONENT_NAME"
 
       # Find tests matching component name
-      FOUND_TESTS=$(find tests -name "*${COMPONENT_NAME}*.spec.ts" -o -name "*${COMPONENT_NAME}*.cy.ts" 2>/dev/null || true)
+      FOUND_TESTS=$(find tests -name "*${COMPONENT_NAME}*.spec.ts" -o -name "*${COMPONENT_NAME}*.cy.ts" 2> /dev/null || true)
       if [ -n "$FOUND_TESTS" ]; then
         while IFS= read -r test_file; do
           RELATED_TEST_FILES+=("$test_file")
@@ -366,32 +366,32 @@ while IFS= read -r file; do
       ;;
 
     # Utility/lib changes: run integration + unit tests
-    src/utils/*|src/lib/*|src/helpers/*)
+    src/utils/* | src/lib/* | src/helpers/*)
       echo "⚙️  Utility file changed: $file"
-      RELATED_TEST_FILES+=($(find tests/unit tests/integration -name "*.spec.ts" 2>/dev/null || true))
+      RELATED_TEST_FILES+=($(find tests/unit tests/integration -name "*.spec.ts" 2> /dev/null || true))
       ;;
 
     # API changes: run integration + e2e tests
-    src/api/*|src/services/*|src/controllers/*)
+    src/api/* | src/services/* | src/controllers/*)
       echo "🔌 API file changed: $file"
-      RELATED_TEST_FILES+=($(find tests/integration tests/e2e -name "*.spec.ts" 2>/dev/null || true))
+      RELATED_TEST_FILES+=($(find tests/integration tests/e2e -name "*.spec.ts" 2> /dev/null || true))
       ;;
 
     # Type changes: run all TypeScript tests
-    *.d.ts|src/types/*)
+    *.d.ts | src/types/*)
       echo "📝 Type definition changed: $file"
       RUN_ALL_TESTS=true
       break
       ;;
 
     # Documentation only: skip tests
-    *.md|docs/*|README*)
+    *.md | docs/* | README*)
       echo "📄 Documentation changed: $file (no tests needed)"
       ;;
 
     *)
       echo "❓ Unclassified change: $file (running smoke tests)"
-      RELATED_TEST_FILES+=($(find tests -name "*smoke*.spec.ts" 2>/dev/null || true))
+      RELATED_TEST_FILES+=($(find tests -name "*smoke*.spec.ts" 2> /dev/null || true))
       ;;
   esac
 done <<< "$CHANGED_FILES"
@@ -492,78 +492,78 @@ jobs:
  * Defines which tests run at each stage of the development lifecycle
  */
 
-export type TestStage = 'pre-commit' | 'ci-pr' | 'ci-merge' | 'staging' | 'production';
+export type TestStage = "pre-commit" | "ci-pr" | "ci-merge" | "staging" | "production"
 
 export type TestPromotion = {
-  stage: TestStage;
-  description: string;
-  testCommand: string;
-  timebudget: string; // minutes
-  required: boolean;
-  failureAction: 'block' | 'warn' | 'alert';
-};
+  stage: TestStage
+  description: string
+  testCommand: string
+  timebudget: string // minutes
+  required: boolean
+  failureAction: "block" | "warn" | "alert"
+}
 
 export const TEST_PROMOTION_RULES: Record<TestStage, TestPromotion> = {
-  'pre-commit': {
-    stage: 'pre-commit',
-    description: 'Local developer checks before git commit',
-    testCommand: 'npm run test:smoke',
-    timebudget: '2',
+  "pre-commit": {
+    stage: "pre-commit",
+    description: "Local developer checks before git commit",
+    testCommand: "npm run test:smoke",
+    timebudget: "2",
     required: true,
-    failureAction: 'block',
+    failureAction: "block",
   },
-  'ci-pr': {
-    stage: 'ci-pr',
-    description: 'CI checks on pull request creation/update',
-    testCommand: 'npm run test:changed && npm run test:p0-p1',
-    timebudget: '10',
+  "ci-pr": {
+    stage: "ci-pr",
+    description: "CI checks on pull request creation/update",
+    testCommand: "npm run test:changed && npm run test:p0-p1",
+    timebudget: "10",
     required: true,
-    failureAction: 'block',
+    failureAction: "block",
   },
-  'ci-merge': {
-    stage: 'ci-merge',
-    description: 'Full regression before merge to main',
-    testCommand: 'npm run test:regression',
-    timebudget: '30',
+  "ci-merge": {
+    stage: "ci-merge",
+    description: "Full regression before merge to main",
+    testCommand: "npm run test:regression",
+    timebudget: "30",
     required: true,
-    failureAction: 'block',
+    failureAction: "block",
   },
   staging: {
-    stage: 'staging',
-    description: 'Post-deployment validation in staging environment',
+    stage: "staging",
+    description: "Post-deployment validation in staging environment",
     testCommand: 'npm run test:e2e -- --grep "@smoke"',
-    timebudget: '15',
+    timebudget: "15",
     required: true,
-    failureAction: 'block',
+    failureAction: "block",
   },
   production: {
-    stage: 'production',
-    description: 'Production smoke tests post-deployment',
+    stage: "production",
+    description: "Production smoke tests post-deployment",
     testCommand: 'npm run test:e2e:prod -- --grep "@smoke.*@p0"',
-    timebudget: '5',
+    timebudget: "5",
     required: false,
-    failureAction: 'alert',
+    failureAction: "alert",
   },
-};
+}
 
 /**
  * Get tests to run for a specific stage
  */
 export function getTestsForStage(stage: TestStage): TestPromotion {
-  return TEST_PROMOTION_RULES[stage];
+  return TEST_PROMOTION_RULES[stage]
 }
 
 /**
  * Validate if tests can be promoted to next stage
  */
 export function canPromote(currentStage: TestStage, testsPassed: boolean): boolean {
-  const promotion = TEST_PROMOTION_RULES[currentStage];
+  const promotion = TEST_PROMOTION_RULES[currentStage]
 
   if (!promotion.required) {
-    return true; // Non-required tests don't block promotion
+    return true // Non-required tests don't block promotion
   }
 
-  return testsPassed;
+  return testsPassed
 }
 ```
 
@@ -654,7 +654,7 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          text: '🚨 Production smoke tests failed!'
+          text: "🚨 Production smoke tests failed!"
           webhook_url: ${{ secrets.SLACK_WEBHOOK }}
 ```
 
@@ -693,8 +693,8 @@ Full regression does NOT run on:
 Skip tests (emergency only):
 
 ```bash
-git commit --no-verify  # Skip pre-commit hook
-gh pr merge --admin     # Force merge (requires admin)
+git commit --no-verify # Skip pre-commit hook
+gh pr merge --admin    # Force merge (requires admin)
 ```
 ````
 

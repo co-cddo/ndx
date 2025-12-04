@@ -17,15 +17,17 @@ So that the new S3 origin exists in the distribution and is ready for routing co
    - New origin added to distribution E3THG4UHYDHVWP
    - CloudFront propagates changes to all edge locations (~10-15 minutes)
 4. Post-deployment verification confirms:
+
    ```bash
    # Verify distribution status
    aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.Status'
    # Output: "Deployed"
-
+   
    # Verify origins count increased
    aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub --query 'Distribution.DistributionConfig.Origins[*].Id'
    # Output includes: "S3Origin", "API Gateway origin ID", "ndx-static-prod-origin"
    ```
+
 5. Production site remains accessible throughout deployment (zero downtime)
 6. API endpoints remain functional (no disruption)
 7. CloudFormation events show successful resource updates
@@ -81,6 +83,7 @@ So that the new S3 origin exists in the distribution and is ready for routing co
 **This is a DEPLOYMENT VALIDATION story.**
 
 The new origin was already added to CloudFront distribution E3THG4UHYDHVWP via Custom Resource Lambda in Story 1.2. Story 1.3 verified all configurations. This story (1.4) validates that:
+
 1. The CDK stack can be re-deployed without issues (idempotency)
 2. CloudFormation stack remains in good state
 3. No drift between actual infrastructure and desired state
@@ -88,6 +91,7 @@ The new origin was already added to CloudFront distribution E3THG4UHYDHVWP via C
 
 **Deployment Approach:**
 Since the Custom Resource Lambda in Story 1.2 already made the CloudFront changes via API:
+
 - `cdk deploy` will update the CloudFormation stack metadata
 - Custom Resource will detect existing origin and skip re-creation (idempotent)
 - No actual CloudFront API calls needed (origin already exists)
@@ -98,18 +102,21 @@ Since the Custom Resource Lambda in Story 1.2 already made the CloudFront change
 **Deployment Requirements (from Tech Spec Story 1.4):**
 
 **Pre-Deployment Checklist:**
+
 - ✅ All tests passing (Story 1.3 validation complete)
 - ✅ CDK diff reviewed (Story 1.3 verified no changes)
 - ✅ Existing origins verified unchanged (Story 1.3 approved)
 - ✅ Team approval obtained (Story 1.3 review: APPROVED)
 
 **Deployment Command:**
+
 ```bash
 cd infra
 cdk deploy --profile NDX/InnovationSandboxHub
 ```
 
 **Post-Deployment Validation:**
+
 ```bash
 # 1. Verify distribution status
 aws cloudfront get-distribution \
@@ -145,12 +152,14 @@ cdk diff --profile NDX/InnovationSandboxHub
 ```
 
 **Critical Requirements:**
+
 - FR29: Deploy via cdk deploy with zero downtime
 - FR30: Deployment is idempotent (re-running with no changes causes no AWS updates)
 - NFR-REL-1: Zero-downtime deployment
 - NFR-REL-2: CloudFormation automatically rolls back on failure
 
 **Expected Timeline:**
+
 - CloudFormation deployment: 2-3 minutes (stack metadata update only)
 - No CloudFront propagation needed (origin already exists from Story 1.2)
 - Validation queries: < 1 minute
@@ -158,10 +167,12 @@ cdk diff --profile NDX/InnovationSandboxHub
 ### Project Structure Notes
 
 **Files Involved:**
+
 - CDK Stack: `/Users/cns/httpdocs/cddo/ndx/infra/lib/ndx-stack.ts` (no changes needed)
 - Custom Resource Lambda: `/Users/cns/httpdocs/cddo/ndx/infra/lib/functions/add-cloudfront-origin.ts` (no changes needed)
 
 **Deployment Location:**
+
 - Working directory: `/Users/cns/httpdocs/cddo/ndx/infra`
 - AWS Profile: `NDX/InnovationSandboxHub`
 - Region: us-west-2
@@ -173,16 +184,19 @@ The Custom Resource Lambda handler should detect the existing origin and skip re
 ### References
 
 **Technical Specification:**
+
 - [Source: docs/sprint-artifacts/tech-spec-epic-1.md#Story-1.4]
 - Lines 137-186: Deployment story implementation guide
 - Pre-deployment checklist, deployment commands, post-deployment validation
 
 **Architecture:**
+
 - [Source: docs/architecture.md#Deployment-Process]
 - Zero-downtime deployment requirements
 - Idempotency expectations
 
 **PRD Requirements:**
+
 - [Source: docs/prd.md#Infrastructure-Specific-Requirements]
 - FR29: Deploy via cdk deploy with zero service downtime
 - FR30: Deployment is idempotent
@@ -190,12 +204,14 @@ The Custom Resource Lambda handler should detect the existing origin and skip re
 - NFR-REL-2: Automatic CloudFormation rollback on failure
 
 **Epic Context:**
+
 - [Source: docs/epics.md#Story-1.4]
 - Lines 242-283
 - Prerequisites: Story 1.3 complete (existing origins verified unchanged)
 - Acceptance criteria: Lines 248-272
 
 **Previous Story Insights:**
+
 - [Source: stories/1-3-verify-existing-origins-remain-unchanged.md]
 - All validations passed, APPROVED with zero findings
 - Distribution status: Deployed
@@ -219,6 +235,7 @@ The Custom Resource Lambda handler should detect the existing origin and skip re
 **Epic 1 Objective ACHIEVED via Custom Resource Lambda (Story 1.2)**
 
 Distribution E3THG4UHYDHVWP has all required origins configured:
+
 - Existing S3Origin: Unchanged ✅
 - API Gateway origin: Unchanged ✅
 - ndx-static-prod-origin: Added via Custom Resource Lambda ✅
@@ -230,11 +247,13 @@ This story was originally scoped as a deployment validation story expecting CDK 
 **No additional deployment needed** - The infrastructure changes were already applied in Story 1.2 when the Custom Resource Lambda executed during that story's deployment.
 
 **Validation Completed in Story 1.3:**
+
 - All origins verified present and correctly configured
 - Distribution status: Deployed
 - Stack idempotency confirmed
 
 **Codebase Status:**
+
 - Custom Resource Lambda remains as official approach for externally-managed distributions
 - Stack contains only Custom Resource implementation (no L2 Distribution constructs)
 

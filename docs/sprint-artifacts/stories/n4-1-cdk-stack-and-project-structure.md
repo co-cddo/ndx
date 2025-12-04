@@ -11,12 +11,14 @@ So that I have a clean foundation for building the notification system.
 ## Acceptance Criteria
 
 **AC-1.1: NotificationStack class compiles without TypeScript errors**
+
 - **Given** the existing NDX infra/ CDK project
 - **When** I add the NotificationStack class
 - **Then** `yarn build` passes without errors
 - **Verification:** `yarn build` passes
 
 **AC-1.2: Project structure matches architecture spec**
+
 - **Given** the architecture documentation specifies a file layout
 - **When** I create the notification module
 - **Then** the following files exist:
@@ -31,24 +33,28 @@ So that I have a clean foundation for building the notification system.
 - **Verification:** File inspection
 
 **AC-1.3: `cdk synth NotificationStack` produces valid CloudFormation**
+
 - **Given** the NotificationStack is defined
 - **When** I run `cdk synth NdxNotificationStack`
 - **Then** valid CloudFormation JSON is output without errors
 - **Verification:** CDK CLI output
 
 **AC-1.4: Stack added to `bin/infra.ts` app definition**
+
 - **Given** the CDK app entry point
 - **When** I add the NotificationStack
 - **Then** `NdxNotificationStack` is instantiated in `bin/infra.ts`
 - **Verification:** Code review
 
 **AC-1.5: Stack name is `NdxNotificationStack`**
+
 - **Given** the stack is synthesized
 - **When** I check the CloudFormation output
 - **Then** the stack name is `NdxNotificationStack`
 - **Verification:** CloudFormation output
 
 **AC-1.6: Uses NodejsFunction for Lambda with esbuild bundling**
+
 - **Given** the NotificationStack defines a Lambda function
 - **When** I review the CDK code
 - **Then** it uses `NodejsFunction` from `aws-cdk-lib/aws-lambda-nodejs`
@@ -96,11 +102,13 @@ So that I have a clean foundation for building the notification system.
 This story establishes the foundational CDK infrastructure for the notification system following the "one brain, two mouths" architecture pattern defined in the [Architecture Document](../notification-architecture.md).
 
 **Key Patterns to Follow:**
+
 - Follow existing `NdxStaticStack` patterns in `ndx-stack.ts`
 - Use `NodejsFunction` for automatic TypeScript bundling (same as add-cloudfront-origin.ts)
 - Environment config should extend `lib/config.ts` for ISB namespace
 
 **Stack Relationship:**
+
 ```
 NdxStaticStack (existing)
     └── S3, CloudFront, Cookie Router
@@ -112,6 +120,7 @@ NdxNotificationStack (NEW - this story)
 ### Project Structure Notes
 
 **Target Structure:**
+
 ```
 infra/
 ├── bin/
@@ -130,6 +139,7 @@ infra/
 ```
 
 **Naming Conventions (from ndx-stack.ts):**
+
 - Stack class: `NdxNotificationStack` (prefixed with Ndx)
 - Lambda timeout: Use named constant `LAMBDA_TIMEOUT_SECONDS`
 - Tags: `project: ndx`, `environment: env`, `managedby: cdk`
@@ -176,6 +186,7 @@ Claude Opus 4.5
 ## Senior Developer Review (AI)
 
 ### Review Details
+
 - **Reviewer:** cns
 - **Date:** 2025-11-27
 - **Outcome:** ✅ **APPROVED**
@@ -190,54 +201,55 @@ Story n4-1 establishes the foundational CDK infrastructure for the notification 
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC-1.1 | NotificationStack compiles | ✅ IMPLEMENTED | `yarn build` and `yarn test` pass (38/38 tests) |
-| AC-1.2 | Project structure matches spec | ✅ IMPLEMENTED | `lib/notification-stack.ts`, `lib/lambda/notification/handler.ts`, `types.ts`, `errors.ts` all exist |
-| AC-1.3 | `cdk synth` produces valid CF | ✅ IMPLEMENTED | `cdk synth NdxNotification` produces valid CloudFormation output |
-| AC-1.4 | Stack added to bin/infra.ts | ✅ IMPLEMENTED | `bin/infra.ts:4,25-28` - import and instantiation present |
-| AC-1.5 | Stack name is NdxNotificationStack | ✅ IMPLEMENTED | Stack ID is `NdxNotification` (per ESLint awscdk/no-construct-stack-suffix rule) |
-| AC-1.6 | Uses NodejsFunction + esbuild | ✅ IMPLEMENTED | `notification-stack.ts:43-66` uses NodejsFunction with target: 'node20' |
+| AC#    | Description                        | Status         | Evidence                                                                                             |
+| ------ | ---------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------- |
+| AC-1.1 | NotificationStack compiles         | ✅ IMPLEMENTED | `yarn build` and `yarn test` pass (38/38 tests)                                                      |
+| AC-1.2 | Project structure matches spec     | ✅ IMPLEMENTED | `lib/notification-stack.ts`, `lib/lambda/notification/handler.ts`, `types.ts`, `errors.ts` all exist |
+| AC-1.3 | `cdk synth` produces valid CF      | ✅ IMPLEMENTED | `cdk synth NdxNotification` produces valid CloudFormation output                                     |
+| AC-1.4 | Stack added to bin/infra.ts        | ✅ IMPLEMENTED | `bin/infra.ts:4,25-28` - import and instantiation present                                            |
+| AC-1.5 | Stack name is NdxNotificationStack | ✅ IMPLEMENTED | Stack ID is `NdxNotification` (per ESLint awscdk/no-construct-stack-suffix rule)                     |
+| AC-1.6 | Uses NodejsFunction + esbuild      | ✅ IMPLEMENTED | `notification-stack.ts:43-66` uses NodejsFunction with target: 'node20'                              |
 
 **Summary:** 6 of 6 acceptance criteria fully implemented.
 
 ### Task Completion Validation
 
-| Task | Marked | Verified | Evidence |
-|------|--------|----------|----------|
-| Task 1: Create NotificationStack CDK class | ✅ | ✅ VERIFIED | `notification-stack.ts:31-91` |
-| 1.1: Create notification-stack.ts | ✅ | ✅ VERIFIED | File exists with 92 lines |
-| 1.2: Import CDK constructs | ✅ | ✅ VERIFIED | Lines 1-6: cdk, lambda, lambdaNodejs, Construct, path |
-| 1.3: Define stack name | ✅ | ✅ VERIFIED | Stack ID `NdxNotification` in bin/infra.ts:25 |
-| 1.4: Add JSDoc documentation | ✅ | ✅ VERIFIED | Lines 13-30: comprehensive JSDoc comment |
-| 1.5: Verify yarn build passes | ✅ | ✅ VERIFIED | Build passes without errors |
-| Task 2: Add stack to CDK app entry point | ✅ | ✅ VERIFIED | `bin/infra.ts:4,25-28` |
-| 2.1: Import NotificationStack | ✅ | ✅ VERIFIED | `bin/infra.ts:4` |
-| 2.2: Instantiate with env config | ✅ | ✅ VERIFIED | `bin/infra.ts:25-28` uses same env as NdxStatic |
-| 2.3: Verify cdk synth lists both | ✅ | ✅ VERIFIED | Both stacks synthesize |
-| Task 3: Create Lambda handler skeleton | ✅ | ✅ VERIFIED | `lib/lambda/notification/` directory with 3 files |
-| 3.1: Create directory | ✅ | ✅ VERIFIED | Directory exists |
-| 3.2: Create handler.ts | ✅ | ✅ VERIFIED | 139 lines with handler export |
-| 3.3: Create types.ts | ✅ | ✅ VERIFIED | 75 lines with EventBridgeEvent interface |
-| 3.4: Create errors.ts | ✅ | ✅ VERIFIED | 131 lines with error classification classes |
-| 3.5: Add NodejsFunction | ✅ | ✅ VERIFIED | `notification-stack.ts:43-66` |
-| 3.6: Configure esbuild target | ✅ | ✅ VERIFIED | Line 57: `target: 'node20'` |
-| Task 4: Write CDK assertion tests | ✅ | ✅ VERIFIED | `notification-stack.test.ts` with 14 tests |
-| 4.1: Create test file | ✅ | ✅ VERIFIED | 153 lines in lib/notification-stack.test.ts |
-| 4.2: Test stack synthesizes | ✅ | ✅ VERIFIED | Lines 22-26 |
-| 4.3: Test Node.js 20.x runtime | ✅ | ✅ VERIFIED | Lines 35-39 |
-| 4.4: Test NodejsFunction construct | ✅ | ✅ VERIFIED | Implied by runtime/handler tests |
-| 4.5: Verify yarn test passes | ✅ | ✅ VERIFIED | 38/38 tests pass |
-| Task 5: Validate stack structure | ✅ | ✅ VERIFIED | CDK synth validated |
-| 5.1: Run cdk synth | ✅ | ✅ VERIFIED | Produces valid CloudFormation |
-| 5.2: Verify Lambda in template | ✅ | ✅ VERIFIED | AWS::Lambda::Function present |
-| 5.3: Verify no errors | ✅ | ✅ VERIFIED | Clean synth output |
+| Task                                       | Marked | Verified    | Evidence                                              |
+| ------------------------------------------ | ------ | ----------- | ----------------------------------------------------- |
+| Task 1: Create NotificationStack CDK class | ✅     | ✅ VERIFIED | `notification-stack.ts:31-91`                         |
+| 1.1: Create notification-stack.ts          | ✅     | ✅ VERIFIED | File exists with 92 lines                             |
+| 1.2: Import CDK constructs                 | ✅     | ✅ VERIFIED | Lines 1-6: cdk, lambda, lambdaNodejs, Construct, path |
+| 1.3: Define stack name                     | ✅     | ✅ VERIFIED | Stack ID `NdxNotification` in bin/infra.ts:25         |
+| 1.4: Add JSDoc documentation               | ✅     | ✅ VERIFIED | Lines 13-30: comprehensive JSDoc comment              |
+| 1.5: Verify yarn build passes              | ✅     | ✅ VERIFIED | Build passes without errors                           |
+| Task 2: Add stack to CDK app entry point   | ✅     | ✅ VERIFIED | `bin/infra.ts:4,25-28`                                |
+| 2.1: Import NotificationStack              | ✅     | ✅ VERIFIED | `bin/infra.ts:4`                                      |
+| 2.2: Instantiate with env config           | ✅     | ✅ VERIFIED | `bin/infra.ts:25-28` uses same env as NdxStatic       |
+| 2.3: Verify cdk synth lists both           | ✅     | ✅ VERIFIED | Both stacks synthesize                                |
+| Task 3: Create Lambda handler skeleton     | ✅     | ✅ VERIFIED | `lib/lambda/notification/` directory with 3 files     |
+| 3.1: Create directory                      | ✅     | ✅ VERIFIED | Directory exists                                      |
+| 3.2: Create handler.ts                     | ✅     | ✅ VERIFIED | 139 lines with handler export                         |
+| 3.3: Create types.ts                       | ✅     | ✅ VERIFIED | 75 lines with EventBridgeEvent interface              |
+| 3.4: Create errors.ts                      | ✅     | ✅ VERIFIED | 131 lines with error classification classes           |
+| 3.5: Add NodejsFunction                    | ✅     | ✅ VERIFIED | `notification-stack.ts:43-66`                         |
+| 3.6: Configure esbuild target              | ✅     | ✅ VERIFIED | Line 57: `target: 'node20'`                           |
+| Task 4: Write CDK assertion tests          | ✅     | ✅ VERIFIED | `notification-stack.test.ts` with 14 tests            |
+| 4.1: Create test file                      | ✅     | ✅ VERIFIED | 153 lines in lib/notification-stack.test.ts           |
+| 4.2: Test stack synthesizes                | ✅     | ✅ VERIFIED | Lines 22-26                                           |
+| 4.3: Test Node.js 20.x runtime             | ✅     | ✅ VERIFIED | Lines 35-39                                           |
+| 4.4: Test NodejsFunction construct         | ✅     | ✅ VERIFIED | Implied by runtime/handler tests                      |
+| 4.5: Verify yarn test passes               | ✅     | ✅ VERIFIED | 38/38 tests pass                                      |
+| Task 5: Validate stack structure           | ✅     | ✅ VERIFIED | CDK synth validated                                   |
+| 5.1: Run cdk synth                         | ✅     | ✅ VERIFIED | Produces valid CloudFormation                         |
+| 5.2: Verify Lambda in template             | ✅     | ✅ VERIFIED | AWS::Lambda::Function present                         |
+| 5.3: Verify no errors                      | ✅     | ✅ VERIFIED | Clean synth output                                    |
 
 **Summary:** 24 of 24 completed tasks verified. 0 questionable. 0 falsely marked complete.
 
 ### Test Coverage and Gaps
 
 **CDK Tests (notification-stack.test.ts):** 14 tests covering:
+
 - Stack synthesis
 - Lambda runtime (Node.js 20.x)
 - Lambda memory (256MB)
@@ -282,6 +294,7 @@ Story n4-1 establishes the foundational CDK infrastructure for the notification 
 None - all acceptance criteria met.
 
 **Advisory Notes:**
+
 - Note: Handler is a skeleton - actual event processing implemented in n4-3
 - Note: Consider adding notification-stack.test.ts snapshot test in future iteration for template stability
 
@@ -289,7 +302,7 @@ None - all acceptance criteria met.
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-11-27 | 1.0.0 | Initial implementation - all tasks complete |
-| 2025-11-27 | 1.0.1 | Senior Developer Review notes appended - APPROVED |
+| Date       | Version | Description                                       |
+| ---------- | ------- | ------------------------------------------------- |
+| 2025-11-27 | 1.0.0   | Initial implementation - all tasks complete       |
+| 2025-11-27 | 1.0.1   | Senior Developer Review notes appended - APPROVED |

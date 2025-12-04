@@ -15,46 +15,56 @@ So that I can review and accept the AUP before requesting a sandbox.
 ## Acceptance Criteria
 
 ### AC1: Dark Overlay Background
+
 **Given** the user clicks "Try this now" button
 **When** the AUP modal opens
 **Then** a dark semi-transparent overlay covers the page
 
 ### AC2: Modal Header
+
 **Given** the AUP modal is open
 **When** the user views the modal
 **Then** they see "Request AWS Sandbox Access" as the header
 
 ### AC3: Session Information Display
+
 **Given** the AUP modal is open
 **When** the user views the modal
 **Then** they see:
+
 - Session duration: 24 hours
 - Budget limit: $50 USD
 
 ### AC4: Scrollable AUP Container
+
 **Given** the AUP modal is open
 **When** the AUP content is longer than the container
 **Then** the AUP section is scrollable
 
 ### AC5: AUP Checkbox with Label
+
 **Given** the AUP modal is open
 **When** the user views the checkbox
 **Then** they see "I have read and accept the Acceptable Use Policy"
 
 ### AC6: Cancel and Continue Buttons
+
 **Given** the AUP modal is open
 **When** the user views the footer
 **Then** they see Cancel and Continue buttons
 
 ### AC7: Focus Trap (ADR-026)
+
 **Given** the AUP modal is open
 **When** the user presses Tab
 **Then** focus cycles within the modal (does not escape to page)
 
 ### AC8: ARIA Attributes
+
 **Given** the AUP modal is open
 **When** inspecting the HTML
 **Then** it has:
+
 - `role="dialog"`
 - `aria-modal="true"`
 - `aria-labelledby` pointing to title
@@ -91,13 +101,16 @@ So that I can review and accept the AUP before requesting a sandbox.
 ## Dev Agent Record
 
 ### Context Reference
+
 - Epic 6 Tech Spec: `docs/sprint-artifacts/tech-spec-epic-6.md`
 - ADR-026: Accessible Modal Pattern
 
 ### Agent Model Used
+
 Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Completion Notes List
+
 1. Created focus-trap.ts with Tab/Shift+Tab cycling
 2. Created aria-live.ts for screen reader announcements
 3. Created aup-modal.ts as singleton class with open/close methods
@@ -108,6 +121,7 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 8. ARIA live announcements for state changes
 
 ### File List
+
 - `src/try/ui/utils/focus-trap.ts` - New (156 lines actual)
 - `src/try/ui/utils/aria-live.ts` - New (72 lines actual)
 - `src/try/ui/components/aup-modal.ts` - New (433 lines actual)
@@ -134,9 +148,11 @@ Comprehensive systematic review of Story 6.6 (Lease Request Modal Overlay UI) co
 ### Key Findings
 
 **MEDIUM Severity Issues (Fixed):**
+
 - [x] [Med] AC4: AUP container missing scrollable styles (fixed in styles.scss:140-141)
 
 **LOW Severity Issues (Documentation):**
+
 - Note: Story completion note #4 states "Modal uses inline CSS" but implementation correctly uses external CSS in styles.scss for CSP compliance (this is the correct approach)
 - Note: File line counts in Dev Agent Record are slightly underestimated but acceptable (136→156, 68→72, 400→433 lines)
 
@@ -144,16 +160,16 @@ Comprehensive systematic review of Story 6.6 (Lease Request Modal Overlay UI) co
 
 Systematic validation of all 8 acceptance criteria with file:line evidence:
 
-| AC | Description | Status | Evidence |
-|----|-------------|--------|----------|
-| AC1 | Dark Overlay Background | IMPLEMENTED | `styles.scss:83-97` - `.aup-modal-overlay` with `background: rgba(0, 0, 0, 0.7)` |
-| AC2 | Modal Header "Request AWS Sandbox Access" | IMPLEMENTED | `aup-modal.ts:263` - Header text matches exactly |
-| AC3 | Session Info (24hrs, $50 USD) | IMPLEMENTED | `aup-modal.ts:267-272` - Both duration and budget displayed |
-| AC4 | Scrollable AUP Container | IMPLEMENTED (FIXED) | `styles.scss:135-142` - Added `max-height: 300px` and `overflow-y: auto` |
-| AC5 | AUP Checkbox with Label | IMPLEMENTED | `aup-modal.ts:283-293` - Checkbox with correct label text |
-| AC6 | Cancel and Continue Buttons | IMPLEMENTED | `aup-modal.ts:296-312` - Both buttons present in footer |
-| AC7 | Focus Trap (ADR-026) | IMPLEMENTED | `focus-trap.ts:89-111` - Tab/Shift+Tab cycling, `aup-modal.ts:393-402` - Setup and activation |
-| AC8 | ARIA Attributes | IMPLEMENTED | `aup-modal.ts:254-260` - role="dialog", aria-modal="true", aria-labelledby, aria-describedby |
+| AC  | Description                               | Status              | Evidence                                                                                      |
+| --- | ----------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| AC1 | Dark Overlay Background                   | IMPLEMENTED         | `styles.scss:83-97` - `.aup-modal-overlay` with `background: rgba(0, 0, 0, 0.7)`              |
+| AC2 | Modal Header "Request AWS Sandbox Access" | IMPLEMENTED         | `aup-modal.ts:263` - Header text matches exactly                                              |
+| AC3 | Session Info (24hrs, $50 USD)             | IMPLEMENTED         | `aup-modal.ts:267-272` - Both duration and budget displayed                                   |
+| AC4 | Scrollable AUP Container                  | IMPLEMENTED (FIXED) | `styles.scss:135-142` - Added `max-height: 300px` and `overflow-y: auto`                      |
+| AC5 | AUP Checkbox with Label                   | IMPLEMENTED         | `aup-modal.ts:283-293` - Checkbox with correct label text                                     |
+| AC6 | Cancel and Continue Buttons               | IMPLEMENTED         | `aup-modal.ts:296-312` - Both buttons present in footer                                       |
+| AC7 | Focus Trap (ADR-026)                      | IMPLEMENTED         | `focus-trap.ts:89-111` - Tab/Shift+Tab cycling, `aup-modal.ts:393-402` - Setup and activation |
+| AC8 | ARIA Attributes                           | IMPLEMENTED         | `aup-modal.ts:254-260` - role="dialog", aria-modal="true", aria-labelledby, aria-describedby  |
 
 **Summary:** 8 of 8 acceptance criteria fully implemented with evidence.
 
@@ -161,22 +177,23 @@ Systematic validation of all 8 acceptance criteria with file:line evidence:
 
 All tasks marked complete were verified against actual implementation:
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Created focus-trap.ts utility | [x] Complete | VERIFIED | File exists: `src/try/ui/utils/focus-trap.ts` (156 lines) |
-| Created aria-live.ts utility | [x] Complete | VERIFIED | File exists: `src/try/ui/utils/aria-live.ts` (72 lines) |
-| Created aup-modal.ts component | [x] Complete | VERIFIED | File exists: `src/try/ui/components/aup-modal.ts` (433 lines) |
-| Implemented modal open/close lifecycle | [x] Complete | VERIFIED | `aup-modal.ts:85-107, 148-175` - open() and close() methods |
-| Implemented focus trap with Escape | [x] Complete | VERIFIED | `focus-trap.ts:80-111` - keydown handler with Tab and Escape |
-| Implemented ARIA live announcements | [x] Complete | VERIFIED | `aria-live.ts:49-62` - announce() function, used in `aup-modal.ts:103,119,126,347` |
-| Updated try-button.ts to open modal | [x] Complete | VERIFIED | `try-button.ts:72` - openAupModal() call |
-| Integrated modal styles | [x] Complete | VERIFIED | `styles.scss:81-199` - All modal styles (CSP compliant) |
+| Task                                   | Marked As    | Verified As | Evidence                                                                           |
+| -------------------------------------- | ------------ | ----------- | ---------------------------------------------------------------------------------- |
+| Created focus-trap.ts utility          | [x] Complete | VERIFIED    | File exists: `src/try/ui/utils/focus-trap.ts` (156 lines)                          |
+| Created aria-live.ts utility           | [x] Complete | VERIFIED    | File exists: `src/try/ui/utils/aria-live.ts` (72 lines)                            |
+| Created aup-modal.ts component         | [x] Complete | VERIFIED    | File exists: `src/try/ui/components/aup-modal.ts` (433 lines)                      |
+| Implemented modal open/close lifecycle | [x] Complete | VERIFIED    | `aup-modal.ts:85-107, 148-175` - open() and close() methods                        |
+| Implemented focus trap with Escape     | [x] Complete | VERIFIED    | `focus-trap.ts:80-111` - keydown handler with Tab and Escape                       |
+| Implemented ARIA live announcements    | [x] Complete | VERIFIED    | `aria-live.ts:49-62` - announce() function, used in `aup-modal.ts:103,119,126,347` |
+| Updated try-button.ts to open modal    | [x] Complete | VERIFIED    | `try-button.ts:72` - openAupModal() call                                           |
+| Integrated modal styles                | [x] Complete | VERIFIED    | `styles.scss:81-199` - All modal styles (CSP compliant)                            |
 
 **Summary:** 8 of 8 completed tasks verified with file:line evidence. 0 questionable. 0 falsely marked complete.
 
 ### Test Coverage and Gaps
 
 **Unit Test Files Found:**
+
 - `src/try/ui/utils/focus-trap.test.ts` (10,760 bytes)
 - `src/try/ui/utils/aria-live.test.ts` (4,627 bytes)
 - `src/try/ui/components/aup-modal.test.ts` (18,227 bytes)
@@ -190,6 +207,7 @@ All tasks marked complete were verified against actual implementation:
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✓ **ADR-026 (Accessible Modal Pattern):** Focus trap implemented with Tab/Shift+Tab cycling, Escape key handling, ARIA attributes (role="dialog", aria-modal="true")
 - ✓ **ADR-028 (ARIA Live Regions):** Screen reader announcements for modal open/close, loading, error states via `aria-live.ts`
 - ✓ **CSP Compliance:** All styles in external stylesheet `styles.scss`, no inline styles in JavaScript
@@ -199,6 +217,7 @@ All tasks marked complete were verified against actual implementation:
 **Architecture Violations:** None identified.
 
 **Module Dependencies:** Verified per Epic 6 tech spec structure:
+
 - `aup-modal.ts` imports `focus-trap.ts` ✓
 - `aup-modal.ts` imports `aria-live.ts` ✓
 - `aup-modal.ts` imports configurations-service (Story 6.7 dependency) ✓
@@ -207,6 +226,7 @@ All tasks marked complete were verified against actual implementation:
 ### Security Notes
 
 **Security Review:**
+
 - ✓ **Input Sanitization:** All user inputs use `textContent` (safe) not `innerHTML` for AUP content display
 - ✓ **XSS Protection:** Template literals in `innerHTML` (lines 198, 253) use only static strings and hardcoded internal messages (no user input)
 - ✓ **CSP Compliance:** No inline styles or scripts; all CSS in external stylesheet
@@ -218,15 +238,18 @@ All tasks marked complete were verified against actual implementation:
 ### Best Practices and References
 
 **Accessibility:**
+
 - [WCAG 2.2 Modal Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)
 - [GOV.UK Design System Accessibility](https://design-system.service.gov.uk/accessibility/)
 
 **Focus Management:**
+
 - Implementation follows WCAG 2.2 Level AA focus management requirements
 - Focus trap uses `requestAnimationFrame` for reliable initial focus (line 129)
 - Returns focus to previously focused element on close (lines 146-149)
 
 **Code Quality:**
+
 - TypeScript interfaces for type safety (`AupModalState`, `AupAcceptCallback`)
 - Comprehensive JSDoc comments for all public methods
 - Const enums for element IDs prevent typos (`IDS` object)
@@ -235,9 +258,11 @@ All tasks marked complete were verified against actual implementation:
 ### Action Items
 
 **Code Changes Required:**
+
 - [x] [Med] Add scrollable container styles to AUP container [file: src/assets/styles.scss:140-141]
 
 **Advisory Notes:**
+
 - Note: Update Dev Agent Record completion note #4 to clarify "external CSS in styles.scss" instead of "inline CSS" (documentation accuracy)
 - Note: Consider adding visual scroll indicator (e.g., fade gradient) when AUP content overflows for better UX (optional enhancement)
 - Note: File line counts in Dev Agent Record should be updated to actual counts for accuracy (156, 72, 433 lines)

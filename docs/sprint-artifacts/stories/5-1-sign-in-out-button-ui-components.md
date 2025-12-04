@@ -11,6 +11,7 @@ so that I can authenticate to access Try features.
 ## Acceptance Criteria
 
 **AC1: Sign in button displays when unauthenticated**
+
 - **Given** I am on any NDX page
 - **When** I am not authenticated (no `isb-jwt` in sessionStorage)
 - **Then** I see a "Sign in" button in the top-right navigation area
@@ -18,18 +19,21 @@ so that I can authenticate to access Try features.
 - **And** the button has accessible text: "Sign in"
 
 **AC2: Sign out button displays when authenticated**
+
 - **When** I am authenticated (`isb-jwt` exists in sessionStorage)
 - **Then** I see a "Sign out" button in the top-right navigation area
 - **And** the button uses GOV.UK Design System styling
 - **And** the button has accessible text: "Sign out"
 
 **AC3: Navigation updates dynamically based on auth state**
+
 - **Given** authentication state changes (sign in or sign out)
 - **When** the auth state changes
 - **Then** navigation buttons update automatically without page refresh
 - **And** only one button is visible at a time (either "Sign in" OR "Sign out", not both)
 
 **AC4: Button placement follows GOV.UK header pattern**
+
 - **Given** NDX uses GOV.UK Design System header
 - **When** I view any page
 - **Then** sign in/out button appears in top-right navigation area
@@ -37,6 +41,7 @@ so that I can authenticate to access Try features.
 - **And** button is visible on all NDX pages (home, catalogue, try page, product pages)
 
 **AC5: Buttons meet WCAG 2.2 AA accessibility requirements**
+
 - **Given** sign in/out buttons are rendered
 - **When** I navigate with keyboard only
 - **Then** buttons are focusable via Tab key
@@ -46,6 +51,7 @@ so that I can authenticate to access Try features.
 - **And** screen readers announce "Sign in button" or "Sign out button" appropriately
 
 **AC6: Client-side JavaScript checks auth state on page load**
+
 - **Given** page loads
 - **When** JavaScript initializes
 - **Then** script checks sessionStorage for `isb-jwt` token
@@ -131,6 +137,7 @@ so that I can authenticate to access Try features.
 This story creates the **authentication UI foundation** for Epic 5 (Authentication Foundation), enabling government users to see their authentication state in the NDX navigation:
 
 **Epic 5 Story Sequence:**
+
 - **Story 5.1**: Sign In/Out Button UI Components (this story) - Visual foundation
 - Story 5.2: Sign In OAuth Redirect Flow - Wire up OAuth login
 - Story 5.3: JWT Token Extraction from URL - Handle OAuth callback
@@ -149,6 +156,7 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 **From Story 4.6 (Setup Validation Script - Epic 4 Complete):**
 
 **Epic 4 Implementation Completed:**
+
 - All 6 stories delivered: mitmproxy setup documentation, addon script, npm scripts, proxy configuration, certificate trust, validation script
 - Local development infrastructure ready for Try feature development
 - Validation script (`scripts/validate-local-setup.sh`) provides automated prerequisite checks (mitmproxy, addon, ports, certificate)
@@ -156,28 +164,33 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 - Cross-platform support: macOS (lsof), Linux (lsof with netstat fallback), Windows Git Bash (netstat)
 
 **Key Insights:**
+
 - **Cross-platform validation effective** - Pattern of primary command → fallback → informational notice works well (Story 5.1 should consider browser compatibility similarly)
 - **Clear status indicators essential** - ✅/❌/⚠️ emojis provide immediate visual feedback (Story 5.1 should use clear visual states for auth buttons)
 - **Actionable error messages reduce friction** - Specific commands provided (e.g., "Run: pip install mitmproxy") minimize developer confusion
 - **Critical vs warning distinction** - Exit 1 for blockers (mitmproxy missing), exit 0 for warnings (port in use) - Story 5.1 should distinguish critical auth failures from temporary states
 
 **Patterns to Reuse:**
+
 - **Event-driven architecture** - Story 4.6 used conditional checks throughout script; Story 5.1 adopts event-driven AuthState pattern (ADR-024) for auth changes
 - **Defensive programming** - Story 4.6 checked command availability before use; Story 5.1 should check sessionStorage availability before accessing
 - **Comprehensive testing** - Story 4.6 documented all failure scenarios; Story 5.1 needs auth state transitions tested (unauthenticated → authenticated → unauthenticated)
 - **Documentation as test oracle** - Story 4.6's documentation provided expected output; Story 5.1 should document expected button states
 
 **Technical Context from Story 4.6:**
+
 - **Development foundation ready**: Validation script confirms local setup complete (mitmproxy running, ports available, certificate trusted)
 - **Next phase begins**: Epic 5 (Authentication) builds on Epic 4 infrastructure (no blocking dependencies)
 - **npm script pattern established**: `yarn validate-setup` pattern; Story 5.1 can follow similar pattern for dev scripts if needed
 
 **Files Modified in Story 4.6:**
+
 - `scripts/validate-local-setup.sh` - Automated validation with 5 checks (NEW)
 - `package.json` - Added `validate-setup` npm script (MODIFIED)
 - `docs/development/local-try-setup.md` - Updated to version 1.3 with Validation section (MODIFIED)
 
 **Files to Create in Story 5.1:**
+
 - **NEW**: `src/try/auth/auth-provider.ts` - AuthState class with event-driven pattern
 - **NEW**: `src/try/auth/session-storage.ts` - JWT token storage utilities (if needed for abstraction)
 - **NEW**: `src/try/ui/auth-nav.ts` - Sign in/out button rendering and update logic
@@ -185,6 +198,7 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 - **UPDATE**: Main JavaScript initialization - Initialize auth navigation on page load
 
 **Transition from Epic 4 to Epic 5:**
+
 - Epic 4 delivered **infrastructure** (mitmproxy proxy, validation, documentation)
 - Epic 5 delivers **authentication** (UI components, OAuth, JWT management, API integration)
 - Story 5.1 is first user-facing component - sets visual and interaction patterns for remaining Epic 5 stories
@@ -196,6 +210,7 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 ### Architecture References
 
 **From try-before-you-buy-architecture.md:**
+
 - **ADR-024**: Authentication state management using event-driven pattern - CRITICAL for Story 5.1
   - Implement `AuthState` class with subscribe/notify pattern
   - Multiple components react to auth state changes (nav links, try buttons, /try page)
@@ -206,6 +221,7 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 - **ADR-015**: Architecture Handoff Documentation - Story 5.1 establishes auth pattern for Epic 5+ stories
 
 **From ux-design-specification.md:**
+
 - **Component 5: Authentication State Indicator** (Section 6.2) - Complete spec for Story 5.1:
   - **Placement**: Top-right navigation in GOV.UK header (consistent across all pages)
   - **Signed Out**: "Sign in" link visible (blue underlined link, GOV.UK standard)
@@ -222,6 +238,7 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
   - Color contrast: 4.5:1 minimum for normal text, 3:1 for large text
 
 **From prd.md:**
+
 - **FR-TRY-11**: System displays "Sign in" button in top-right navigation when user not authenticated
 - **FR-TRY-12**: System displays "Sign out" button in top-right navigation when user authenticated
 - **FR-TRY-15**: System uses GOV.UK Design System button styling for sign in/out buttons
@@ -229,6 +246,7 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 - **NFR-TRY-COMPAT-1**: Supports latest 2 versions of Chrome, Firefox, Safari, Edge
 
 **From tech-spec-epic-5.md** (to be created, but patterns established):
+
 - AuthState pattern will be used by all Epic 5+ stories
 - sessionStorage key: `isb-jwt` (consistent across all auth modules)
 - Navigation button updates via event subscription (no polling, no manual refresh)
@@ -238,17 +256,20 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 **New Files to Create:**
 
 **Path**: `src/try/auth/auth-provider.ts`
+
 - **Purpose**: Centralized authentication state management with event-driven pattern
 - **Exports**: `AuthState` singleton instance, `isAuthenticated()`, `subscribe()`, `notify()` methods
 - **Dependencies**: None (vanilla TypeScript, no external libraries)
 - **Pattern**: Observer pattern (subscribers notified on auth state changes)
 
 **Path**: `src/try/auth/session-storage.ts` (optional, may inline in auth-provider)
+
 - **Purpose**: Utility functions for sessionStorage JWT token operations
 - **Exports**: `getToken()`, `setToken()`, `removeToken()` helper functions
 - **Rationale**: Abstracts sessionStorage key (`isb-jwt`) for consistency
 
 **Path**: `src/try/ui/auth-nav.ts`
+
 - **Purpose**: Render and update sign in/out buttons in navigation
 - **Exports**: `initAuthNav()` function to initialize navigation buttons on page load
 - **Dependencies**: `auth-provider.ts` (subscribes to auth state changes)
@@ -257,21 +278,25 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 **Files to Update:**
 
 **Path**: `_includes/layouts/base.njk` (or similar navigation template)
+
 - **Change**: Add `<div id="auth-nav"></div>` placeholder in header navigation area
 - **Position**: Top-right navigation (after main nav links, before search if exists)
 - **Pattern**: Server-side placeholder, client-side hydration via JavaScript
 
 **Path**: `src/scripts/main.ts` (or main JavaScript entry point)
+
 - **Change**: Import and initialize `initAuthNav()` on page load
 - **Pattern**: `DOMContentLoaded` event listener → call `initAuthNav()`
 
 **Path**: `package.json` (if TypeScript compilation needed)
+
 - **Change**: Ensure TypeScript compiles `src/try/**/*.ts` files
 - **Pattern**: Existing build process should handle new files automatically
 
 **GOV.UK Design System Integration:**
 
 **Header Pattern Reference:**
+
 ```html
 <header class="govuk-header" role="banner">
   <div class="govuk-header__container govuk-width-container">
@@ -295,16 +320,19 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 ```
 
 **Sign In Button HTML (Generated by auth-nav.ts):**
+
 ```html
 <a href="/api/auth/login" class="govuk-header__link">Sign in</a>
 ```
 
 **Sign Out Button HTML (Generated by auth-nav.ts):**
+
 ```html
 <a href="#" class="govuk-header__link" data-module="auth-nav" data-action="signout">Sign out</a>
 ```
 
 **Touch Target Expansion (CSS):**
+
 ```css
 .govuk-header__link {
   padding: 12px 8px; /* Expands clickable area to meet 44x44px minimum */
@@ -317,49 +345,51 @@ This story creates the **authentication UI foundation** for Epic 5 (Authenticati
 **AuthState Event-Driven Pattern (ADR-024):**
 
 **auth-provider.ts Structure:**
+
 ```typescript
-type AuthStateListener = () => void;
+type AuthStateListener = () => void
 
 class AuthState {
-  private listeners: AuthStateListener[] = [];
+  private listeners: AuthStateListener[] = []
 
   isAuthenticated(): boolean {
-    return sessionStorage.getItem('isb-jwt') !== null;
+    return sessionStorage.getItem("isb-jwt") !== null
   }
 
   subscribe(listener: AuthStateListener): void {
-    this.listeners.push(listener);
+    this.listeners.push(listener)
   }
 
   notify(): void {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener())
   }
 
   // Called by Story 5.3 (token extraction) and Story 5.5 (sign out)
   updateState(): void {
-    this.notify();
+    this.notify()
   }
 }
 
 // Export singleton instance
-export const authState = new AuthState();
+export const authState = new AuthState()
 ```
 
 **auth-nav.ts Structure:**
+
 ```typescript
-import { authState } from '../auth/auth-provider';
+import { authState } from "../auth/auth-provider"
 
 export function initAuthNav(): void {
-  const container = document.getElementById('auth-nav');
-  if (!container) return;
+  const container = document.getElementById("auth-nav")
+  if (!container) return
 
   // Render initial state
-  renderAuthNav(container);
+  renderAuthNav(container)
 
   // Subscribe to auth state changes
   authState.subscribe(() => {
-    renderAuthNav(container);
-  });
+    renderAuthNav(container)
+  })
 }
 
 function renderAuthNav(container: HTMLElement): void {
@@ -368,35 +398,37 @@ function renderAuthNav(container: HTMLElement): void {
       <a href="#" class="govuk-header__link" data-module="auth-nav" data-action="signout">
         Sign out
       </a>
-    `;
+    `
     // Event listener for sign out will be added in Story 5.5
   } else {
     container.innerHTML = `
       <a href="/api/auth/login" class="govuk-header__link">
         Sign in
       </a>
-    `;
+    `
   }
 }
 ```
 
 **Defensive Programming:**
+
 ```typescript
 // Check sessionStorage availability before use
-if (typeof sessionStorage === 'undefined') {
-  console.warn('sessionStorage not available, auth features disabled');
-  return;
+if (typeof sessionStorage === "undefined") {
+  console.warn("sessionStorage not available, auth features disabled")
+  return
 }
 
 // Check DOM element exists before rendering
-const container = document.getElementById('auth-nav');
+const container = document.getElementById("auth-nav")
 if (!container) {
-  console.warn('Auth navigation container not found');
-  return;
+  console.warn("Auth navigation container not found")
+  return
 }
 ```
 
 **Progressive Enhancement:**
+
 ```html
 <!-- Server-side fallback (if JavaScript disabled) -->
 <noscript>
@@ -410,94 +442,98 @@ if (!container) {
 ### Testing Strategy
 
 **Unit Tests (auth-provider.ts):**
+
 ```typescript
-describe('AuthState', () => {
+describe("AuthState", () => {
   beforeEach(() => {
-    sessionStorage.clear();
-  });
+    sessionStorage.clear()
+  })
 
-  it('should return false when no JWT token in sessionStorage', () => {
-    expect(authState.isAuthenticated()).toBe(false);
-  });
+  it("should return false when no JWT token in sessionStorage", () => {
+    expect(authState.isAuthenticated()).toBe(false)
+  })
 
-  it('should return true when JWT token exists in sessionStorage', () => {
-    sessionStorage.setItem('isb-jwt', 'mock-token');
-    expect(authState.isAuthenticated()).toBe(true);
-  });
+  it("should return true when JWT token exists in sessionStorage", () => {
+    sessionStorage.setItem("isb-jwt", "mock-token")
+    expect(authState.isAuthenticated()).toBe(true)
+  })
 
-  it('should notify subscribers when auth state changes', () => {
-    const listener = jest.fn();
-    authState.subscribe(listener);
-    authState.notify();
-    expect(listener).toHaveBeenCalledTimes(1);
-  });
-});
+  it("should notify subscribers when auth state changes", () => {
+    const listener = jest.fn()
+    authState.subscribe(listener)
+    authState.notify()
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
+})
 ```
 
 **Integration Tests (auth-nav.ts):**
+
 ```typescript
-describe('Auth Navigation', () => {
-  let container: HTMLElement;
+describe("Auth Navigation", () => {
+  let container: HTMLElement
 
   beforeEach(() => {
-    document.body.innerHTML = '<div id="auth-nav"></div>';
-    container = document.getElementById('auth-nav')!;
-    sessionStorage.clear();
-  });
+    document.body.innerHTML = '<div id="auth-nav"></div>'
+    container = document.getElementById("auth-nav")!
+    sessionStorage.clear()
+  })
 
   it('should render "Sign in" button when unauthenticated', () => {
-    initAuthNav();
-    expect(container.innerHTML).toContain('Sign in');
-    expect(container.querySelector('a')?.href).toContain('/api/auth/login');
-  });
+    initAuthNav()
+    expect(container.innerHTML).toContain("Sign in")
+    expect(container.querySelector("a")?.href).toContain("/api/auth/login")
+  })
 
   it('should render "Sign out" button when authenticated', () => {
-    sessionStorage.setItem('isb-jwt', 'mock-token');
-    initAuthNav();
-    expect(container.innerHTML).toContain('Sign out');
-  });
+    sessionStorage.setItem("isb-jwt", "mock-token")
+    initAuthNav()
+    expect(container.innerHTML).toContain("Sign out")
+  })
 
-  it('should update button when auth state changes', () => {
-    initAuthNav();
-    expect(container.innerHTML).toContain('Sign in');
+  it("should update button when auth state changes", () => {
+    initAuthNav()
+    expect(container.innerHTML).toContain("Sign in")
 
     // Simulate sign in
-    sessionStorage.setItem('isb-jwt', 'mock-token');
-    authState.notify();
-    expect(container.innerHTML).toContain('Sign out');
-  });
-});
+    sessionStorage.setItem("isb-jwt", "mock-token")
+    authState.notify()
+    expect(container.innerHTML).toContain("Sign out")
+  })
+})
 ```
 
 **Accessibility Tests:**
+
 ```typescript
-describe('Auth Navigation Accessibility', () => {
-  it('should have minimum 44x44px touch target', () => {
-    initAuthNav();
-    const link = container.querySelector('a');
-    const rect = link!.getBoundingClientRect();
-    expect(rect.width).toBeGreaterThanOrEqual(44);
-    expect(rect.height).toBeGreaterThanOrEqual(44);
-  });
+describe("Auth Navigation Accessibility", () => {
+  it("should have minimum 44x44px touch target", () => {
+    initAuthNav()
+    const link = container.querySelector("a")
+    const rect = link!.getBoundingClientRect()
+    expect(rect.width).toBeGreaterThanOrEqual(44)
+    expect(rect.height).toBeGreaterThanOrEqual(44)
+  })
 
-  it('should be keyboard navigable', () => {
-    initAuthNav();
-    const link = container.querySelector('a');
-    link!.focus();
-    expect(document.activeElement).toBe(link);
-  });
+  it("should be keyboard navigable", () => {
+    initAuthNav()
+    const link = container.querySelector("a")
+    link!.focus()
+    expect(document.activeElement).toBe(link)
+  })
 
-  it('should have visible focus indicator', () => {
-    initAuthNav();
-    const link = container.querySelector('a');
-    link!.focus();
-    const outline = window.getComputedStyle(link!).outline;
-    expect(outline).not.toBe('none');
-  });
-});
+  it("should have visible focus indicator", () => {
+    initAuthNav()
+    const link = container.querySelector("a")
+    link!.focus()
+    const outline = window.getComputedStyle(link!).outline
+    expect(outline).not.toBe("none")
+  })
+})
 ```
 
 **Manual Testing Checklist:**
+
 - [ ] Sign in button appears on unauthenticated page load
 - [ ] Sign out button appears after authentication (tested in Story 5.2+)
 - [ ] Only one button visible at a time
@@ -540,6 +576,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 **Status:** ✅ COMPLETE - All 8 ACs validated
 
 **Files Created:**
+
 1. `src/try/auth/auth-provider.ts` - AuthState class (Observer pattern per ADR-024)
 2. `src/try/ui/auth-nav.ts` - Sign in/out button component
 3. `src/try/main.ts` - Main JavaScript entry point
@@ -549,20 +586,24 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 7. `docs/development/authentication-state-management.md` - Developer documentation
 
 **Files Modified:**
+
 1. `src/_includes/components/header/template.njk` - Added `#auth-nav` placeholder
 2. `eleventy.config.js` - Added `scripts: ["/assets/try.bundle.js"]`
 3. `package.json` - Added esbuild, TypeScript, Jest dependencies + build scripts
 
 **Build Output:**
+
 - `src/assets/try.bundle.js` - Compiled JavaScript bundle (5.7kb)
 - `src/assets/try.bundle.js.map` - Source map for debugging
 
 **Test Results:**
+
 - ✅ All 15 unit tests passing (100%)
 - ✅ Full build completes successfully
 - ✅ All 8 acceptance criteria validated
 
 **Known Limitations (MVP):**
+
 1. Sign out functionality incomplete (Story 5.5 will implement)
 2. No token validation (server-side API validates on each request)
 3. No sessionStorage error UI for private browsing (console warning only)

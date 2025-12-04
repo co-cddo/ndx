@@ -21,18 +21,21 @@ So that I can intercept CloudFront API requests and redirect them to local NDX s
 **Then** the documentation includes:
 
 **Section: Prerequisites**
+
 - Python 3.8+ installed
 - mitmproxy installed: `pip install mitmproxy`
 - NDX node server can run on localhost:8080
 - Innovation Sandbox CloudFront domain: `https://d7roov8fndsis.cloudfront.net`
 
 **Section: How mitmproxy Works for Try Development**
+
 - mitmproxy acts as transparent proxy intercepting CloudFront domain requests
 - UI requests (HTML, CSS, JS) → forward to localhost:8080 (local NDX server)
 - API requests (`/api/*`) → pass through to real CloudFront (Innovation Sandbox backend)
 - Enables local UI development with real backend API
 
 **Section: Architecture Diagram**
+
 ```
 Browser Request → mitmproxy (localhost:8081)
                       ↓
@@ -46,6 +49,7 @@ localhost:8080               CloudFront
 ```
 
 **Section: Configuration Steps**
+
 1. Install mitmproxy: `pip install mitmproxy`
 2. Create addon script: `scripts/mitmproxy-addon.py` (Story 4.2)
 3. Configure system proxy settings to use localhost:8081
@@ -59,12 +63,14 @@ localhost:8080               CloudFront
 **Prerequisites:** None (first story in epic)
 
 **Technical Notes:**
+
 - mitmproxy listens on localhost:8081 (avoids clash with NDX server on 8080)
 - Transparent proxy intercepts specific domain only
 - Does NOT intercept all traffic (minimally invasive)
 - System proxy settings revert when mitmproxy stopped
 
 **Architecture Context:**
+
 - **ADR-015:** Vanilla Eleventy with TypeScript (brownfield constraint)
   - Local server runs Eleventy build output on port 8080
   - mitmproxy routes UI requests to local build (hot-reload workflow)
@@ -75,6 +81,7 @@ localhost:8080               CloudFront
 - **Output:** `/docs/development/local-try-setup.md` comprehensive setup guide
 
 **UX Design Context:**
+
 - **Developer Experience:** Fast iteration on UI changes without backend mocking
 - **Production Parity:** Tests against real Innovation Sandbox API (catches integration issues early)
 
@@ -122,6 +129,7 @@ addons = [request]
 ```
 
 **And** script handles edge cases:
+
 - Root path (`/`) forwards to localhost:8080
 - Static assets (`/assets/*`) forward to localhost:8080
 - Product pages (`/catalogue/*`) forward to localhost:8080
@@ -135,6 +143,7 @@ addons = [request]
 **Prerequisites:** Story 4.1 (Documentation created)
 
 **Technical Notes:**
+
 - mitmproxy addon API: `http.HTTPFlow` object
 - `flow.request.pretty_host` for domain matching
 - Modify `scheme`, `host`, `port` for local forwarding
@@ -142,6 +151,7 @@ addons = [request]
 - No authentication token manipulation needed (OAuth redirects work)
 
 **Architecture Context:**
+
 - **Routing Logic:**
   - UI routes (`/`, `/catalogue/*`, `/try`, static assets): Forward to localhost:8080
   - API routes (`/api/*`): Pass through to CloudFront unchanged
@@ -152,6 +162,7 @@ addons = [request]
 - **Script Location:** `scripts/mitmproxy-addon.py` version-controlled with codebase
 
 **UX Design Context:**
+
 - **Developer Experience:** Simple Python script, minimal configuration
 - **Debugging:** mitmproxy console shows all intercepted requests (UI vs API routing visible)
 
@@ -178,12 +189,14 @@ So that I can quickly start local development environment.
 ```
 
 **And** running `yarn dev:proxy` starts mitmproxy with:
+
 - Listen port: 8081
 - Mode: transparent proxy
 - Addon script: scripts/mitmproxy-addon.py
 - Configuration directory: ~/.mitmproxy
 
 **And** console output shows:
+
 - Proxy server running on localhost:8081
 - Addon loaded: mitmproxy-addon.py
 - Waiting for requests
@@ -193,6 +206,7 @@ So that I can quickly start local development environment.
 **Prerequisites:** Story 4.2 (Addon script created)
 
 **Technical Notes:**
+
 - `--listen-port 8081` avoids clash with NDX server on 8080
 - `--mode transparent` enables domain interception
 - `-s` flag specifies addon script path
@@ -200,6 +214,7 @@ So that I can quickly start local development environment.
 - May need to trust mitmproxy CA certificate for HTTPS interception
 
 **Architecture Context:**
+
 - **npm Script:** `yarn dev:proxy` starts mitmproxy with correct configuration
 - **Port 8081:** mitmproxy listener (avoids conflict with NDX server on 8080)
 - **Transparent Mode:** Intercepts CloudFront domain requests without browser extension
@@ -210,6 +225,7 @@ So that I can quickly start local development environment.
   - Browser: Navigate to CloudFront domain (proxied to localhost)
 
 **UX Design Context:**
+
 - **Developer Experience:** Single command to start proxy (`yarn dev:proxy`)
 - **Clean Shutdown:** Press `q` in mitmproxy console to stop cleanly
 
@@ -228,6 +244,7 @@ So that browser traffic routes through mitmproxy.
 **Then** the documentation includes proxy configuration for macOS, Windows, Linux:
 
 **macOS: System Preferences**
+
 ```
 1. Open System Preferences → Network
 2. Select active network (Wi-Fi or Ethernet)
@@ -238,6 +255,7 @@ So that browser traffic routes through mitmproxy.
 ```
 
 **Windows: Internet Options**
+
 ```
 1. Open Control Panel → Internet Options
 2. Click Connections → LAN Settings
@@ -247,6 +265,7 @@ So that browser traffic routes through mitmproxy.
 ```
 
 **Linux: GNOME Settings**
+
 ```
 1. Open Settings → Network → Network Proxy
 2. Select "Manual"
@@ -256,21 +275,25 @@ So that browser traffic routes through mitmproxy.
 ```
 
 **And** documentation includes instructions to bypass proxy for non-CloudFront domains:
+
 - Add bypass list: `localhost, 127.0.0.1, *.local`
 - Only CloudFront domain routed through proxy
 
 **And** documentation includes revert instructions:
+
 - Set proxy to "Off" or "Direct" when not developing Try features
 
 **Prerequisites:** Story 4.3 (Run configuration created)
 
 **Technical Notes:**
+
 - System proxy settings affect all browsers
 - Can alternatively use browser-specific proxy extensions (FoxyProxy)
 - mitmproxy must be running before enabling system proxy
 - Revert proxy settings to avoid routing all traffic when not developing
 
 **Architecture Context:**
+
 - **System-Wide Proxy:** All browsers route through localhost:8081 when enabled
 - **Bypass List:** Ensure `localhost, 127.0.0.1, *.local` bypassed (prevents proxying local traffic)
 - **Platform-Specific:** macOS (System Preferences), Windows (Internet Options), Linux (GNOME Settings)
@@ -278,6 +301,7 @@ So that browser traffic routes through mitmproxy.
 - **Revert When Done:** Disable system proxy when not developing Try features (avoid routing all traffic)
 
 **UX Design Context:**
+
 - **Developer Experience:** One-time setup per machine
 - **Documentation:** Platform-specific instructions in `/docs/development/local-try-setup.md`
 
@@ -296,6 +320,7 @@ So that I can intercept HTTPS requests without browser warnings.
 **Then** the documentation includes certificate trust instructions:
 
 **macOS: Keychain Access**
+
 ```
 1. Open ~/.mitmproxy/mitmproxy-ca-cert.pem
 2. Keychain Access opens automatically
@@ -305,6 +330,7 @@ So that I can intercept HTTPS requests without browser warnings.
 ```
 
 **Windows: Certificate Manager**
+
 ```
 1. Open ~/.mitmproxy/mitmproxy-ca-cert.pem
 2. Install Certificate → Current User → Place in "Trusted Root Certification Authorities"
@@ -312,17 +338,20 @@ So that I can intercept HTTPS requests without browser warnings.
 ```
 
 **Linux: ca-certificates**
+
 ```
 1. sudo cp ~/.mitmproxy/mitmproxy-ca-cert.pem /usr/local/share/ca-certificates/mitmproxy.crt
 2. sudo update-ca-certificates
 ```
 
 **And** documentation warns about certificate trust implications:
+
 - Only trust certificate on development machines
 - Never trust mitmproxy certificate in production
 - Certificate enables mitmproxy to decrypt HTTPS traffic
 
 **And** validation instructions provided:
+
 1. Browse to `https://d7roov8fndsis.cloudfront.net`
 2. No SSL warnings should appear
 3. UI content loads from localhost:8080
@@ -331,12 +360,14 @@ So that I can intercept HTTPS requests without browser warnings.
 **Prerequisites:** Story 4.4 (Proxy configuration documented)
 
 **Technical Notes:**
+
 - mitmproxy auto-generates CA certificate on first run
 - Certificate path: `~/.mitmproxy/mitmproxy-ca-cert.pem`
 - Without trust, browser shows "Your connection is not private" warnings
 - Certificate trust is per-machine, not per-browser (system-wide)
 
 **Architecture Context:**
+
 - **HTTPS Interception:** CloudFront domain uses HTTPS (mitmproxy must decrypt to route)
 - **CA Certificate:** mitmproxy auto-generates on first run (`~/.mitmproxy/mitmproxy-ca-cert.pem`)
 - **Platform-Specific Trust:**
@@ -347,6 +378,7 @@ So that I can intercept HTTPS requests without browser warnings.
 - **Validation:** Browse to CloudFront domain, verify no SSL warnings, UI loads from localhost
 
 **UX Design Context:**
+
 - **Developer Experience:** One-time certificate trust per machine
 - **Security Notice:** Documentation warns about trusting only on dev machines
 - **Validation Steps:** Clear instructions to verify setup working after trust
@@ -398,7 +430,7 @@ fi
 # Check 3: NDX server can start on port 8080
 echo ""
 echo "✓ Checking if port 8080 is available for NDX server..."
-if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null ; then
+if lsof -Pi :8080 -sTCP:LISTEN -t > /dev/null; then
   echo "⚠️  Port 8080 already in use (NDX server may already be running)"
 else
   echo "✅ Port 8080 available"
@@ -407,7 +439,7 @@ fi
 # Check 4: Port 8081 available for mitmproxy
 echo ""
 echo "✓ Checking if port 8081 is available for mitmproxy..."
-if lsof -Pi :8081 -sTCP:LISTEN -t >/dev/null ; then
+if lsof -Pi :8081 -sTCP:LISTEN -t > /dev/null; then
   echo "⚠️  Port 8081 already in use (mitmproxy may already be running)"
 else
   echo "✅ Port 8081 available"
@@ -450,12 +482,14 @@ fi
 **Prerequisites:** Story 4.5 (Certificate trust documented)
 
 **Technical Notes:**
+
 - Validation prevents common setup issues (missing dependencies, port conflicts)
 - Runs before starting development (fast feedback)
 - Detects already-running services (mitmproxy, NDX server)
 - Epic 4 preventive measure from Pre-mortem Analysis (User acceptance #9)
 
 **Architecture Context:**
+
 - **Validation Checks:**
   - mitmproxy installation (`command -v mitmproxy`)
   - Addon script exists (`scripts/mitmproxy-addon.py`)
@@ -467,6 +501,7 @@ fi
 - **Pre-mortem Preventive Measure:** Epic 4 validation prevents "works on my machine" issues
 
 **UX Design Context:**
+
 - **Developer Experience:** Automated validation script (no manual checklist)
 - **Clear Output:** ✅/❌ status for each check, actionable error messages
 - **Next Steps Guidance:** Script shows exact commands to run after validation passes

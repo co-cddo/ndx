@@ -36,39 +36,46 @@ The solution was successfully implemented in Story 1.2 using a Custom Resource L
 ### Epic Impact
 
 **Epic 1 (CloudFront Origin Infrastructure):**
+
 - **Objective:** Add `ndx-static-prod` origin to distribution E3THG4UHYDHVWP ✅ ACHIEVED
 - **Stories 1.1-1.3:** DONE - Implementation successful via Custom Resource Lambda
 - **Story 1.4:** BLOCKED - References deployment approach that conflicts with Custom Resource pattern
 - **Resolution:** Mark Epic 1 COMPLETE (goal met), close Story 1.4 as complete with validation-only scope
 
 **Epic 2 (Cookie-Based Routing Implementation):**
+
 - **Impact:** NONE - Can proceed as planned
 - **Prerequisite:** Epic 1 complete ✅
 
 **Epic 3 (Testing, Validation & Operational Readiness):**
+
 - **Impact:** MINOR - Tests need to validate Custom Resource Lambda approach instead of L2 construct approach
 - **Action:** Update test strategy to verify Custom Resource behavior
 
 ### Story Impact
 
 **Current Stories:**
+
 - **Story 1.1:** DONE - Correctly documents read-only import approach
 - **Story 1.2:** DONE - Custom Resource Lambda implementation (CORRECT approach)
 - **Story 1.3:** DONE - Validation confirms Custom Resource success
 - **Story 1.4:** BLOCKED - Needs resolution (see recommendations)
 
 **Future Stories:**
+
 - **Epic 2 stories:** NO IMPACT - CloudFront Functions for cookie routing can proceed
 - **Epic 3 stories:** MINOR - Test implementation needs Custom Resource validation approach
 
 ### Artifact Conflicts
 
 **PRD:**
+
 - **FR4:** "Reference existing CloudFront distribution without recreating" - Currently violated by L2 constructs in stack
 - **FR25-26:** Import/modify requirements - Need clarification that Custom Resource Lambda is the approved approach
 - **Resolution:** Add note to PRD clarifying Custom Resource Lambda as official pattern for externally-managed distributions
 
 **Architecture:**
+
 - **Conflict:** `ndx-stack.ts` contains L2 Distribution constructs attempting to create/manage CloudFront distribution
 - **Resolution:** Remove L2 Distribution constructs, retain only:
   1. Read-only reference via `fromDistributionAttributes()` (for TypeScript types)
@@ -76,10 +83,12 @@ The solution was successfully implemented in Story 1.2 using a Custom Resource L
   3. IAM permissions for Lambda
 
 **Tech Spec Epic 1:**
+
 - **Status:** ACCURATE - Already documents Custom Resource approach correctly
 - **No changes needed**
 
 **Infrastructure as Code:**
+
 - **File:** `/Users/cns/httpdocs/cddo/ndx/infra/lib/ndx-stack.ts`
 - **Issue:** Contains L2 CloudFront Distribution constructs (OriginAccessIdentity, CloudFront Functions, new Distribution resource)
 - **Resolution:** Clean stack to Custom Resource Lambda-only approach
@@ -123,6 +132,7 @@ The solution was successfully implemented in Story 1.2 using a Custom Resource L
 4. **Verify:** Stack only creates Custom Resource Lambda and provider, no CloudFront resources
 
 **Expected Result:**
+
 - `cdk synth` succeeds with no CloudFront Distribution in template
 - `cdk diff` shows no changes (already deployed via Custom Resource)
 - Stack is idempotent
@@ -143,6 +153,7 @@ The solution was successfully implemented in Story 1.2 using a Custom Resource L
 **Epic 1 Objective ACHIEVED via Custom Resource Lambda (Story 1.2)**
 
 Distribution E3THG4UHYDHVWP has all required origins configured:
+
 - Existing S3Origin: Unchanged ✅
 - API Gateway origin: Unchanged ✅
 - ndx-static-prod-origin: Added via Custom Resource Lambda ✅
@@ -154,11 +165,13 @@ This story was originally scoped as a deployment validation story expecting CDK 
 **No additional deployment needed** - The infrastructure changes were already applied in Story 1.2 when the Custom Resource Lambda executed during that story's deployment.
 
 **Validation Completed in Story 1.3:**
+
 - All origins verified present and correctly configured
 - Distribution status: Deployed
 - Stack idempotency confirmed
 
 **Codebase Cleanup:**
+
 - Removed conflicting L2 Distribution constructs from `ndx-stack.ts`
 - Retained Custom Resource Lambda as official approach for externally-managed distributions
 
@@ -170,6 +183,7 @@ This story was originally scoped as a deployment validation story expecting CDK 
 **File:** `/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/sprint-status.yaml`
 
 **Current:**
+
 ```yaml
 development_status:
   epic-1: contexted
@@ -177,6 +191,7 @@ development_status:
 ```
 
 **Proposed:**
+
 ```yaml
 development_status:
   epic-1: done
@@ -251,6 +266,7 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
 **Timeline:** Immediate implementation (< 1 hour)
 
 **Risk Mitigation:**
+
 - No AWS infrastructure changes - zero deployment risk
 - Code cleanup only - easily reversible via git
 - Distribution already in correct state - no regression possible
@@ -264,6 +280,7 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
 **User Approval:** ✅ APPROVED (2025-11-20)
 
 **Next Steps:**
+
 1. Execute implementation tasks (4 changes listed above)
 2. Validate success criteria
 3. Proceed to Epic 2: Cookie-Based Routing Implementation

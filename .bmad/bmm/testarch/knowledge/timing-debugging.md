@@ -27,69 +27,69 @@ Race conditions arise when tests make assumptions about asynchronous timing (net
 
 ```typescript
 // tests/timing/race-condition-prevention.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test"
 
-test.describe('Race Condition Prevention Patterns', () => {
-  test('❌ Anti-Pattern: Navigate then intercept (race condition)', async ({ page, context }) => {
+test.describe("Race Condition Prevention Patterns", () => {
+  test("❌ Anti-Pattern: Navigate then intercept (race condition)", async ({ page, context }) => {
     // BAD: Navigation starts before interception ready
-    await page.goto('/products'); // ⚠️ Race! API might load before route is set
+    await page.goto("/products") // ⚠️ Race! API might load before route is set
 
-    await context.route('**/api/products', (route) => {
-      route.fulfill({ status: 200, body: JSON.stringify({ products: [] }) });
-    });
+    await context.route("**/api/products", (route) => {
+      route.fulfill({ status: 200, body: JSON.stringify({ products: [] }) })
+    })
 
     // Test may see real API response or mock (non-deterministic)
-  });
+  })
 
-  test('✅ Pattern: Intercept BEFORE navigate (deterministic)', async ({ page, context }) => {
+  test("✅ Pattern: Intercept BEFORE navigate (deterministic)", async ({ page, context }) => {
     // GOOD: Interception ready before navigation
-    await context.route('**/api/products', (route) => {
+    await context.route("**/api/products", (route) => {
       route.fulfill({
         status: 200,
-        contentType: 'application/json',
+        contentType: "application/json",
         body: JSON.stringify({
           products: [
-            { id: 1, name: 'Product A', price: 29.99 },
-            { id: 2, name: 'Product B', price: 49.99 },
+            { id: 1, name: "Product A", price: 29.99 },
+            { id: 2, name: "Product B", price: 49.99 },
           ],
         }),
-      });
-    });
+      })
+    })
 
-    const responsePromise = page.waitForResponse('**/api/products');
+    const responsePromise = page.waitForResponse("**/api/products")
 
-    await page.goto('/products'); // Navigation happens AFTER route is ready
-    await responsePromise; // Explicit wait for network
+    await page.goto("/products") // Navigation happens AFTER route is ready
+    await responsePromise // Explicit wait for network
 
     // Test sees mock response reliably (deterministic)
-    await expect(page.getByText('Product A')).toBeVisible();
-  });
+    await expect(page.getByText("Product A")).toBeVisible()
+  })
 
-  test('✅ Pattern: Wait for element state change (loading → loaded)', async ({ page }) => {
-    await page.goto('/dashboard');
+  test("✅ Pattern: Wait for element state change (loading → loaded)", async ({ page }) => {
+    await page.goto("/dashboard")
 
     // Wait for loading indicator to appear (confirms load started)
-    await page.getByTestId('loading-spinner').waitFor({ state: 'visible' });
+    await page.getByTestId("loading-spinner").waitFor({ state: "visible" })
 
     // Wait for loading indicator to disappear (confirms load complete)
-    await page.getByTestId('loading-spinner').waitFor({ state: 'detached' });
+    await page.getByTestId("loading-spinner").waitFor({ state: "detached" })
 
     // Content now reliably visible
-    await expect(page.getByTestId('dashboard-data')).toBeVisible();
-  });
+    await expect(page.getByTestId("dashboard-data")).toBeVisible()
+  })
 
-  test('✅ Pattern: Explicit visibility check (not just presence)', async ({ page }) => {
-    await page.goto('/modal-demo');
+  test("✅ Pattern: Explicit visibility check (not just presence)", async ({ page }) => {
+    await page.goto("/modal-demo")
 
-    await page.getByRole('button', { name: 'Open Modal' }).click();
+    await page.getByRole("button", { name: "Open Modal" }).click()
 
     // ❌ Bad: Element exists but may not be visible yet
     // await expect(page.getByTestId('modal')).toBeAttached()
 
     // ✅ Good: Wait for visibility (accounts for animations)
-    await expect(page.getByTestId('modal')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Modal Title' })).toBeVisible();
-  });
+    await expect(page.getByTestId("modal")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Modal Title" })).toBeVisible()
+  })
 
   test('❌ Anti-Pattern: waitForLoadState("networkidle") in SPAs', async ({ page }) => {
     // ⚠️ Deprecated for SPAs (WebSocket connections never idle)
@@ -97,13 +97,13 @@ test.describe('Race Condition Prevention Patterns', () => {
     // await page.waitForLoadState('networkidle') // May timeout in SPAs
 
     // ✅ Better: Wait for specific API response
-    const responsePromise = page.waitForResponse('**/api/dashboard');
-    await page.goto('/dashboard');
-    await responsePromise;
+    const responsePromise = page.waitForResponse("**/api/dashboard")
+    await page.goto("/dashboard")
+    await responsePromise
 
-    await expect(page.getByText('Dashboard loaded')).toBeVisible();
-  });
-});
+    await expect(page.getByText("Dashboard loaded")).toBeVisible()
+  })
+})
 ```
 
 **Key Points**:
@@ -124,60 +124,60 @@ test.describe('Race Condition Prevention Patterns', () => {
 
 ```typescript
 // tests/timing/deterministic-waits.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test"
 
-test.describe('Deterministic Waiting Patterns', () => {
-  test('waitForResponse() with URL pattern', async ({ page }) => {
-    const responsePromise = page.waitForResponse('**/api/products');
+test.describe("Deterministic Waiting Patterns", () => {
+  test("waitForResponse() with URL pattern", async ({ page }) => {
+    const responsePromise = page.waitForResponse("**/api/products")
 
-    await page.goto('/products');
-    await responsePromise; // Deterministic (waits for exact API call)
+    await page.goto("/products")
+    await responsePromise // Deterministic (waits for exact API call)
 
-    await expect(page.getByText('Products loaded')).toBeVisible();
-  });
+    await expect(page.getByText("Products loaded")).toBeVisible()
+  })
 
-  test('waitForResponse() with predicate function', async ({ page }) => {
-    const responsePromise = page.waitForResponse((resp) => resp.url().includes('/api/search') && resp.status() === 200);
+  test("waitForResponse() with predicate function", async ({ page }) => {
+    const responsePromise = page.waitForResponse((resp) => resp.url().includes("/api/search") && resp.status() === 200)
 
-    await page.goto('/search');
-    await page.getByPlaceholder('Search').fill('laptop');
-    await page.getByRole('button', { name: 'Search' }).click();
+    await page.goto("/search")
+    await page.getByPlaceholder("Search").fill("laptop")
+    await page.getByRole("button", { name: "Search" }).click()
 
-    await responsePromise; // Wait for successful search response
+    await responsePromise // Wait for successful search response
 
-    await expect(page.getByTestId('search-results')).toBeVisible();
-  });
+    await expect(page.getByTestId("search-results")).toBeVisible()
+  })
 
-  test('waitForFunction() for custom conditions', async ({ page }) => {
-    await page.goto('/dashboard');
+  test("waitForFunction() for custom conditions", async ({ page }) => {
+    await page.goto("/dashboard")
 
     // Wait for custom JavaScript condition
     await page.waitForFunction(() => {
-      const element = document.querySelector('[data-testid="user-count"]');
-      return element && parseInt(element.textContent || '0') > 0;
-    });
+      const element = document.querySelector('[data-testid="user-count"]')
+      return element && parseInt(element.textContent || "0") > 0
+    })
 
     // User count now loaded
-    await expect(page.getByTestId('user-count')).not.toHaveText('0');
-  });
+    await expect(page.getByTestId("user-count")).not.toHaveText("0")
+  })
 
-  test('waitFor() element state (attached, visible, hidden, detached)', async ({ page }) => {
-    await page.goto('/products');
+  test("waitFor() element state (attached, visible, hidden, detached)", async ({ page }) => {
+    await page.goto("/products")
 
     // Wait for element to be attached to DOM
-    await page.getByTestId('product-list').waitFor({ state: 'attached' });
+    await page.getByTestId("product-list").waitFor({ state: "attached" })
 
     // Wait for element to be visible (animations complete)
-    await page.getByTestId('product-list').waitFor({ state: 'visible' });
+    await page.getByTestId("product-list").waitFor({ state: "visible" })
 
     // Perform action
-    await page.getByText('Product A').click();
+    await page.getByText("Product A").click()
 
     // Wait for modal to be hidden (close animation complete)
-    await page.getByTestId('modal').waitFor({ state: 'hidden' });
-  });
+    await page.getByTestId("modal").waitFor({ state: "hidden" })
+  })
 
-  test('Cypress: cy.wait() with aliased intercepts', async () => {
+  test("Cypress: cy.wait() with aliased intercepts", async () => {
     // Cypress example (not Playwright)
     /*
     cy.intercept('GET', '/api/products').as('getProducts')
@@ -186,8 +186,8 @@ test.describe('Deterministic Waiting Patterns', () => {
 
     cy.get('[data-testid="product-list"]').should('be.visible')
     */
-  });
-});
+  })
+})
 ```
 
 **Key Points**:
@@ -208,22 +208,22 @@ test.describe('Deterministic Waiting Patterns', () => {
 
 ```typescript
 // tests/timing/anti-patterns.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test"
 
-test.describe('Timing Anti-Patterns to Avoid', () => {
-  test('❌ NEVER: page.waitForTimeout() (arbitrary delay)', async ({ page }) => {
-    await page.goto('/dashboard');
+test.describe("Timing Anti-Patterns to Avoid", () => {
+  test("❌ NEVER: page.waitForTimeout() (arbitrary delay)", async ({ page }) => {
+    await page.goto("/dashboard")
 
     // ❌ Bad: Arbitrary 3-second wait (flaky)
     // await page.waitForTimeout(3000)
     // Problem: Might be too short (CI slower) or too long (wastes time)
 
     // ✅ Good: Wait for observable event
-    await page.waitForResponse('**/api/dashboard');
-    await expect(page.getByText('Dashboard loaded')).toBeVisible();
-  });
+    await page.waitForResponse("**/api/dashboard")
+    await expect(page.getByText("Dashboard loaded")).toBeVisible()
+  })
 
-  test('❌ NEVER: cy.wait(number) without alias (arbitrary delay)', async () => {
+  test("❌ NEVER: cy.wait(number) without alias (arbitrary delay)", async () => {
     // Cypress example
     /*
     // ❌ Bad: Arbitrary delay
@@ -235,10 +235,10 @@ test.describe('Timing Anti-Patterns to Avoid', () => {
     cy.visit('/products')
     cy.wait('@getProducts') // Deterministic
     */
-  });
+  })
 
-  test('❌ NEVER: Multiple hard waits in sequence (compounding delays)', async ({ page }) => {
-    await page.goto('/checkout');
+  test("❌ NEVER: Multiple hard waits in sequence (compounding delays)", async ({ page }) => {
+    await page.goto("/checkout")
 
     // ❌ Bad: Stacked hard waits (6+ seconds wasted)
     // await page.waitForTimeout(2000) // Wait for form
@@ -248,12 +248,12 @@ test.describe('Timing Anti-Patterns to Avoid', () => {
     // await page.waitForTimeout(3000) // Wait for redirect
 
     // ✅ Good: Event-based waits (no wasted time)
-    await page.getByTestId('checkout-form').waitFor({ state: 'visible' });
-    await page.getByTestId('email').fill('test@example.com');
-    await page.waitForResponse('**/api/validate-email');
-    await page.getByTestId('submit').click();
-    await page.waitForURL('**/confirmation');
-  });
+    await page.getByTestId("checkout-form").waitFor({ state: "visible" })
+    await page.getByTestId("email").fill("test@example.com")
+    await page.waitForResponse("**/api/validate-email")
+    await page.getByTestId("submit").click()
+    await page.waitForURL("**/confirmation")
+  })
 
   test('❌ NEVER: waitForLoadState("networkidle") in SPAs', async ({ page }) => {
     // ❌ Bad: Unreliable in SPAs (WebSocket connections never idle)
@@ -261,22 +261,22 @@ test.describe('Timing Anti-Patterns to Avoid', () => {
     // await page.waitForLoadState('networkidle') // Timeout in SPAs!
 
     // ✅ Good: Wait for specific API responses
-    await page.goto('/dashboard');
-    await page.waitForResponse('**/api/dashboard');
-    await page.waitForResponse('**/api/user');
-    await expect(page.getByTestId('dashboard-content')).toBeVisible();
-  });
+    await page.goto("/dashboard")
+    await page.waitForResponse("**/api/dashboard")
+    await page.waitForResponse("**/api/user")
+    await expect(page.getByTestId("dashboard-content")).toBeVisible()
+  })
 
-  test('❌ NEVER: Sleep/setTimeout in tests', async ({ page }) => {
-    await page.goto('/products');
+  test("❌ NEVER: Sleep/setTimeout in tests", async ({ page }) => {
+    await page.goto("/products")
 
     // ❌ Bad: Node.js sleep (blocks test thread)
     // await new Promise(resolve => setTimeout(resolve, 2000))
 
     // ✅ Good: Playwright auto-waits for element
-    await expect(page.getByText('Products loaded')).toBeVisible();
-  });
-});
+    await expect(page.getByText("Products loaded")).toBeVisible()
+  })
+})
 ```
 
 **Why These Fail**:
@@ -295,27 +295,27 @@ test.describe('Timing Anti-Patterns to Avoid', () => {
 ### Technique 1: Promise Chain Analysis
 
 ```typescript
-test('debug async waterfall with console logs', async ({ page }) => {
-  console.log('1. Starting navigation...');
-  await page.goto('/products');
+test("debug async waterfall with console logs", async ({ page }) => {
+  console.log("1. Starting navigation...")
+  await page.goto("/products")
 
-  console.log('2. Waiting for API response...');
-  const response = await page.waitForResponse('**/api/products');
-  console.log('3. API responded:', response.status());
+  console.log("2. Waiting for API response...")
+  const response = await page.waitForResponse("**/api/products")
+  console.log("3. API responded:", response.status())
 
-  console.log('4. Waiting for UI update...');
-  await expect(page.getByText('Products loaded')).toBeVisible();
-  console.log('5. Test complete');
+  console.log("4. Waiting for UI update...")
+  await expect(page.getByText("Products loaded")).toBeVisible()
+  console.log("5. Test complete")
 
   // Console output shows exactly where timing issue occurs
-});
+})
 ```
 
 ### Technique 2: Network Waterfall Inspection (DevTools)
 
 ```typescript
-test('inspect network timing with trace viewer', async ({ page }) => {
-  await page.goto('/dashboard');
+test("inspect network timing with trace viewer", async ({ page }) => {
+  await page.goto("/dashboard")
 
   // Generate trace for analysis
   // npx playwright test --trace on
@@ -326,17 +326,17 @@ test('inspect network timing with trace viewer', async ({ page }) => {
   // 2. Identify slow requests (>1s response time)
   // 3. Find race conditions (overlapping requests)
   // 4. Verify request order (dependencies)
-});
+})
 ```
 
 ### Technique 3: Trace Viewer for Timing Visualization
 
 ```typescript
-test('use trace viewer to debug timing', async ({ page }) => {
+test("use trace viewer to debug timing", async ({ page }) => {
   // Run with trace: npx playwright test --trace on
 
-  await page.goto('/checkout');
-  await page.getByTestId('submit').click();
+  await page.goto("/checkout")
+  await page.getByTestId("submit").click()
 
   // In trace viewer, examine:
   // - Timeline: See exact timing of each action
@@ -344,8 +344,8 @@ test('use trace viewer to debug timing', async ({ page }) => {
   // - Network: Identify slow/failed requests
   // - Console: Check for async errors
 
-  await expect(page.getByText('Success')).toBeVisible();
-});
+  await expect(page.getByText("Success")).toBeVisible()
+})
 ```
 
 ---

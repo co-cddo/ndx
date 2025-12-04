@@ -3,6 +3,7 @@
 This epic breakdown transforms the NDX Try Before You Buy PRD into 52 bite-sized, implementable stories across 5 epics. All 79 functional requirements are covered with full architectural context and accessibility built-in throughout.
 
 **Key Strengths:**
+
 - **Risk-first sequencing:** Most technically risky epics first (local dev, auth foundation)
 - **UX checkpoint:** Gate story validates design before implementation (Epic 6)
 - **Accessibility throughout:** Built-in NFRs + comprehensive Epic 8 validation
@@ -14,12 +15,14 @@ This epic breakdown transforms the NDX Try Before You Buy PRD into 52 bite-sized
 - **BDD acceptance criteria:** Given/When/Then format for all stories
 
 **Implementation Approach:**
+
 1. Execute stories sequentially within each epic
 2. Each story is sized for single developer session completion
 3. All tests must pass before moving to next story
 4. Accessibility validated continuously, not just at the end
 
 **Context for Phase 4:**
+
 - PRD provides functional requirements (WHAT capabilities)
 - Architecture provides technical decisions (HOW to implement - in progress for cross-gov SSO)
 - Epics provide tactical implementation plan (STORY-BY-STORY breakdown)
@@ -38,4 +41,3 @@ Create sprint status file from Feature 2 epics and begin Phase 4 implementation.
 _For implementation: Each story contains complete acceptance criteria, prerequisites, and technical notes for autonomous development agent execution._
 
 ---
-

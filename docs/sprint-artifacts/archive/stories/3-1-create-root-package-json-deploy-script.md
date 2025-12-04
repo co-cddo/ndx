@@ -13,6 +13,7 @@ So that deployment is triggered from the project root with a simple command.
 1. **Given** the root `package.json` exists
    **When** I add the deploy script
    **Then** `package.json` includes:
+
    ```json
    {
      "scripts": {
@@ -53,18 +54,21 @@ So that deployment is triggered from the project root with a simple command.
 ### Architecture Patterns and Constraints
 
 **Deployment Automation Location** [Source: docs/infrastructure-architecture.md#Project-Structure]
+
 - Deployment automation lives at root, not in `/infra`
 - Keeps infrastructure (CDK) separate from deployment (site files)
 - Infrastructure directory (`/infra`) manages AWS CDK infrastructure
 - Scripts directory manages deployment of built site files
 
 **Package.json Scripts Convention** [Source: docs/epics.md#Story-3.1]
+
 - Architecture doc section 5.3 specifies `yarn deploy` at root
 - Deploy script path: `scripts/deploy.sh`
 - Entry point from project root for deployment workflow
 
 **Deployment Workflow** [Source: docs/sprint-artifacts/tech-spec-epic-3.md#Workflows]
 Manual deployment flow:
+
 ```
 Developer → yarn build → _site/ created
          ↓
@@ -93,6 +97,7 @@ Story 3.1 establishes the deployment command structure. Story 3.2 will implement
 ### Project Structure Notes
 
 **Current Root Package.json Scripts:**
+
 ```json
 {
   "scripts": {
@@ -105,6 +110,7 @@ Story 3.1 establishes the deployment command structure. Story 3.2 will implement
 ```
 
 **After Story 3.1:**
+
 ```json
 {
   "scripts": {
@@ -118,6 +124,7 @@ Story 3.1 establishes the deployment command structure. Story 3.2 will implement
 ```
 
 **Directory Structure After Story 3.1:**
+
 ```
 ndx/                                  # Project root
 ├── scripts/                         # NEW in Story 3.1
@@ -133,6 +140,7 @@ ndx/                                  # Project root
 ### Functional Requirements Coverage
 
 This story implements:
+
 - **FR11:** Deploy via yarn deploy command ✓ (Entry point created, implementation in Story 3.2)
 
 ### References
@@ -155,12 +163,14 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Implementation Plan:**
+
 1. Create scripts directory at project root
 2. Create placeholder deploy.sh script with success message
 3. Add deploy script entry to root package.json
 4. Verify yarn deploy command works
 
 **Execution:**
+
 - Created `/scripts` directory successfully
 - Created `scripts/deploy.sh` with placeholder message
 - Made script executable via chmod +x
@@ -187,6 +197,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
   - Returns exit code 0 (success)
 
 **Acceptance Criteria Verified:**
+
 1. ✅ package.json includes deploy script pointing to scripts/deploy.sh
 2. ✅ scripts/ directory created at project root
 3. ✅ scripts/deploy.sh placeholder file exists
@@ -200,9 +211,11 @@ This story establishes the deployment command structure. Story 3.2 will replace 
 ### File List
 
 **NEW:**
+
 - scripts/deploy.sh - Placeholder deployment script (executable)
 
 **MODIFIED:**
+
 - package.json - Added deploy script to scripts section
 
 ---
@@ -223,41 +236,42 @@ Story 3.1 successfully establishes the deployment command infrastructure as spec
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | package.json includes deploy script | IMPLEMENTED | package.json:11 - `"deploy": "scripts/deploy.sh"` ✓ |
+| AC# | Description                                | Status      | Evidence                                                                         |
+| --- | ------------------------------------------ | ----------- | -------------------------------------------------------------------------------- |
+| AC1 | package.json includes deploy script        | IMPLEMENTED | package.json:11 - `"deploy": "scripts/deploy.sh"` ✓                              |
 | AC2 | scripts/ directory created at project root | IMPLEMENTED | Directory exists at /Users/cns/httpdocs/cddo/ndx/scripts (verified via ls -la) ✓ |
-| AC3 | scripts/deploy.sh placeholder file exists | IMPLEMENTED | scripts/deploy.sh:1-4 - File exists with shebang, placeholder message, exit 0 ✓ |
-| AC4 | yarn deploy executes the script | IMPLEMENTED | Tested successfully - outputs placeholder message and exits with code 0 ✓ |
+| AC3 | scripts/deploy.sh placeholder file exists  | IMPLEMENTED | scripts/deploy.sh:1-4 - File exists with shebang, placeholder message, exit 0 ✓  |
+| AC4 | yarn deploy executes the script            | IMPLEMENTED | Tested successfully - outputs placeholder message and exits with code 0 ✓        |
 
 **Summary:** 4 of 4 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Create scripts directory | COMPLETED [x] | VERIFIED COMPLETE | Directory exists at /Users/cns/httpdocs/cddo/ndx/scripts |
-| Task 1.1: Create /Users/cns/httpdocs/cddo/ndx/scripts directory | COMPLETED [x] | VERIFIED COMPLETE | Directory created successfully |
-| Task 1.2: Verify directory exists via ls command | COMPLETED [x] | VERIFIED COMPLETE | Verified via ls -la command output |
-| Task 2: Create placeholder deploy script | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh created with all required elements |
-| Task 2.1: Create scripts/deploy.sh file | COMPLETED [x] | VERIFIED COMPLETE | File exists at scripts/deploy.sh |
-| Task 2.2: Add shebang line: #!/bin/bash | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh:1 contains `#!/bin/bash` |
-| Task 2.3: Add placeholder message | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh:3 contains echo statement |
-| Task 2.4: Add exit 0 for successful execution | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh:4 contains `exit 0` |
-| Task 2.5: Make script executable: chmod +x scripts/deploy.sh | COMPLETED [x] | VERIFIED COMPLETE | File permissions: -rwx--x--x@ (executable) |
-| Task 2.6: Test execution: ./scripts/deploy.sh | COMPLETED [x] | VERIFIED COMPLETE | Tested - outputs placeholder message successfully |
-| Task 3: Add deploy script to package.json | COMPLETED [x] | VERIFIED COMPLETE | package.json updated with deploy script entry |
-| Task 3.1: Read current /Users/cns/httpdocs/cddo/ndx/package.json | COMPLETED [x] | VERIFIED COMPLETE | package.json read and modified |
-| Task 3.2: Add "deploy": "scripts/deploy.sh" to scripts section | COMPLETED [x] | VERIFIED COMPLETE | package.json:11 contains exact entry |
-| Task 3.3: Verify JSON syntax is valid | COMPLETED [x] | VERIFIED COMPLETE | package.json is valid JSON (no syntax errors) |
-| Task 3.4: Save updated package.json | COMPLETED [x] | VERIFIED COMPLETE | package.json saved with deploy script |
-| Task 3.5: Test: yarn deploy executes placeholder script | COMPLETED [x] | VERIFIED COMPLETE | yarn deploy tested successfully |
+| Task                                                             | Marked As     | Verified As       | Evidence                                                 |
+| ---------------------------------------------------------------- | ------------- | ----------------- | -------------------------------------------------------- |
+| Task 1: Create scripts directory                                 | COMPLETED [x] | VERIFIED COMPLETE | Directory exists at /Users/cns/httpdocs/cddo/ndx/scripts |
+| Task 1.1: Create /Users/cns/httpdocs/cddo/ndx/scripts directory  | COMPLETED [x] | VERIFIED COMPLETE | Directory created successfully                           |
+| Task 1.2: Verify directory exists via ls command                 | COMPLETED [x] | VERIFIED COMPLETE | Verified via ls -la command output                       |
+| Task 2: Create placeholder deploy script                         | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh created with all required elements     |
+| Task 2.1: Create scripts/deploy.sh file                          | COMPLETED [x] | VERIFIED COMPLETE | File exists at scripts/deploy.sh                         |
+| Task 2.2: Add shebang line: #!/bin/bash                          | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh:1 contains `#!/bin/bash`               |
+| Task 2.3: Add placeholder message                                | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh:3 contains echo statement              |
+| Task 2.4: Add exit 0 for successful execution                    | COMPLETED [x] | VERIFIED COMPLETE | scripts/deploy.sh:4 contains `exit 0`                    |
+| Task 2.5: Make script executable: chmod +x scripts/deploy.sh     | COMPLETED [x] | VERIFIED COMPLETE | File permissions: -rwx--x--x@ (executable)               |
+| Task 2.6: Test execution: ./scripts/deploy.sh                    | COMPLETED [x] | VERIFIED COMPLETE | Tested - outputs placeholder message successfully        |
+| Task 3: Add deploy script to package.json                        | COMPLETED [x] | VERIFIED COMPLETE | package.json updated with deploy script entry            |
+| Task 3.1: Read current /Users/cns/httpdocs/cddo/ndx/package.json | COMPLETED [x] | VERIFIED COMPLETE | package.json read and modified                           |
+| Task 3.2: Add "deploy": "scripts/deploy.sh" to scripts section   | COMPLETED [x] | VERIFIED COMPLETE | package.json:11 contains exact entry                     |
+| Task 3.3: Verify JSON syntax is valid                            | COMPLETED [x] | VERIFIED COMPLETE | package.json is valid JSON (no syntax errors)            |
+| Task 3.4: Save updated package.json                              | COMPLETED [x] | VERIFIED COMPLETE | package.json saved with deploy script                    |
+| Task 3.5: Test: yarn deploy executes placeholder script          | COMPLETED [x] | VERIFIED COMPLETE | yarn deploy tested successfully                          |
 
 **Summary:** 16 of 16 completed tasks verified, 0 questionable, 0 falsely marked complete ✓
 
 ### Test Coverage and Gaps
 
 **Manual Verification Approach:** Per story constraints, this infrastructure story uses manual verification rather than automated tests. All acceptance criteria were validated through:
+
 - Directory existence verification (ls command)
 - File content verification (read scripts/deploy.sh)
 - File permissions verification (ls -la showing executable flag)
@@ -271,6 +285,7 @@ Story 3.1 successfully establishes the deployment command infrastructure as spec
 **Architecture Compliance:** ✓ FULL COMPLIANCE
 
 All architectural constraints from infrastructure-architecture.md satisfied:
+
 - ✓ Deployment automation lives at root, not in `/infra` (architecture section: Project Structure)
 - ✓ Keeps infrastructure (CDK) separate from deployment (site files)
 - ✓ Scripts directory manages deployment of built site files
@@ -282,6 +297,7 @@ All architectural constraints from infrastructure-architecture.md satisfied:
 - ✓ Uses Yarn package manager per project standards
 
 **Functional Requirements Satisfied:**
+
 - FR11: Deploy via yarn deploy command ✓ (Entry point created, implementation in Story 3.2 as planned)
 
 ### Security Notes
@@ -289,6 +305,7 @@ All architectural constraints from infrastructure-architecture.md satisfied:
 **Security Assessment:** ✓ EXCELLENT
 
 No security concerns for this infrastructure story:
+
 - Placeholder script has no external interactions or security implications
 - No credentials, secrets, or sensitive data involved
 - No network operations or file system modifications beyond setup
@@ -300,23 +317,27 @@ No security concerns for this infrastructure story:
 ### Best Practices and References
 
 **Bash Script Best Practices Applied:**
+
 - ✓ Proper shebang line (#!/bin/bash)
 - ✓ Clear placeholder message for future implementation
 - ✓ Explicit exit code (exit 0) for success
 - ✓ Executable permissions set correctly
 
 **Node.js/Package.json Best Practices:**
+
 - ✓ Scripts section maintains alphabetical ordering
 - ✓ Valid JSON syntax
 - ✓ Script path uses project-relative path (scripts/deploy.sh)
 - ✓ Consistent with existing script patterns
 
 **Separation of Concerns:**
+
 - ✓ Deployment logic separated from infrastructure (CDK) code
 - ✓ Root-level deployment command for application deployment
 - ✓ Clear foundation for future enhancement in Story 3.2
 
 **References:**
+
 - [Bash Best Practices](https://google.github.io/styleguide/shellguide.html)
 - [NPM Scripts Best Practices](https://docs.npmjs.com/cli/v10/using-npm/scripts)
 - [Yarn Scripts Documentation](https://yarnpkg.com/cli/run)
@@ -326,6 +347,7 @@ No security concerns for this infrastructure story:
 **No action items** - Story implementation is complete and approved.
 
 **Advisory Notes:**
+
 - Note: Story 3.2 will implement full AWS S3 sync logic with error recovery
 - Note: Placeholder approach allows testing command structure before complex logic
 - Note: Foundation is properly established for Epic 3 deployment automation

@@ -11,6 +11,7 @@ so that I can intercept CloudFront requests and develop Try feature UI locally w
 ## Acceptance Criteria
 
 **AC1: Documentation includes platform-specific proxy configuration steps**
+
 - **Given** `/docs/development/local-try-setup.md` exists
 - **When** I navigate to the "System Proxy Configuration" section
 - **Then** it includes step-by-step instructions for:
@@ -22,6 +23,7 @@ so that I can intercept CloudFront requests and develop Try feature UI locally w
 - **And** instructions include bypass list: `localhost, 127.0.0.1, *.local`
 
 **AC2: Documentation includes browser-specific proxy option (alternative)**
+
 - **Given** developers may have corporate proxy conflicts
 - **When** I read the "Alternative: Browser-Specific Proxy" section
 - **Then** it documents FoxyProxy extension setup for Chrome/Firefox
@@ -29,6 +31,7 @@ so that I can intercept CloudFront requests and develop Try feature UI locally w
 - **And** explains when to use browser proxy vs system proxy (corporate network considerations)
 
 **AC3: Documentation includes proxy revert instructions**
+
 - **Given** developers need to disable proxy when not developing Try features
 - **When** I navigate to the "Disabling the Proxy" section
 - **Then** it includes instructions for each platform to revert proxy settings
@@ -36,6 +39,7 @@ so that I can intercept CloudFront requests and develop Try feature UI locally w
 - **And** includes quick reference: "Uncheck 'Use proxy' or remove proxy server address"
 
 **AC4: Documentation includes troubleshooting section**
+
 - **Given** developers may encounter proxy configuration issues
 - **When** I navigate to the "Troubleshooting Proxy Issues" section
 - **Then** it includes common issues and solutions:
@@ -121,9 +125,11 @@ This story creates the **system proxy configuration documentation** for Epic 4 (
 **From Story 4.2 (Create mitmproxy Addon Script):**
 
 **New Files Created:**
+
 - `scripts/mitmproxy-addon.py` - Conditional forwarding addon script (UI → localhost:8080, API → CloudFront passthrough)
 
 **Key Insights:**
+
 - **mitmproxy listens on port 8081** - System proxy must point to this port
 - **Bypass list essential** - Prevents recursive proxying of localhost requests (would cause infinite loops)
 - **OAuth compatibility** - Addon preserves CloudFront Host header for OAuth callback validation
@@ -131,23 +137,28 @@ This story creates the **system proxy configuration documentation** for Epic 4 (
 - **Corporate network consideration** - Browser-specific proxy option needed for developers with existing corporate proxies
 
 **Patterns to Reuse:**
+
 - Clear, step-by-step instructions with platform-specific details (same documentation style as Story 4.1)
 - Troubleshooting section covers common pitfalls discovered during manual testing
 - Validation commands provide quick verification of configuration
 
 **Technical Debt Noted:**
+
 - None affecting Story 4.4
 
 **Pending Review Items:**
+
 - Story 4.2 status is "review" - addon script awaiting SM review
 - No blocking issues for Story 4.4 (documentation standalone)
 
 **New Services/Patterns from Story 4.2:**
+
 - mitmproxy runs on port 8081 (documented in Story 4.3 npm scripts)
 - Addon script location: `scripts/mitmproxy-addon.py`
 - Startup command: `yarn dev:proxy` (wraps `mitmproxy -s scripts/mitmproxy-addon.py --listen-port 8081`)
 
 **Files to Reference:**
+
 - Use `scripts/mitmproxy-addon.py` for explaining routing behavior (helps developers understand why proxy configuration matters)
 - Reference `docs/development/local-try-setup.md` structure from Story 4.1 (add system proxy section to this file)
 
@@ -157,10 +168,12 @@ This story creates the **system proxy configuration documentation** for Epic 4 (
 ### Architecture References
 
 **From try-before-you-buy-architecture.md:**
+
 - **ADR-017**: Vanilla TypeScript (no framework) - system proxy enables local TypeScript development with hot reload
 - **ADR-020**: Progressive enhancement pattern - static HTML served from localhost:8080 works seamlessly with proxy
 
 **From tech-spec-epic-4.md:**
+
 - **Detailed Design → Workflows**: Daily workflow requires system proxy configured to route browser → mitmproxy (8081) → conditional routing
 - **Dependencies → Developer Machine System Proxy**: Configuration scope can be system-wide or browser-specific
 - **Dependencies → Bypass List**: `localhost, 127.0.0.1, *.local` prevents recursive proxying
@@ -168,20 +181,24 @@ This story creates the **system proxy configuration documentation** for Epic 4 (
 - **Risks → RISK-4**: Corporate proxy/VPN conflicts → Browser-specific proxy as alternative
 
 **From prd.md:**
+
 - **NFR-TRY-TEST-1**: E2E tests require working proxy configuration (foundation for future testing)
 - **Phase 1: mitmproxy Configuration**: System proxy is essential component of local dev setup
 
 ### Project Structure Notes
 
 **Documentation File to Update:**
+
 - Path: `docs/development/local-try-setup.md`
 - New Sections: "System Proxy Configuration", "Alternative: Browser-Specific Proxy", "Disabling the Proxy", "Troubleshooting Proxy Issues"
 - Position: After "mitmproxy Installation" section, before "Certificate Trust Setup" section
 
 **No New Code Files:**
+
 - Story 4.4 is documentation-only (no scripts or configuration files created)
 
 **Platform Coverage:**
+
 - macOS (primary dev platform for many government teams)
 - Windows (common in corporate environments)
 - Linux (GNOME desktop environment, note for other DEs)
@@ -189,6 +206,7 @@ This story creates the **system proxy configuration documentation** for Epic 4 (
 ### Implementation Guidance
 
 **macOS Proxy Configuration:**
+
 ```
 System Preferences (macOS 13+) or System Settings (macOS 14+)
 → Network
@@ -207,6 +225,7 @@ System Preferences (macOS 13+) or System Settings (macOS 14+)
 ```
 
 **Windows Proxy Configuration:**
+
 ```
 Control Panel
 → Internet Options
@@ -222,6 +241,7 @@ Control Panel
 ```
 
 **Linux (GNOME) Proxy Configuration:**
+
 ```
 Settings
 → Network
@@ -234,6 +254,7 @@ Settings
 ```
 
 **FoxyProxy Pattern Configuration:**
+
 ```
 FoxyProxy Extension (Chrome/Firefox)
 → Options
@@ -251,6 +272,7 @@ FoxyProxy Extension (Chrome/Firefox)
 ```
 
 **Validation Command:**
+
 ```bash
 # Verify proxy configuration routes CloudFront requests
 curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net
@@ -262,23 +284,27 @@ curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net
 ### Testing Strategy
 
 **Documentation Review:**
+
 - Manual review by developer following instructions on fresh machine (one platform)
 - Verify all steps clear and actionable
 - Test validation command produces expected results
 - Confirm troubleshooting section covers issues encountered during testing
 
 **Platform Testing:**
+
 - Test proxy configuration on at least one platform (macOS, Windows, or Linux)
 - Verify browser traffic routes through mitmproxy (check mitmproxy console logs)
 - Test bypass list prevents localhost loops (localhost requests not proxied)
 
 **Acceptance Criteria Validation:**
+
 - **AC1**: Review confirms all three platforms documented with clear steps, bypass list included
 - **AC2**: FoxyProxy alternative documented with pattern setup instructions
 - **AC3**: Revert instructions present for all platforms and FoxyProxy
 - **AC4**: Troubleshooting section covers common issues with validation command
 
 **No Automated Tests:**
+
 - Story 4.4 is documentation-only (no code to test)
 - Validation script (Story 4.6) will check if proxy is configured, but cannot automate configuration itself
 
@@ -307,6 +333,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Implementation Approach:**
+
 - Extended existing local-try-setup.md with comprehensive system proxy configuration documentation
 - Added platform-specific sections for macOS, Windows, and Linux (GNOME)
 - Included FoxyProxy browser extension alternative for corporate proxy/VPN conflicts
@@ -314,6 +341,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Structured documentation follows established patterns from Story 4.1 (step-by-step, platform-specific, troubleshooting)
 
 **Technical Decisions:**
+
 1. **Port Configuration:** Consistently documented localhost:8081 across all platforms (matches mitmproxy listen port from Story 4.3)
 2. **Bypass List Format:** Platform-specific separators (commas for macOS/Linux, semicolons for Windows) to match OS conventions
 3. **Validation Command:** `curl -x http://localhost:8081 https://d7roov8fndsis.cloudfront.net` provides quick verification of proxy routing
@@ -321,6 +349,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 5. **FoxyProxy Alternative:** Addresses RISK-4 from tech spec (corporate proxy/VPN conflicts)
 
 **Testing Performed:**
+
 - Documentation review: All acceptance criteria covered
 - Consistency check: Bypass list documented identically across all platform sections (`localhost, 127.0.0.1, *.local`)
 - Cross-reference validation: Updated internal links to point to new System Proxy Configuration section (removed broken Story 4.4 references)
@@ -331,23 +360,27 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 **Story 4.4 Implementation Complete:**
 
 ✅ **System Proxy Configuration Documentation Added**
+
 - macOS: System Settings → Network → Proxies (HTTP/HTTPS proxy localhost:8081, bypass list configured)
 - Windows: Control Panel → Internet Options → LAN Settings (proxy localhost:8081, exceptions configured)
 - Linux (GNOME): Settings → Network → Network Proxy (Manual method, HTTP/HTTPS proxy localhost:8081, ignore hosts configured)
 - Visual guides: ASCII diagrams show UI navigation for each platform
 
 ✅ **Browser-Specific Proxy Alternative (FoxyProxy):**
+
 - Installation instructions for Chrome and Firefox
 - Pattern configuration: `*d7roov8fndsis.cloudfront.net*` → localhost:8081
 - Explained when to use: Corporate networks, VPN conflicts, browser-only isolation
 - Benefits and limitations documented
 
 ✅ **Proxy Disable Instructions:**
+
 - Revert steps for macOS, Windows, Linux, and FoxyProxy
 - Explained when to disable: Not developing, VPN conflicts, troubleshooting
 - Quick revert test command: `curl https://google.com` (verify normal internet access)
 
 ✅ **Troubleshooting Section (5 Issues):**
+
 1. **Cannot Connect to CloudFront Domain** → Verify mitmproxy running on port 8081
 2. **Infinite Redirect Loop** → Check bypass list includes localhost (prevents recursive proxying)
 3. **VPN/Corporate Proxy Conflicts** → Use FoxyProxy browser extension instead of system proxy
@@ -355,6 +388,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 5. **Validation Command Fails** → Diagnostic steps for common curl errors
 
 ✅ **Documentation Updates:**
+
 - Updated Table of Contents with new System Proxy Configuration sections
 - Updated Next Steps section: Story 4.4 marked complete
 - Updated document version: 1.0 → 1.1 (Last Updated: 2025-11-23, Story 4.4)
@@ -365,6 +399,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### File List
 
 **Files Modified:**
+
 - `docs/development/local-try-setup.md` - Added System Proxy Configuration section (310+ lines of platform-specific documentation, troubleshooting, and FoxyProxy alternative)
 
 ---
@@ -388,26 +423,26 @@ The implementation demonstrates excellent attention to detail with consistent by
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
+| AC#     | Description                                                         | Status         | Evidence                                                                                                                                                                       |
+| ------- | ------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **AC1** | Platform-specific proxy configuration steps (macOS, Windows, Linux) | ✅ IMPLEMENTED | local-try-setup.md:293-486 - Complete coverage of all 3 platforms with HTTP/HTTPS proxy localhost:8081 and bypass list `localhost, 127.0.0.1, *.local` documented consistently |
-| **AC2** | Browser-specific proxy option (FoxyProxy alternative) | ✅ IMPLEMENTED | local-try-setup.md:489-549 - FoxyProxy extension documented for Chrome/Firefox with pattern `*d7roov8fndsis.cloudfront.net*`, explains when to use for corporate/VPN conflicts |
-| **AC3** | Proxy revert instructions | ✅ IMPLEMENTED | local-try-setup.md:552-593 - Revert steps documented for macOS, Windows, Linux, and FoxyProxy with clear "when to disable" guidance |
-| **AC4** | Troubleshooting section with validation command | ✅ IMPLEMENTED | local-try-setup.md:708-837 - 5 common issues documented (cannot connect, infinite loop, VPN conflicts, sites broken, validation fails) with `curl -x` validation command |
+| **AC2** | Browser-specific proxy option (FoxyProxy alternative)               | ✅ IMPLEMENTED | local-try-setup.md:489-549 - FoxyProxy extension documented for Chrome/Firefox with pattern `*d7roov8fndsis.cloudfront.net*`, explains when to use for corporate/VPN conflicts |
+| **AC3** | Proxy revert instructions                                           | ✅ IMPLEMENTED | local-try-setup.md:552-593 - Revert steps documented for macOS, Windows, Linux, and FoxyProxy with clear "when to disable" guidance                                            |
+| **AC4** | Troubleshooting section with validation command                     | ✅ IMPLEMENTED | local-try-setup.md:708-837 - 5 common issues documented (cannot connect, infinite loop, VPN conflicts, sites broken, validation fails) with `curl -x` validation command       |
 
 **Summary:** 4 of 4 acceptance criteria fully implemented ✅
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: macOS proxy config | ✅ Complete | ✅ VERIFIED | local-try-setup.md:293-356 - All 5 subtasks verified (section, steps, proxy settings, bypass list, visual guide) |
-| Task 2: Windows proxy config | ✅ Complete | ✅ VERIFIED | local-try-setup.md:359-417 - All 6 subtasks verified (section, navigation, checkbox, address:port, exceptions with semicolons, visual guide) |
-| Task 3: Linux proxy config | ✅ Complete | ✅ VERIFIED | local-try-setup.md:420-486 - All 6 subtasks verified (section, navigation, manual method, proxy settings, ignore hosts, other DEs noted) |
-| Task 4: FoxyProxy alternative | ✅ Complete | ✅ VERIFIED | local-try-setup.md:489-549 - All 5 subtasks verified (section, installation links, pattern config, when to use, visual descriptions provided) |
-| Task 5: Proxy revert instructions | ✅ Complete | ✅ VERIFIED | local-try-setup.md:552-593 - All 6 subtasks verified (section, macOS/Windows/Linux/FoxyProxy revert steps, when to disable explained) |
-| Task 6: Troubleshooting section | ✅ Complete | ✅ VERIFIED | local-try-setup.md:708-837 - All 7 subtasks verified (5 issues + validation command + mitmproxy console mentions) |
-| Task 7: Documentation completeness | ✅ Complete | ✅ VERIFIED | All platforms reviewed for clarity, bypass list consistent across platforms, troubleshooting comprehensive, no grammar issues |
+| Task                               | Marked As   | Verified As | Evidence                                                                                                                                      |
+| ---------------------------------- | ----------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Task 1: macOS proxy config         | ✅ Complete | ✅ VERIFIED | local-try-setup.md:293-356 - All 5 subtasks verified (section, steps, proxy settings, bypass list, visual guide)                              |
+| Task 2: Windows proxy config       | ✅ Complete | ✅ VERIFIED | local-try-setup.md:359-417 - All 6 subtasks verified (section, navigation, checkbox, address:port, exceptions with semicolons, visual guide)  |
+| Task 3: Linux proxy config         | ✅ Complete | ✅ VERIFIED | local-try-setup.md:420-486 - All 6 subtasks verified (section, navigation, manual method, proxy settings, ignore hosts, other DEs noted)      |
+| Task 4: FoxyProxy alternative      | ✅ Complete | ✅ VERIFIED | local-try-setup.md:489-549 - All 5 subtasks verified (section, installation links, pattern config, when to use, visual descriptions provided) |
+| Task 5: Proxy revert instructions  | ✅ Complete | ✅ VERIFIED | local-try-setup.md:552-593 - All 6 subtasks verified (section, macOS/Windows/Linux/FoxyProxy revert steps, when to disable explained)         |
+| Task 6: Troubleshooting section    | ✅ Complete | ✅ VERIFIED | local-try-setup.md:708-837 - All 7 subtasks verified (5 issues + validation command + mitmproxy console mentions)                             |
+| Task 7: Documentation completeness | ✅ Complete | ✅ VERIFIED | All platforms reviewed for clarity, bypass list consistent across platforms, troubleshooting comprehensive, no grammar issues                 |
 
 **Summary:** 7 of 7 completed tasks verified, 0 questionable, 0 falsely marked complete ✅
 
@@ -428,6 +463,7 @@ Story 4.4 is documentation-only with no code implementation. Testing consists of
 ### Architectural Alignment
 
 **Tech Spec Compliance:**
+
 - ✅ **Port 8081:** Consistently documented across all platforms (matches Story 4.3 npm script configuration)
 - ✅ **Bypass List Requirement:** `localhost, 127.0.0.1, *.local` documented per tech spec to prevent recursive proxying (Epic 4 Tech Spec: Dependencies → Developer Machine System Proxy)
 - ✅ **Platform Coverage:** macOS, Windows, Linux documented as required (Epic 4 Tech Spec: Detailed Design → Workflows)
@@ -435,6 +471,7 @@ Story 4.4 is documentation-only with no code implementation. Testing consists of
 - ✅ **Security Best Practice:** Proxy disable instructions included (when not developing, VPN conflicts, troubleshooting)
 
 **Architecture Decision Adherence:**
+
 - ✅ **ADR-015 Compliance:** Documentation follows Epic 4 tech spec guidance patterns (clear instructions, platform-specific, troubleshooting)
 - ✅ **Development Workflow Alignment:** Documentation supports daily workflow: Browser → mitmproxy (8081) → conditional routing
 
@@ -458,6 +495,7 @@ Security considerations relevant to documentation content:
 **Documentation Quality Standards:**
 
 Story 4.4 documentation follows established best practices from Story 4.1:
+
 - ✅ **Step-by-Step Instructions:** Each platform has numbered steps with clear UI navigation paths
 - ✅ **Platform-Specific Sections:** Separate sections for macOS, Windows, Linux avoid confusion
 - ✅ **Visual Guides:** ASCII diagrams supplement written instructions (no actual screenshots needed)
@@ -465,11 +503,13 @@ Story 4.4 documentation follows established best practices from Story 4.1:
 - ✅ **Validation Commands:** Provides quick verification: `curl -x`, `scutil --proxy`, `gsettings get`, etc.
 
 **Consistency Achieved:**
+
 - ✅ **Bypass List Format:** Correctly documented with platform-specific separators (commas for macOS/Linux, semicolons for Windows)
 - ✅ **Port References:** localhost:8081 used consistently across all documentation sections
 - ✅ **Terminology:** "System proxy" vs "browser proxy" distinction clear throughout
 
 **Documentation References:**
+
 - [mitmproxy Documentation - Getting Started](https://docs.mitmproxy.org/stable/overview-getting-started/)
 - [FoxyProxy Extension - Chrome](https://chrome.google.com/webstore/detail/foxyproxy-standard)
 - [FoxyProxy Extension - Firefox](https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-standard/)
@@ -487,6 +527,7 @@ All acceptance criteria satisfied, all tasks verified complete, documentation qu
 Story 4.4 delivers production-ready system proxy configuration documentation that fully satisfies all 4 acceptance criteria and completes all 7 tasks with comprehensive platform coverage. The documentation demonstrates excellent quality with consistent bypass list configuration (preventing infinite loops), clear troubleshooting guidance (5 common issues), and FoxyProxy browser extension alternative (mitigating RISK-4 from tech spec).
 
 Systematic validation confirms:
+
 - ✅ All platform-specific instructions present and complete (macOS, Windows, Linux)
 - ✅ All tasks marked complete have been verified with file:line evidence
 - ✅ Zero defects, zero questionable completions, zero false task completions
@@ -498,6 +539,7 @@ Systematic validation confirms:
 ## Change Log
 
 ### Version 1.2 - 2025-11-23
+
 - Senior Developer Review notes appended (AI review by cns)
 - Status: review → approved for done
 - Review outcome: APPROVE (all ACs verified, all tasks complete, zero defects)

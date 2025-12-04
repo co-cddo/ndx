@@ -141,7 +141,8 @@ decision_categories:
 common_stacks:
   modern_fullstack:
     name: "Modern Full-Stack"
-    components: ["Next.js", "PostgreSQL or Supabase", "Prisma ORM", "NextAuth.js", "Tailwind CSS", "TypeScript", "Vercel"]
+    components:
+      ["Next.js", "PostgreSQL or Supabase", "Prisma ORM", "NextAuth.js", "Tailwind CSS", "TypeScript", "Vercel"]
     good_for: "Most web applications"
 
   enterprise_stack:
@@ -169,7 +170,8 @@ starter_templates:
   create_next_app:
     name: "Create Next App"
     command_search: "npx create-next-app@latest"
-    decisions_provided: ["Next.js framework", "TypeScript option", "App Router vs Pages", "Tailwind CSS option", "ESLint"]
+    decisions_provided:
+      ["Next.js framework", "TypeScript option", "App Router vs Pages", "Tailwind CSS option", "ESLint"]
     good_for: ["React web applications", "Full-stack apps", "SSR/SSG"]
 
   create_t3_app:

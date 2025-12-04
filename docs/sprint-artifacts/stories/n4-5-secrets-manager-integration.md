@@ -11,30 +11,35 @@ So that secrets are not stored in code or environment variables and can be rotat
 ## Acceptance Criteria
 
 **AC-5.1: Lambda retrieves credentials from path**
+
 - **Given** the Lambda function starts
 - **When** it needs to send notifications
 - **Then** it retrieves credentials from `/ndx/notifications/credentials`
 - **Verification:** Integration test (will be stub in this story, real retrieval in N-5/N-6)
 
 **AC-5.2: Secret value cached in Lambda memory**
+
 - **Given** the Lambda retrieves a secret
 - **When** subsequent invocations occur in the same container
 - **Then** the secret is cached and not re-fetched
 - **Verification:** Code review + performance test
 
 **AC-5.3: Secrets Manager errors fail gracefully**
+
 - **Given** Secrets Manager is unavailable
 - **When** the Lambda attempts to retrieve credentials
 - **Then** it logs the error and fails (triggering DLQ)
 - **Verification:** Unit test
 
 **AC-5.4: Lambda IAM role has GetSecretValue permission**
+
 - **Given** the Lambda function
 - **When** deployed via CDK
 - **Then** its IAM role has `secretsmanager:GetSecretValue` for the secrets path
 - **Verification:** CDK assertion test
 
 **AC-5.5: Resource policy restricts secret access**
+
 - **Given** the secret in Secrets Manager
 - **When** reviewed
 - **Then** access is restricted to the Lambda role only (defense in depth)
@@ -42,18 +47,21 @@ So that secrets are not stored in code or environment variables and can be rotat
 - **Verification:** CDK assertion test + Red Team
 
 **AC-5.6: Secret JSON structure documented**
+
 - **Given** the secret schema
 - **When** documented
 - **Then** it defines: `{ notifyApiKey, slackWebhookUrl }`
 - **Verification:** Documentation
 
 **AC-5.7: Dependency security maintained**
+
 - **Given** the project dependencies
 - **When** `yarn audit` is run
 - **Then** no critical vulnerabilities exist; packages pinned to exact versions
 - **Verification:** Automated security scan
 
 **AC-5.8: Cache invalidation on new version**
+
 - **Given** a cached secret
 - **When** Secrets Manager returns a new version
 - **Then** the cache is invalidated on next container startup
@@ -114,6 +122,7 @@ So that secrets are not stored in code or environment variables and can be rotat
 ## Architecture Reference
 
 From notification-architecture.md:
+
 ```typescript
 // Lambda environment
 {

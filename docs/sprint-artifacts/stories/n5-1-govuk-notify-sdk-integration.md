@@ -220,12 +220,12 @@ NotificationHandler (N-4)
 
 ### Error Classification Map
 
-| Status Code | Error Type | Retry | Alarm |
-|-------------|------------|-------|-------|
-| 400 | PermanentError | No | No |
-| 401/403 | CriticalError | No | Immediate |
-| 429 | RetriableError | Yes (1000ms) | After threshold |
-| 5xx | RetriableError | Yes (backoff) | After 20 consecutive |
+| Status Code | Error Type     | Retry         | Alarm                |
+| ----------- | -------------- | ------------- | -------------------- |
+| 400         | PermanentError | No            | No                   |
+| 401/403     | CriticalError  | No            | Immediate            |
+| 429         | RetriableError | Yes (1000ms)  | After threshold      |
+| 5xx         | RetriableError | Yes (backoff) | After 20 consecutive |
 
 ### Circuit Breaker Configuration
 
@@ -281,11 +281,13 @@ Claude claude-opus-4-5-20251101
 ### File List
 
 #### New Files
+
 - `infra/lib/lambda/notification/notify-sender.ts` - Core NotifySender class with GOV.UK Notify SDK integration
 - `infra/lib/lambda/notification/notify-client.d.ts` - TypeScript declarations for notifications-node-client SDK
 - `infra/lib/lambda/notification/notify-sender.test.ts` - 43 unit tests for NotifySender
 
 #### Modified Files
+
 - `infra/package.json` - Added notifications-node-client, isomorphic-dompurify dependencies
 - `infra/lib/lambda/notification/errors.ts` - Fixed 429 retry delay to 1000ms for Notify
 - `infra/lib/notification-stack.ts` - Added 90-day log retention (logRetention: THREE_MONTHS)
@@ -294,12 +296,12 @@ Claude claude-opus-4-5-20251101
 
 ### Review Summary
 
-| Category | Status |
-|----------|--------|
+| Category     | Status                                             |
+| ------------ | -------------------------------------------------- |
 | **Reviewer** | Senior Dev Agent (Claude claude-opus-4-5-20251101) |
-| **Date** | 2025-11-28 |
-| **Verdict** | ✅ **APPROVED** |
-| **Tests** | 181/181 passing |
+| **Date**     | 2025-11-28                                         |
+| **Verdict**  | ✅ **APPROVED**                                    |
+| **Tests**    | 181/181 passing                                    |
 
 ### Architecture & Design ✅
 
@@ -312,35 +314,35 @@ Claude claude-opus-4-5-20251101
 
 All MUST criteria for code implementation satisfied:
 
-| AC | Description | File:Line | Verified |
-|----|-------------|-----------|----------|
-| AC-1.1 | notifications-node-client installed | package.json:37 | ✅ |
-| AC-1.2 | API key from Secrets Manager | secrets.ts:80-130 | ✅ |
-| AC-1.3 | Singleton pattern | notify-sender.ts:249-256 | ✅ |
-| AC-1.4 | sendEmail() wraps SDK | notify-sender.ts:316-319 | ✅ |
-| AC-1.5 | Input sanitisation | sanitizePersonalisation() | ✅ |
-| AC-1.6 | Reference = eventId | notify-sender.ts:303 | ✅ |
-| AC-1.7 | 400 → PermanentError | notify-sender.ts:411-413 | ✅ |
-| AC-1.8 | 401/403 → CriticalError | notify-sender.ts:417-424 | ✅ |
-| AC-1.9 | 429 → RetriableError(1000ms) | notify-sender.ts:427-431 | ✅ |
-| AC-1.10 | 5xx → RetriableError | notify-sender.ts:435-437 | ✅ |
-| AC-1.14 | Email verification assertion | verifyRecipient() | ✅ |
-| AC-1.17 | DOMPurify sanitisation | isomorphic-dompurify | ✅ |
-| AC-1.19 | UUID validation pattern | validateUUID() | ✅ |
-| AC-1.21 | Never log API key | Code comment + impl | ✅ |
-| AC-1.31 | Circuit breaker (20 errors) | notify-sender.ts:541-543 | ✅ |
-| AC-1.49 | Lambda timeout 30s | notification-stack.ts:117 | ✅ |
-| AC-1.55 | API key caching | secrets.ts:82-85 | ✅ |
+| AC      | Description                         | File:Line                 | Verified |
+| ------- | ----------------------------------- | ------------------------- | -------- |
+| AC-1.1  | notifications-node-client installed | package.json:37           | ✅       |
+| AC-1.2  | API key from Secrets Manager        | secrets.ts:80-130         | ✅       |
+| AC-1.3  | Singleton pattern                   | notify-sender.ts:249-256  | ✅       |
+| AC-1.4  | sendEmail() wraps SDK               | notify-sender.ts:316-319  | ✅       |
+| AC-1.5  | Input sanitisation                  | sanitizePersonalisation() | ✅       |
+| AC-1.6  | Reference = eventId                 | notify-sender.ts:303      | ✅       |
+| AC-1.7  | 400 → PermanentError                | notify-sender.ts:411-413  | ✅       |
+| AC-1.8  | 401/403 → CriticalError             | notify-sender.ts:417-424  | ✅       |
+| AC-1.9  | 429 → RetriableError(1000ms)        | notify-sender.ts:427-431  | ✅       |
+| AC-1.10 | 5xx → RetriableError                | notify-sender.ts:435-437  | ✅       |
+| AC-1.14 | Email verification assertion        | verifyRecipient()         | ✅       |
+| AC-1.17 | DOMPurify sanitisation              | isomorphic-dompurify      | ✅       |
+| AC-1.19 | UUID validation pattern             | validateUUID()            | ✅       |
+| AC-1.21 | Never log API key                   | Code comment + impl       | ✅       |
+| AC-1.31 | Circuit breaker (20 errors)         | notify-sender.ts:541-543  | ✅       |
+| AC-1.49 | Lambda timeout 30s                  | notification-stack.ts:117 | ✅       |
+| AC-1.55 | API key caching                     | secrets.ts:82-85          | ✅       |
 
 ### Security Controls ✅
 
-| Control | Implementation | Rating |
-|---------|---------------|--------|
-| Never log secrets | `tokenMetadata()` logs hash only | Excellent |
-| Input sanitisation | DOMPurify strips all HTML | Excellent |
-| Email verification | Strict equality check | Good |
-| UUID validation | Rejects query strings/injection | Excellent |
-| Circuit breaker | Prevents cascade failures | Excellent |
+| Control            | Implementation                   | Rating    |
+| ------------------ | -------------------------------- | --------- |
+| Never log secrets  | `tokenMetadata()` logs hash only | Excellent |
+| Input sanitisation | DOMPurify strips all HTML        | Excellent |
+| Email verification | Strict equality check            | Good      |
+| UUID validation    | Rejects query strings/injection  | Excellent |
+| Circuit breaker    | Prevents cascade failures        | Excellent |
 
 ### Testing Coverage ✅
 

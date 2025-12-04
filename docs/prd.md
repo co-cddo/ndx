@@ -5,6 +5,7 @@
 **Version:** 2.0
 
 **Features Covered:**
+
 1. CloudFront Origin Routing (Cookie-based routing infrastructure) - **COMPLETED**
 2. Try Before You Buy (AWS Innovation Sandbox Integration) - **IN DEVELOPMENT**
 3. GOV.UK Notify Integration (Innovation Sandbox email notifications) - **PLANNED**
@@ -47,18 +48,21 @@ The differentiator is taking a **methodical, low-risk approach** to UI evolution
 This is a **focused infrastructure enhancement** to an existing CloudFront distribution. The change is surgical and contained: adding a new origin and implementing cookie-based routing logic. No application code changes, no API changes, no user-facing functionality changes for production users.
 
 **Why Infrastructure Project:**
+
 - Modifies AWS CloudFront distribution configuration
 - Adds S3 origin with Origin Access Control
 - Implements routing logic via Lambda@Edge or CloudFront Functions
 - Pure deployment infrastructure concern
 
 **Domain Context:** As a UK government service, NDX infrastructure changes must:
+
 - Maintain zero downtime (government users cannot experience service interruption)
 - Preserve existing functionality completely (no regressions tolerated for live service)
 - Be auditable and reversible (public sector accountability)
 - Follow GDS standards for service reliability
 
 **Complexity Assessment: Medium**
+
 - **Not High:** Single CloudFront distribution change, well-understood AWS pattern, small tester group
 - **Not Low:** Production government service, requires precise configuration, zero-downtime requirement
 
@@ -77,6 +81,7 @@ This is a **focused infrastructure enhancement** to an existing CloudFront distr
 5. **Instant Rollback:** Can disable routing or remove new origin in under 5 minutes if issues discovered
 
 **What Winning Looks Like:**
+
 - Small group of internal CDDO testers can self-manage cookie to opt into new UI
 - Production users experience absolutely zero changes (no performance impact, no behavior changes)
 - Team has confidence to deploy UI changes to new bucket knowing only cookied users will see them
@@ -90,55 +95,40 @@ This is a **focused infrastructure enhancement** to an existing CloudFront distr
 ### MVP - Minimum Viable Product
 
 **CloudFront Configuration:**
+
 1. **Add New Origin:** Add `ndx-static-prod` S3 bucket as third origin to CloudFront distribution E3THG4UHYDHVWP
 2. **Origin Access Control:** Configure OAC for new origin to match security of existing S3Origin
 3. **Cookie-Based Routing:** Implement Lambda@Edge or CloudFront Function to inspect `NDX` cookie and route accordingly
 4. **Routing Logic:** If cookie `NDX=true` → route to `ndx-static-prod`, else → route to existing S3Origin
 5. **Preserve API Routes:** Ensure API Gateway origin routes remain completely untouched
 
-**CDK Implementation:**
-6. **CDK Code for CloudFront:** Define CloudFront configuration changes in CDK (infra/)
-7. **Origin Configuration:** Define new S3 origin with appropriate settings (OAC, connection timeouts, protocol)
-8. **Routing Function Code:** Lambda@Edge or CloudFront Function code for cookie inspection
-9. **Validation:** CDK tests for CloudFront configuration changes
+**CDK Implementation:** 6. **CDK Code for CloudFront:** Define CloudFront configuration changes in CDK (infra/) 7. **Origin Configuration:** Define new S3 origin with appropriate settings (OAC, connection timeouts, protocol) 8. **Routing Function Code:** Lambda@Edge or CloudFront Function code for cookie inspection 9. **Validation:** CDK tests for CloudFront configuration changes
 
-**Deployment & Validation:**
-10. **Zero-Downtime Deployment:** Deploy CloudFront changes without service interruption
-11. **Smoke Test:** Validate cookie routing works (set cookie, verify origin switch)
-12. **Rollback Plan:** Document steps to disable routing or remove origin if issues arise
+**Deployment & Validation:** 10. **Zero-Downtime Deployment:** Deploy CloudFront changes without service interruption 11. **Smoke Test:** Validate cookie routing works (set cookie, verify origin switch) 12. **Rollback Plan:** Document steps to disable routing or remove origin if issues arise
 
 ### Growth Features (Post-MVP)
 
 **Enhanced Routing:**
+
 1. **Multiple Cookie Values:** Support different cookie values for different test versions (e.g., `NDX=beta`, `NDX=canary`)
 2. **Percentage Rollout:** Route X% of traffic to new origin regardless of cookie (gradual rollout)
 3. **Header-Based Routing:** Additional routing based on custom headers for automated testing
 4. **User-Agent Routing:** Route based on browser/device for targeted testing
 
-**Observability:**
-5. **Routing Metrics:** CloudWatch metrics showing traffic split between origins
-6. **Origin Performance Comparison:** Compare response times between old and new origins
-7. **Error Rate Monitoring:** Alert if new origin has higher error rates than existing
-8. **Real User Monitoring:** Track which users are seeing which origin
+**Observability:** 5. **Routing Metrics:** CloudWatch metrics showing traffic split between origins 6. **Origin Performance Comparison:** Compare response times between old and new origins 7. **Error Rate Monitoring:** Alert if new origin has higher error rates than existing 8. **Real User Monitoring:** Track which users are seeing which origin
 
-**Automation:**
-9. **Cookie Management UI:** Simple web page to set/unset the NDX cookie (eliminates manual browser console)
-10. **Admin Dashboard:** View current routing configuration and traffic distribution
-11. **Automated Testing:** Integration tests that verify routing logic
+**Automation:** 9. **Cookie Management UI:** Simple web page to set/unset the NDX cookie (eliminates manual browser console) 10. **Admin Dashboard:** View current routing configuration and traffic distribution 11. **Automated Testing:** Integration tests that verify routing logic
 
 ### Vision (Future)
 
 **Complete Strangler Pattern:**
+
 1. **Gradual Migration:** Progressively roll out new UI to 10%, 25%, 50%, 75%, 100% of users
 2. **A/B Testing Framework:** Use routing infrastructure for A/B testing different UI approaches
 3. **Feature Flags:** Route based on user feature flags for gradual feature rollouts
 4. **New UI Default:** Eventually make new origin the default, old origin becomes fallback
 
-**Advanced Capabilities:**
-5. **Multi-Variant Testing:** Support 3+ UI versions simultaneously for testing
-6. **Geographic Routing:** Different UIs for different regions/departments
-7. **Personalized Routing:** Route based on user preferences or department policies
-8. **Automated Rollback:** Automatically switch back to old origin if error thresholds exceeded
+**Advanced Capabilities:** 5. **Multi-Variant Testing:** Support 3+ UI versions simultaneously for testing 6. **Geographic Routing:** Different UIs for different regions/departments 7. **Personalized Routing:** Route based on user preferences or department policies 8. **Automated Rollback:** Automatically switch back to old origin if error thresholds exceeded
 
 ---
 
@@ -154,6 +144,7 @@ This infrastructure change has minimal government-specific requirements since it
 4. **No Breaking Changes:** Existing site functionality must remain 100% intact for all users without opt-in cookie
 
 **GovTech-Specific Constraints:**
+
 - **No User Data Handling:** This is infrastructure routing only, no user data or PII involved
 - **No Compliance Changes:** Routing mechanism doesn't affect WCAG accessibility, GDS standards, or security posture
 - **Public Sector Transparency:** Infrastructure-as-code in public repository maintains open government principles
@@ -181,6 +172,7 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
 ### Existing Infrastructure Context
 
 **CloudFront Distribution:**
+
 - Distribution ID: `E3THG4UHYDHVWP`
 - Domain: `ndx.digital.cabinet-office.gov.uk`
 - Status: Production (Deployed)
@@ -188,6 +180,7 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
 - Region: us-west-2 (Global CDN)
 
 **Existing Origins:**
+
 1. **S3Origin (ID: "S3Origin"):**
    - Bucket: `ndx-try-isb-compute-cloudfrontuiapiisbfrontendbuck-ssjtxkytbmky`
    - Origin Access Control: E3P8MA1G9Y5BYE
@@ -198,15 +191,16 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
    - Path: `/prod`
    - Purpose: Backend API endpoints
 
-**New Origin to Add:**
-3. **ndx-static-prod (New):**
-   - Bucket: `ndx-static-prod` (CDK-managed, already deployed)
-   - Origin Access Control: Reuse existing E3P8MA1G9Y5BYE or create new
-   - Purpose: New UI version for testing via cookie routing
+**New Origin to Add:** 3. **ndx-static-prod (New):**
+
+- Bucket: `ndx-static-prod` (CDK-managed, already deployed)
+- Origin Access Control: Reuse existing E3P8MA1G9Y5BYE or create new
+- Purpose: New UI version for testing via cookie routing
 
 ### CloudFront Configuration Changes
 
 **Origin Configuration:**
+
 - Origin ID: `ndx-static-prod-origin`
 - Origin Domain: `ndx-static-prod.s3.us-west-2.amazonaws.com`
 - Origin Protocol: HTTPS only
@@ -221,6 +215,7 @@ This pattern avoids CloudFormation import complexities and conflicts with extern
 Two implementation options:
 
 **Option A: CloudFront Functions (Recommended):**
+
 - **Advantage:** Lower latency (runs at edge), lower cost, simpler
 - **Function Type:** Viewer request function
 - **Language:** JavaScript (CloudFront Functions runtime)
@@ -228,6 +223,7 @@ Two implementation options:
 - **Deployment:** Part of CloudFront cache behavior configuration
 
 **Option B: Lambda@Edge:**
+
 - **Advantage:** More powerful, can perform complex logic if needed later
 - **Function Type:** Origin request function
 - **Language:** Node.js
@@ -235,26 +231,36 @@ Two implementation options:
 - **Logic:** Same cookie inspection and origin selection
 
 **Routing Function Logic:**
+
 ```javascript
 // Pseudo-code for routing function
 function handler(event) {
-  const request = event.request;
-  const cookies = parseCookies(request.headers.cookie);
+  const request = event.request
+  const cookies = parseCookies(request.headers.cookie)
 
   // Check for NDX cookie with value "true"
-  if (cookies['NDX'] === 'true') {
+  if (cookies["NDX"] === "true") {
     // Route to new S3 bucket origin
-    request.origin = { s3: { /* ndx-static-prod config */ } };
+    request.origin = {
+      s3: {
+        /* ndx-static-prod config */
+      },
+    }
   } else {
     // Route to existing S3 origin (default behavior)
-    request.origin = { s3: { /* existing S3Origin config */ } };
+    request.origin = {
+      s3: {
+        /* existing S3Origin config */
+      },
+    }
   }
 
-  return request;
+  return request
 }
 ```
 
 **Cache Behavior Configuration:**
+
 - **Do NOT modify API Gateway routes** - Only affect default cache behavior
 - Default cache behavior: Attach routing function
 - Preserve all existing cache policies, compression settings, viewer protocol policies
@@ -263,6 +269,7 @@ function handler(event) {
 ### CDK Implementation Requirements
 
 **CDK Stack Updates:**
+
 - Update existing `NdxStaticStack` or create new `NdxCloudfrontStack`
 - Import existing CloudFront distribution (do not create new one)
 - Add new S3 origin to distribution configuration
@@ -270,6 +277,7 @@ function handler(event) {
 - Attach function to default cache behavior
 
 **Testing Requirements:**
+
 - Snapshot test for CloudFront configuration changes
 - Fine-grained assertions for new origin properties
 - Fine-grained assertions that API Gateway origin remains untouched
@@ -279,26 +287,17 @@ function handler(event) {
 ### Deployment Process
 
 **Pre-Deployment:**
+
 1. Review current CloudFront configuration via AWS Console
 2. Run `cdk diff` to preview infrastructure changes
 3. Verify API Gateway origin configuration is not modified in diff
 4. Document current default cache behavior configuration for rollback
 
-**Deployment:**
-5. Run `cdk deploy` to apply CloudFront changes
-6. CloudFront propagates changes globally (10-15 minutes)
-7. Monitor CloudFormation stack events for successful deployment
+**Deployment:** 5. Run `cdk deploy` to apply CloudFront changes 6. CloudFront propagates changes globally (10-15 minutes) 7. Monitor CloudFormation stack events for successful deployment
 
-**Post-Deployment Validation:**
-8. Without cookie: Browse site, verify existing origin serves content
-9. Set cookie `NDX=true`: Browse site, verify new origin serves content
-10. Clear cookie: Verify switched back to existing origin
-11. Check CloudFront metrics for errors or anomalies
+**Post-Deployment Validation:** 8. Without cookie: Browse site, verify existing origin serves content 9. Set cookie `NDX=true`: Browse site, verify new origin serves content 10. Clear cookie: Verify switched back to existing origin 11. Check CloudFront metrics for errors or anomalies
 
-**Rollback Plan:**
-12. Option 1: Disable routing function (fastest)
-13. Option 2: Revert CloudFront configuration via `cdk deploy` with previous version
-14. Option 3: Remove new origin entirely if issues persist
+**Rollback Plan:** 12. Option 1: Disable routing function (fastest) 13. Option 2: Revert CloudFront configuration via `cdk deploy` with previous version 14. Option 3: Remove new origin entirely if issues persist
 
 ---
 
@@ -513,6 +512,7 @@ function handler(event) {
 ## PRD Summary
 
 **Captured Requirements:**
+
 - **44 Functional Requirements** across 7 capability areas:
   - CloudFront Origin Management (6 FRs)
   - Cookie-Based Routing Logic (8 FRs)
@@ -533,6 +533,7 @@ function handler(event) {
   - Compliance & Auditability (5 NFRs)
 
 **Key Deliverables:**
+
 1. CloudFront distribution E3THG4UHYDHVWP enhanced with third origin (`ndx-static-prod`)
 2. Origin Access Control configured for new S3 origin matching existing security
 3. Cookie-based routing function (CloudFront Functions or Lambda@Edge) inspecting `NDX` cookie
@@ -541,6 +542,7 @@ function handler(event) {
 6. Deployment documentation with rollback procedures
 
 **Success Validation:**
+
 - Testers with `NDX=true` cookie see new S3 bucket content
 - All users without cookie see existing site unchanged
 - API Gateway origin completely untouched
@@ -608,6 +610,7 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 7. **Accessibility Compliance:** WCAG 2.2 AA minimum (target AAA) with keyboard navigation and screen reader support
 
 **What Winning Looks Like:**
+
 - Government users browse NDX catalogue, click "Try" button, accept AUP, and get AWS sandbox access in < 30 seconds
 - Users manage multiple past/current try sessions from centralized /try page
 - GOV.UK Design System styling ensures seamless NDX integration (Innovation Sandbox branding invisible to users)
@@ -621,96 +624,52 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 ### MVP - Minimum Viable Product
 
 **Phase 1: Local Development Setup (Dev Infrastructure)**
+
 1. **mitmproxy Configuration:** Proxy `https://ndx.digital.cabinet-office.gov.uk/` to localhost for development
 2. **API Route Exclusion:** Exclude `/api/*` routes (proxy only UI, not API calls)
 3. **Playwright Validation:** Prove proxy works for home page and API calls return expected responses
 
-**Phase 2-3: Testing Infrastructure**
-4. **End-to-End Test Suite:** Automated tests proving proxy and app server integration
-5. **Smoke Test Suite:** Crawl main website areas to catch regression issues
-6. **Test Credentials:** Document 1Password CLI integration for test user credentials
+**Phase 2-3: Testing Infrastructure** 4. **End-to-End Test Suite:** Automated tests proving proxy and app server integration 5. **Smoke Test Suite:** Crawl main website areas to catch regression issues 6. **Test Credentials:** Document 1Password CLI integration for test user credentials
 
-**Phase 4: Authentication (Sign In/Out UI)**
-7. **Sign In Button:** Top-right navigation shows "Sign in" when unauthenticated
-8. **Sign Out Button:** Top-right navigation shows "Sign out" when authenticated
-9. **Session Management:** JWT stored in sessionStorage (persists across tabs, not browser restarts)
-10. **OAuth Flow:** Redirect to `/api/auth/login`, handle token in URL query param, store in sessionStorage
-11. **API Integration:** Send `Authorization: Bearer {token}` header with all ISB API requests
+**Phase 4: Authentication (Sign In/Out UI)** 7. **Sign In Button:** Top-right navigation shows "Sign in" when unauthenticated 8. **Sign Out Button:** Top-right navigation shows "Sign out" when authenticated 9. **Session Management:** JWT stored in sessionStorage (persists across tabs, not browser restarts) 10. **OAuth Flow:** Redirect to `/api/auth/login`, handle token in URL query param, store in sessionStorage 11. **API Integration:** Send `Authorization: Bearer {token}` header with all ISB API requests
 
-**Phase 5: Try Page (/try)**
-12. **Try Page Route:** Create `/try` page showing user's sandbox sessions
-13. **Unauthenticated State:** Show "Sign in to view your try sessions" button if not logged in
-14. **Session List View:** Display current and past try sessions in table format
+**Phase 5: Try Page (/try)** 12. **Try Page Route:** Create `/try` page showing user's sandbox sessions 13. **Unauthenticated State:** Show "Sign in to view your try sessions" button if not logged in 14. **Session List View:** Display current and past try sessions in table format
 
-**Phase 6: Try Sessions Display**
-15. **Previous Sessions Table:** Show expired/terminated sessions with columns:
-    - Template Name (e.g., "user research 0.0.1")
-    - AWS Account ID
-    - Expiry Date (relative time: "4 days ago")
-    - Budget Status (e.g., "$0 / $5", "$2.50 / $5")
-    - Status Badge (Active/Expired/Terminated/Failed with color coding)
+**Phase 6: Try Sessions Display** 15. **Previous Sessions Table:** Show expired/terminated sessions with columns: - Template Name (e.g., "user research 0.0.1") - AWS Account ID - Expiry Date (relative time: "4 days ago") - Budget Status (e.g., "$0 / $5", "$2.50 / $5") - Status Badge (Active/Expired/Terminated/Failed with color coding)
 
-**Phase 7: Active Session Management**
-16. **Current Lease Display:** Highlight active sessions differently from expired ones
-17. **AWS Console Launch:** "Launch AWS Console" button opening SSO portal URL in new tab:
-    - URL format: `https://d-9267e1e371.awsapps.com/start/#/console?account_id={accountId}&role_name=ndx_IsbUsersPS`
-18. **Session Details:** Show lease duration remaining, budget consumed, account ID
+**Phase 7: Active Session Management** 16. **Current Lease Display:** Highlight active sessions differently from expired ones 17. **AWS Console Launch:** "Launch AWS Console" button opening SSO portal URL in new tab: - URL format: `https://d-9267e1e371.awsapps.com/start/#/console?account_id={accountId}&role_name=ndx_IsbUsersPS` 18. **Session Details:** Show lease duration remaining, budget consumed, account ID
 
-**Phase 8: Catalogue Integration**
-19. **Product Page Metadata:** Add YAML frontmatter fields to catalogue product pages:
-    ```yaml
+**Phase 8: Catalogue Integration** 19. **Product Page Metadata:** Add YAML frontmatter fields to catalogue product pages:
+`yaml
     try: ndx_isb
     try_id: a3beced2-be4e-41a0-b6e2-735a73fffed7  # Lease template UUID
-    ```
-20. **Try Before You Buy Tag:** Add tag to products supporting try (e.g., `tags: ["Try Before You Buy"]`)
-21. **Catalogue Filter:** Enable filtering catalogue by "Try Before You Buy" tag (matches existing tag filter behavior)
-22. **Empty AWS Account Product:** Create `src/catalogue/aws/empty.md` for bare AWS sandbox environment
+    ` 20. **Try Before You Buy Tag:** Add tag to products supporting try (e.g., `tags: ["Try Before You Buy"]`) 21. **Catalogue Filter:** Enable filtering catalogue by "Try Before You Buy" tag (matches existing tag filter behavior) 22. **Empty AWS Account Product:** Create `src/catalogue/aws/empty.md` for bare AWS sandbox environment
 
-**Phase 9: Try Button & Lease Request**
-23. **Try Button on Product Pages:** GOV.UK button "Try this now for 24 hours" (matches existing design pattern)
-24. **Unauthenticated Flow:** If not signed in, initiate OAuth sign-in flow first
-25. **Lease Request Modal:** Overlay/modal window showing:
-    - Duration: 24 hours
-    - Budget: $50 max
-    - Scrollable AUP text (fetched from `/api/configurations` termsOfService field)
-    - Required checkbox: "I accept the Acceptable Use Policy"
-    - Cancel button (closes modal)
-    - Continue button (requests lease, navigates to /try page)
-26. **Error Handling:**
-    - Max leases exceeded (409): Show JavaScript alert + redirect to /try page
-    - Other errors: Show JavaScript alert with error message
-27. **Loading States:** Show loading indicator while requesting lease
+**Phase 9: Try Button & Lease Request** 23. **Try Button on Product Pages:** GOV.UK button "Try this now for 24 hours" (matches existing design pattern) 24. **Unauthenticated Flow:** If not signed in, initiate OAuth sign-in flow first 25. **Lease Request Modal:** Overlay/modal window showing: - Duration: 24 hours - Budget: $50 max - Scrollable AUP text (fetched from `/api/configurations` termsOfService field) - Required checkbox: "I accept the Acceptable Use Policy" - Cancel button (closes modal) - Continue button (requests lease, navigates to /try page) 26. **Error Handling:** - Max leases exceeded (409): Show JavaScript alert + redirect to /try page - Other errors: Show JavaScript alert with error message 27. **Loading States:** Show loading indicator while requesting lease
 
 ### Growth Features (Post-MVP)
 
 **Enhanced Session Management:**
+
 1. **Manual Lease Termination:** "End Session Early" button for active leases
 2. **Budget Alerts:** Visual warnings when 75%, 90% of budget consumed
 3. **Session Notes:** Add user notes/tags to leases for organization
 4. **Session Search:** Filter/search past sessions by date, budget, status
 
-**Multi-Template Support:**
-5. **Template Selection:** Support multiple lease templates with different durations/budgets
-6. **Pre-Configured Environments:** Templates with pre-loaded services (e.g., "API Gateway + Lambda Starter")
+**Multi-Template Support:** 5. **Template Selection:** Support multiple lease templates with different durations/budgets 6. **Pre-Configured Environments:** Templates with pre-loaded services (e.g., "API Gateway + Lambda Starter")
 
-**Improved UX:**
-7. **Session Countdown Timer:** Live countdown showing time remaining on active leases
-8. **Email Notifications:** Optional email alerts for session expiration warnings
-9. **Quick Renew:** One-click lease renewal (request new lease for same template)
-10. **Cost Breakdown:** Show per-service cost breakdown for active sessions
+**Improved UX:** 7. **Session Countdown Timer:** Live countdown showing time remaining on active leases 8. **Email Notifications:** Optional email alerts for session expiration warnings 9. **Quick Renew:** One-click lease renewal (request new lease for same template) 10. **Cost Breakdown:** Show per-service cost breakdown for active sessions
 
 ### Vision (Future)
 
 **Integration Expansion:**
+
 1. **Multi-Cloud Support:** Extend try-before-you-buy to Azure, GCP sandboxes
 2. **Pre-Built Scenarios:** "Click to deploy" example architectures in sandbox
 3. **Guided Tutorials:** In-sandbox walkthroughs for common use cases
 4. **Collaborative Sandboxes:** Share sandbox access with team members
 
-**Procurement Integration:**
-5. **Try-to-Buy Pipeline:** "Convert to Production" button initiating formal procurement
-6. **Usage Reports:** Export try session activity for procurement justification
-7. **Budget Forecasting:** Predict production costs based on sandbox usage patterns
+**Procurement Integration:** 5. **Try-to-Buy Pipeline:** "Convert to Production" button initiating formal procurement 6. **Usage Reports:** Export try session activity for procurement justification 7. **Budget Forecasting:** Predict production costs based on sandbox usage patterns
 
 ---
 
@@ -841,6 +800,7 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 **FR-TRY-34:** System displays cost accrued to 4 decimal places (matches API precision)
 
 **FR-TRY-35:** System displays status badge with color coding:
+
 - Active: Green background
 - Pending: Orange background
 - Expired: Pink background
@@ -1087,6 +1047,7 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind a simp
 **Challenge:** Government users receiving Innovation Sandbox notifications need clear, professionally formatted emails that match GOV.UK standards, with proper branding and content that aligns with the NDX platform experience.
 
 **Solution:** Deploy a CloudFormation stack that:
+
 1. Intercepts all Innovation Sandbox EventBridge events
 2. Transforms event payloads into GOV.UK Notify template parameters
 3. Sends notifications via GOV.UK Notify API using 18 distinct email templates
@@ -1116,6 +1077,7 @@ The differentiator is **hiding AWS Innovation Sandbox complexity** behind profes
 This is a **serverless event processing pipeline** that intercepts EventBridge events and transforms them into GOV.UK Notify API calls. The change is self-contained: one Lambda function, one EventBridge rule, one SQS queue, and one Secrets Manager secret.
 
 **Why Infrastructure Project:**
+
 - Deploys AWS resources via CloudFormation
 - Lambda function processes events (Python runtime)
 - EventBridge rule filters Innovation Sandbox events
@@ -1123,6 +1085,7 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 - SQS Dead Letter Queue for failed notifications
 
 **Domain Context:** As a UK government service, notifications must:
+
 - Meet GOV.UK notification service standards
 - Provide clear, actionable content to government users
 - Include appropriate government branding
@@ -1130,6 +1093,7 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 - Be auditable and traceable
 
 **Complexity Assessment: Medium**
+
 - **Not High:** Single Lambda function, well-understood EventBridge pattern, established GOV.UK Notify API
 - **Not Low:** 18 distinct event types, production government service, requires template design and error handling
 
@@ -1150,6 +1114,7 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 7. **Templates Complete:** All 18 event types have corresponding GOV.UK Notify templates configured
 
 **What Winning Looks Like:**
+
 - Users receive professional, GOV.UK-branded emails for all Innovation Sandbox events
 - Lease lifecycle events (requested, approved, denied, terminated) notify users promptly
 - Budget alerts warn users before overspending
@@ -1165,6 +1130,7 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 ### MVP - Minimum Viable Product
 
 **Phase 1: Infrastructure Setup**
+
 1. **CloudFormation Stack:** Define stack with all required AWS resources
 2. **EventBridge Rule:** Create rule matching Innovation Sandbox event patterns
 3. **Lambda Function:** Python function for event transformation and Notify API calls
@@ -1172,64 +1138,35 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 5. **Secrets Manager Secret:** Secure storage for GOV.UK Notify API key
 6. **IAM Role:** Lambda execution role with least-privilege permissions
 
-**Phase 2: Event Processing (Lease Lifecycle - 4 Events)**
-7. **LeaseRequested:** Notify user their sandbox request is pending approval
-8. **LeaseApproved:** Notify user their sandbox is ready with AWS Console access details
-9. **LeaseDenied:** Notify user their sandbox request was denied with reason
-10. **LeaseTerminated:** Notify user their sandbox session has ended
+**Phase 2: Event Processing (Lease Lifecycle - 4 Events)** 7. **LeaseRequested:** Notify user their sandbox request is pending approval 8. **LeaseApproved:** Notify user their sandbox is ready with AWS Console access details 9. **LeaseDenied:** Notify user their sandbox request was denied with reason 10. **LeaseTerminated:** Notify user their sandbox session has ended
 
-**Phase 3: Event Processing (Lease Monitoring - 7 Events)**
-11. **LeaseBudgetThresholdAlert:** Warn user approaching budget limit (75%, 90%)
-12. **LeaseBudgetExceeded:** Notify user budget exceeded, sandbox frozen
-13. **LeaseDurationThresholdAlert:** Warn user sandbox expiring soon
-14. **LeaseFreezingThresholdAlert:** Notify user sandbox will freeze soon
-15. **LeaseExpired:** Notify user sandbox has expired
-16. **LeaseFrozen:** Notify user sandbox frozen (budget or policy)
-17. **LeaseUnfrozen:** Notify user sandbox unfrozen and accessible again
+**Phase 3: Event Processing (Lease Monitoring - 7 Events)** 11. **LeaseBudgetThresholdAlert:** Warn user approaching budget limit (75%, 90%) 12. **LeaseBudgetExceeded:** Notify user budget exceeded, sandbox frozen 13. **LeaseDurationThresholdAlert:** Warn user sandbox expiring soon 14. **LeaseFreezingThresholdAlert:** Notify user sandbox will freeze soon 15. **LeaseExpired:** Notify user sandbox has expired 16. **LeaseFrozen:** Notify user sandbox frozen (budget or policy) 17. **LeaseUnfrozen:** Notify user sandbox unfrozen and accessible again
 
-**Phase 4: Event Processing (Account Management - 5 Events)**
-18. **CleanAccountRequest:** Notify admin account cleanup requested
-19. **AccountCleanupSucceeded:** Notify admin/user account cleanup complete
-20. **AccountCleanupFailed:** Alert admin account cleanup failed, manual intervention needed
-21. **AccountQuarantined:** Alert admin account quarantined due to policy violation
-22. **AccountDriftDetected:** Alert admin account drift detected from expected state
+**Phase 4: Event Processing (Account Management - 5 Events)** 18. **CleanAccountRequest:** Notify admin account cleanup requested 19. **AccountCleanupSucceeded:** Notify admin/user account cleanup complete 20. **AccountCleanupFailed:** Alert admin account cleanup failed, manual intervention needed 21. **AccountQuarantined:** Alert admin account quarantined due to policy violation 22. **AccountDriftDetected:** Alert admin account drift detected from expected state
 
-**Phase 5: Event Processing (Cost Reporting - 2 Events)**
-23. **GroupCostReportGenerated:** Notify group manager cost report available
-24. **GroupCostReportGeneratedFailure:** Alert admin cost report generation failed
+**Phase 5: Event Processing (Cost Reporting - 2 Events)** 23. **GroupCostReportGenerated:** Notify group manager cost report available 24. **GroupCostReportGeneratedFailure:** Alert admin cost report generation failed
 
-**Phase 6: Error Handling & Monitoring**
-25. **DLQ Processing:** Failed notifications captured in SQS with message metadata
-26. **CloudWatch Alarms:** Alarms for Lambda errors, DLQ depth, API failures
-27. **Logging:** Structured logging for debugging and audit trail
+**Phase 6: Error Handling & Monitoring** 25. **DLQ Processing:** Failed notifications captured in SQS with message metadata 26. **CloudWatch Alarms:** Alarms for Lambda errors, DLQ depth, API failures 27. **Logging:** Structured logging for debugging and audit trail
 
-**Phase 7: GOV.UK Notify Templates**
-28. **Template Design:** Create 18 GOV.UK Notify templates matching event types
-29. **Template Personalization:** Define personalization fields (user email, account ID, budget, dates)
-30. **Template Testing:** Validate templates render correctly with sample data
+**Phase 7: GOV.UK Notify Templates** 28. **Template Design:** Create 18 GOV.UK Notify templates matching event types 29. **Template Personalization:** Define personalization fields (user email, account ID, budget, dates) 30. **Template Testing:** Validate templates render correctly with sample data
 
 ### Growth Features (Post-MVP)
 
 **Enhanced Notifications:**
+
 1. **SMS Notifications:** Optional SMS for critical events (budget exceeded, account quarantined)
 2. **Digest Emails:** Daily/weekly summary of sandbox activity
 3. **Rich Email Content:** Include charts/graphs for cost reports
 4. **Notification Preferences:** User preferences for which notifications to receive
 
-**Operational Improvements:**
-5. **DLQ Retry Automation:** Lambda to automatically retry failed notifications
-6. **Notification Dashboard:** CloudWatch dashboard showing notification metrics
-7. **A/B Template Testing:** Test different email templates for effectiveness
-8. **Rate Limiting:** Throttle notifications to prevent email overload
+**Operational Improvements:** 5. **DLQ Retry Automation:** Lambda to automatically retry failed notifications 6. **Notification Dashboard:** CloudWatch dashboard showing notification metrics 7. **A/B Template Testing:** Test different email templates for effectiveness 8. **Rate Limiting:** Throttle notifications to prevent email overload
 
-**Integration Expansion:**
-9. **Slack Integration:** Send notifications to Slack channels for team visibility
-10. **Webhook Support:** Configurable webhooks for custom integrations
-11. **Multi-Language:** Template variants for Welsh language support
+**Integration Expansion:** 9. **Slack Integration:** Send notifications to Slack channels for team visibility 10. **Webhook Support:** Configurable webhooks for custom integrations 11. **Multi-Language:** Template variants for Welsh language support
 
 ### Vision (Future)
 
 **Advanced Notification Platform:**
+
 1. **Notification Hub:** Centralized notification management across all NDX services
 2. **AI-Powered Summaries:** Intelligent summarization of multiple events
 3. **Predictive Alerts:** ML-based prediction of budget overruns before they happen
@@ -1317,63 +1254,81 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 ### Lease Lifecycle Events (4 Events)
 
 **FR-NOTIFY-14:** System sends "Lease Requested" notification when LeaseRequested event received
+
 - Personalizes: user name, template name, request timestamp
 
 **FR-NOTIFY-15:** System sends "Lease Approved" notification when LeaseApproved event received
+
 - Personalizes: user name, AWS account ID, SSO portal URL, expiration date, budget limit
 
 **FR-NOTIFY-16:** System sends "Lease Denied" notification when LeaseDenied event received
+
 - Personalizes: user name, template name, denial reason
 
 **FR-NOTIFY-17:** System sends "Lease Terminated" notification when LeaseTerminated event received
+
 - Personalizes: user name, AWS account ID, termination reason, final cost
 
 ### Lease Monitoring Events (7 Events)
 
 **FR-NOTIFY-18:** System sends "Budget Threshold Alert" notification when LeaseBudgetThresholdAlert event received
+
 - Personalizes: user name, current spend, budget limit, threshold percentage
 
 **FR-NOTIFY-19:** System sends "Budget Exceeded" notification when LeaseBudgetExceeded event received
+
 - Personalizes: user name, final spend, budget limit, account status
 
 **FR-NOTIFY-20:** System sends "Duration Threshold Alert" notification when LeaseDurationThresholdAlert event received
+
 - Personalizes: user name, time remaining, expiration date
 
 **FR-NOTIFY-21:** System sends "Freezing Threshold Alert" notification when LeaseFreezingThresholdAlert event received
+
 - Personalizes: user name, reason (budget/time), freeze time
 
 **FR-NOTIFY-22:** System sends "Lease Expired" notification when LeaseExpired event received
+
 - Personalizes: user name, AWS account ID, expiration time, final cost
 
 **FR-NOTIFY-23:** System sends "Lease Frozen" notification when LeaseFrozen event received
+
 - Personalizes: user name, AWS account ID, freeze reason, resume instructions
 
 **FR-NOTIFY-24:** System sends "Lease Unfrozen" notification when LeaseUnfrozen event received
+
 - Personalizes: user name, AWS account ID, SSO portal URL, remaining time/budget
 
 ### Account Management Events (5 Events)
 
 **FR-NOTIFY-25:** System sends "Cleanup Requested" notification when CleanAccountRequest event received
+
 - Personalizes: admin name, AWS account ID, cleanup scope
 
 **FR-NOTIFY-26:** System sends "Cleanup Succeeded" notification when AccountCleanupSucceeded event received
+
 - Personalizes: admin/user name, AWS account ID, resources cleaned
 
 **FR-NOTIFY-27:** System sends "Cleanup Failed" notification when AccountCleanupFailed event received
+
 - Personalizes: admin name, AWS account ID, failure reason, manual steps
 
 **FR-NOTIFY-28:** System sends "Account Quarantined" notification when AccountQuarantined event received
+
 - Personalizes: admin name, AWS account ID, quarantine reason, escalation contact
 
 **FR-NOTIFY-29:** System sends "Drift Detected" notification when AccountDriftDetected event received
+
 - Personalizes: admin name, AWS account ID, drift details, remediation guidance
 
 ### Cost Reporting Events (2 Events)
 
 **FR-NOTIFY-30:** System sends "Cost Report Generated" notification when GroupCostReportGenerated event received
+
 - Personalizes: manager name, group name, report period, total cost, report URL
 
 **FR-NOTIFY-31:** System sends "Cost Report Failed" notification when GroupCostReportGeneratedFailure event received
+
 - Personalizes: admin name, group name, report period, failure reason
 
 ### Error Handling
@@ -1527,6 +1482,7 @@ This is a **serverless event processing pipeline** that intercepts EventBridge e
 **Challenge:** Distributed monitoring across AWS Console, email, and other tools creates friction and delays in responding to operational events. Teams need consolidated, real-time alerts where they already work.
 
 **Solution:** Deploy a CloudFormation stack that:
+
 1. Intercepts AWS Billing events for daily spend summaries and anomaly detection
 2. Intercepts Innovation Sandbox EventBridge events for account lifecycle alerts
 3. Sends formatted notifications to configured Slack channels via Slack API
@@ -1556,6 +1512,7 @@ The differentiator is **bringing operational awareness to the team** rather than
 This is a **serverless event processing pipeline** similar to the GOV.UK Notify integration, but targeting Slack channels instead of email. The implementation reuses the same EventBridge pattern with a dedicated Lambda function for Slack API calls.
 
 **Why Infrastructure Project:**
+
 - Deploys AWS resources via CloudFormation
 - Lambda function processes events (Python runtime)
 - EventBridge rules filter AWS Billing and Innovation Sandbox events
@@ -1563,12 +1520,14 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 - SQS Dead Letter Queue for failed notifications
 
 **Domain Context:** As an operations tool for a UK government service:
+
 - Must not expose sensitive information in Slack messages
 - AWS account IDs can be included (internal operations use)
 - Budget/cost data formatted for clarity
 - No PII in alerts (operations-focused, not user-facing)
 
 **Complexity Assessment: Low-Medium**
+
 - **Not High:** Only 5 notification types, established Slack API pattern, similar to existing Notify integration
 - **Not Low:** Production government service, requires AWS Billing integration, error handling needed
 
@@ -1589,6 +1548,7 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 7. **Secrets Secure:** Slack credentials retrieved from Secrets Manager (not hardcoded)
 
 **What Winning Looks Like:**
+
 - Operations team sees all critical events in their #ndx-alerts Slack channel
 - Daily spend summaries help track budget burn rate across organization
 - Billing anomalies caught early before they become problems
@@ -1603,6 +1563,7 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 ### MVP - Minimum Viable Product
 
 **Phase 1: Infrastructure Setup**
+
 1. **CloudFormation Stack:** Define stack with all required AWS resources
 2. **EventBridge Rules:** Create rules for AWS Billing events and Innovation Sandbox events
 3. **Lambda Function:** Python function for event transformation and Slack API calls
@@ -1610,19 +1571,21 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 5. **Secrets Manager Secret:** Secure storage for Slack webhook URL or API token
 6. **IAM Role:** Lambda execution role with least-privilege permissions
 
-**Phase 2: AWS Billing Alerts (2 Alert Types)**
-7. **Daily Spend Summary:** Aggregate org-wide spend for past 24 hours, send to Slack
-   - Triggered by CloudWatch scheduled event (daily at configured time)
-   - Retrieves Cost Explorer data for previous 24-hour period
-   - Formats as Slack Block Kit message with spending breakdown
+**Phase 2: AWS Billing Alerts (2 Alert Types)** 7. **Daily Spend Summary:** Aggregate org-wide spend for past 24 hours, send to Slack
+
+- Triggered by CloudWatch scheduled event (daily at configured time)
+- Retrieves Cost Explorer data for previous 24-hour period
+- Formats as Slack Block Kit message with spending breakdown
+
 8. **Billing Anomalies:** Detect unusual spending patterns, alert immediately
    - Triggered by AWS Anomaly Detection service events
    - Includes anomaly details, affected services, projected impact
 
-**Phase 3: Innovation Sandbox EventBridge Alerts (3 Alert Types)**
-9. **Account Made Active:** Notify when sandbox account assigned to user
-   - Triggered by Innovation Sandbox account activation event
-   - Includes user email, AWS account ID, template name
+**Phase 3: Innovation Sandbox EventBridge Alerts (3 Alert Types)** 9. **Account Made Active:** Notify when sandbox account assigned to user
+
+- Triggered by Innovation Sandbox account activation event
+- Includes user email, AWS account ID, template name
+
 10. **Account Quarantined:** Alert when account quarantined for policy violation
     - Triggered by AccountQuarantined EventBridge event
     - Includes AWS account ID, quarantine reason, escalation guidance
@@ -1630,38 +1593,27 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
     - Triggered by LeaseFrozen EventBridge event
     - Includes AWS account ID, freeze reason, affected user
 
-**Phase 4: Error Handling & Monitoring**
-12. **DLQ Processing:** Failed notifications captured in SQS with message metadata
-13. **CloudWatch Alarms:** Alarms for Lambda errors, DLQ depth, API failures
-14. **Logging:** Structured logging for debugging and audit trail
+**Phase 4: Error Handling & Monitoring** 12. **DLQ Processing:** Failed notifications captured in SQS with message metadata 13. **CloudWatch Alarms:** Alarms for Lambda errors, DLQ depth, API failures 14. **Logging:** Structured logging for debugging and audit trail
 
-**Phase 5: Slack Message Formatting**
-15. **Block Kit Templates:** Create Slack Block Kit templates for each alert type
-16. **Color Coding:** Use attachment colors (green/yellow/red) for severity
-17. **Action Buttons:** Include relevant links (AWS Console, NDX admin pages)
+**Phase 5: Slack Message Formatting** 15. **Block Kit Templates:** Create Slack Block Kit templates for each alert type 16. **Color Coding:** Use attachment colors (green/yellow/red) for severity 17. **Action Buttons:** Include relevant links (AWS Console, NDX admin pages)
 
 ### Growth Features (Post-MVP)
 
 **Enhanced Alerts:**
+
 1. **Weekly/Monthly Summaries:** Digest reports for spending trends
 2. **Budget Forecasting Alerts:** Projected month-end spend warnings
 3. **Service-Specific Breakdown:** Per-service spending in daily summaries
 4. **Custom Thresholds:** Configurable spending thresholds for alerts
 
-**Channel Management:**
-5. **Multi-Channel Routing:** Route different alert types to different channels
-6. **Alert Severity Levels:** Critical vs warning vs info routing
-7. **@mention Support:** Tag specific users for critical alerts
-8. **Slack Thread Replies:** Group related alerts in threads
+**Channel Management:** 5. **Multi-Channel Routing:** Route different alert types to different channels 6. **Alert Severity Levels:** Critical vs warning vs info routing 7. **@mention Support:** Tag specific users for critical alerts 8. **Slack Thread Replies:** Group related alerts in threads
 
-**Integration Expansion:**
-9. **Slack Commands:** `/ndx-status` to query current spend or active leases
-10. **Interactive Buttons:** Approve/deny actions directly from Slack
-11. **Escalation Workflows:** Auto-escalate unacknowledged critical alerts
+**Integration Expansion:** 9. **Slack Commands:** `/ndx-status` to query current spend or active leases 10. **Interactive Buttons:** Approve/deny actions directly from Slack 11. **Escalation Workflows:** Auto-escalate unacknowledged critical alerts
 
 ### Vision (Future)
 
 **Advanced Operations Platform:**
+
 1. **AI-Powered Summaries:** ML-generated insights on spending patterns
 2. **Predictive Alerting:** Forecast issues before they occur
 3. **Cross-Service Correlation:** Link related events across services
@@ -1939,6 +1891,7 @@ This is a **serverless event processing pipeline** similar to the GOV.UK Notify 
 **Challenge:** Both GOV.UK Notify templates and Slack Block Kit messages need access to comprehensive lease data for debugging, operations, and user context. However, GOV.UK Notify and Slack APIs don't support nested objects or arrays - all values must be flat key-value pairs.
 
 **Solution:** Extend the notification Lambda to:
+
 1. Extract `leaseId` (or `userEmail` + `uuid`) from EventBridge events
 2. Query DynamoDB LeaseTable for the complete lease record
 3. Flatten nested objects and arrays into flat key-value format
@@ -1968,18 +1921,21 @@ The differentiator is **maximizing notification value** by providing complete co
 This is an **enhancement to the existing notification Lambda** that adds DynamoDB query capability and payload transformation logic. The change is contained: one Lambda modification, one IAM permission addition, no new AWS resources.
 
 **Why Infrastructure Enhancement:**
+
 - Modifies existing notification Lambda function
 - Adds DynamoDB read permissions to Lambda IAM role
 - Implements data transformation logic (flattening)
 - No new CloudFormation resources required
 
 **Domain Context:** As an enhancement to UK government notifications:
+
 - Enriched data aids operational response to account events
 - Flattened structure ensures GOV.UK Notify template compatibility
 - Debug `keys` parameter aids support team troubleshooting
 - No additional PII exposure (LeaseTable data already in scope)
 
 **Complexity Assessment: Low-Medium**
+
 - **Not High:** Single Lambda enhancement, standard DynamoDB query pattern, pure data transformation
 - **Not Low:** Must handle 8 lease states correctly, flatten complex nested structures, graceful degradation required
 
@@ -2000,6 +1956,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 7. **Graceful Degradation:** If lease not found or DynamoDB error, notification proceeds with event data only
 
 **What Winning Looks Like:**
+
 - Operations team sees `leaseDurationInHours: 24` in Slack alerts
 - GOV.UK Notify emails include lease duration, budget limits, and approval info
 - Debug `keys` field shows exactly which fields are available: `"keys": "userEmail,uuid,status,leaseDurationInHours,maxSpend,..."`
@@ -2014,36 +1971,23 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 ### MVP - Minimum Viable Product
 
 **Phase 1: DynamoDB Integration**
+
 1. **IAM Permissions:** Add `dynamodb:GetItem` permission to notification Lambda role for LeaseTable
 2. **Cross-Account Access:** If LeaseTable in different account, configure cross-account IAM role assumption
 3. **LeaseTable Reference:** Store LeaseTable name/ARN in environment variable or Secrets Manager
 
-**Phase 2: Lease Query Logic**
-4. **Extract Lease Key:** Parse `userEmail` and `uuid` (or `leaseId`) from EventBridge event detail
-5. **Query DynamoDB:** Execute GetItem with composite key (`userEmail` PK, `uuid` SK)
-6. **Handle Not Found:** If lease doesn't exist, log warning and continue with event data only
-7. **Handle Errors:** If DynamoDB error, log error, metric, and continue with event data only
+**Phase 2: Lease Query Logic** 4. **Extract Lease Key:** Parse `userEmail` and `uuid` (or `leaseId`) from EventBridge event detail 5. **Query DynamoDB:** Execute GetItem with composite key (`userEmail` PK, `uuid` SK) 6. **Handle Not Found:** If lease doesn't exist, log warning and continue with event data only 7. **Handle Errors:** If DynamoDB error, log error, metric, and continue with event data only
 
-**Phase 3: Payload Flattening**
-8. **Flatten Nested Objects:** Transform `{meta: {createdTime: "2025-01-01"}}` → `{meta_createdTime: "2025-01-01"}`
-9. **Flatten Arrays of Objects:** Transform `{budgetThresholds: [{dollarsSpent: 50, action: "ALERT"}]}` → `{budgetThresholds_0_dollarsSpent: "50", budgetThresholds_0_action: "ALERT"}`
-10. **Flatten Arrays of Primitives:** Transform `{tags: ["a", "b"]}` → `{tags_0: "a", tags_1: "b"}`
-11. **Handle Null/Undefined:** Skip null and undefined values in flattened output
-12. **Stringify Values:** Convert all values to strings for Notify/Slack compatibility
+**Phase 3: Payload Flattening** 8. **Flatten Nested Objects:** Transform `{meta: {createdTime: "2025-01-01"}}` → `{meta_createdTime: "2025-01-01"}` 9. **Flatten Arrays of Objects:** Transform `{budgetThresholds: [{dollarsSpent: 50, action: "ALERT"}]}` → `{budgetThresholds_0_dollarsSpent: "50", budgetThresholds_0_action: "ALERT"}` 10. **Flatten Arrays of Primitives:** Transform `{tags: ["a", "b"]}` → `{tags_0: "a", tags_1: "b"}` 11. **Handle Null/Undefined:** Skip null and undefined values in flattened output 12. **Stringify Values:** Convert all values to strings for Notify/Slack compatibility
 
-**Phase 4: Keys Parameter**
-13. **Generate Keys List:** Create comma-separated string of all flattened field names
-14. **Include in Payload:** Add `keys` field to every notification payload
-15. **Alphabetical Order:** Sort keys alphabetically for consistent debugging
+**Phase 4: Keys Parameter** 13. **Generate Keys List:** Create comma-separated string of all flattened field names 14. **Include in Payload:** Add `keys` field to every notification payload 15. **Alphabetical Order:** Sort keys alphabetically for consistent debugging
 
-**Phase 5: Integration**
-16. **Merge with Event Data:** Combine enriched lease data with original event data (lease data takes precedence)
-17. **Send to GOV.UK Notify:** Pass enriched, flattened payload as personalisation object
-18. **Send to Slack:** Reference enriched fields in Block Kit message templates
+**Phase 5: Integration** 16. **Merge with Event Data:** Combine enriched lease data with original event data (lease data takes precedence) 17. **Send to GOV.UK Notify:** Pass enriched, flattened payload as personalisation object 18. **Send to Slack:** Reference enriched fields in Block Kit message templates
 
 ### LeaseTable Schema Reference
 
 **All Leases (Base Schema):**
+
 - `userEmail` (string, email) - Partition key
 - `uuid` (string, UUID) - Sort key
 - `status` (string) - PendingApproval | ApprovalDenied | Active | Frozen | Expired | BudgetExceeded | ManuallyTerminated | AccountQuarantined | Ejected
@@ -2057,6 +2001,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 - `meta` (object) - `{createdTime: datetime, lastEditTime: datetime, schemaVersion: number}`
 
 **Monitored Leases (Active/Frozen - additional fields):**
+
 - `awsAccountId` (string, 12 digits)
 - `approvedBy` (string) - email or "AUTO_APPROVED"
 - `startDate` (ISO 8601 datetime)
@@ -2065,12 +2010,14 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 - `totalCostAccrued` (number)
 
 **Expired Leases (additional fields):**
+
 - `endDate` (ISO 8601 datetime)
 - `ttl` (number, Unix timestamp)
 
 ### Example Flattened Output
 
 **Input (DynamoDB Lease Record):**
+
 ```json
 {
   "userEmail": "user@example.gov.uk",
@@ -2079,12 +2026,10 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
   "leaseDurationInHours": 24,
   "maxSpend": 50,
   "budgetThresholds": [
-    {"dollarsSpent": 25, "action": "ALERT"},
-    {"dollarsSpent": 45, "action": "FREEZE_ACCOUNT"}
+    { "dollarsSpent": 25, "action": "ALERT" },
+    { "dollarsSpent": 45, "action": "FREEZE_ACCOUNT" }
   ],
-  "durationThresholds": [
-    {"hoursRemaining": 4, "action": "ALERT"}
-  ],
+  "durationThresholds": [{ "hoursRemaining": 4, "action": "ALERT" }],
   "meta": {
     "createdTime": "2025-01-15T10:00:00Z",
     "lastEditTime": "2025-01-15T12:30:00Z",
@@ -2094,11 +2039,12 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
   "approvedBy": "admin@example.gov.uk",
   "startDate": "2025-01-15T12:30:00Z",
   "expirationDate": "2025-01-16T12:30:00Z",
-  "totalCostAccrued": 12.50
+  "totalCostAccrued": 12.5
 }
 ```
 
 **Output (Flattened for Notify/Slack):**
+
 ```json
 {
   "userEmail": "user@example.gov.uk",
@@ -2127,24 +2073,20 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 ### Growth Features (Post-MVP)
 
 **Enhanced Enrichment:**
+
 1. **Template Data Enrichment:** Also fetch LeaseTemplate record for template-specific fields
 2. **Account Data Enrichment:** Fetch SandboxAccount record for account-specific details
 3. **User Data Enrichment:** Fetch user profile data if available
 4. **Historical Data:** Include previous lease status for state change context
 
-**Performance Optimizations:**
-5. **Batch Queries:** If multiple leases in event, batch DynamoDB queries
-6. **Caching:** Cache lease data within Lambda container for repeated queries
-7. **Parallel Queries:** Query lease and template data in parallel
+**Performance Optimizations:** 5. **Batch Queries:** If multiple leases in event, batch DynamoDB queries 6. **Caching:** Cache lease data within Lambda container for repeated queries 7. **Parallel Queries:** Query lease and template data in parallel
 
-**Debugging Enhancements:**
-8. **Enrichment Metadata:** Add `_enriched: true`, `_enrichmentTime: "50ms"` fields
-9. **Source Tracking:** Add `_source: "dynamodb"` vs `_source: "event"` per field
-10. **Schema Version:** Include `_leaseSchemaVersion` for compatibility tracking
+**Debugging Enhancements:** 8. **Enrichment Metadata:** Add `_enriched: true`, `_enrichmentTime: "50ms"` fields 9. **Source Tracking:** Add `_source: "dynamodb"` vs `_source: "event"` per field 10. **Schema Version:** Include `_leaseSchemaVersion` for compatibility tracking
 
 ### Vision (Future)
 
 **Advanced Data Platform:**
+
 1. **Real-Time Enrichment Cache:** DynamoDB Streams populate enrichment cache
 2. **Cross-Service Enrichment:** Enrich with data from other NDX services
 3. **ML-Powered Context:** Add predicted risk scores, anomaly flags
@@ -2357,10 +2299,12 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 **Total Requirements Captured:**
 
 **Feature 1: CloudFront Origin Routing (COMPLETED)**
+
 - 44 Functional Requirements across 7 capability areas
 - 35 Non-Functional Requirements across 7 quality dimensions
 
 **Feature 2: Try Before You Buy (IN DEVELOPMENT)**
+
 - **79 Functional Requirements** across 9 capability areas:
   - Authentication & Session Management (10 FRs)
   - User Interface - Sign In/Out (5 FRs)
@@ -2385,6 +2329,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
   - Design System Compliance (5 NFRs)
 
 **Feature 3: GOV.UK Notify Integration (PLANNED)**
+
 - **48 Functional Requirements** across 9 capability areas:
   - EventBridge Integration (5 FRs)
   - Lambda Function Processing (8 FRs)
@@ -2408,6 +2353,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
   - Testing (5 NFRs)
 
 **Feature 4: Slack Integration (PLANNED)**
+
 - **54 Functional Requirements** across 10 capability areas:
   - EventBridge Integration (5 FRs)
   - AWS Billing Integration (5 FRs)
@@ -2431,6 +2377,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
   - Compliance & Auditability (4 NFRs)
 
 **Feature 5: DynamoDB Lease Enrichment (PLANNED)**
+
 - **50 Functional Requirements** across 6 capability areas:
   - DynamoDB Integration (6 FRs)
   - Payload Flattening - Objects (5 FRs)
@@ -2450,6 +2397,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
   - Testing (5 NFRs)
 
 **Combined Totals:**
+
 - **275 Functional Requirements**
 - **159 Non-Functional Requirements**
 - **434 Total Requirements**
@@ -2466,6 +2414,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 6. Deployment documentation with rollback procedures
 
 **Success Validation:**
+
 - Testers with `NDX=true` cookie see new S3 bucket content
 - All users without cookie see existing site unchanged
 - API Gateway origin completely untouched
@@ -2491,6 +2440,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 12. mitmproxy local development setup
 
 **Success Validation:**
+
 - Government users can sign in, browse catalogue, click "Try" button, accept AUP, and get AWS sandbox access in < 30 seconds
 - Users manage active/past try sessions from /try page with budget tracking and console launch
 - Zero Innovation Sandbox branding visible (seamless NDX integration)
@@ -2514,6 +2464,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 10. Deployment runbook and rollback procedures
 
 **Success Validation:**
+
 - All 18 Innovation Sandbox event types trigger corresponding notifications
 - Users receive GOV.UK-branded emails instead of AWS SES defaults
 - Failed notifications captured in DLQ for investigation and retry
@@ -2538,6 +2489,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 11. Deployment runbook and rollback procedures
 
 **Success Validation:**
+
 - Daily spend summaries posted to Slack at configured time (09:00 UTC default)
 - Billing anomalies trigger immediate Slack alerts with affected services
 - Account activation, quarantine, and freeze events trigger Slack notifications
@@ -2562,6 +2514,7 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 10. Integration tests verifying enriched payloads reach Notify/Slack
 
 **Success Validation:**
+
 - Slack messages include `leaseDurationInHours` field with lease duration value
 - GOV.UK Notify personalisation includes `leaseDurationInHours`, `maxSpend`, `budgetThresholds_0_dollarsSpent`
 - Nested fields appear flattened: `meta.createdTime` → `meta_createdTime`
@@ -2577,23 +2530,29 @@ This is an **enhancement to the existing notification Lambda** that adds DynamoD
 This PRD captures requirements for **five critical NDX capabilities** that together enable safe platform evolution, accelerated service evaluation, professional government communications, operational visibility, and context-rich notifications for UK government users:
 
 ### CloudFront Origin Routing (COMPLETED)
+
 **Safe, low-risk UI evolution** via surgical infrastructure enhancement. The cookie-based routing enables the strangler pattern for UI modernization without risking production stability for the £2B government procurement platform.
 
 ### Try Before You Buy (IN DEVELOPMENT)
+
 **Self-service sandbox provisioning** that removes procurement friction from cloud service evaluation. Government users can test AWS services hands-on before committing to procurement, accelerating digital transformation while maintaining strict GovTech compliance (WCAG 2.2, GOV.UK Design System, budget controls, auditability).
 
 ### GOV.UK Notify Integration (PLANNED)
+
 **Government-branded notifications** replacing default AWS SES emails with professional GOV.UK Notify-powered communications. Users receive clear, GDS-compliant notifications for all Innovation Sandbox events - from lease approvals to budget alerts - ensuring the NDX experience remains consistent and professional throughout the user journey.
 
 ### Slack Integration (PLANNED)
+
 **Real-time operational visibility** bringing critical alerts directly to the team's collaboration workspace. Operations teams receive daily AWS spend summaries, billing anomaly alerts, and Innovation Sandbox account lifecycle notifications in Slack - reducing context switching and enabling rapid response to operational events.
 
 ### DynamoDB Lease Enrichment (PLANNED)
+
 **Context-rich notification payloads** that transform basic event alerts into comprehensive, actionable messages. By enriching notifications with complete LeaseTable data, operations and users receive full lease context including duration, budget thresholds, timestamps, and approval info - with a debugging `keys` parameter listing all available fields. Nested structures are flattened for GOV.UK Notify/Slack compatibility.
 
 The infrastructure-as-code approach via CDK, CloudFormation, and client-side TypeScript ensures **reproducibility, auditability, and transparency** - critical requirements for public sector platforms. This methodical approach demonstrates government service engineering best practices: make surgical changes, validate thoroughly, and build capabilities that serve government users effectively.
 
 **Business Impact:**
+
 - **CloudFront Routing:** Enables confident UI evolution with real-user testing before full rollout
 - **Try Before You Buy:** Reduces procurement cycle time from weeks to seconds, enabling informed decision-making for cloud service adoption
 - **GOV.UK Notify Integration:** Delivers professional, branded communications that reinforce trust and clarity for government users evaluating cloud services

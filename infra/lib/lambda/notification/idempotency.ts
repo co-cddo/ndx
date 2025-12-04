@@ -15,37 +15,37 @@
  * @see docs/sprint-artifacts/tech-spec-epic-n5.md#Story-n5-7
  */
 
-import { Logger } from '@aws-lambda-powertools/logger';
-import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
-import { PermanentError } from './errors';
-import { hashForLog } from './ownership';
-import type { ValidatedEvent } from './validation';
+import { Logger } from "@aws-lambda-powertools/logger"
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { PermanentError } from "./errors"
+import { hashForLog } from "./ownership"
+import type { ValidatedEvent } from "./validation"
 
 // =============================================================================
 // Constants
 // =============================================================================
 
 /** AC-7.8: 7-day TTL covers max EventBridge replay + buffer */
-export const IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+export const IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
 
 /** AC-7.10: Max event age in milliseconds */
-const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const MAX_EVENT_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 /** AC-7.9: Namespace prefix for idempotency keys */
-const IDEMPOTENCY_NAMESPACE = 'ndx-notify';
+const IDEMPOTENCY_NAMESPACE = "ndx-notify"
 
 /** Default schema version when not specified */
-const DEFAULT_SCHEMA_VERSION = 'v1';
+const DEFAULT_SCHEMA_VERSION = "v1"
 
 // =============================================================================
 // Logger and Metrics
 // =============================================================================
 
-const logger = new Logger({ serviceName: 'ndx-notifications' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
 const metrics = new Metrics({
-  namespace: 'ndx/notifications',
-  serviceName: 'ndx-notifications',
-});
+  namespace: "ndx/notifications",
+  serviceName: "ndx-notifications",
+})
 
 // =============================================================================
 // Types
@@ -55,11 +55,11 @@ const metrics = new Metrics({
  * Cached event data for verification on idempotency hit
  */
 export interface CachedEventData {
-  eventId: string;
-  userEmail: string;
-  eventType: string;
-  schemaVersion: string;
-  processedAt: string;
+  eventId: string
+  userEmail: string
+  eventType: string
+  schemaVersion: string
+  processedAt: string
 }
 
 /**
@@ -67,11 +67,11 @@ export interface CachedEventData {
  */
 export interface IdempotencyCheckResult {
   /** Whether the event is a duplicate */
-  isDuplicate: boolean;
+  isDuplicate: boolean
   /** Reason for skipping (if duplicate) */
-  skipReason?: 'idempotency_hit' | 'event_too_old' | 'lease_window_skip';
+  skipReason?: "idempotency_hit" | "event_too_old" | "lease_window_skip"
   /** Cached event data (if duplicate found) */
-  cachedEvent?: CachedEventData;
+  cachedEvent?: CachedEventData
 }
 
 /**
@@ -79,9 +79,9 @@ export interface IdempotencyCheckResult {
  */
 export interface IdempotencyOptions {
   /** DynamoDB table name for idempotency records */
-  tableName: string;
+  tableName: string
   /** Override TTL for testing */
-  ttlSeconds?: number;
+  ttlSeconds?: number
 }
 
 // =============================================================================
@@ -94,32 +94,29 @@ export interface IdempotencyOptions {
  *
  * Format: ndx-notify:v1:abc123-def456-789012
  */
-export function generateIdempotencyKey(
-  eventId: string,
-  schemaVersion: string = DEFAULT_SCHEMA_VERSION
-): string {
+export function generateIdempotencyKey(eventId: string, schemaVersion: string = DEFAULT_SCHEMA_VERSION): string {
   // AC-7.9: Namespace prefix prevents collision with other uses of the table
   // AC-7.19: Schema version prevents collision when event format changes
-  return `${IDEMPOTENCY_NAMESPACE}:${schemaVersion}:${eventId}`;
+  return `${IDEMPOTENCY_NAMESPACE}:${schemaVersion}:${eventId}`
 }
 
 /**
  * Extract components from an idempotency key
  */
 export function parseIdempotencyKey(key: string): {
-  namespace: string;
-  schemaVersion: string;
-  eventId: string;
+  namespace: string
+  schemaVersion: string
+  eventId: string
 } | null {
-  const parts = key.split(':');
+  const parts = key.split(":")
   if (parts.length !== 3) {
-    return null;
+    return null
   }
   return {
     namespace: parts[0],
     schemaVersion: parts[1],
     eventId: parts[2],
-  };
+  }
 }
 
 // =============================================================================
@@ -134,24 +131,24 @@ export function parseIdempotencyKey(key: string): {
  * @returns true if event is too old, false if acceptable
  */
 export function isEventTooOld(eventTimestamp: string): boolean {
-  const eventTime = new Date(eventTimestamp).getTime();
-  const age = Date.now() - eventTime;
-  return age > MAX_EVENT_AGE_MS;
+  const eventTime = new Date(eventTimestamp).getTime()
+  const age = Date.now() - eventTime
+  return age > MAX_EVENT_AGE_MS
 }
 
 /**
  * Get event age in human-readable format
  */
 export function getEventAge(eventTimestamp: string): string {
-  const eventTime = new Date(eventTimestamp).getTime();
-  const ageMs = Date.now() - eventTime;
-  const days = Math.floor(ageMs / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((ageMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const eventTime = new Date(eventTimestamp).getTime()
+  const ageMs = Date.now() - eventTime
+  const days = Math.floor(ageMs / (24 * 60 * 60 * 1000))
+  const hours = Math.floor((ageMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
 
   if (days > 0) {
-    return `${days}d ${hours}h`;
+    return `${days}d ${hours}h`
   }
-  return `${hours}h`;
+  return `${hours}h`
 }
 
 /**
@@ -160,28 +157,28 @@ export function getEventAge(eventTimestamp: string): string {
  */
 export function validateEventAge(event: ValidatedEvent): boolean {
   if (isEventTooOld(event.timestamp)) {
-    const age = getEventAge(event.timestamp);
+    const age = getEventAge(event.timestamp)
 
     // AC-7.10: Log warning for stale event
-    logger.warn('Event too old - skipping notification', {
+    logger.warn("Event too old - skipping notification", {
       eventId: event.eventId,
       eventTimestamp: event.timestamp,
       eventAge: age,
-      maxAge: '7d',
-      action: 'skip',
-    });
+      maxAge: "7d",
+      action: "skip",
+    })
 
     // AC-7.7: Emit NotificationSkipped metric with reason
-    metrics.addMetric('NotificationSkipped', MetricUnit.Count, 1);
-    metrics.addDimension('SkipReason', 'event_too_old');
+    metrics.addMetric("NotificationSkipped", MetricUnit.Count, 1)
+    metrics.addDimension("SkipReason", "event_too_old")
 
     // AC-7.17: Alert metric for events beyond TTL
-    metrics.addMetric('StaleEventRejected', MetricUnit.Count, 1);
+    metrics.addMetric("StaleEventRejected", MetricUnit.Count, 1)
 
-    return false; // Event is too old
+    return false // Event is too old
   }
 
-  return true; // Event age is acceptable
+  return true // Event age is acceptable
 }
 
 // =============================================================================
@@ -196,55 +193,52 @@ export function validateEventAge(event: ValidatedEvent): boolean {
  *
  * @throws PermanentError if email mismatch detected (potential replay attack)
  */
-export function verifyEmailOnCacheHit(
-  currentEvent: ValidatedEvent,
-  cachedEvent: CachedEventData
-): void {
-  const currentEmail = extractUserEmail(currentEvent);
-  const cachedEmail = cachedEvent.userEmail;
+export function verifyEmailOnCacheHit(currentEvent: ValidatedEvent, cachedEvent: CachedEventData): void {
+  const currentEmail = extractUserEmail(currentEvent)
+  const cachedEmail = cachedEvent.userEmail
 
   if (currentEmail !== cachedEmail) {
     // AC-7.14: Log security alert
-    logger.error('SECURITY ALERT: Idempotency key reused with different email', {
+    logger.error("SECURITY ALERT: Idempotency key reused with different email", {
       eventId: currentEvent.eventId,
       cachedEmail: hashForLog(cachedEmail),
       currentEmail: hashForLog(currentEmail),
       cachedEventType: cachedEvent.eventType,
       currentEventType: currentEvent.eventType,
-      securityWarning: 'potential replay attack',
-    });
+      securityWarning: "potential replay attack",
+    })
 
     // AC-7.15: Emit tampering metric
-    metrics.addMetric('IdempotencyTampering', MetricUnit.Count, 1);
+    metrics.addMetric("IdempotencyTampering", MetricUnit.Count, 1)
 
     // AC-7.13: Fail with SECURITY error
-    throw new PermanentError('Email mismatch on idempotency check - potential replay attack', {
+    throw new PermanentError("Email mismatch on idempotency check - potential replay attack", {
       eventId: currentEvent.eventId,
       securityIncident: true,
-    });
+    })
   }
 
-  logger.debug('Email verified on idempotency cache hit', {
+  logger.debug("Email verified on idempotency cache hit", {
     eventId: currentEvent.eventId,
     emailHash: hashForLog(currentEmail),
-  });
+  })
 }
 
 /**
  * Extract user email from validated event
  */
 function extractUserEmail(event: ValidatedEvent): string {
-  const detail = event.detail as Record<string, unknown>;
-  if (typeof detail.userEmail === 'string') {
-    return detail.userEmail;
+  const detail = event.detail as Record<string, unknown>
+  if (typeof detail.userEmail === "string") {
+    return detail.userEmail
   }
-  if (typeof detail.principalEmail === 'string') {
-    return detail.principalEmail;
+  if (typeof detail.principalEmail === "string") {
+    return detail.principalEmail
   }
-  if (typeof detail.email === 'string') {
-    return detail.email;
+  if (typeof detail.email === "string") {
+    return detail.email
   }
-  throw new PermanentError('No user email found in event', { eventId: event.eventId });
+  throw new PermanentError("No user email found in event", { eventId: event.eventId })
 }
 
 // =============================================================================
@@ -258,47 +252,44 @@ function extractUserEmail(event: ValidatedEvent): string {
  * @param cachedEvent - Previously cached event data (if exists)
  * @returns IdempotencyCheckResult with skip decision
  */
-export function checkIdempotency(
-  event: ValidatedEvent,
-  cachedEvent?: CachedEventData
-): IdempotencyCheckResult {
+export function checkIdempotency(event: ValidatedEvent, cachedEvent?: CachedEventData): IdempotencyCheckResult {
   // AC-7.10: Check event age first
   if (!validateEventAge(event)) {
     return {
       isDuplicate: true,
-      skipReason: 'event_too_old',
-    };
+      skipReason: "event_too_old",
+    }
   }
 
   // AC-7.11: Check for idempotency cache hit
   if (cachedEvent) {
     // AC-7.12: Verify email on cache hit (throws if mismatch)
-    verifyEmailOnCacheHit(event, cachedEvent);
+    verifyEmailOnCacheHit(event, cachedEvent)
 
     // AC-7.7, AC-7.11: Log and emit metrics for duplicate
-    logger.info('Duplicate event detected - skipping notification', {
+    logger.info("Duplicate event detected - skipping notification", {
       eventId: event.eventId,
-      reason: 'idempotency_hit',
+      reason: "idempotency_hit",
       originalProcessedAt: cachedEvent.processedAt,
-    });
+    })
 
-    metrics.addMetric('NotificationSkipped', MetricUnit.Count, 1);
-    metrics.addDimension('SkipReason', 'duplicate');
+    metrics.addMetric("NotificationSkipped", MetricUnit.Count, 1)
+    metrics.addDimension("SkipReason", "duplicate")
 
     // AC-7.11: Split metric for idempotency hit
-    metrics.addMetric('IdempotencyHit', MetricUnit.Count, 1);
+    metrics.addMetric("IdempotencyHit", MetricUnit.Count, 1)
 
     return {
       isDuplicate: true,
-      skipReason: 'idempotency_hit',
+      skipReason: "idempotency_hit",
       cachedEvent,
-    };
+    }
   }
 
   // No duplicate detected
   return {
     isDuplicate: false,
-  };
+  }
 }
 
 // =============================================================================
@@ -310,7 +301,7 @@ export function checkIdempotency(
  */
 export function createCachedEventData(
   event: ValidatedEvent,
-  schemaVersion: string = DEFAULT_SCHEMA_VERSION
+  schemaVersion: string = DEFAULT_SCHEMA_VERSION,
 ): CachedEventData {
   return {
     eventId: event.eventId,
@@ -318,14 +309,14 @@ export function createCachedEventData(
     eventType: event.eventType,
     schemaVersion,
     processedAt: new Date().toISOString(),
-  };
+  }
 }
 
 /**
  * Calculate expiration timestamp for TTL
  */
 export function calculateExpiration(ttlSeconds: number = IDEMPOTENCY_TTL_SECONDS): number {
-  return Math.floor(Date.now() / 1000) + ttlSeconds;
+  return Math.floor(Date.now() / 1000) + ttlSeconds
 }
 
 // =============================================================================
@@ -336,17 +327,14 @@ export function calculateExpiration(ttlSeconds: number = IDEMPOTENCY_TTL_SECONDS
  * AC-7.11: 60-second lease-level deduplication window
  * Prevents rapid-fire duplicate events for the same lease within 60 seconds
  */
-const LEASE_DEDUP_WINDOW_MS = 60 * 1000; // 60 seconds
+const LEASE_DEDUP_WINDOW_MS = 60 * 1000 // 60 seconds
 
 /**
  * Generate lease-level deduplication key
  * Format: ndx-notify:lease:userEmail:leaseUuid
  */
-export function generateLeaseWindowKey(
-  userEmail: string,
-  leaseUuid: string
-): string {
-  return `${IDEMPOTENCY_NAMESPACE}:lease:${userEmail}:${leaseUuid}`;
+export function generateLeaseWindowKey(userEmail: string, leaseUuid: string): string {
+  return `${IDEMPOTENCY_NAMESPACE}:lease:${userEmail}:${leaseUuid}`
 }
 
 /**
@@ -354,33 +342,33 @@ export function generateLeaseWindowKey(
  */
 export function isWithinLeaseWindow(
   lastProcessedAt: string | undefined,
-  windowMs: number = LEASE_DEDUP_WINDOW_MS
+  windowMs: number = LEASE_DEDUP_WINDOW_MS,
 ): boolean {
   if (!lastProcessedAt) {
-    return false;
+    return false
   }
 
-  const lastTime = new Date(lastProcessedAt).getTime();
-  const elapsed = Date.now() - lastTime;
+  const lastTime = new Date(lastProcessedAt).getTime()
+  const elapsed = Date.now() - lastTime
 
   if (elapsed < windowMs) {
-    logger.info('Event within lease-level deduplication window', {
+    logger.info("Event within lease-level deduplication window", {
       lastProcessedAt,
       elapsedMs: elapsed,
       windowMs,
-    });
+    })
 
     // AC-7.11: Emit LeaseWindowSkip metric
-    metrics.addMetric('LeaseWindowSkip', MetricUnit.Count, 1);
+    metrics.addMetric("LeaseWindowSkip", MetricUnit.Count, 1)
 
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 // =============================================================================
 // Exports for Testing
 // =============================================================================
 
-export { MAX_EVENT_AGE_MS, LEASE_DEDUP_WINDOW_MS, IDEMPOTENCY_NAMESPACE, DEFAULT_SCHEMA_VERSION };
+export { MAX_EVENT_AGE_MS, LEASE_DEDUP_WINDOW_MS, IDEMPOTENCY_NAMESPACE, DEFAULT_SCHEMA_VERSION }

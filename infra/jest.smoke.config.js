@@ -11,12 +11,12 @@
  * @see docs/sprint-artifacts/stories/n5-8-govuk-notify-sandbox-integration-test.md
  */
 module.exports = {
-  testEnvironment: 'node',
-  roots: ['<rootDir>/test/smoke'],
-  testMatch: ['**/*.smoke.test.ts'],
-  testPathIgnorePatterns: ['/node_modules/'],
+  testEnvironment: "node",
+  roots: ["<rootDir>/test/smoke"],
+  testMatch: ["**/*.smoke.test.ts"],
+  testPathIgnorePatterns: ["/node_modules/"],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    "^.+\\.tsx?$": "ts-jest",
   },
   // Shorter timeout for smoke tests (30 seconds)
   testTimeout: 30000,
@@ -24,4 +24,4 @@ module.exports = {
   maxWorkers: 1,
   // Verbose output for debugging
   verbose: true,
-};
+}

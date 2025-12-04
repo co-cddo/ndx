@@ -19,14 +19,17 @@ So that I know when my sessions will expire.
 **Then** I see formatted expiry:
 
 **For future expirations (not yet expired):**
+
 - Format: Relative time (e.g., "In 23 hours", "In 45 minutes")
 - Uses native `Intl.RelativeTimeFormat` API
 
 **For past expirations (already expired):**
+
 - Format: Absolute date/time (e.g., "22 Nov 2025, 14:30")
 - Uses UK date format (day month year)
 
 **And** JavaScript formats expiry combining relative and absolute:
+
 - Format: "in 1 hour (24 Nov 2025, 15:30)"
 
 **And** expiry updates automatically (refresh every minute for relative times)
@@ -38,6 +41,7 @@ So that I know when my sessions will expire.
 ## Tasks / Subtasks
 
 ### Core Implementation
+
 - [x] Create date formatting utilities module (`src/try/utils/date-utils.ts`)
   - [x] `formatRelativeTime()` - Format relative time using Intl.RelativeTimeFormat
   - [x] `formatAbsoluteDate()` - Format absolute date in UK format
@@ -46,17 +50,20 @@ So that I know when my sessions will expire.
   - [x] `isExpired()` - Check if date is in the past
 
 ### Sessions Table Integration
+
 - [x] Import and use `formatExpiry()` in sessions-table.ts
 - [x] Render expiry in table cell with combined format
 - [x] Add ARIA label to expiry cell for screen readers
 
 ### Auto-Refresh Functionality
+
 - [x] Implement auto-refresh timer in try-page.ts
 - [x] Start timer when rendering authenticated state with leases
 - [x] Stop timer when showing empty state or on sign out
 - [x] Refresh table every 60 seconds to update relative times
 
 ### Testing
+
 - [x] Unit tests for all date formatting functions (22 tests)
 - [x] Unit tests for sessions-table expiry rendering
 - [x] Unit tests for auto-refresh timer functionality (3 tests)
@@ -65,6 +72,7 @@ So that I know when my sessions will expire.
 ## Dev Agent Record
 
 ### Context Reference
+
 - Epic: `/Users/cns/httpdocs/cddo/ndx/docs/epics/epic-7-try-sessions-dashboard.md`
 - Architecture: `/Users/cns/httpdocs/cddo/ndx/docs/architecture.md`
 - Tech Stack: TypeScript, Jest, native Intl APIs
@@ -107,10 +115,12 @@ So that I know when my sessions will expire.
 ### File List
 
 **Created:**
+
 - `src/try/utils/date-utils.ts` - Date formatting utilities
 - `src/try/utils/date-utils.test.ts` - Unit tests for date utilities
 
 **Modified:**
+
 - `src/try/ui/components/sessions-table.ts` - Use formatExpiry(), add ARIA label
 - `src/try/ui/components/sessions-table.test.ts` - Add ARIA label test
 - `src/try/ui/try-page.ts` - Add auto-refresh functionality
@@ -118,9 +128,9 @@ So that I know when my sessions will expire.
 
 ## Change Log
 
-| Date | Version | Description |
-|------|---------|-------------|
-| 2025-11-25 | 1.0 | Story implementation completed with code review fixes |
+| Date       | Version | Description                                           |
+| ---------- | ------- | ----------------------------------------------------- |
+| 2025-11-25 | 1.0     | Story implementation completed with code review fixes |
 
 ---
 
@@ -181,34 +191,35 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 
 ### Acceptance Criteria Coverage
 
-| AC # | Requirement | Status | Evidence |
-|------|-------------|--------|----------|
-| AC1 | Format expiry: Relative time for future | ✅ IMPLEMENTED | `formatRelativeTime()` in date-utils.ts:20-44, tests passing |
-| AC2 | Format expiry: Absolute date/time for past | ✅ IMPLEMENTED | `formatAbsoluteDate()` in date-utils.ts:55-66, tests passing |
-| AC3 | JavaScript formats expiry correctly | ✅ IMPLEMENTED | `formatExpiry()` in date-utils.ts:123-127, combines both formats |
-| AC4 | Expiry updates automatically (every minute) | ✅ IMPLEMENTED (FIXED) | Auto-refresh in try-page.ts:238-261, 60-second interval |
-| AC5 | Screen reader announces expiry (ARIA labels) | ✅ IMPLEMENTED (FIXED) | aria-label in sessions-table.ts:103, test verifies |
+| AC # | Requirement                                  | Status                 | Evidence                                                         |
+| ---- | -------------------------------------------- | ---------------------- | ---------------------------------------------------------------- |
+| AC1  | Format expiry: Relative time for future      | ✅ IMPLEMENTED         | `formatRelativeTime()` in date-utils.ts:20-44, tests passing     |
+| AC2  | Format expiry: Absolute date/time for past   | ✅ IMPLEMENTED         | `formatAbsoluteDate()` in date-utils.ts:55-66, tests passing     |
+| AC3  | JavaScript formats expiry correctly          | ✅ IMPLEMENTED         | `formatExpiry()` in date-utils.ts:123-127, combines both formats |
+| AC4  | Expiry updates automatically (every minute)  | ✅ IMPLEMENTED (FIXED) | Auto-refresh in try-page.ts:238-261, 60-second interval          |
+| AC5  | Screen reader announces expiry (ARIA labels) | ✅ IMPLEMENTED (FIXED) | aria-label in sessions-table.ts:103, test verifies               |
 
 **Summary:** 5 of 5 acceptance criteria fully implemented (2 fixed during review)
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Create date utilities module | ✅ Complete | ✅ VERIFIED | date-utils.ts exists with 5 functions, 128 lines |
-| Integrate into sessions table | ✅ Complete | ✅ VERIFIED | sessions-table.ts:85 uses formatExpiry() |
-| Add ARIA labels | ✅ Complete | ✅ VERIFIED (added during review) | sessions-table.ts:103 has aria-label |
-| Auto-refresh functionality | ✅ Complete | ✅ VERIFIED (added during review) | try-page.ts:238-261, timer implementation |
-| Unit tests for date functions | ✅ Complete | ✅ VERIFIED | date-utils.test.ts with 22 tests, all passing |
-| Unit tests for table rendering | ✅ Complete | ✅ VERIFIED | sessions-table.test.ts includes expiry tests |
-| Unit tests for auto-refresh | ✅ Complete | ✅ VERIFIED (added during review) | try-page.test.ts:371-467, 3 tests |
-| Accessibility tests | ✅ Complete | ✅ VERIFIED (added during review) | sessions-table.test.ts:322-328 |
+| Task                           | Marked As   | Verified As                       | Evidence                                         |
+| ------------------------------ | ----------- | --------------------------------- | ------------------------------------------------ |
+| Create date utilities module   | ✅ Complete | ✅ VERIFIED                       | date-utils.ts exists with 5 functions, 128 lines |
+| Integrate into sessions table  | ✅ Complete | ✅ VERIFIED                       | sessions-table.ts:85 uses formatExpiry()         |
+| Add ARIA labels                | ✅ Complete | ✅ VERIFIED (added during review) | sessions-table.ts:103 has aria-label             |
+| Auto-refresh functionality     | ✅ Complete | ✅ VERIFIED (added during review) | try-page.ts:238-261, timer implementation        |
+| Unit tests for date functions  | ✅ Complete | ✅ VERIFIED                       | date-utils.test.ts with 22 tests, all passing    |
+| Unit tests for table rendering | ✅ Complete | ✅ VERIFIED                       | sessions-table.test.ts includes expiry tests     |
+| Unit tests for auto-refresh    | ✅ Complete | ✅ VERIFIED (added during review) | try-page.test.ts:371-467, 3 tests                |
+| Accessibility tests            | ✅ Complete | ✅ VERIFIED (added during review) | sessions-table.test.ts:322-328                   |
 
 **Summary:** 8 of 8 tasks verified complete with evidence
 
 ### Test Coverage and Gaps
 
 **Test Results:**
+
 - **Total Tests:** 395 passing (4 new tests added during review)
 - **Date Utils Tests:** 22 tests covering all functions and edge cases
 - **Sessions Table Tests:** 40 tests including new ARIA label verification
@@ -216,6 +227,7 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 - **Coverage:** All acceptance criteria have corresponding tests
 
 **Test Quality:**
+
 - ✅ Comprehensive edge case coverage (now/future/past times, null handling)
 - ✅ Timer functionality tested with jest.useFakeTimers()
 - ✅ ARIA accessibility tested
@@ -227,6 +239,7 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 ### Architectural Alignment
 
 **Tech-Spec Compliance:**
+
 - ✅ Module structure follows established patterns (`src/try/utils/`)
 - ✅ Naming conventions consistent with codebase (kebab-case files, camelCase functions)
 - ✅ TypeScript types properly defined
@@ -234,6 +247,7 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 - ✅ Responsive design maintained with data-label attributes
 
 **Architecture Alignment:**
+
 - ✅ Separation of concerns: utilities in utils/, UI in components/
 - ✅ No breaking changes to existing interfaces
 - ✅ Follows ADR-024 subscription pattern for auth state (existing)
@@ -243,6 +257,7 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 ### Security Notes
 
 **Security Review:**
+
 - ✅ No user input processed by date formatting functions
 - ✅ HTML escaping already in place for product names (XSS protection)
 - ✅ ARIA labels use template literals with controlled data (dates from API)
@@ -254,12 +269,14 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 ### Best-Practices and References
 
 **References:**
+
 - [MDN: Intl.RelativeTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/RelativeTimeFormat) - Native API for i18n-friendly relative times
 - [MDN: Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat) - Used via `toLocaleString()` for UK date format
 - [GOV.UK Design System: Tables](https://design-system.service.gov.uk/components/table/) - Responsive table patterns followed
 - [WCAG 2.1: ARIA Labels](https://www.w3.org/WAI/WCAG21/Understanding/label-in-name.html) - Screen reader accessibility
 
 **Best Practices Followed:**
+
 - ✅ Native browser APIs preferred over external libraries
 - ✅ Proper TypeScript typing for type safety
 - ✅ Timer cleanup to prevent memory leaks
@@ -270,12 +287,14 @@ Story 7.5 implements expiry date formatting for the sessions dashboard. The impl
 ### Action Items
 
 **Code Changes Required:**
+
 - [x] [High] Implement auto-refresh timer for expiry dates [file: src/try/ui/try-page.ts:45,238-261]
 - [x] [Medium] Add ARIA labels to expiry table cells [file: src/try/ui/components/sessions-table.ts:103]
 - [x] [Medium] Add unit tests for auto-refresh functionality [file: src/try/ui/try-page.test.ts:371-467]
 - [x] [Medium] Add accessibility test for expiry ARIA labels [file: src/try/ui/components/sessions-table.test.ts:322-328]
 
 **Advisory Notes:**
+
 - Note: Consider adding visual indicator when table auto-refreshes (subtle animation) for transparency - optional UX enhancement for future iteration
 - Note: Auto-refresh timer runs even when browser tab is inactive; consider using Page Visibility API to pause when tab hidden (performance optimization for future)
 

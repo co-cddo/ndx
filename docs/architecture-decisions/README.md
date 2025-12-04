@@ -5,6 +5,7 @@ This directory contains Architecture Decision Records for the Try Before You Buy
 ## ADR Index
 
 ### Core Architecture
+
 - [ADR-017: Try Button Integration](ADR-017-try-button.md) - Client-side Try button with authentication and modal
 - [ADR-021: Centralized API Client](ADR-021-centralized-api-client.md) - Single API module with auth interceptor
 - [ADR-023: OAuth Callback Pattern](ADR-023-oauth-callback-pattern.md) - Secure OAuth flow implementation
@@ -21,18 +22,23 @@ Each ADR follows this structure:
 # ADR-XXX: Title
 
 ## Status
+
 [Proposed | Accepted | Deprecated | Superseded]
 
 ## Context
+
 What is the issue that we're seeing that is motivating this decision?
 
 ## Decision
+
 What is the change that we're proposing and/or doing?
 
 ## Consequences
+
 What becomes easier or more difficult to do because of this change?
 
 ## Implementation
+
 Code examples and file locations.
 ```
 

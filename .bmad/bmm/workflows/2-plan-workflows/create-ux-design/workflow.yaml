@@ -57,5 +57,4 @@ color_themes_html: "{output_folder}/ux-color-themes.html"
 design_directions_html: "{output_folder}/ux-design-directions.html"
 
 standalone: true
-
 # Web bundle configuration for standalone deployment

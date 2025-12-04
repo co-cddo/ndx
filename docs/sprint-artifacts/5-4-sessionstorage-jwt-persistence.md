@@ -109,12 +109,14 @@ This story focuses on **manual testing** to validate sessionStorage behavior:
 ### Architecture Context
 
 **ADR-016: sessionStorage for JWT tokens (NOT localStorage, NOT cookies)**
+
 - **Rationale:** Security vs UX trade-off for government shared devices
   - **Persists across tabs:** User doesn't re-auth when opening new tab (good UX)
   - **Clears on browser close:** Shared device security (government requirement)
   - **No server-side session needed:** Stateless JWT approach (scalability)
 
 **ADR-024: Authentication state management with event-driven pattern**
+
 - **AuthState notifies subscribers when auth status changes:**
   - Components subscribe to auth state: nav links, try buttons, /try page
   - Reactive pattern ensures UI consistency across tabs
@@ -122,12 +124,14 @@ This story focuses on **manual testing** to validate sessionStorage behavior:
   - **Potential Enhancement:** Use `storage` event to sync auth state across tabs (not required for MVP)
 
 **Source:**
+
 - Architecture: `docs/try-before-you-buy-architecture.md` (ADR-016, ADR-024)
 - Epic Details: `docs/epics/epic-5-authentication-foundation.md` (Story 5.4 full specification)
 
 ### Project Structure Notes
 
 **Existing Components (from Story 5.3):**
+
 - `src/try/auth/session-storage.ts` - JWT token storage utilities
   - `sessionStorage.setItem('isb-jwt', token)` - Stores token
   - `sessionStorage.getItem('isb-jwt')` - Retrieves token
@@ -164,16 +168,19 @@ This story focuses on **manual testing** to validate sessionStorage behavior:
 ### Potential Issues & Solutions
 
 **Issue 1: sessionStorage Not Shared Across Tabs**
+
 - **Symptom:** New tab requires re-authentication despite sessionStorage
 - **Cause:** Browser privacy settings or incognito mode
 - **Solution:** Test in normal browsing mode (not private/incognito), verify browser allows sessionStorage
 
 **Issue 2: sessionStorage Persists After Browser Close**
+
 - **Symptom:** Token still present after browser restart
 - **Cause:** Browser "restore session" feature may preserve sessionStorage
 - **Solution:** Disable session restore in browser settings for testing, or clear browsing data before test
 
 **Issue 3: Auth State Not Updating in New Tab**
+
 - **Symptom:** New tab shows "Sign in" despite valid token in sessionStorage
 - **Cause:** AuthState.isAuthenticated() not called on page load in new tab
 - **Solution:** Verify auth state checked in `src/try/main.ts` on DOMContentLoaded event
@@ -181,6 +188,7 @@ This story focuses on **manual testing** to validate sessionStorage behavior:
 ### Acceptance Testing
 
 **Test Case 1: Cross-Tab Authentication**
+
 ```
 1. Open NDX in Tab 1
 2. Click "Sign in" → Complete OAuth → Verify "Sign out" button
@@ -191,6 +199,7 @@ This story focuses on **manual testing** to validate sessionStorage behavior:
 ```
 
 **Test Case 2: Browser Restart Clears Auth**
+
 ```
 1. Sign in to NDX
 2. Verify "Sign out" button visible
@@ -203,6 +212,7 @@ This story focuses on **manual testing** to validate sessionStorage behavior:
 ```
 
 **Test Case 3: DevTools Verification**
+
 ```
 1. Open DevTools (F12) → Application → Session Storage → https://ndx.gov.uk
 2. Sign in to NDX
@@ -253,23 +263,27 @@ This validation story confirms that the existing sessionStorage implementation (
    - Cross-browser compatibility confirmed (Chrome, Firefox, Safari, Edge)
 
 **Architecture Compliance:**
+
 - ✅ ADR-016: Uses sessionStorage (NOT localStorage, NOT cookies)
 - ✅ ADR-024: AuthState.isAuthenticated() checks sessionStorage correctly
 - ✅ Token key 'isb-jwt' consistent across all Epic 5+ stories
 - ✅ Defensive programming handles sessionStorage unavailability
 
 **Test Results:**
+
 - ✅ All existing tests pass (63/63 tests, 2 test suites)
 - ✅ No regressions detected
 - ✅ No new tests required (existing tests cover sessionStorage usage)
 
 **Implementation Status:**
+
 - ✅ No new code required
 - ✅ No file modifications required
 - ✅ No configuration changes required
 - ✅ Validation documented in docs/sprint-artifacts/5-4-validation-results.md
 
 **Technical Validation:**
+
 - Code review of src/try/auth/auth-provider.ts confirms correct sessionStorage usage
 - Code review of src/try/auth/oauth-flow.ts confirms correct token storage
 - Web Storage API specification research confirms expected behavior
@@ -279,6 +293,7 @@ This validation story confirms that the existing sessionStorage implementation (
 Story ready for review. Consider manual end-to-end testing when OAuth integration is fully deployed to production.
 
 **References:**
+
 - Validation Report: docs/sprint-artifacts/5-4-validation-results.md
 - MDN Documentation: https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
 - WHATWG Specification: https://html.spec.whatwg.org/multipage/webstorage.html
@@ -290,6 +305,7 @@ Story ready for review. Consider manual end-to-end testing when OAuth integratio
 Implemented automated E2E tests for sessionStorage JWT persistence using Playwright infrastructure (Story 8.0). All 3 acceptance criteria now validated with automated regression testing.
 
 **Implementation Details:**
+
 - Created tests/e2e/auth/sessionstorage-persistence.spec.ts (157 lines, 5 tests)
 - Test coverage:
   - AC #1: Token persistence across page navigations (2 tests)
@@ -299,6 +315,7 @@ Implemented automated E2E tests for sessionStorage JWT persistence using Playwri
 - Regression suite passing: Unit tests 63/63 ✅, E2E tests 9/9 ✅
 
 **Technical Approach:**
+
 - Playwright browser contexts used to simulate browser sessions
 - sessionStorage.getItem/setItem validated via page.evaluate()
 - Browser context isolation simulates browser close/restart behavior
@@ -308,6 +325,7 @@ Implemented automated E2E tests for sessionStorage JWT persistence using Playwri
 Playwright isolates sessionStorage between browser contexts for test safety. Real browsers share sessionStorage across tabs from same origin. Tests validate underlying persistence mechanism (navigation across routes) which proves cross-tab capability.
 
 **Review Follow-ups Completed:**
+
 - ✅ [High] E2E tests implemented (tests/e2e/auth/sessionstorage-persistence.spec.ts)
 - ✅ [Medium] Testing checklist updated with E2E test execution status
 - ✅ [Medium] Manual browser-close testing documented (E2E test provides automated equivalent)
@@ -317,14 +335,17 @@ Playwright isolates sessionStorage between browser contexts for test safety. Rea
 ### File List
 
 **New Files:**
+
 - docs/sprint-artifacts/5-4-validation-results.md - Comprehensive validation documentation
 - **tests/e2e/auth/sessionstorage-persistence.spec.ts** - E2E tests for sessionStorage JWT persistence (5 tests)
 
 **Modified Files:**
+
 - docs/sprint-artifacts/5-4-sessionstorage-jwt-persistence.md - Story status updated, review follow-ups completed
 - docs/sprint-artifacts/sprint-status.yaml - Story status: ready-for-dev → in-progress → review → in-progress
 
 **Code Files Validated (No Changes):**
+
 - src/try/auth/auth-provider.ts - sessionStorage.getItem('isb-jwt') usage confirmed correct
 - src/try/auth/oauth-flow.ts - sessionStorage.setItem('isb-jwt', token) usage confirmed correct
 - src/try/auth/auth-provider.test.ts - Existing tests validate sessionStorage behavior
@@ -343,18 +364,21 @@ Playwright isolates sessionStorage between browser contexts for test safety. Rea
 Story 5.4 is a validation story that confirms sessionStorage API behavior meets PRD requirements. While the validation documentation (5-4-validation-results.md) is comprehensive and all 3 acceptance criteria are theoretically satisfied by native browser behavior, **this story is BLOCKED due to a critical missing requirement: automated E2E tests**.
 
 **CRITICAL BLOCKER:**
+
 - ❌ **No E2E tests exist** - User explicitly requested "make sure there are e2e tests"
 - ❌ `tests/e2e/auth/` directory is empty (no test files)
 - ❌ Story relies entirely on manual testing + specification research
 - ❌ Cannot verify actual cross-tab/browser-close behavior programmatically
 
 **What Exists:**
+
 - ✅ Comprehensive validation documentation (5-4-validation-results.md)
 - ✅ Unit tests passing (63/63 tests)
 - ✅ Code review confirms correct sessionStorage usage
 - ✅ All tasks marked complete with evidence
 
 **What's Missing:**
+
 - ❌ Automated E2E tests for sessionStorage persistence
 - ❌ Automated E2E tests for cross-tab behavior
 - ❌ Automated E2E tests for browser-close cleanup
@@ -367,13 +391,16 @@ Story 5.4 is a validation story that confirms sessionStorage API behavior meets 
 ### Key Findings
 
 **HIGH Severity (BLOCKING):**
+
 - **[High] Missing E2E Tests**: No automated tests exist to validate sessionStorage behavior (AC #1, #2, #3). User explicitly requested E2E tests but story relies entirely on manual validation. This creates regression risk and violates the established testing strategy (Story 8.0 provides Playwright infrastructure for exactly this use case).
 
 **MEDIUM Severity:**
+
 - **[Medium] Manual Testing Insufficient**: Story claims all ACs satisfied through "specification research" without actual browser testing evidence. DevTools screenshots mentioned in Task 4.1 are not included in validation results document.
 - **[Medium] Test Coverage Gap**: Unit tests (63 passing) validate sessionStorage mocking but cannot test actual browser cross-tab behavior or browser-close cleanup.
 
 **LOW Severity (Advisory):**
+
 - **[Low] Story Completion Ambiguity**: Validation story pattern unclear - if native browser behavior satisfies requirements without code changes, should story completion include automated tests or just documentation?
 
 ---
@@ -382,11 +409,11 @@ Story 5.4 is a validation story that confirms sessionStorage API behavior meets 
 
 All 3 acceptance criteria **THEORETICALLY SATISFIED** by Web Storage API specification, but **NOT VERIFIED** with automated tests:
 
-| AC# | Description | Status | Evidence | E2E Test? |
-|-----|-------------|--------|----------|-----------|
-| AC1 | Cross-Tab Persistence | ⚠️ UNVERIFIED | Validation doc cites Web Storage API spec, code review confirms sessionStorage.getItem() usage | ❌ NO |
-| AC2 | Browser Close Behavior | ⚠️ UNVERIFIED | Validation doc cites Web Storage API spec (native browser cleanup) | ❌ NO |
-| AC3 | Validation in DevTools | ⚠️ UNVERIFIED | Validation doc confirms DevTools accessible, token key 'isb-jwt' consistent | ❌ NO |
+| AC# | Description            | Status        | Evidence                                                                                       | E2E Test? |
+| --- | ---------------------- | ------------- | ---------------------------------------------------------------------------------------------- | --------- |
+| AC1 | Cross-Tab Persistence  | ⚠️ UNVERIFIED | Validation doc cites Web Storage API spec, code review confirms sessionStorage.getItem() usage | ❌ NO     |
+| AC2 | Browser Close Behavior | ⚠️ UNVERIFIED | Validation doc cites Web Storage API spec (native browser cleanup)                             | ❌ NO     |
+| AC3 | Validation in DevTools | ⚠️ UNVERIFIED | Validation doc confirms DevTools accessible, token key 'isb-jwt' consistent                    | ❌ NO     |
 
 **AC Coverage Summary:** 3 of 3 acceptance criteria documented as satisfied, but 0 of 3 have automated E2E test verification.
 
@@ -398,12 +425,12 @@ All 3 acceptance criteria **THEORETICALLY SATISFIED** by Web Storage API specifi
 
 All 4 task groups **MARKED COMPLETE** but validation method questioned:
 
-| Task | Marked As | Verified As | Evidence | Concern |
-|------|-----------|-------------|----------|---------|
-| Task 1: Validate sessionStorage Persistence Behavior | ✅ Complete | ⚠️ QUESTIONABLE | Validation doc (spec research only, no browser testing evidence) | Manual testing claimed but no screenshots/artifacts provided |
-| Task 2: Verify AuthState Updates Across Tabs | ✅ Complete | ⚠️ QUESTIONABLE | Validation doc (code review + spec research) | No actual cross-tab test execution documented |
-| Task 3: Test Browser Close/Restart Scenario | ✅ Complete | ⚠️ QUESTIONABLE | Validation doc (spec research confirms auto-cleanup) | No actual browser restart test execution documented |
-| Task 4: Document Testing Results | ✅ Complete | ✅ VERIFIED | 5-4-validation-results.md created (369 lines) | Documentation excellent, but lacks screenshots (Task 4.1) and actual test execution evidence |
+| Task                                                 | Marked As   | Verified As     | Evidence                                                         | Concern                                                                                      |
+| ---------------------------------------------------- | ----------- | --------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Task 1: Validate sessionStorage Persistence Behavior | ✅ Complete | ⚠️ QUESTIONABLE | Validation doc (spec research only, no browser testing evidence) | Manual testing claimed but no screenshots/artifacts provided                                 |
+| Task 2: Verify AuthState Updates Across Tabs         | ✅ Complete | ⚠️ QUESTIONABLE | Validation doc (code review + spec research)                     | No actual cross-tab test execution documented                                                |
+| Task 3: Test Browser Close/Restart Scenario          | ✅ Complete | ⚠️ QUESTIONABLE | Validation doc (spec research confirms auto-cleanup)             | No actual browser restart test execution documented                                          |
+| Task 4: Document Testing Results                     | ✅ Complete | ✅ VERIFIED     | 5-4-validation-results.md created (369 lines)                    | Documentation excellent, but lacks screenshots (Task 4.1) and actual test execution evidence |
 
 **Task Completion Summary:** 4 of 4 tasks marked complete, but validation is specification-based rather than execution-based. Task 4.1 explicitly requires "Capture screenshots of DevTools session storage panel" but none are included.
 
@@ -414,12 +441,14 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 ### Test Coverage and Gaps
 
 **Current Test Coverage:**
+
 - ✅ Unit tests: 63 passing (Jest, sessionStorage mocked)
   - auth-provider.test.ts: Tests AuthState.isAuthenticated() with mocked sessionStorage
   - oauth-flow.test.ts: Tests token extraction/storage with mocked sessionStorage
 - ❌ E2E tests: 0 (CRITICAL GAP)
 
 **Test Gaps (HIGH SEVERITY):**
+
 - **[BLOCKER] No E2E tests for sessionStorage cross-tab persistence**
   - Should exist: `tests/e2e/auth/sessionstorage-persistence.spec.ts`
   - Test: Open tab, sign in, open second tab, verify auth state persists
@@ -431,6 +460,7 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
   - Playwright can execute JavaScript in browser context
 
 **Recommendation:**
+
 1. Implement at minimum 1 E2E test for cross-tab persistence (feasible with Playwright)
 2. Document manual browser-close testing with screenshots (not automatable)
 3. Add E2E test that validates sessionStorage.getItem('isb-jwt') returns token after sign-in
@@ -440,6 +470,7 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 ### Architectural Alignment
 
 **✅ Architecture Compliance:**
+
 - **ADR-016 (sessionStorage for JWT tokens):** Correctly implemented
   - Uses sessionStorage (NOT localStorage, NOT cookies)
   - Token key 'isb-jwt' consistent across Stories 5.1-5.3
@@ -457,6 +488,7 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 **[HIGH] Story 8.0 (E2E Testing Infrastructure) was implemented to enable automated E2E tests for authentication (Story 5.11, 5.10). Story 5.4 predates Story 8.0 implementation but is now in review AFTER Story 8.0 is complete. Story 5.4 should leverage Playwright infrastructure but does not.**
 
 **Evidence:**
+
 - Story 8.0 completion notes (8-0-e2e-testing-infrastructure-setup.md:615): "Proceed with Story 5.11 (Authentication E2E Test Suite) - infrastructure ready"
 - Story 5.4 context (5-4-sessionstorage-jwt-persistence.context.xml:189): "This story requires primarily manual testing" - Written before Story 8.0, now outdated
 - Current state: `tests/e2e/auth/` directory empty despite Playwright ready
@@ -470,12 +502,14 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 **✅ No security issues identified in sessionStorage implementation.**
 
 **Security-Positive Patterns:**
+
 - sessionStorage clears on browser close (government shared device security)
 - No persistent token storage (unlike localStorage)
 - Token not exposed in URLs or cookies
 - Same-origin policy enforced by browser
 
 **Advisory:**
+
 - E2E tests should validate that tokens are NOT present after browser restart (security regression test)
 - E2E tests should validate that tokens persist across tabs (UX regression test)
 
@@ -484,22 +518,26 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 ### Best-Practices and References
 
 **Tech Stack Detected:**
+
 - **Storage API:** Web Storage API (sessionStorage) - HTML5 standard
 - **Testing:** Jest 29.7.0 (unit tests), Playwright 1.56.1 (E2E infrastructure available but unused)
 - **Language:** TypeScript 5.7.2
 
 **Best Practices Observed:**
+
 - ✅ Comprehensive validation documentation (5-4-validation-results.md)
 - ✅ Web Storage API specification research thorough
 - ✅ Cross-browser compatibility verified (Chrome, Firefox, Safari, Edge)
 - ✅ Token key consistency ('isb-jwt') across all stories
 
 **Best Practices Violated:**
+
 - ❌ No automated E2E tests despite Playwright infrastructure available
 - ❌ Manual testing not documented with screenshots/artifacts (Task 4.1 incomplete)
 - ❌ Regression prevention: Manual tests don't run in CI pipeline
 
 **References:**
+
 - [MDN - Window.sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) - Cited in validation doc
 - [WHATWG HTML Specification - Web Storage](https://html.spec.whatwg.org/multipage/webstorage.html) - Cited in validation doc
 - [Playwright Testing Best Practices](https://playwright.dev/docs/best-practices) - NOT followed
@@ -509,6 +547,7 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 ### Action Items
 
 **Code Changes Required:**
+
 - [x] [High] Create E2E test for sessionStorage cross-tab persistence [file: tests/e2e/auth/sessionstorage-persistence.spec.ts]
   - Test 1: Sign in → open new tab → verify 'Sign out' button visible (AC #1)
   - Test 2: Sign in → execute `sessionStorage.getItem('isb-jwt')` in both tabs → verify same token (AC #3)
@@ -521,6 +560,7 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
   - Update Testing Checklist (lines 134-141) to include "E2E tests passing"
 
 **Advisory Notes:**
+
 - Note: Consider updating story context template to require E2E tests for validation stories when Playwright available
 - Note: Story completion criteria unclear for validation stories - define whether automated tests required or just documentation
 - Note: Future validation stories should use established E2E infrastructure (Story 8.0) rather than manual-only testing
@@ -530,11 +570,13 @@ All 4 task groups **MARKED COMPLETE** but validation method questioned:
 **❌ REVIEW COMPLETE - BLOCKED**
 
 Story is BLOCKED due to missing E2E tests. While validation documentation is excellent and code implementation is correct, automated testing is required to:
+
 1. Prevent regressions (manual tests don't run in CI)
 2. Verify actual browser behavior (not just specification assumptions)
 3. Follow established testing strategy (Story 8.0 provides Playwright infrastructure)
 
 **Next Steps:**
+
 1. Implement E2E tests for sessionStorage persistence (1-2 tests minimum)
 2. Add screenshots to validation documentation (complete Task 4.1)
 3. Update story status back to in-progress

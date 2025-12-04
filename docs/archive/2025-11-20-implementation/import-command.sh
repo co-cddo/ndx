@@ -44,7 +44,7 @@ STACK_STATUS=$(aws cloudformation describe-stacks \
   --stack-name NdxStatic \
   --profile NDX/InnovationSandboxHub \
   --query 'Stacks[0].StackStatus' \
-  --output text 2>/dev/null || echo "NOT_FOUND")
+  --output text 2> /dev/null || echo "NOT_FOUND")
 
 if [ "$STACK_STATUS" == "NOT_FOUND" ]; then
   echo "❌ CloudFormation stack not found. Import may have failed."
@@ -58,7 +58,7 @@ DIST_STATUS=$(aws cloudfront get-distribution \
   --id E3THG4UHYDHVWP \
   --profile NDX/InnovationSandboxHub \
   --query 'Distribution.Status' \
-  --output text 2>/dev/null || echo "ERROR")
+  --output text 2> /dev/null || echo "ERROR")
 
 echo "CloudFront Distribution Status: $DIST_STATUS"
 

@@ -11,30 +11,35 @@ So that I can detect and respond to notification system failures quickly.
 ## Acceptance Criteria
 
 **AC-6.1: DLQ depth alarm**
+
 - **Given** the Dead Letter Queue
 - **When** message count > 0
 - **Then** alarm `ndx-notification-dlq-depth` triggers
 - **Verification:** CDK assertion test
 
 **AC-6.2: Lambda errors alarm**
+
 - **Given** the notification Lambda
 - **When** errors > 5 in 5 minutes
 - **Then** alarm `ndx-notification-errors` triggers
 - **Verification:** CDK assertion test
 
 **AC-6.3: Canary alarm (zero invocations)**
+
 - **Given** the notification Lambda
 - **When** zero invocations for 24 hours
 - **Then** alarm `ndx-notification-canary` triggers (detects silent death)
 - **Verification:** CDK assertion test
 
 **AC-6.4: DLQ rate alarm**
+
 - **Given** the Dead Letter Queue
 - **When** message rate > 50 in 5 minutes
 - **Then** alarm `ndx-notification-dlq-rate` triggers (detects flooding)
 - **Verification:** CDK assertion test + Red Team
 
 **AC-6.5: Auth failure alarm (CRITICAL)**
+
 - **Given** Lambda receives 401/403 errors
 - **When** any auth failure occurs
 - **Then** immediate CRITICAL alarm triggers (separate from code bugs)
@@ -42,18 +47,21 @@ So that I can detect and respond to notification system failures quickly.
 - **Verification:** CDK assertion test + Pre-mortem
 
 **AC-6.6: Error rate alarm**
+
 - **Given** the notification Lambda
 - **When** error rate > 10% in 5 minutes
 - **Then** alarm `ndx-notification-error-rate` triggers (slow ramp detection)
 - **Verification:** CDK assertion test + Risk Matrix
 
 **AC-6.7: DLQ stale alarm**
+
 - **Given** DLQ with messages
 - **When** messages present for > 24 hours
 - **Then** alarm `ndx-notification-dlq-stale` triggers (stuck processing)
 - **Verification:** CDK assertion test + Risk Matrix
 
 **AC-6.8: Secret age alarm**
+
 - **Given** the notification credentials secret
 - **When** secret age > 335 days
 - **Then** alarm `ndx-notification-secrets-expiry` triggers (proactive rotation)
@@ -61,12 +69,14 @@ So that I can detect and respond to notification system failures quickly.
 - **Verification:** CDK assertion test + Risk Matrix
 
 **AC-6.9: SNS alarm topic**
+
 - **Given** all alarms
 - **When** any alarm triggers
 - **Then** notification published to SNS topic
 - **Verification:** CDK assertion test
 
 **AC-6.10: AWS Chatbot configuration**
+
 - **Given** the SNS alarm topic
 - **When** configured
 - **Then** AWS Chatbot routes to `#ndx-infra-alerts` channel
@@ -74,12 +84,14 @@ So that I can detect and respond to notification system failures quickly.
 - **Verification:** Manual verification
 
 **AC-6.11: Chatbot independence**
+
 - **Given** the notification Lambda fails
 - **When** Chatbot receives SNS notification
 - **Then** Slack alert still delivered (independent path)
 - **Verification:** Staging integration test
 
 **AC-6.12: Custom metrics published**
+
 - **Given** Lambda processes events
 - **When** notification succeeds/fails
 - **Then** metrics `NotificationSuccess`, `NotificationFailure` emitted
@@ -87,30 +99,35 @@ So that I can detect and respond to notification system failures quickly.
 - **Verification:** Integration test
 
 **AC-6.13: CloudWatch dashboard**
+
 - **Given** the monitoring infrastructure
 - **When** deployed
 - **Then** dashboard includes: Events/hour, Success Rate, DLQ Depth, EventsReceivedFromISB
 - **Verification:** Dashboard inspection
 
 **AC-6.14: Runbook URLs in alarms**
+
 - **Given** all alarms
 - **When** created
 - **Then** description includes `runbook_url` for remediation guidance
 - **Verification:** CDK assertion test
 
 **AC-6.15: DLQ ops notification**
+
 - **Given** event fails to DLQ
 - **When** processed
 - **Then** ops team is notified via alarm (covered by AC-6.1)
 - **Verification:** Code review
 
 **AC-6.16: Incident response template**
+
 - **Given** an alarm triggers
 - **When** ops team responds
 - **Then** documented template with email lookup procedure exists
 - **Verification:** Documentation review
 
 **AC-6.17: No PII in Slack**
+
 - **Given** ops Slack alerts
 - **When** generated
 - **Then** no user emails - account IDs only (GDPR compliance)
@@ -118,6 +135,7 @@ So that I can detect and respond to notification system failures quickly.
 - **Verification:** Code review + PESTLE/GDPR
 
 **AC-6.18: Webhook URL security**
+
 - **Given** Secrets Manager operations
 - **When** logging
 - **Then** webhook URL never logged; failures log `[REDACTED]` only
@@ -189,6 +207,7 @@ So that I can detect and respond to notification system failures quickly.
 ## Architecture Reference
 
 From tech-spec-epic-n4.md:
+
 ```
 CloudWatch Alarms (8) - Risk Matrix validated
 ├── ndx-notification-dlq-depth (> 0) [P2]

@@ -9,25 +9,33 @@ Story 1.1 has been reimplemented to use `CfnDistribution` (L1 construct) instead
 ### File: `/Users/cns/httpdocs/cddo/ndx/infra/lib/ndx-stack.ts`
 
 **Before**: Read-only reference (cannot modify)
+
 ```typescript
-cloudfront.Distribution.fromDistributionAttributes(this, 'ImportedDistribution', {
-  distributionId: 'E3THG4UHYDHVWP',
-  domainName: 'd7roov8fndsis.cloudfront.net'
-});
+cloudfront.Distribution.fromDistributionAttributes(this, "ImportedDistribution", {
+  distributionId: "E3THG4UHYDHVWP",
+  domainName: "d7roov8fndsis.cloudfront.net",
+})
 ```
 
 **After**: Full L1 definition (ready for import + modification)
+
 ```typescript
-const cfnDistribution = new cloudfront.CfnDistribution(this, 'ImportedDistribution', {
+const cfnDistribution = new cloudfront.CfnDistribution(this, "ImportedDistribution", {
   distributionConfig: {
     // Full configuration matching existing distribution
     enabled: true,
-    origins: [/* S3Origin, API Gateway origin */],
-    defaultCacheBehavior: {/* existing config */},
-    cacheBehaviors: [/* /api/* behavior */],
+    origins: [
+      /* S3Origin, API Gateway origin */
+    ],
+    defaultCacheBehavior: {
+      /* existing config */
+    },
+    cacheBehaviors: [
+      /* /api/* behavior */
+    ],
     // ... complete config
   },
-});
+})
 ```
 
 ### Configuration Details
@@ -51,18 +59,21 @@ Mirrored from existing distribution E3THG4UHYDHVWP:
 ## Import Command Ready
 
 ### Automated Script (Recommended)
+
 ```bash
 cd /Users/cns/httpdocs/cddo/ndx
 ./docs/import-command.sh
 ```
 
 The script:
+
 - Verifies CDK synth
 - Runs `cdk import` with prompts
 - Validates stack and distribution status
 - Checks for configuration drift
 
 ### Manual Import
+
 ```bash
 cd /Users/cns/httpdocs/cddo/ndx/infra
 npx cdk import --profile NDX/InnovationSandboxHub NdxStatic
@@ -82,12 +93,14 @@ npx cdk import --profile NDX/InnovationSandboxHub NdxStatic
 **Risk Accepted**: ISB template updates may conflict with NDX stack changes.
 
 **Mitigation**:
+
 - Monitor ISB release notes
 - Run `cdk diff` before any NDX deployments
 - Can remove distribution from stack if conflicts arise
 - Distribution has implicit RETAIN policy (safe to delete stack)
 
 **Rollback**:
+
 ```bash
 # Delete CloudFormation stack (does NOT delete distribution)
 aws cloudformation delete-stack --stack-name NdxStatic --profile NDX/InnovationSandboxHub
@@ -99,6 +112,7 @@ git checkout HEAD -- infra/lib/ndx-stack.ts
 ## After Successful Import
 
 ### 1. Update Sprint Status
+
 File: `/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/sprint-status.yaml`
 
 ```yaml
@@ -144,10 +158,11 @@ See: `/Users/cns/httpdocs/cddo/ndx/docs/story-1.2-implementation.md`
 ### 3. Deploy Story 1.2 Changes
 
 After adding new origin:
+
 ```bash
 cd /Users/cns/httpdocs/cddo/ndx/infra
 npm run build
-npx cdk diff --profile NDX/InnovationSandboxHub  # Verify only new origin added
+npx cdk diff --profile NDX/InnovationSandboxHub # Verify only new origin added
 npx cdk deploy --profile NDX/InnovationSandboxHub
 ```
 

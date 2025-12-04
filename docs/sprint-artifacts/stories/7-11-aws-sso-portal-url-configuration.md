@@ -15,64 +15,76 @@ So that users are directed to correct SSO portal for their sandbox accounts.
 ## Acceptance Criteria
 
 ### AC1: Configuration includes environment variable support
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `src/try/config.ts:61-78,97` - `getConfigValue()` checks `window.__TRY_CONFIG__`, `process.env`, then defaults
+
 ```typescript
 function getConfigValue(key: string, defaultValue: string): string {
-  const globalConfig = (typeof window !== 'undefined' && (window as any).__TRY_CONFIG__) || {};
-  if (globalConfig[key]) return globalConfig[key];
-  if (typeof process !== 'undefined' && (process as any).env?.[key]) {
-    return (process as any).env[key];
+  const globalConfig = (typeof window !== "undefined" && (window as any).__TRY_CONFIG__) || {}
+  if (globalConfig[key]) return globalConfig[key]
+  if (typeof process !== "undefined" && (process as any).env?.[key]) {
+    return (process as any).env[key]
   }
-  return defaultValue;
+  return defaultValue
 }
 
 export const config: TryConfig = {
-  awsSsoPortalUrl: getConfigValue('AWS_SSO_PORTAL_URL', DEFAULT_AWS_SSO_PORTAL_URL),
+  awsSsoPortalUrl: getConfigValue("AWS_SSO_PORTAL_URL", DEFAULT_AWS_SSO_PORTAL_URL),
   // ...
-};
+}
 ```
 
 ### AC2: Launch button uses configured URL
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `src/try/api/sessions-service.ts:307-319` - `getSsoUrl()` uses `config.awsSsoPortalUrl`
+
 ```typescript
 export function getSsoUrl(lease: Lease): string {
   if (lease.awsSsoPortalUrl) {
-    return lease.awsSsoPortalUrl;
+    return lease.awsSsoPortalUrl
   }
-  const baseUrl = config.awsSsoPortalUrl;
-  const accountId = lease.awsAccountId;
-  const roleName = config.ssoRoleName;
-  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`;
+  const baseUrl = config.awsSsoPortalUrl
+  const accountId = lease.awsAccountId
+  const roleName = config.ssoRoleName
+  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`
 }
 ```
+
 **Evidence:** `src/try/ui/components/sessions-table.ts:138,148` - Launch button calls `getSsoUrl(lease)`
 
 ### AC3: Configuration documented in README
+
 **Status:** ✅ IMPLEMENTED
 **Evidence:** `README.md:106-131` - Full documentation section
-```markdown
+
+````markdown
 ## Try Before You Buy Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable             | Description                           | Default                                  |
+| -------------------- | ------------------------------------- | ---------------------------------------- |
 | `AWS_SSO_PORTAL_URL` | AWS SSO portal URL for console access | `https://d-9267e1e371.awsapps.com/start` |
-| `API_BASE_URL` | Innovation Sandbox API base URL | `/api` |
-| `REQUEST_TIMEOUT` | API request timeout in milliseconds | `10000` |
+| `API_BASE_URL`       | Innovation Sandbox API base URL       | `/api`                                   |
+| `REQUEST_TIMEOUT`    | API request timeout in milliseconds   | `10000`                                  |
 
 ### Development
+
 For local development with mitmproxy, default values work out of the box.
 
 ### Production
+
 Set environment variables in your deployment configuration:
+
 ```bash
 export AWS_SSO_PORTAL_URL="https://your-portal.awsapps.com/start"
 ```
+````
 
 Configuration is centralized in `src/try/config.ts`.
+
 ```
 
 ## Tasks / Subtasks
@@ -345,3 +357,4 @@ Story 7.11 is complete and approved.
 - Configuration is now centralized and ready for deployment
 - All Epic 7 stories can use the config module for consistent settings
 - No code changes needed between dev/staging/prod environments
+```

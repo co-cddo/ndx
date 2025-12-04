@@ -11,33 +11,33 @@
  * Context-specific error message overrides.
  * Different services may need slightly different wording for the same HTTP status.
  */
-export type ErrorContext = 'sessions' | 'configurations' | 'configuration' | 'leases' | 'general';
+export type ErrorContext = "sessions" | "configurations" | "configuration" | "leases" | "general"
 
 /**
  * Context-specific message overrides for certain status codes.
  */
 const CONTEXT_MESSAGES: Record<ErrorContext, Partial<Record<number, string>>> = {
   sessions: {
-    401: 'Please sign in to view your sessions.',
-    403: 'You do not have permission to view sessions.',
-    404: 'Sessions not found.',
+    401: "Please sign in to view your sessions.",
+    403: "You do not have permission to view sessions.",
+    404: "Sessions not found.",
   },
   configurations: {
-    401: 'Please sign in to continue.',
-    403: 'You do not have permission to access this resource.',
-    404: 'Configuration not found. Please contact support.',
+    401: "Please sign in to continue.",
+    403: "You do not have permission to access this resource.",
+    404: "Configuration not found. Please contact support.",
   },
   configuration: {
-    401: 'Please sign in to continue.',
-    403: 'You do not have permission to access this resource.',
-    404: 'Configuration not found. Please contact support.',
+    401: "Please sign in to continue.",
+    403: "You do not have permission to access this resource.",
+    404: "Configuration not found. Please contact support.",
   },
   leases: {
-    401: 'Please sign in to continue.',
-    404: 'The requested resource was not found.',
+    401: "Please sign in to continue.",
+    404: "The requested resource was not found.",
   },
   general: {},
-};
+}
 
 /**
  * Default error messages for HTTP status codes.
@@ -47,14 +47,14 @@ const CONTEXT_MESSAGES: Record<ErrorContext, Partial<Record<number, string>>> = 
  * - Calm tone (don't alarm users)
  */
 const DEFAULT_MESSAGES: Record<number, string> = {
-  401: 'Please sign in to continue.',
-  403: 'You do not have permission to access this resource.',
-  404: 'Resource not found.',
-  500: 'The sandbox service is temporarily unavailable. Please try again later.',
-  502: 'The sandbox service is temporarily unavailable. Please try again later.',
-  503: 'The sandbox service is temporarily unavailable. Please try again later.',
-  504: 'The sandbox service is temporarily unavailable. Please try again later.',
-};
+  401: "Please sign in to continue.",
+  403: "You do not have permission to access this resource.",
+  404: "Resource not found.",
+  500: "The sandbox service is temporarily unavailable. Please try again later.",
+  502: "The sandbox service is temporarily unavailable. Please try again later.",
+  503: "The sandbox service is temporarily unavailable. Please try again later.",
+  504: "The sandbox service is temporarily unavailable. Please try again later.",
+}
 
 /**
  * Get user-friendly error message for HTTP status codes.
@@ -72,21 +72,21 @@ const DEFAULT_MESSAGES: Record<number, string> = {
  * // Returns: 'The sandbox service is temporarily unavailable. Please try again later.'
  * ```
  */
-export function getHttpErrorMessage(status: number, context: ErrorContext = 'general'): string {
+export function getHttpErrorMessage(status: number, context: ErrorContext = "general"): string {
   // Check for context-specific message first
-  const contextMessage = CONTEXT_MESSAGES[context]?.[status];
+  const contextMessage = CONTEXT_MESSAGES[context]?.[status]
   if (contextMessage) {
-    return contextMessage;
+    return contextMessage
   }
 
   // Fall back to default message for status code
-  const defaultMessage = DEFAULT_MESSAGES[status];
+  const defaultMessage = DEFAULT_MESSAGES[status]
   if (defaultMessage) {
-    return defaultMessage;
+    return defaultMessage
   }
 
   // Generic fallback for unknown status codes
-  return 'An unexpected error occurred. Please try again.';
+  return "An unexpected error occurred. Please try again."
 }
 
 /**
@@ -97,9 +97,9 @@ export function getHttpErrorMessage(status: number, context: ErrorContext = 'gen
  */
 export function isNetworkError(error: unknown): boolean {
   if (!(error instanceof Error)) {
-    return false;
+    return false
   }
-  return error.message.includes('Failed to fetch') || error.message.includes('Network request failed');
+  return error.message.includes("Failed to fetch") || error.message.includes("Network request failed")
 }
 
 /**
@@ -110,7 +110,7 @@ export function isNetworkError(error: unknown): boolean {
  */
 export function isTimeoutError(error: unknown): boolean {
   if (!(error instanceof Error)) {
-    return false;
+    return false
   }
-  return error.name === 'AbortError' || error.message.includes('timeout');
+  return error.name === "AbortError" || error.message.includes("timeout")
 }

@@ -59,12 +59,14 @@ So that CDK has the necessary staging resources (S3 bucket, IAM roles) to deploy
 ### Architecture Patterns and Constraints
 
 **CDK Bootstrap Purpose** [Source: docs/infrastructure-architecture.md#Deployment-Architecture]
+
 - Bootstrap is a one-time AWS setup required before any `cdk deploy` command
 - Creates staging resources needed for CDK stack deployments
 - Resources persist across multiple stack deployments
 - Must be performed in each AWS account/region combination where CDK deploys
 
 **Bootstrap Resources Created** [Source: docs/infrastructure-architecture.md#Deployment-Components]
+
 - **CDK Staging S3 Bucket**: Stores CloudFormation templates and file assets during deployment
 - **IAM Execution Role**: CloudFormation uses this role to provision resources
 - **IAM Deployment Role**: CDK uses this role to initiate deployments
@@ -73,11 +75,13 @@ So that CDK has the necessary staging resources (S3 bucket, IAM roles) to deploy
 
 **Critical Bootstrap Requirement** [Source: docs/epics.md#Story-1.5]
 Failure to bootstrap causes cryptic deployment errors:
+
 - "assets bucket not found" error when running `cdk deploy`
 - CloudFormation stack creation fails immediately
 - No clear indication that bootstrap is missing
 
 **Target AWS Environment** [Source: docs/prd.md#AWS-Resource-Configuration]
+
 - AWS Account: Use account ID from `aws sts get-caller-identity`
 - AWS Region: us-west-2
 - AWS Profile: NDX/InnovationSandboxHub (pre-configured locally)
@@ -88,11 +92,12 @@ Failure to bootstrap causes cryptic deployment errors:
 
 - **Git Configuration Complete**: /infra directory properly configured for version control
 - **Files Tracked**: 12 essential files staged (all .ts source, configs, yarn.lock)
-- **Artifacts Excluded**: Compiled files (*.js, *.d.ts), build artifacts (node_modules/, cdk.out/), runtime cache (cdk.context.json) correctly ignored
+- **Artifacts Excluded**: Compiled files (_.js, _.d.ts), build artifacts (node_modules/, cdk.out/), runtime cache (cdk.context.json) correctly ignored
 - **Commit Convention Documented**: Standard format with types (feat, fix, test, docs, chore), scopes (infra, deploy, app), examples, and rationale
 - **Quality Gates Passing**: yarn lint (exit 0), yarn build (successful), yarn test (1 test passing)
 
 **Files Available for Bootstrap:**
+
 - infra/cdk.json - CDK configuration (defines app entry point)
 - infra/bin/infra.ts - CDK app entry point (instantiates stack)
 - infra/lib/infra-stack.ts - Stack definition (example stack from cdk init)
@@ -100,6 +105,7 @@ Failure to bootstrap causes cryptic deployment errors:
 - infra/tsconfig.json - TypeScript configuration
 
 **Current Infra State:**
+
 - CDK project initialized with TypeScript
 - Yarn package manager configured
 - ESLint configured with AWS CDK plugin
@@ -114,17 +120,20 @@ The /infra directory is fully set up locally but has never interacted with AWS. 
 ### Project Structure Notes
 
 **Bootstrap Command Format** [Source: docs/infrastructure-architecture.md#Deployment-Components]
+
 ```bash
 cd infra
 cdk bootstrap aws://ACCOUNT-ID/us-west-2 --profile NDX/InnovationSandboxHub
 ```
 
 **Account ID Retrieval:**
+
 ```bash
 aws sts get-caller-identity --profile NDX/InnovationSandboxHub --query Account --output text
 ```
 
 **Bootstrap Verification:**
+
 ```bash
 # Verify CDKToolkit stack exists
 aws cloudformation describe-stacks --stack-name CDKToolkit --profile NDX/InnovationSandboxHub
@@ -137,6 +146,7 @@ aws ssm get-parameter --name /cdk-bootstrap/version --profile NDX/InnovationSand
 ```
 
 **Expected Bootstrap Output:**
+
 ```
  ⏳  Bootstrapping environment aws://123456789012/us-west-2...
 Trusted accounts for deployment: (none)
@@ -147,6 +157,7 @@ CDKToolkit: creating CloudFormation changeset...
 ```
 
 **Bootstrap Resources Naming:**
+
 - S3 Bucket: `cdk-hnb659fds-assets-ACCOUNT-ID-us-west-2` (auto-generated name)
 - IAM Roles: `cdk-hnb659fds-cfn-exec-role-ACCOUNT-ID-us-west-2`, `cdk-hnb659fds-deploy-role-ACCOUNT-ID-us-west-2`
 - CloudFormation Stack: `CDKToolkit`
@@ -154,17 +165,20 @@ CDKToolkit: creating CloudFormation changeset...
 ### Testing Standards
 
 **Validation Approach** [Source: docs/prd.md#Infrastructure-Provisioning]
+
 - FR6: Infrastructure can be deployed to AWS via `cdk deploy` command (bootstrap is prerequisite)
 - FR4: Infrastructure code can be validated locally via `cdk synth` before deployment
 - NFR-REL-4: Infrastructure must validate successfully via `cdk synth` before any deployment attempt
 
 **Quality Gate:**
+
 - Bootstrap must complete successfully (exit code 0)
 - CDKToolkit CloudFormation stack must exist with CREATE_COMPLETE status
 - `cdk synth` must work after bootstrap (proves CDK → AWS connection)
 - `cdk diff` should complete without errors (even if no changes)
 
 **Error Scenarios to Handle:**
+
 1. **Profile Not Found**: Instruct user to configure AWS CLI with NDX/InnovationSandboxHub profile
 2. **Insufficient Permissions**: User's AWS credentials must have AdministratorAccess or equivalent
 3. **Already Bootstrapped**: Bootstrap is idempotent; re-running is safe and updates if needed
@@ -173,6 +187,7 @@ CDKToolkit: creating CloudFormation changeset...
 ### Bootstrap Persistence and Reusability
 
 **Important Characteristics** [Source: docs/infrastructure-architecture.md#Deployment-Components]
+
 - Bootstrap is performed ONCE per AWS account/region combination
 - Bootstrap resources persist indefinitely (not deleted after stack deployments)
 - All CDK stacks in the same account/region use the same bootstrap resources
@@ -180,6 +195,7 @@ CDKToolkit: creating CloudFormation changeset...
 - Bootstrap costs are minimal (~$0.01/month for staging S3 bucket)
 
 **Future Implications:**
+
 - Story 2.4 (Deploy S3 Infrastructure to AWS) will use these bootstrap resources
 - Any future CDK stacks in us-west-2 will reuse this bootstrap
 - Growth phase features (CloudFront, OIDC roles) will use same bootstrap
@@ -240,6 +256,7 @@ N/A - All operations completed successfully without errors.
 ### Technical Notes
 
 **Bootstrap Resources Created:**
+
 - CloudFormation Stack: CDKToolkit (arn:aws:cloudformation:us-west-2:568672915267:stack/CDKToolkit/17e08650-c47a-11f0-8ecf-0a996be8a471)
 - S3 Bucket: cdk-hnb659fds-assets-568672915267-us-west-2
 - ECR Repository: cdk-hnb659fds-container-assets-568672915267-us-west-2
@@ -250,6 +267,7 @@ N/A - All operations completed successfully without errors.
 - IAM Lookup Role: cdk-hnb659fds-lookup-role-568672915267-us-west-2
 
 **Bootstrap Configuration:**
+
 - Default execution policy: AdministratorAccess
 - Trusted accounts: none
 - Qualifier: hnb659fds
@@ -257,6 +275,7 @@ N/A - All operations completed successfully without errors.
 - KMS encryption: AWS_MANAGED_KEY
 
 **Quality Gates Met:**
+
 - Bootstrap exit code: 0 (success)
 - CloudFormation stack status: CREATE_COMPLETE
 - `cdk synth` exit code: 0 (success)
@@ -264,6 +283,7 @@ N/A - All operations completed successfully without errors.
 - Bootstrap version 29 is compatible with CDK v2.224.0+
 
 **Acceptance Criteria Status:**
+
 - AC #1: Bootstrap completed successfully with all resources created
 - AC #2: CloudFormation stack CDKToolkit exists with CREATE_COMPLETE status
 - AC #3: Bootstrap version 29 confirmed compatible
@@ -291,23 +311,23 @@ Story 1.5 successfully bootstraps AWS CDK in the target account/region with all 
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC #1 | Bootstrap completed successfully creating S3 bucket, IAM roles, SSM parameters | **IMPLEMENTED** | Story lines 218-222: Bootstrap CREATE_COMPLETE with 12 resources |
-| AC #2 | CDKToolkit CloudFormation stack exists | **IMPLEMENTED** | Story lines 224-226: Stack status CREATE_COMPLETE verified via AWS CLI |
-| AC #3 | Bootstrap version compatible with CDK v2.224.0+ | **IMPLEMENTED** | Story lines 226-227: Version 29 confirmed compatible |
-| AC #4 | Bootstrap resources tagged with `project: ndx-cdk-bootstrap` | **IMPLEMENTED** | Story line 270: Re-bootstrapped with tags, verified via `describe-stacks` |
+| AC#   | Description                                                                    | Status          | Evidence                                                                  |
+| ----- | ------------------------------------------------------------------------------ | --------------- | ------------------------------------------------------------------------- |
+| AC #1 | Bootstrap completed successfully creating S3 bucket, IAM roles, SSM parameters | **IMPLEMENTED** | Story lines 218-222: Bootstrap CREATE_COMPLETE with 12 resources          |
+| AC #2 | CDKToolkit CloudFormation stack exists                                         | **IMPLEMENTED** | Story lines 224-226: Stack status CREATE_COMPLETE verified via AWS CLI    |
+| AC #3 | Bootstrap version compatible with CDK v2.224.0+                                | **IMPLEMENTED** | Story lines 226-227: Version 29 confirmed compatible                      |
+| AC #4 | Bootstrap resources tagged with `project: ndx-cdk-bootstrap`                   | **IMPLEMENTED** | Story line 270: Re-bootstrapped with tags, verified via `describe-stacks` |
 
 **Summary:** 4 of 4 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Verify AWS CLI configuration | Complete | **VERIFIED** | Lines 212-216: Account 568672915267, region us-west-2, profile verified |
-| Task 2: Run CDK bootstrap | Complete | **VERIFIED** | Lines 218-222: Bootstrap successful, 12 resources created |
-| Task 3: Validate CDKToolkit stack | Complete | **VERIFIED** | Lines 224-232: Stack validated, version 29, tags verified |
-| Task 4: Test CDK deployment readiness | Complete | **VERIFIED** | Lines 234-238: `cdk synth` and `cdk diff` both successful |
+| Task                                  | Marked As | Verified As  | Evidence                                                                |
+| ------------------------------------- | --------- | ------------ | ----------------------------------------------------------------------- |
+| Task 1: Verify AWS CLI configuration  | Complete  | **VERIFIED** | Lines 212-216: Account 568672915267, region us-west-2, profile verified |
+| Task 2: Run CDK bootstrap             | Complete  | **VERIFIED** | Lines 218-222: Bootstrap successful, 12 resources created               |
+| Task 3: Validate CDKToolkit stack     | Complete  | **VERIFIED** | Lines 224-232: Stack validated, version 29, tags verified               |
+| Task 4: Test CDK deployment readiness | Complete  | **VERIFIED** | Lines 234-238: `cdk synth` and `cdk diff` both successful               |
 
 **Summary:** 4 of 4 completed tasks verified ✓
 **False completions:** 0
@@ -316,6 +336,7 @@ Story 1.5 successfully bootstraps AWS CDK in the target account/region with all 
 ### Test Coverage and Gaps
 
 **Testing Performed:**
+
 - Bootstrap operation successful (AWS CloudFormation deployment test)
 - Stack verification via AWS CLI (`describe-stacks`)
 - Resource validation (bucket, roles, SSM parameter confirmed)
@@ -327,6 +348,7 @@ Story 1.5 successfully bootstraps AWS CDK in the target account/region with all 
 ### Architectural Alignment
 
 **Fully aligned with architecture:**
+
 - Infrastructure Architecture section 10.2 specifies bootstrap as one-time prerequisite ✓
 - Epic 1 Story 1.5 in epics.md defines exact acceptance criteria ✓
 - Tech Spec Epic 1 AC-6 maps to this story ✓
@@ -345,12 +367,14 @@ Story 1.5 successfully bootstraps AWS CDK in the target account/region with all 
 ### Best-Practices and References
 
 **AWS CDK Bootstrap Best Practices:**
+
 - Bootstrap is idempotent and safe to re-run (confirmed in testing)
 - Bootstrap resources persist across stack deployments (correct behavior)
 - Using `--tags` flag applies tags to all bootstrap resources
 - Bootstrap version tracking via SSM parameter enables compatibility checks
 
 **References:**
+
 - [AWS CDK Bootstrap Documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
 - [CDK Bootstrap Stack Reference](https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk/lib/api/bootstrap/bootstrap-template.yaml)
 
@@ -363,6 +387,7 @@ Story 1.5 successfully bootstraps AWS CDK in the target account/region with all 
 ## Change Log
 
 **Version 1.1 - 2025-11-18**
+
 - Re-ran bootstrap with `--tags project=ndx-cdk-bootstrap` to fix AC #4
 - Verified tags applied via `aws cloudformation describe-stacks`
 - Updated Acceptance Criteria Status in Dev Agent Record

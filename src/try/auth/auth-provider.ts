@@ -16,20 +16,20 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-024|ADR-024: Authentication State Management}
  */
 
-import { JWT_TOKEN_KEY } from '../constants';
-import { isJWTExpired } from '../utils/jwt-utils';
+import { JWT_TOKEN_KEY } from "../constants"
+import { isJWTExpired } from "../utils/jwt-utils"
 
 /**
  * Type definition for authentication state change listeners.
  * Callbacks receive the current authentication state as a boolean.
  */
-type AuthStateListener = (isAuthenticated: boolean) => void;
+type AuthStateListener = (isAuthenticated: boolean) => void
 
 /**
  * Type definition for unsubscribe function returned by subscribe().
  * Call this function to remove the listener and prevent memory leaks.
  */
-type Unsubscribe = () => void;
+type Unsubscribe = () => void
 
 /**
  * AuthState class manages authentication state using an event-driven pattern.
@@ -61,7 +61,7 @@ class AuthState {
    * Array of listener callbacks subscribed to auth state changes.
    * @private
    */
-  private listeners: AuthStateListener[] = [];
+  private listeners: AuthStateListener[] = []
 
   // TOKEN_KEY imported from '../constants' as JWT_TOKEN_KEY
 
@@ -88,24 +88,24 @@ class AuthState {
   isAuthenticated(): boolean {
     // Defensive programming: Check if sessionStorage is available
     // (some browsers disable in private/incognito mode)
-    if (typeof sessionStorage === 'undefined') {
-      console.warn('[AuthState] sessionStorage not available, auth features disabled');
-      return false;
+    if (typeof sessionStorage === "undefined") {
+      console.warn("[AuthState] sessionStorage not available, auth features disabled")
+      return false
     }
 
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY);
+    const token = sessionStorage.getItem(JWT_TOKEN_KEY)
     if (!token) {
-      return false;
+      return false
     }
 
     // Check if token is expired (with 60s buffer for clock skew)
     if (isJWTExpired(token, 60)) {
-      console.warn('[AuthState] JWT token expired, clearing from sessionStorage');
-      sessionStorage.removeItem(JWT_TOKEN_KEY);
-      return false;
+      console.warn("[AuthState] JWT token expired, clearing from sessionStorage")
+      sessionStorage.removeItem(JWT_TOKEN_KEY)
+      return false
     }
 
-    return true;
+    return true
   }
 
   /**
@@ -136,18 +136,18 @@ class AuthState {
    * ```
    */
   subscribe(listener: AuthStateListener): Unsubscribe {
-    this.listeners.push(listener);
+    this.listeners.push(listener)
 
     // Immediately call listener with current state (prevents initial render delay)
-    listener(this.isAuthenticated());
+    listener(this.isAuthenticated())
 
     // H7: Return unsubscribe function for cleanup
     return () => {
-      const index = this.listeners.indexOf(listener);
+      const index = this.listeners.indexOf(listener)
       if (index > -1) {
-        this.listeners.splice(index, 1);
+        this.listeners.splice(index, 1)
       }
-    };
+    }
   }
 
   /**
@@ -170,8 +170,8 @@ class AuthState {
    * ```
    */
   notify(): void {
-    const isAuth = this.isAuthenticated();
-    this.listeners.forEach((listener) => listener(isAuth));
+    const isAuth = this.isAuthenticated()
+    this.listeners.forEach((listener) => listener(isAuth))
   }
 
   /**
@@ -192,13 +192,13 @@ class AuthState {
    * ```
    */
   login(token: string): void {
-    if (typeof sessionStorage === 'undefined') {
-      console.error('[AuthState] Cannot store token - sessionStorage not available');
-      return;
+    if (typeof sessionStorage === "undefined") {
+      console.error("[AuthState] Cannot store token - sessionStorage not available")
+      return
     }
 
-    sessionStorage.setItem(JWT_TOKEN_KEY, token);
-    this.notify();
+    sessionStorage.setItem(JWT_TOKEN_KEY, token)
+    this.notify()
   }
 
   /**
@@ -217,13 +217,13 @@ class AuthState {
    * ```
    */
   logout(): void {
-    if (typeof sessionStorage === 'undefined') {
-      console.warn('[AuthState] sessionStorage not available, cannot clear token');
-      return;
+    if (typeof sessionStorage === "undefined") {
+      console.warn("[AuthState] sessionStorage not available, cannot clear token")
+      return
     }
 
-    sessionStorage.removeItem(JWT_TOKEN_KEY);
-    this.notify();
+    sessionStorage.removeItem(JWT_TOKEN_KEY)
+    this.notify()
   }
 }
 
@@ -245,4 +245,4 @@ class AuthState {
  * }
  * ```
  */
-export const authState = new AuthState();
+export const authState = new AuthState()

@@ -70,18 +70,21 @@ So that the S3 bucket exists in production and is ready to receive files.
 ### Architecture Patterns and Constraints
 
 **Deployment Configuration** [Source: docs/infrastructure-architecture.md#Deployment-Architecture]
+
 - Region: us-west-2
 - AWS Profile: NDX/InnovationSandboxHub
 - Stack name: NdxStaticStack (or NdxStatic based on Story 2.2 implementation)
 - Deployment command: `cdk deploy --profile NDX/InnovationSandboxHub`
 
 **CDK Bootstrap Prerequisite** [Source: docs/epics.md#Story-1.5]
+
 - CDK bootstrap completed in Story 1.5
 - CDKToolkit stack exists in AWS account
 - Bootstrap creates staging S3 bucket and IAM roles
 - Required before any `cdk deploy` command
 
 **S3 Bucket Configuration** [Source: docs/infrastructure-architecture.md#Data-Architecture]
+
 - Bucket name: ndx-static-prod
 - Encryption: S3_MANAGED (AES256)
 - Public access: BLOCK_ALL (all 4 settings)
@@ -90,6 +93,7 @@ So that the S3 bucket exists in production and is ready to receive files.
 - Tags: project=ndx, environment=prod, managedby=cdk
 
 **Idempotency Requirement** [Source: docs/prd.md#Non-Functional-Requirements]
+
 - NFR-REL-1: CDK deployment must be idempotent
 - Re-running deploy with no changes causes no AWS modifications
 - CloudFormation detects no changes and completes quickly
@@ -113,6 +117,7 @@ This deployment creates the infrastructure but does not make the site publicly a
 [Source: docs/sprint-artifacts/2-3-validate-s3-access-pattern-for-mvp.md#Dev-Agent-Record]
 
 **Infrastructure State from Story 2-2:**
+
 - CDK stack defined in infra/lib/ndx-stack.ts
 - CloudFormation template validates successfully via `cdk synth`
 - ESLint passes with zero errors
@@ -124,6 +129,7 @@ This deployment creates the infrastructure but does not make the site publicly a
 ### Project Structure Notes
 
 **Deployment Workflow:**
+
 ```bash
 # Navigate to infrastructure directory
 cd /Users/cns/httpdocs/cddo/ndx/infra
@@ -138,7 +144,7 @@ cdk diff --profile NDX/InnovationSandboxHub
 cdk deploy --profile NDX/InnovationSandboxHub
 
 # Verify deployment
-cdk diff --profile NDX/InnovationSandboxHub  # Should show no changes
+cdk diff --profile NDX/InnovationSandboxHub # Should show no changes
 ```
 
 **Verification Commands:**
@@ -147,6 +153,7 @@ All verification commands use the AWS CLI with the NDX/InnovationSandboxHub prof
 ### Functional Requirements Coverage
 
 This story implements:
+
 - **FR2:** Deploy S3 bucket to us-west-2 using profile ✓
 - **FR4:** Infrastructure validated via cdk synth ✓
 - **FR5:** Changes previewed via cdk diff ✓
@@ -176,6 +183,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Debug Log References
 
 **Task 1 Plan:**
+
 1. Navigate to infra directory
 2. Run `cdk synth --profile NDX/InnovationSandboxHub`
 3. Verify CloudFormation template generates successfully
@@ -183,6 +191,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 5. Ensure no synthesis errors
 
 **Deployment Notes:**
+
 - CDK synthesis completed successfully (5.15s)
 - CloudFormation template validated with correct S3 bucket configuration
 - Deployment completed in 36.32s (total 41.47s including synthesis)
@@ -193,11 +202,13 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ✅ **Story 2.4 Complete - Infrastructure Deployed Successfully**
 
 **Deployment Summary:**
+
 - CloudFormation Stack: NdxStatic created in us-west-2
 - S3 Bucket: ndx-static-prod successfully deployed
 - All acceptance criteria verified and passed
 
 **Configuration Verified:**
+
 - Encryption: AES256 (S3_MANAGED) ✓
 - Versioning: Enabled ✓
 - Public Access: BLOCK_ALL (all 4 settings) ✓
@@ -205,6 +216,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Idempotency: Confirmed - no differences on re-deployment ✓
 
 **Functional Requirements Satisfied:**
+
 - FR2: Deploy to us-west-2 with NDX/InnovationSandboxHub profile ✓
 - FR6: Deploy via cdk deploy command ✓
 - FR7: Idempotent deployments ✓
@@ -212,22 +224,26 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - NFR-REL-2: Automatic rollback capability (CloudFormation) ✓
 
 **Key Achievements:**
+
 - First production infrastructure deployment to AWS complete
 - S3 bucket ready to receive static site files
 - Foundation established for Epic 3 deployment automation
 - Infrastructure validated through comprehensive AWS CLI verification
 
 **Next Steps:**
+
 - Epic 3: Create deployment scripts to upload site files to bucket
 - Future: Add CloudFront CDN for public site access (growth phase)
 
 ### File List
 
 No code changes in this story - deployment only. Infrastructure defined in previous Story 2.2:
+
 - infra/lib/ndx-stack.ts (existing - no changes)
 - infra/bin/infra.ts (existing - no changes)
 
 AWS Resources Created:
+
 - CloudFormation Stack: NdxStatic (us-west-2)
 - S3 Bucket: ndx-static-prod (us-west-2)
 
@@ -251,25 +267,25 @@ This is a deployment-only story with no code changes - all infrastructure was de
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC1 | CDK deployment succeeds with all bucket configurations | IMPLEMENTED | CloudFormation stack ARN: `arn:aws:cloudformation:us-west-2:568672915267:stack/NdxStatic/6e924640-c4da-11f0-a0ba-028956dc58c3`<br>- Stack status: CREATE_COMPLETE<br>- Encryption: AES256 verified<br>- Versioning: Enabled verified<br>- Public access: BLOCK_ALL verified (all 4 settings)<br>- Tags: project/environment/managedby verified |
-| AC2 | cdk diff shows no changes after deployment | IMPLEMENTED | Post-deployment diff output: "There were no differences" |
-| AC3 | CloudFormation events show successful resource creation | IMPLEMENTED | All resources show CREATE_COMPLETE status via CloudFormation events |
-| AC4 | Deployment is idempotent | IMPLEMENTED | Confirmed via AC2 - no differences on re-deployment (FR7, NFR-REL-1) |
+| AC# | Description                                             | Status      | Evidence                                                                                                                                                                                                                                                                                                                                       |
+| --- | ------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC1 | CDK deployment succeeds with all bucket configurations  | IMPLEMENTED | CloudFormation stack ARN: `arn:aws:cloudformation:us-west-2:568672915267:stack/NdxStatic/6e924640-c4da-11f0-a0ba-028956dc58c3`<br>- Stack status: CREATE_COMPLETE<br>- Encryption: AES256 verified<br>- Versioning: Enabled verified<br>- Public access: BLOCK_ALL verified (all 4 settings)<br>- Tags: project/environment/managedby verified |
+| AC2 | cdk diff shows no changes after deployment              | IMPLEMENTED | Post-deployment diff output: "There were no differences"                                                                                                                                                                                                                                                                                       |
+| AC3 | CloudFormation events show successful resource creation | IMPLEMENTED | All resources show CREATE_COMPLETE status via CloudFormation events                                                                                                                                                                                                                                                                            |
+| AC4 | Deployment is idempotent                                | IMPLEMENTED | Confirmed via AC2 - no differences on re-deployment (FR7, NFR-REL-1)                                                                                                                                                                                                                                                                           |
 
 **Summary:** 4 of 4 acceptance criteria fully implemented ✓
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Validate CDK stack before deployment | COMPLETED [x] | VERIFIED COMPLETE | CDK synth generated valid CloudFormation template with correct S3 bucket properties |
-| Task 2: Preview infrastructure changes | COMPLETED [x] | VERIFIED COMPLETE | CDK diff showed expected new S3 bucket creation |
-| Task 3: Deploy infrastructure to AWS | COMPLETED [x] | VERIFIED COMPLETE | CloudFormation stack deployed successfully with CREATE_COMPLETE status |
-| Task 4: Verify S3 bucket configuration | COMPLETED [x] | VERIFIED COMPLETE | All 5 AWS CLI verification commands (ls, encryption, versioning, public-access-block, tagging) confirmed correct configuration |
-| Task 5: Validate idempotent deployment | COMPLETED [x] | VERIFIED COMPLETE | Post-deployment diff confirmed "no differences" |
-| Task 6: Verify CloudFormation events | COMPLETED [x] | VERIFIED COMPLETE | CloudFormation events show CREATE_COMPLETE for stack and all resources |
+| Task                                         | Marked As     | Verified As       | Evidence                                                                                                                       |
+| -------------------------------------------- | ------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Task 1: Validate CDK stack before deployment | COMPLETED [x] | VERIFIED COMPLETE | CDK synth generated valid CloudFormation template with correct S3 bucket properties                                            |
+| Task 2: Preview infrastructure changes       | COMPLETED [x] | VERIFIED COMPLETE | CDK diff showed expected new S3 bucket creation                                                                                |
+| Task 3: Deploy infrastructure to AWS         | COMPLETED [x] | VERIFIED COMPLETE | CloudFormation stack deployed successfully with CREATE_COMPLETE status                                                         |
+| Task 4: Verify S3 bucket configuration       | COMPLETED [x] | VERIFIED COMPLETE | All 5 AWS CLI verification commands (ls, encryption, versioning, public-access-block, tagging) confirmed correct configuration |
+| Task 5: Validate idempotent deployment       | COMPLETED [x] | VERIFIED COMPLETE | Post-deployment diff confirmed "no differences"                                                                                |
+| Task 6: Verify CloudFormation events         | COMPLETED [x] | VERIFIED COMPLETE | CloudFormation events show CREATE_COMPLETE for stack and all resources                                                         |
 
 **Summary:** 6 of 6 completed tasks verified, 0 questionable, 0 falsely marked complete ✓
 
@@ -278,6 +294,7 @@ This is a deployment-only story with no code changes - all infrastructure was de
 **Manual Verification Approach:** Per story constraints, this deployment story uses manual AWS CLI verification rather than automated tests. This is appropriate for infrastructure deployment validation.
 
 **Verification Coverage:**
+
 - ✓ Bucket existence verification
 - ✓ Encryption configuration verification
 - ✓ Versioning configuration verification
@@ -293,6 +310,7 @@ This is a deployment-only story with no code changes - all infrastructure was de
 **Architecture Compliance:** ✓ FULL COMPLIANCE
 
 All architectural constraints from infrastructure-architecture.md satisfied:
+
 - ✓ Region: us-west-2
 - ✓ AWS Profile: NDX/InnovationSandboxHub
 - ✓ Stack Name: NdxStatic (as defined in infra/bin/infra.ts)
@@ -305,6 +323,7 @@ All architectural constraints from infrastructure-architecture.md satisfied:
 - ✓ Idempotency: Confirmed via cdk diff
 
 **Functional Requirements Satisfied:**
+
 - FR2: Deploy to us-west-2 with profile ✓
 - FR6: Deploy via cdk deploy ✓
 - FR7: Idempotent deployments ✓
@@ -330,6 +349,7 @@ The infrastructure deployment demonstrates security best practices:
 ### Best Practices and References
 
 **AWS CDK Best Practices Applied:**
+
 - ✓ Infrastructure as Code with type-safe TypeScript
 - ✓ CloudFormation automatic rollback on deployment failure
 - ✓ Explicit resource naming for production resources
@@ -337,12 +357,14 @@ The infrastructure deployment demonstrates security best practices:
 - ✓ Idempotent deployments via CDK change sets
 
 **AWS S3 Security Best Practices:**
+
 - ✓ Encryption by default
 - ✓ Versioning for data protection
 - ✓ Public access blocking
 - ✓ Retention policy to prevent accidental deletion
 
 **References:**
+
 - [AWS CDK Best Practices](https://docs.aws.amazon.com/cdk/v2/guide/best-practices.html)
 - [S3 Security Best Practices](https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html)
 - [CloudFormation Stack Policies](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html)
@@ -352,6 +374,7 @@ The infrastructure deployment demonstrates security best practices:
 **No action items** - Story implementation is complete and approved.
 
 **Advisory Notes:**
+
 - Note: Epic 3 will add deployment automation scripts to upload site files to the bucket
 - Note: Future growth phase will add CloudFront CDN for public site access (per Story 2.3 decision)
 - Note: Consider adding AWS Budget alerts for cost monitoring (optional enhancement)

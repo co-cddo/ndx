@@ -10,18 +10,18 @@ so that **the AUP modal can display actual duration and budget limits instead of
 
 ## Acceptance Criteria
 
-| ID | Criterion | Test Approach |
-|----|-----------|---------------|
-| AC-1 | `fetchLeaseTemplate(tryId)` calls `GET /api/leaseTemplates/{tryId}` endpoint | Unit: mock fetch |
-| AC-2 | Response parsed for `leaseDurationInHours` and `maxSpend` fields | Unit: parse test |
-| AC-3 | Returns typed `LeaseTemplateResult` with `success`/`data` or `error`/`errorCode` | Unit: type validation |
-| AC-4 | 404 response returns `errorCode: 'NOT_FOUND'` with user-friendly message | Unit: 404 handling |
-| AC-5 | 401 response triggers auth redirect via `callISBAPI()` | Unit: auth redirect |
-| AC-6 | 500+ response returns `errorCode: 'SERVER_ERROR'` with retry guidance | Unit: server error |
-| AC-7 | Network timeout (>5s) returns `errorCode: 'TIMEOUT'` | Unit: timeout handling |
-| AC-8 | Invalid UUID rejected before API call (fail fast) | Unit: validation |
-| AC-9 | Concurrent calls deduplicated via `deduplicatedRequest()` | Unit: dedup test |
-| AC-10 | Malformed API response (missing required fields) logged as warning | Unit: logging test |
+| ID    | Criterion                                                                        | Test Approach          |
+| ----- | -------------------------------------------------------------------------------- | ---------------------- |
+| AC-1  | `fetchLeaseTemplate(tryId)` calls `GET /api/leaseTemplates/{tryId}` endpoint     | Unit: mock fetch       |
+| AC-2  | Response parsed for `leaseDurationInHours` and `maxSpend` fields                 | Unit: parse test       |
+| AC-3  | Returns typed `LeaseTemplateResult` with `success`/`data` or `error`/`errorCode` | Unit: type validation  |
+| AC-4  | 404 response returns `errorCode: 'NOT_FOUND'` with user-friendly message         | Unit: 404 handling     |
+| AC-5  | 401 response triggers auth redirect via `callISBAPI()`                           | Unit: auth redirect    |
+| AC-6  | 500+ response returns `errorCode: 'SERVER_ERROR'` with retry guidance            | Unit: server error     |
+| AC-7  | Network timeout (>5s) returns `errorCode: 'TIMEOUT'`                             | Unit: timeout handling |
+| AC-8  | Invalid UUID rejected before API call (fail fast)                                | Unit: validation       |
+| AC-9  | Concurrent calls deduplicated via `deduplicatedRequest()`                        | Unit: dedup test       |
+| AC-10 | Malformed API response (missing required fields) logged as warning               | Unit: logging test     |
 
 ## Tasks / Subtasks
 
@@ -77,15 +77,15 @@ so that **the AUP modal can display actual duration and budget limits instead of
 
 ### Source Tree Components
 
-| Component | Path | Action |
-|-----------|------|--------|
-| New service | `src/try/api/lease-templates-service.ts` | CREATE |
-| New tests | `src/try/api/lease-templates-service.test.ts` | CREATE |
-| Existing API client | `src/try/api/api-client.ts` | USE (callISBAPI) |
-| Existing dedup util | `src/try/utils/request-dedup.ts` | USE (deduplicatedRequest) |
-| Existing error utils | `src/try/utils/error-utils.ts` | USE (getHttpErrorMessage) |
-| Existing config | `src/try/config.ts` | USE (config.requestTimeout) |
-| Reference pattern | `src/try/api/configurations-service.ts` | FOLLOW (same structure) |
+| Component            | Path                                          | Action                      |
+| -------------------- | --------------------------------------------- | --------------------------- |
+| New service          | `src/try/api/lease-templates-service.ts`      | CREATE                      |
+| New tests            | `src/try/api/lease-templates-service.test.ts` | CREATE                      |
+| Existing API client  | `src/try/api/api-client.ts`                   | USE (callISBAPI)            |
+| Existing dedup util  | `src/try/utils/request-dedup.ts`              | USE (deduplicatedRequest)   |
+| Existing error utils | `src/try/utils/error-utils.ts`                | USE (getHttpErrorMessage)   |
+| Existing config      | `src/try/config.ts`                           | USE (config.requestTimeout) |
+| Reference pattern    | `src/try/api/configurations-service.ts`       | FOLLOW (same structure)     |
 
 ### API Contract (from ISB OpenAPI)
 
@@ -136,6 +136,7 @@ so that **the AUP modal can display actual duration and budget limits instead of
 **First story in Epic 9** - no predecessor context.
 
 However, relevant patterns established in Epic 6:
+
 - `configurations-service.ts` (Story 6.7) provides the exact pattern to follow
 - `callISBAPI()` handles 401 redirect automatically
 - `deduplicatedRequest()` prevents concurrent duplicate calls
@@ -175,12 +176,15 @@ N/A - Implementation succeeded on first attempt
 ## Senior Developer Review (AI)
 
 ### Reviewer
+
 cns
 
 ### Date
+
 2025-12-02
 
 ### Outcome
+
 **APPROVE** - All acceptance criteria implemented with evidence, all tasks verified, excellent code quality.
 
 ### Summary
@@ -193,31 +197,31 @@ No issues found. Implementation is clean and follows all architectural decisions
 
 ### Acceptance Criteria Coverage
 
-| AC# | Description | Status | Evidence |
-|-----|-------------|--------|----------|
-| AC-1 | fetchLeaseTemplate calls GET /api/leaseTemplates/{tryId} | IMPLEMENTED | lease-templates-service.ts:169-173, buildEndpoint():123-125 |
-| AC-2 | Response parsed for leaseDurationInHours and maxSpend | IMPLEMENTED | lease-templates-service.ts:218-221 |
-| AC-3 | Returns typed LeaseTemplateResult | IMPLEMENTED | lease-templates-service.ts:34-50 |
-| AC-4 | 404 returns NOT_FOUND | IMPLEMENTED | lease-templates-service.ts:179-187 |
-| AC-5 | 401 returns UNAUTHORIZED (with skipAuthRedirect) | IMPLEMENTED | lease-templates-service.ts:189-197 |
-| AC-6 | 500+ returns SERVER_ERROR | IMPLEMENTED | lease-templates-service.ts:199-207 |
-| AC-7 | Timeout returns TIMEOUT | IMPLEMENTED | lease-templates-service.ts:158-161, 246-255 |
-| AC-8 | Invalid UUID rejected before API call | IMPLEMENTED | lease-templates-service.ts:146-154 |
-| AC-9 | Concurrent calls deduplicated | IMPLEMENTED | lease-templates-service.ts:157 |
-| AC-10 | Missing fields logged as warning | IMPLEMENTED | lease-templates-service.ts:212-232 |
+| AC#   | Description                                              | Status      | Evidence                                                    |
+| ----- | -------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| AC-1  | fetchLeaseTemplate calls GET /api/leaseTemplates/{tryId} | IMPLEMENTED | lease-templates-service.ts:169-173, buildEndpoint():123-125 |
+| AC-2  | Response parsed for leaseDurationInHours and maxSpend    | IMPLEMENTED | lease-templates-service.ts:218-221                          |
+| AC-3  | Returns typed LeaseTemplateResult                        | IMPLEMENTED | lease-templates-service.ts:34-50                            |
+| AC-4  | 404 returns NOT_FOUND                                    | IMPLEMENTED | lease-templates-service.ts:179-187                          |
+| AC-5  | 401 returns UNAUTHORIZED (with skipAuthRedirect)         | IMPLEMENTED | lease-templates-service.ts:189-197                          |
+| AC-6  | 500+ returns SERVER_ERROR                                | IMPLEMENTED | lease-templates-service.ts:199-207                          |
+| AC-7  | Timeout returns TIMEOUT                                  | IMPLEMENTED | lease-templates-service.ts:158-161, 246-255                 |
+| AC-8  | Invalid UUID rejected before API call                    | IMPLEMENTED | lease-templates-service.ts:146-154                          |
+| AC-9  | Concurrent calls deduplicated                            | IMPLEMENTED | lease-templates-service.ts:157                              |
+| AC-10 | Missing fields logged as warning                         | IMPLEMENTED | lease-templates-service.ts:212-232                          |
 
 **Summary: 10 of 10 acceptance criteria fully implemented**
 
 ### Task Completion Validation
 
-| Task | Marked As | Verified As | Evidence |
-|------|-----------|-------------|----------|
-| Task 1: Create service file (6 subtasks) | [x] | VERIFIED | All 6 subtasks verified in source |
-| Task 2: Error handling (6 subtasks) | [x] | VERIFIED | All 6 subtasks verified in source |
-| Task 3: Input validation (2 subtasks) | [x] | VERIFIED | Both subtasks verified in source |
-| Task 4: Defensive parsing (5 subtasks) | [x] | VERIFIED | All 5 subtasks verified in source |
-| Task 5: Unit tests (10 subtasks) | [x] | VERIFIED | All 10 subtasks verified in test file |
-| Task 6: Export from module (1 subtask) | [x] | VERIFIED | Exports on lines 22, 34, 145 |
+| Task                                     | Marked As | Verified As | Evidence                              |
+| ---------------------------------------- | --------- | ----------- | ------------------------------------- |
+| Task 1: Create service file (6 subtasks) | [x]       | VERIFIED    | All 6 subtasks verified in source     |
+| Task 2: Error handling (6 subtasks)      | [x]       | VERIFIED    | All 6 subtasks verified in source     |
+| Task 3: Input validation (2 subtasks)    | [x]       | VERIFIED    | Both subtasks verified in source      |
+| Task 4: Defensive parsing (5 subtasks)   | [x]       | VERIFIED    | All 5 subtasks verified in source     |
+| Task 5: Unit tests (10 subtasks)         | [x]       | VERIFIED    | All 10 subtasks verified in test file |
+| Task 6: Export from module (1 subtask)   | [x]       | VERIFIED    | Exports on lines 22, 34, 145          |
 
 **Summary: 31 of 31 completed tasks verified, 0 questionable, 0 falsely marked complete**
 
@@ -254,8 +258,9 @@ No issues found. Implementation is clean and follows all architectural decisions
 ### Action Items
 
 **Code Changes Required:**
+
 - None required
 
 **Advisory Notes:**
-- Note: Consider adding CloudWatch metrics in future iteration (tech spec mentions this as future enhancement)
 
+- Note: Consider adding CloudWatch metrics in future iteration (tech spec mentions this as future enhancement)

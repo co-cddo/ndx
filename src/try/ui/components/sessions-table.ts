@@ -11,33 +11,33 @@
  * @module sessions-table
  */
 
-import { Lease, LeaseStatus, isLeaseActive, getSsoUrl } from '../../api/sessions-service';
-import { formatExpiry, formatRemainingDuration } from '../../utils/date-utils';
-import { formatBudget, calculateBudgetPercentage } from '../../utils/currency-utils';
+import { Lease, LeaseStatus, isLeaseActive, getSsoUrl } from "../../api/sessions-service"
+import { formatExpiry, formatRemainingDuration } from "../../utils/date-utils"
+import { formatBudget, calculateBudgetPercentage } from "../../utils/currency-utils"
 
 /**
  * Status badge color mapping per Story 7.4.
  */
 const STATUS_COLORS: Record<LeaseStatus, string> = {
-  Pending: 'govuk-tag--blue',
-  Active: 'govuk-tag--green',
-  Expired: 'govuk-tag--grey',
-  Terminated: 'govuk-tag--red',
-  ManuallyTerminated: 'govuk-tag--red',
-  Failed: 'govuk-tag--red',
-};
+  Pending: "govuk-tag--blue",
+  Active: "govuk-tag--green",
+  Expired: "govuk-tag--grey",
+  Terminated: "govuk-tag--red",
+  ManuallyTerminated: "govuk-tag--red",
+  Failed: "govuk-tag--red",
+}
 
 /**
  * User-friendly status labels for display.
  */
 const STATUS_LABELS: Record<LeaseStatus, string> = {
-  Pending: 'Pending',
-  Active: 'Active',
-  Expired: 'Expired',
-  Terminated: 'Terminated',
-  ManuallyTerminated: 'Ended',
-  Failed: 'Failed',
-};
+  Pending: "Pending",
+  Active: "Active",
+  Expired: "Expired",
+  Terminated: "Terminated",
+  ManuallyTerminated: "Ended",
+  Failed: "Failed",
+}
 
 /**
  * Render the sessions table.
@@ -47,10 +47,10 @@ const STATUS_LABELS: Record<LeaseStatus, string> = {
  */
 export function renderSessionsTable(leases: Lease[]): string {
   if (leases.length === 0) {
-    return renderEmptyTable();
+    return renderEmptyTable()
   }
 
-  const rows = leases.map(renderSessionRow).join('');
+  const rows = leases.map(renderSessionRow).join("")
 
   return `
     <table class="govuk-table sessions-table">
@@ -71,7 +71,7 @@ export function renderSessionsTable(leases: Lease[]): string {
         ${rows}
       </tbody>
     </table>
-  `;
+  `
 }
 
 /**
@@ -81,19 +81,19 @@ export function renderSessionsTable(leases: Lease[]): string {
  * @returns HTML string for the row
  */
 function renderSessionRow(lease: Lease): string {
-  const statusClass = STATUS_COLORS[lease.status];
-  const expiry = formatExpiry(lease.expiresAt);
-  const budget = formatBudget(lease.currentSpend, lease.maxSpend);
-  const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend);
-  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`;
-  const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null;
-  const actions = renderActions(lease);
+  const statusClass = STATUS_COLORS[lease.status]
+  const expiry = formatExpiry(lease.expiresAt)
+  const budget = formatBudget(lease.currentSpend, lease.maxSpend)
+  const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend)
+  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`
+  const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null
+  const actions = renderActions(lease)
 
   return `
     <tr class="govuk-table__row">
       <td class="govuk-table__cell" data-label="Product">
         <strong>${escapeHtml(lease.leaseTemplateName)}</strong>
-        ${remaining ? `<br><span class="govuk-body-s govuk-!-margin-top-1">${remaining}</span>` : ''}
+        ${remaining ? `<br><span class="govuk-body-s govuk-!-margin-top-1">${remaining}</span>` : ""}
       </td>
       <td class="govuk-table__cell" data-label="AWS Account ID">
         <code class="govuk-!-font-size-16">${lease.awsAccountId}</code>
@@ -121,7 +121,7 @@ function renderSessionRow(lease: Lease): string {
         ${actions}
       </td>
     </tr>
-  `;
+  `
 }
 
 /**
@@ -132,10 +132,10 @@ function renderSessionRow(lease: Lease): string {
  */
 function renderActions(lease: Lease): string {
   if (!isLeaseActive(lease)) {
-    return '<span class="govuk-body-s">No actions available</span>';
+    return '<span class="govuk-body-s">No actions available</span>'
   }
 
-  const ssoUrl = getSsoUrl(lease);
+  const ssoUrl = getSsoUrl(lease)
 
   return `
     <a
@@ -148,7 +148,7 @@ function renderActions(lease: Lease): string {
       Launch AWS Console
       <span class="govuk-visually-hidden">(opens in new tab)</span>
     </a>
-  `;
+  `
 }
 
 /**
@@ -167,7 +167,7 @@ function renderEmptyTable(): string {
         to get started.
       </p>
     </div>
-  `;
+  `
 }
 
 /**
@@ -177,9 +177,9 @@ function renderEmptyTable(): string {
  * @returns Escaped string
  */
 function escapeHtml(str: string): string {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  const div = document.createElement("div")
+  div.textContent = str
+  return div.innerHTML
 }
 
 /**
@@ -192,7 +192,7 @@ export function renderLoadingState(): string {
     <div class="sessions-loading" aria-live="polite">
       <p class="govuk-body">Loading your sessions...</p>
     </div>
-  `;
+  `
 }
 
 /**
@@ -218,5 +218,5 @@ export function renderErrorState(message: string): string {
         </button>
       </div>
     </div>
-  `;
+  `
 }

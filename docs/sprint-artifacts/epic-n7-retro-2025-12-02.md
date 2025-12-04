@@ -24,14 +24,14 @@ Epic N-7 successfully implemented DynamoDB lease record enrichment for the notif
 
 ## Key Deliverables
 
-| Story | Description | Tests |
-|-------|-------------|-------|
-| N7-1 | DynamoDB Integration Setup | fetchLeaseRecord(), schema fingerprint |
-| N7-2 | Payload Flattening Utility | flattenObject() with depth/array limits |
-| N7-3 | Value Stringification | stringifyValue(), generateKeys() |
-| N7-4 | Notification Integration | handler.ts enrichment merge |
-| N7-5 | Error Handling and Metrics | EnrichmentSuccess/Failure, ErrorType dimensions |
-| N7-6 | Lease Status Handling | 9 statuses, UnexpectedLeaseStatus metric |
+| Story | Description                | Tests                                           |
+| ----- | -------------------------- | ----------------------------------------------- |
+| N7-1  | DynamoDB Integration Setup | fetchLeaseRecord(), schema fingerprint          |
+| N7-2  | Payload Flattening Utility | flattenObject() with depth/array limits         |
+| N7-3  | Value Stringification      | stringifyValue(), generateKeys()                |
+| N7-4  | Notification Integration   | handler.ts enrichment merge                     |
+| N7-5  | Error Handling and Metrics | EnrichmentSuccess/Failure, ErrorType dimensions |
+| N7-6  | Lease Status Handling      | 9 statuses, UnexpectedLeaseStatus metric        |
 
 ## Metrics Added
 

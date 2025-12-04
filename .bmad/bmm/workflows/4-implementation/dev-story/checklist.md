@@ -1,13 +1,13 @@
 ---
-title: 'Dev Story Completion Checklist'
-validation-target: 'Story markdown ({{story_path}})'
+title: "Dev Story Completion Checklist"
+validation-target: "Story markdown ({{story_path}})"
 required-inputs:
-  - 'Story markdown file with Tasks/Subtasks, Acceptance Criteria'
+  - "Story markdown file with Tasks/Subtasks, Acceptance Criteria"
 optional-inputs:
-  - 'Test results output (if saved)'
-  - 'CI logs (if applicable)'
+  - "Test results output (if saved)"
+  - "CI logs (if applicable)"
 validation-rules:
-  - 'Only permitted sections in story were modified: Tasks/Subtasks checkboxes, Dev Agent Record (Debug Log, Completion Notes), File List, Change Log, and Status'
+  - "Only permitted sections in story were modified: Tasks/Subtasks checkboxes, Dev Agent Record (Debug Log, Completion Notes), File List, Change Log, and Status"
 ---
 
 # Dev Story Completion Checklist

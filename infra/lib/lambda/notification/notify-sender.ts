@@ -21,18 +21,12 @@
  * - 5xx: RetriableError (infrastructure issue)
  */
 
-import { NotifyClient } from 'notifications-node-client';
-import { createHash } from 'crypto';
-import { Logger } from '@aws-lambda-powertools/logger';
-import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
-import { getSecrets } from './secrets';
-import {
-  RetriableError,
-  PermanentError,
-  CriticalError,
-  SecurityError,
-  NotificationError,
-} from './errors';
+import { NotifyClient } from "notifications-node-client"
+import { createHash } from "crypto"
+import { Logger } from "@aws-lambda-powertools/logger"
+import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { getSecrets } from "./secrets"
+import { RetriableError, PermanentError, CriticalError, SecurityError, NotificationError } from "./errors"
 
 // =========================================================================
 // Types
@@ -43,30 +37,30 @@ import {
  */
 export interface NotifyParams {
   /** GOV.UK Notify template ID */
-  templateId: string;
+  templateId: string
   /** Recipient email address */
-  email: string;
+  email: string
   /** Template personalisation values */
-  personalisation: Record<string, string | number>;
+  personalisation: Record<string, string | number>
   /** Event ID for audit trail (becomes Notify reference field) */
-  eventId: string;
+  eventId: string
   /** Original event userEmail for verification */
-  eventUserEmail: string;
+  eventUserEmail: string
 }
 
 /**
  * Response from GOV.UK Notify API
  */
 export interface NotifyResponse {
-  id: string;
+  id: string
   content: {
-    body: string;
-    subject: string;
-  };
+    body: string
+    subject: string
+  }
   template: {
-    id: string;
-    version: number;
-  };
+    id: string
+    version: number
+  }
 }
 
 /**
@@ -74,16 +68,16 @@ export interface NotifyResponse {
  */
 export interface SendOptions {
   /** Skip email verification (SHOULD NEVER BE TRUE - defensive programming) */
-  skipVerification?: boolean;
+  skipVerification?: boolean
 }
 
 /**
  * Circuit breaker state
  */
 interface CircuitBreakerState {
-  consecutiveFailures: number;
-  openUntil: number | null;
-  lastFailureTime: number | null;
+  consecutiveFailures: number
+  openUntil: number | null
+  lastFailureTime: number | null
 }
 
 // =========================================================================
@@ -91,26 +85,26 @@ interface CircuitBreakerState {
 // =========================================================================
 
 /** UUID v4 pattern for validation (AC-1.19) */
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** Circuit breaker threshold (AC-1.31) */
-const CIRCUIT_BREAKER_THRESHOLD = 20;
+const CIRCUIT_BREAKER_THRESHOLD = 20
 
 /** Circuit breaker pause duration in ms (AC-1.32: 5 minutes) */
-const CIRCUIT_BREAKER_PAUSE_MS = 5 * 60 * 1000;
+const CIRCUIT_BREAKER_PAUSE_MS = 5 * 60 * 1000
 
 /** Rate limit retry delay in ms (AC-1.9) */
-const RATE_LIMIT_RETRY_MS = 1000;
+const RATE_LIMIT_RETRY_MS = 1000
 
 // =========================================================================
 // Logger and Metrics
 // =========================================================================
 
-const logger = new Logger({ serviceName: 'ndx-notifications' });
+const logger = new Logger({ serviceName: "ndx-notifications" })
 const metrics = new Metrics({
-  namespace: 'ndx/notifications',
-  serviceName: 'ndx-notifications',
-});
+  namespace: "ndx/notifications",
+  serviceName: "ndx-notifications",
+})
 
 // =========================================================================
 // Utility Functions
@@ -121,9 +115,9 @@ const metrics = new Metrics({
  * Used for email hashing in audit logs and token metadata
  */
 export function hashForLog(value: string): string {
-  if (!value) return 'empty';
-  const hash = createHash('sha256').update(value).digest('hex');
-  return hash.substring(0, 12); // First 12 chars for brevity
+  if (!value) return "empty"
+  const hash = createHash("sha256").update(value).digest("hex")
+  return hash.substring(0, 12) // First 12 chars for brevity
 }
 
 /**
@@ -131,8 +125,8 @@ export function hashForLog(value: string): string {
  * Format: "{tokenLength}:{hash}" e.g., "72:abc123def456"
  */
 export function tokenMetadata(token: string): string {
-  if (!token) return '0:empty';
-  return `${token.length}:${hashForLog(token)}`;
+  if (!token) return "0:empty"
+  return `${token.length}:${hashForLog(token)}`
 }
 
 /**
@@ -140,11 +134,11 @@ export function tokenMetadata(token: string): string {
  * Rejects malformed UUIDs, query strings, and injection attempts
  */
 export function validateUUID(uuid: string): boolean {
-  if (!uuid || typeof uuid !== 'string') {
-    return false;
+  if (!uuid || typeof uuid !== "string") {
+    return false
   }
   // Must match exact UUID v4 pattern - no query strings or extra chars
-  return UUID_PATTERN.test(uuid);
+  return UUID_PATTERN.test(uuid)
 }
 
 /**
@@ -153,41 +147,39 @@ export function validateUUID(uuid: string): boolean {
  * Note: GOV.UK Notify templates also escape HTML, so this is defense-in-depth
  */
 export function sanitizeValue(value: string | number): string {
-  if (typeof value === 'number') {
-    return String(value);
+  if (typeof value === "number") {
+    return String(value)
   }
   // Escape HTML special characters
   return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
 }
 
 /**
  * URL encode a value for use in URLs (AC-1.18, AC-1.20)
  */
 export function encodeForUrl(value: string): string {
-  return encodeURIComponent(value);
+  return encodeURIComponent(value)
 }
 
 /**
  * Sanitize all personalisation values (AC-1.5, AC-1.17)
  * Returns a new object with all values sanitized
  */
-export function sanitizePersonalisation(
-  values: Record<string, string | number>
-): Record<string, string> {
-  const sanitized: Record<string, string> = {};
+export function sanitizePersonalisation(values: Record<string, string | number>): Record<string, string> {
+  const sanitized: Record<string, string> = {}
 
   for (const [key, value] of Object.entries(values)) {
     // Sanitize the key name too (defense in depth)
-    const safeKey = sanitizeValue(key);
-    sanitized[safeKey] = sanitizeValue(value);
+    const safeKey = sanitizeValue(key)
+    sanitized[safeKey] = sanitizeValue(value)
   }
 
-  return sanitized;
+  return sanitized
 }
 
 /**
@@ -195,9 +187,9 @@ export function sanitizePersonalisation(
  */
 export function buildSsoUrl(baseUrl: string, leaseUuid: string): string {
   if (!validateUUID(leaseUuid)) {
-    throw new PermanentError('Invalid lease UUID format');
+    throw new PermanentError("Invalid lease UUID format")
   }
-  return `${baseUrl}?lease=${encodeForUrl(leaseUuid)}`;
+  return `${baseUrl}?lease=${encodeForUrl(leaseUuid)}`
 }
 
 /**
@@ -206,8 +198,8 @@ export function buildSsoUrl(baseUrl: string, leaseUuid: string): string {
  */
 export function calculateJitteredDelay(baseDelayMs: number): number {
   // Add random jitter: 0-50% of base delay
-  const jitter = Math.random() * 0.5 * baseDelayMs;
-  return Math.floor(baseDelayMs + jitter);
+  const jitter = Math.random() * 0.5 * baseDelayMs
+  return Math.floor(baseDelayMs + jitter)
 }
 
 // =========================================================================
@@ -226,13 +218,13 @@ export function calculateJitteredDelay(baseDelayMs: number): number {
  * - Circuit breaker (AC-1.31, AC-1.32)
  */
 export class NotifySender {
-  private client: NotifyClient;
-  private static instance: NotifySender | null = null;
+  private client: NotifyClient
+  private static instance: NotifySender | null = null
   private circuitBreaker: CircuitBreakerState = {
     consecutiveFailures: 0,
     openUntil: null,
     lastFailureTime: null,
-  };
+  }
 
   /**
    * Private constructor - use getInstance() instead
@@ -240,11 +232,11 @@ export class NotifySender {
    */
   private constructor(apiKey: string) {
     // Log only token metadata for audit (AC-1.22)
-    logger.info('Initializing NotifySender', {
+    logger.info("Initializing NotifySender", {
       apiKeyMeta: tokenMetadata(apiKey),
-    });
+    })
 
-    this.client = new NotifyClient(apiKey);
+    this.client = new NotifyClient(apiKey)
   }
 
   /**
@@ -253,18 +245,18 @@ export class NotifySender {
    */
   static async getInstance(): Promise<NotifySender> {
     if (!NotifySender.instance) {
-      logger.debug('Creating new NotifySender instance');
-      const secrets = await getSecrets();
-      NotifySender.instance = new NotifySender(secrets.notifyApiKey);
+      logger.debug("Creating new NotifySender instance")
+      const secrets = await getSecrets()
+      NotifySender.instance = new NotifySender(secrets.notifyApiKey)
     }
-    return NotifySender.instance;
+    return NotifySender.instance
   }
 
   /**
    * Reset singleton for testing
    */
   static resetInstance(): void {
-    NotifySender.instance = null;
+    NotifySender.instance = null
   }
 
   /**
@@ -276,87 +268,87 @@ export class NotifySender {
    * @throws RetriableError, PermanentError, CriticalError, SecurityError
    */
   async send(params: NotifyParams, options: SendOptions = {}): Promise<NotifyResponse> {
-    const { templateId, email, personalisation, eventId, eventUserEmail } = params;
+    const { templateId, email, personalisation, eventId, eventUserEmail } = params
 
     // Step 1: Verify email matches (AC-1.14) - MANDATORY
     if (!options.skipVerification) {
-      this.verifyRecipient(email, eventUserEmail, eventId);
+      this.verifyRecipient(email, eventUserEmail, eventId)
     } else {
       // Log warning if verification is bypassed (should never happen)
-      logger.warn('Email verification bypassed - this is a security risk', {
+      logger.warn("Email verification bypassed - this is a security risk", {
         eventId,
-      });
-      metrics.addMetric('VerificationBypassed', MetricUnit.Count, 1);
+      })
+      metrics.addMetric("VerificationBypassed", MetricUnit.Count, 1)
     }
 
     // Step 2: Check circuit breaker (AC-1.31)
     if (this.isCircuitOpen()) {
-      logger.warn('Circuit breaker is open - rejecting send', {
+      logger.warn("Circuit breaker is open - rejecting send", {
         eventId,
         openUntil: this.circuitBreaker.openUntil,
-      });
-      metrics.addMetric('CircuitBreakerRejection', MetricUnit.Count, 1);
-      throw new RetriableError('Circuit breaker open - Notify service degraded', {
+      })
+      metrics.addMetric("CircuitBreakerRejection", MetricUnit.Count, 1)
+      throw new RetriableError("Circuit breaker open - Notify service degraded", {
         retryAfterMs: this.getRemainingCircuitOpenTime(),
-      });
+      })
     }
 
     // Step 3: Sanitize personalisation values (AC-1.5, AC-1.17)
-    const sanitized = sanitizePersonalisation(personalisation);
+    const sanitized = sanitizePersonalisation(personalisation)
 
     // Step 4: Build reference field with verification source (AC-1.6, AC-1.16)
-    const reference = `ndx:${eventId}`;
+    const reference = `ndx:${eventId}`
 
     // Step 5: Log email send attempt (AC-1.38)
-    logger.info('Sending email via GOV.UK Notify', {
+    logger.info("Sending email via GOV.UK Notify", {
       eventId,
       templateId,
       recipientHash: hashForLog(email),
       eventUserEmailHash: hashForLog(eventUserEmail),
       reference,
-    });
+    })
 
     try {
       // Step 6: Send via SDK (AC-1.4)
       const response = await this.client.sendEmail(templateId, email, {
         personalisation: sanitized,
         reference,
-      });
+      })
 
       // Reset circuit breaker on success
-      this.recordSuccess();
+      this.recordSuccess()
 
       // Step 7: Log success with Notify response ID
-      logger.info('Email sent successfully', {
+      logger.info("Email sent successfully", {
         eventId,
         notifyId: response.data?.id,
         templateVersion: response.data?.template?.version,
-      });
+      })
 
       // Emit success metric
-      metrics.addMetric('EmailSent', MetricUnit.Count, 1);
+      metrics.addMetric("EmailSent", MetricUnit.Count, 1)
 
       return {
-        id: response.data?.id || '',
+        id: response.data?.id || "",
         content: {
-          body: response.data?.content?.body || '',
-          subject: response.data?.content?.subject || '',
+          body: response.data?.content?.body || "",
+          subject: response.data?.content?.subject || "",
         },
         template: {
-          id: response.data?.template?.id || '',
+          id: response.data?.template?.id || "",
           version: response.data?.template?.version || 0,
         },
-      };
+      }
     } catch (error) {
       // Classify and handle error
-      const classifiedError = this.classifyError(error, eventId);
+      const classifiedError = this.classifyError(error, eventId)
 
       // Record failure for circuit breaker
       if (classifiedError instanceof RetriableError && this.isServerError(error)) {
-        this.recordFailure();
+        this.recordFailure()
       }
 
-      throw classifiedError;
+      throw classifiedError
     }
   }
 
@@ -366,35 +358,32 @@ export class NotifySender {
    */
   private verifyRecipient(email: string, eventUserEmail: string, eventId: string): void {
     // Log verification attempt with hashes for audit (AC-1.13)
-    const emailHash = hashForLog(email);
-    const eventEmailHash = hashForLog(eventUserEmail);
+    const emailHash = hashForLog(email)
+    const eventEmailHash = hashForLog(eventUserEmail)
 
-    metrics.addMetric('RecipientVerification', MetricUnit.Count, 1);
-    metrics.addDimension('emailMatch', email === eventUserEmail ? 'match' : 'mismatch');
+    metrics.addMetric("RecipientVerification", MetricUnit.Count, 1)
+    metrics.addDimension("emailMatch", email === eventUserEmail ? "match" : "mismatch")
 
-    logger.debug('Recipient verification', {
+    logger.debug("Recipient verification", {
       eventId,
       emailHash,
       eventUserEmailHash: eventEmailHash,
       match: email === eventUserEmail,
-    });
+    })
 
     // ASSERT: emails must match (AC-1.14)
     if (email !== eventUserEmail) {
-      logger.error('Email verification failed - recipient mismatch', {
+      logger.error("Email verification failed - recipient mismatch", {
         eventId,
         emailHash,
         eventUserEmailHash: eventEmailHash,
-      });
-      metrics.addMetric('RecipientMismatch', MetricUnit.Count, 1);
+      })
+      metrics.addMetric("RecipientMismatch", MetricUnit.Count, 1)
 
-      throw new SecurityError(
-        'Recipient email does not match event userEmail',
-        {
-          eventId,
-          // SECURITY: Never log actual emails in error context
-        }
-      );
+      throw new SecurityError("Recipient email does not match event userEmail", {
+        eventId,
+        // SECURITY: Never log actual emails in error context
+      })
     }
   }
 
@@ -403,66 +392,66 @@ export class NotifySender {
    */
   private classifyError(error: unknown, eventId: string): NotificationError {
     // Extract status code from Notify SDK error
-    const statusCode = this.extractStatusCode(error);
-    const message = this.extractErrorMessage(error);
+    const statusCode = this.extractStatusCode(error)
+    const message = this.extractErrorMessage(error)
 
-    logger.error('Notify API error', {
+    logger.error("Notify API error", {
       eventId,
       statusCode,
       errorMessage: message,
-    });
+    })
 
     // AC-1.7: 400 errors throw PermanentError (no retry)
     if (statusCode === 400) {
-      metrics.addMetric('NotifyClientError', MetricUnit.Count, 1);
-      return new PermanentError(`Notify validation error: ${message}`);
+      metrics.addMetric("NotifyClientError", MetricUnit.Count, 1)
+      return new PermanentError(`Notify validation error: ${message}`)
     }
 
     // AC-1.8: 401/403 errors throw CriticalError (immediate alarm)
     if (statusCode === 401 || statusCode === 403) {
-      metrics.addMetric('NotifyAuthError', MetricUnit.Count, 1);
-      logger.error('CRITICAL: Notify authentication failure - check API key', {
+      metrics.addMetric("NotifyAuthError", MetricUnit.Count, 1)
+      logger.error("CRITICAL: Notify authentication failure - check API key", {
         eventId,
         statusCode,
-      });
-      return new CriticalError(`Notify auth failure: ${message}`, 'notify');
+      })
+      return new CriticalError(`Notify auth failure: ${message}`, "notify")
     }
 
     // AC-1.9: 429 errors throw RetriableError with 1000ms retryAfter
     if (statusCode === 429) {
-      metrics.addMetric('NotifyRateLimited', MetricUnit.Count, 1);
-      return new RetriableError('Notify rate limited', {
+      metrics.addMetric("NotifyRateLimited", MetricUnit.Count, 1)
+      return new RetriableError("Notify rate limited", {
         retryAfterMs: RATE_LIMIT_RETRY_MS,
-      });
+      })
     }
 
     // AC-1.10: 5xx errors throw RetriableError (infrastructure issue)
     if (statusCode >= 500) {
-      metrics.addMetric('NotifyServerError', MetricUnit.Count, 1);
-      return new RetriableError(`Notify server error: ${message}`);
+      metrics.addMetric("NotifyServerError", MetricUnit.Count, 1)
+      return new RetriableError(`Notify server error: ${message}`)
     }
 
     // AC-1.11: Unknown errors default to RetriableError
-    metrics.addMetric('NotifyUnknownError', MetricUnit.Count, 1);
-    return new RetriableError(`Unknown Notify error: ${message}`);
+    metrics.addMetric("NotifyUnknownError", MetricUnit.Count, 1)
+    return new RetriableError(`Unknown Notify error: ${message}`)
   }
 
   /**
    * Extract HTTP status code from Notify SDK error
    */
   private extractStatusCode(error: unknown): number {
-    if (typeof error === 'object' && error !== null) {
-      const e = error as Record<string, unknown>;
+    if (typeof error === "object" && error !== null) {
+      const e = error as Record<string, unknown>
       // Notify SDK stores status in response.status or error.statusCode
-      if (typeof e.statusCode === 'number') return e.statusCode;
-      if (typeof e.status === 'number') return e.status;
-      if (typeof e.response === 'object' && e.response !== null) {
-        const resp = e.response as Record<string, unknown>;
-        if (typeof resp.status === 'number') return resp.status;
-        if (typeof resp.statusCode === 'number') return resp.statusCode;
+      if (typeof e.statusCode === "number") return e.statusCode
+      if (typeof e.status === "number") return e.status
+      if (typeof e.response === "object" && e.response !== null) {
+        const resp = e.response as Record<string, unknown>
+        if (typeof resp.status === "number") return resp.status
+        if (typeof resp.statusCode === "number") return resp.statusCode
       }
     }
-    return 0; // Unknown
+    return 0 // Unknown
   }
 
   /**
@@ -470,41 +459,41 @@ export class NotifySender {
    * GOV.UK Notify returns detailed error info in response.data.errors
    */
   private extractErrorMessage(error: unknown): string {
-    if (typeof error === 'object' && error !== null) {
-      const e = error as Record<string, unknown>;
+    if (typeof error === "object" && error !== null) {
+      const e = error as Record<string, unknown>
 
       // Try to get detailed error from Notify API response
-      if (typeof e.response === 'object' && e.response !== null) {
-        const resp = e.response as Record<string, unknown>;
-        if (typeof resp.data === 'object' && resp.data !== null) {
-          const data = resp.data as Record<string, unknown>;
+      if (typeof e.response === "object" && e.response !== null) {
+        const resp = e.response as Record<string, unknown>
+        if (typeof resp.data === "object" && resp.data !== null) {
+          const data = resp.data as Record<string, unknown>
           // Notify returns errors array with error details
           if (Array.isArray(data.errors) && data.errors.length > 0) {
-            const errors = data.errors.map((err: Record<string, unknown>) =>
-              `${err.error || 'unknown'}: ${err.message || 'no message'}`
-            ).join('; ');
-            return errors;
+            const errors = data.errors
+              .map((err: Record<string, unknown>) => `${err.error || "unknown"}: ${err.message || "no message"}`)
+              .join("; ")
+            return errors
           }
-          if (typeof data.message === 'string') return data.message;
-          if (typeof data.error === 'string') return data.error;
+          if (typeof data.message === "string") return data.message
+          if (typeof data.error === "string") return data.error
         }
       }
 
-      if (typeof e.message === 'string') return e.message;
-      if (typeof e.error === 'string') return e.error;
+      if (typeof e.message === "string") return e.message
+      if (typeof e.error === "string") return e.error
     }
     if (error instanceof Error) {
-      return error.message;
+      return error.message
     }
-    return 'Unknown error';
+    return "Unknown error"
   }
 
   /**
    * Check if error is a server error (5xx)
    */
   private isServerError(error: unknown): boolean {
-    const statusCode = this.extractStatusCode(error);
-    return statusCode >= 500 && statusCode < 600;
+    const statusCode = this.extractStatusCode(error)
+    return statusCode >= 500 && statusCode < 600
   }
 
   // =========================================================================
@@ -516,14 +505,14 @@ export class NotifySender {
    */
   private isCircuitOpen(): boolean {
     if (this.circuitBreaker.openUntil === null) {
-      return false;
+      return false
     }
     if (Date.now() >= this.circuitBreaker.openUntil) {
       // Circuit breaker timeout expired - close it
-      this.closeCircuit();
-      return false;
+      this.closeCircuit()
+      return false
     }
-    return true;
+    return true
   }
 
   /**
@@ -531,9 +520,9 @@ export class NotifySender {
    */
   private getRemainingCircuitOpenTime(): number {
     if (this.circuitBreaker.openUntil === null) {
-      return 0;
+      return 0
     }
-    return Math.max(0, this.circuitBreaker.openUntil - Date.now());
+    return Math.max(0, this.circuitBreaker.openUntil - Date.now())
   }
 
   /**
@@ -541,29 +530,29 @@ export class NotifySender {
    */
   private recordSuccess(): void {
     if (this.circuitBreaker.consecutiveFailures > 0) {
-      logger.info('Circuit breaker: success after failures', {
+      logger.info("Circuit breaker: success after failures", {
         previousFailures: this.circuitBreaker.consecutiveFailures,
-      });
+      })
     }
-    this.circuitBreaker.consecutiveFailures = 0;
-    this.circuitBreaker.lastFailureTime = null;
+    this.circuitBreaker.consecutiveFailures = 0
+    this.circuitBreaker.lastFailureTime = null
   }
 
   /**
    * Record a failure - may trigger circuit breaker
    */
   private recordFailure(): void {
-    this.circuitBreaker.consecutiveFailures++;
-    this.circuitBreaker.lastFailureTime = Date.now();
+    this.circuitBreaker.consecutiveFailures++
+    this.circuitBreaker.lastFailureTime = Date.now()
 
-    logger.warn('Circuit breaker: failure recorded', {
+    logger.warn("Circuit breaker: failure recorded", {
       consecutiveFailures: this.circuitBreaker.consecutiveFailures,
       threshold: CIRCUIT_BREAKER_THRESHOLD,
-    });
+    })
 
     // AC-1.31: Open circuit after threshold
     if (this.circuitBreaker.consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
-      this.openCircuit();
+      this.openCircuit()
     }
   }
 
@@ -572,17 +561,17 @@ export class NotifySender {
    */
   private openCircuit(): void {
     // Apply jitter to pause duration (AC-1.35)
-    const pauseWithJitter = calculateJitteredDelay(CIRCUIT_BREAKER_PAUSE_MS);
-    this.circuitBreaker.openUntil = Date.now() + pauseWithJitter;
+    const pauseWithJitter = calculateJitteredDelay(CIRCUIT_BREAKER_PAUSE_MS)
+    this.circuitBreaker.openUntil = Date.now() + pauseWithJitter
 
-    logger.error('Circuit breaker OPENED - Notify service degraded', {
+    logger.error("Circuit breaker OPENED - Notify service degraded", {
       consecutiveFailures: this.circuitBreaker.consecutiveFailures,
       pauseMs: pauseWithJitter,
       openUntil: new Date(this.circuitBreaker.openUntil).toISOString(),
-    });
+    })
 
     // Emit metric for monitoring
-    metrics.addMetric('CircuitBreakerTriggered', MetricUnit.Count, 1);
+    metrics.addMetric("CircuitBreakerTriggered", MetricUnit.Count, 1)
 
     // AC-1.32: Escalation to ops is handled by CloudWatch alarm on this metric
   }
@@ -591,19 +580,19 @@ export class NotifySender {
    * Close the circuit breaker
    */
   private closeCircuit(): void {
-    logger.info('Circuit breaker CLOSED - resuming normal operation', {
+    logger.info("Circuit breaker CLOSED - resuming normal operation", {
       previousFailures: this.circuitBreaker.consecutiveFailures,
-    });
-    this.circuitBreaker.consecutiveFailures = 0;
-    this.circuitBreaker.openUntil = null;
-    this.circuitBreaker.lastFailureTime = null;
+    })
+    this.circuitBreaker.consecutiveFailures = 0
+    this.circuitBreaker.openUntil = null
+    this.circuitBreaker.lastFailureTime = null
   }
 
   /**
    * Get circuit breaker state for testing
    */
   getCircuitBreakerState(): Readonly<CircuitBreakerState> {
-    return { ...this.circuitBreaker };
+    return { ...this.circuitBreaker }
   }
 
   /**
@@ -614,6 +603,6 @@ export class NotifySender {
       consecutiveFailures: 0,
       openUntil: null,
       lastFailureTime: null,
-    };
+    }
   }
 }

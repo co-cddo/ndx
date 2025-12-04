@@ -1228,7 +1228,7 @@ describe('Enrichment Data Handling', () => {
       };
 
       const result = getBudgetDiscrepancy(100, enrichedData);
-      expect(result).toBe('£200.00');
+      expect(result).toBe('$200.00');
     });
 
     test('AC-5.11: Returns undefined when values are the same', () => {
@@ -1255,7 +1255,7 @@ describe('Enrichment Data Handling', () => {
       expect(result).toBeUndefined();
     });
 
-    test('AC-5.11: Ignores differences less than £0.01', () => {
+    test('AC-5.11: Ignores differences less than $0.01', () => {
       const enrichedData: EnrichedData = {
         enrichedAt: '2024-01-01T00:00:00Z',
         maxSpend: 100.005,
@@ -1301,14 +1301,14 @@ describe('Monitoring Alert Personalisation Builders', () => {
       const result = buildBudgetThresholdPersonalisation(mockBudgetThresholdEvent);
 
       expect(result.userName).toBe('test.user');
-      expect(result.currentSpend).toBe('£75.50');
-      expect(result.budgetLimit).toBe('£100.00');
+      expect(result.currentSpend).toBe('$75.50');
+      expect(result.budgetLimit).toBe('$100.00');
       expect(result.percentUsed).toBe('75.5%');
     });
 
-    test('AC-5.8: Formats currentSpend with GBP symbol', () => {
+    test('AC-5.8: Formats currentSpend with USD symbol', () => {
       const result = buildBudgetThresholdPersonalisation(mockBudgetThresholdEvent);
-      expect(result.currentSpend).toMatch(/^£\d/);
+      expect(result.currentSpend).toMatch(/^\$\d/);
     });
 
     test('AC-5.10: Formats percentUsed with % symbol', () => {
@@ -1328,7 +1328,7 @@ describe('Monitoring Alert Personalisation Builders', () => {
       };
 
       const result = buildBudgetThresholdPersonalisation(mockBudgetThresholdEvent, enrichedData);
-      expect(result.enrichedMaxSpend).toBe('£150.00');
+      expect(result.enrichedMaxSpend).toBe('$150.00');
     });
 
     test('AC-5.11: Does not include enrichedMaxSpend when values are same', () => {
@@ -1432,13 +1432,13 @@ describe('Monitoring Alert Personalisation Builders', () => {
       const result = buildBudgetExceededPersonalisation(mockBudgetExceededEvent);
 
       expect(result.userName).toBe('test.user');
-      expect(result.finalSpend).toBe('£105.50');
-      expect(result.budgetLimit).toBe('£100.00');
+      expect(result.finalSpend).toBe('$105.50');
+      expect(result.budgetLimit).toBe('$100.00');
     });
 
-    test('AC-5.8: Formats finalSpend with GBP symbol', () => {
+    test('AC-5.8: Formats finalSpend with USD symbol', () => {
       const result = buildBudgetExceededPersonalisation(mockBudgetExceededEvent);
-      expect(result.finalSpend).toMatch(/^£\d/);
+      expect(result.finalSpend).toMatch(/^\$\d/);
     });
 
     test('AC-5.12: Includes budget disclaimer', () => {
@@ -1571,7 +1571,7 @@ describe('buildPersonalisation with Monitoring Events', () => {
 
     const result = buildPersonalisation(event);
 
-    expect(result.currentSpend).toBe('£75.00');
+    expect(result.currentSpend).toBe('$75.00');
     expect(result.percentUsed).toBe('75%');
   });
 
@@ -1611,8 +1611,8 @@ describe('buildPersonalisation with Monitoring Events', () => {
 
     const result = buildPersonalisation(event);
 
-    expect(result.finalSpend).toBe('£105.00');
-    expect(result.budgetLimit).toBe('£100.00');
+    expect(result.finalSpend).toBe('$105.00');
+    expect(result.budgetLimit).toBe('$100.00');
   });
 
   test('AC-5.7: Dispatches LeaseFrozen to correct builder', () => {
@@ -1658,9 +1658,9 @@ describe('buildPersonalisation with Monitoring Events', () => {
     const result = buildPersonalisation(event, enrichedData);
 
     // Event budgetLimit should be used, not enriched maxSpend
-    expect(result.budgetLimit).toBe('£100.00');
+    expect(result.budgetLimit).toBe('$100.00');
     // But enrichedMaxSpend should be included since it differs
-    expect(result.enrichedMaxSpend).toBe('£150.00');
+    expect(result.enrichedMaxSpend).toBe('$150.00');
   });
 
   test('AC-5.15: enriched.status never appears in personalisation', () => {

@@ -484,19 +484,27 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
     "CookieRouterFunction6BEF430A": {
       "Properties": {
         "AutoPublish": true,
-        "FunctionCode": "import cf from 'cloudfront';
+        "FunctionCode": "// CloudFront Function for NDX cookie-based origin routing
+// Runtime: cloudfront-js-2.0
+//
+// This function inspects the NDX cookie to determine which S3 origin to use:
+// - NDX=legacy: Route to default cache behavior origin (legacy S3Origin)
+// - Any other value or no cookie: Route to ndx-static-prod with OAC
+//
+// Also handles URI rewriting for S3 compatibility:
+// - Trailing slash URIs get /index.html appended
+// - URIs without file extension get /index.html appended
 
 function handler(event) {
   var request = event.request;
-  var cookies = request.cookies;
+  var cookies = request.cookies || {};
   var uri = request.uri;
 
   // Handle directory-style URLs for S3 compatibility
-  // e.g., /About/ -> /About/index.html, /try -> /try/index.html
   if (uri.endsWith('/')) {
     request.uri = uri + 'index.html';
   } else if (uri.indexOf('.') === -1) {
-    // No file extension (no dot in URI) - treat as directory
+    // No file extension - treat as directory
     request.uri = uri + '/index.html';
   }
 
@@ -504,21 +512,19 @@ function handler(event) {
   var ndxCookie = cookies['NDX'];
 
   if (ndxCookie && ndxCookie.value === 'legacy') {
-    // Use default cache behavior origin (old S3Origin) - no modification needed
+    // Use default cache behavior origin (old S3Origin) - no modification
     return request;
   }
 
   // Default: route to ndx-static-prod with OAC authentication
-  cf.updateRequestOrigin({
-    domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
-    originAccessControlConfig: {
-      enabled: true,
+  request.origin = {
+    s3: {
+      domainName: 'ndx-static-prod.s3.us-west-2.amazonaws.com',
       region: 'us-west-2',
-      signingBehavior: 'always',
-      signingProtocol: 'sigv4',
-      originType: 's3'
+      authMethod: 'origin-access-control',
+      originAccessControlId: 'E3P8MA1G9Y5BYE'
     }
-  });
+  };
 
   return request;
 }

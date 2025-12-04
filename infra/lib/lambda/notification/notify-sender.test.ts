@@ -97,7 +97,6 @@ describe("NotifySender", () => {
 
     // Set up mock sendEmail
     mockSendEmail = jest.fn(() => Promise.resolve(mockEmailResponse))
-
     ;(NotifyClient as jest.Mock).mockImplementation(() => ({
       sendEmail: mockSendEmail,
       getTemplateById: jest.fn(),

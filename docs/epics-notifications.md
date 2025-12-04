@@ -1068,7 +1068,7 @@ So that notifications include status-appropriate context.
 
 **Given** a PendingApproval lease
 **When** enriched
-**Then** base fields included (userEmail, uuid, status, leaseDurationInHours, maxSpend, meta*\*, budgetThresholds*_, durationThresholds\__)
+**Then** base fields included (userEmail, uuid, status, leaseDurationInHours, maxSpend, meta*\*, budgetThresholds*\_, durationThresholds\_\_)
 
 **Given** an Active or Frozen lease
 **When** enriched

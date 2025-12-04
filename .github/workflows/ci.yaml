@@ -115,7 +115,8 @@ jobs:
     needs:
       - build
       - test
-    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }} # Change to 'main' after testing
+    # Temporarily disabled - NdxGitHubActions stack needs manual deployment first to create OIDC roles
+    if: false # ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }} # Change to 'main' after testing
     environment:
       name: production
       url: https://ndx.digital.cabinet-office.gov.uk

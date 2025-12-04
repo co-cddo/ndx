@@ -1,78 +1,27 @@
-name: Tests
+name: Frontend Tests
 
 on:
   push:
-    branches: [main]
+    branches: [try/aws]  # Change to 'main' after testing
+    paths-ignore:
+      - 'infra/**'  # Infra tests moved to infra.yaml
+      - 'docs/**'
   pull_request:
-    branches: [main]
+    branches: [try/aws]  # Change to 'main' after testing
+    paths-ignore:
+      - 'infra/**'
+      - 'docs/**'
 
 jobs:
-  # Infrastructure unit tests
-  infra-unit-tests:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infra
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.17.0"
-          cache: "yarn"
-          cache-dependency-path: infra/yarn.lock
-
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Run infrastructure unit tests
-        run: yarn test
-
-      - name: Run lint
-        run: yarn lint
-
-  # Infrastructure E2E tests for GOV.UK Notify (Story N5-8)
-  # AC-8.4: E2E test runs in CI pipeline
-  # AC-8.5, AC-8.9: E2E test failure blocks deployment
-  infra-e2e-tests:
-    runs-on: ubuntu-latest
-    # Only run E2E tests if unit tests pass
-    needs: [infra-unit-tests]
-    defaults:
-      run:
-        working-directory: infra
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.17.0"
-          cache: "yarn"
-          cache-dependency-path: infra/yarn.lock
-
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Run GOV.UK Notify E2E tests
-        env:
-          # AC-8.1: Uses sandbox API key (not production)
-          NOTIFY_SANDBOX_API_KEY: ${{ secrets.NOTIFY_SANDBOX_API_KEY }}
-          NOTIFY_TEMPLATE_LEASE_APPROVED: ${{ secrets.NOTIFY_TEMPLATE_LEASE_APPROVED }}
-        run: yarn test:e2e
-
   # Frontend tests
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "20.17.0"
           cache: "yarn"
@@ -104,7 +53,7 @@ jobs:
 
       - name: Upload Playwright artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
           path: playwright-report/

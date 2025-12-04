@@ -3,14 +3,24 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - try/aws  # Change to 'main' after testing
     tags:
       - "v*.*.*"
+    paths-ignore:
+      - 'infra/**'  # Infra changes trigger infra.yaml instead
+      - 'docs/**'
   pull_request:
     branches:
-      - main
+      - try/aws  # Change to 'main' after testing
+    paths-ignore:
+      - 'infra/**'
 
 permissions: read-all
+
+env:
+  AWS_REGION: us-west-2
+  S3_BUCKET: ndx-static-prod
+  CLOUDFRONT_DISTRIBUTION_ID: E3THG4UHYDHVWP
 
 jobs:
   build:
@@ -24,7 +34,7 @@ jobs:
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: 🎚️ Enable corepack
+      - name: Enable corepack
         run: corepack enable
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -34,7 +44,8 @@ jobs:
 
       - run: yarn
       - run: yarn lint
-      - run: PATH_PREFIX=/ndx/ yarn build
+      # No PATH_PREFIX needed for S3 deployment (root of bucket)
+      - run: yarn build
 
       - name: Tar files
         run: tar -cf site.tar ./_site
@@ -43,18 +54,70 @@ jobs:
           name: site.tar
           path: site.tar
 
-  publish:
-    name: Publish
+  test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - run: yarn install --immutable
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Install mitmproxy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mitmproxy
+
+      - name: Start mitmproxy
+        run: |
+          mitmproxy --listen-port 8081 -s scripts/mitmproxy-addon.py &
+          sleep 5
+
+      - name: Run unit tests
+        run: yarn test
+
+      - name: Run E2E tests
+        run: yarn test:e2e
+
+      - name: Run Accessibility tests
+        run: yarn test:e2e:accessibility
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy-s3:
+    name: Deploy to S3
     runs-on: ubuntu-latest
     permissions:
-      pages: write
-      id-token: write
+      id-token: write  # Required for OIDC
+      contents: read
     needs:
       - build
-    if: ${{ github.ref == 'refs/heads/main' }}
+      - test
+    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }}  # Change to 'main' after testing
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: production
+      url: https://ndx.digital.cabinet-office.gov.uk
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
@@ -64,17 +127,42 @@ jobs:
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           name: site.tar
+
       - name: Untar files
         run: tar -xvf site.tar
-      - name: Setup Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
-          path: ./_site
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+          role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-ContentDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync ./_site/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --exact-timestamps \
+            --cache-control "public, max-age=3600" \
+            --exclude ".DS_Store"
+
+      - name: Validate deployment
+        run: |
+          EXPECTED_FILES=$(find _site -type f | wc -l | tr -d ' ')
+          UPLOADED_FILES=$(aws s3 ls s3://${{ env.S3_BUCKET }}/ --recursive | wc -l | tr -d ' ')
+          echo "Expected: $EXPECTED_FILES, Uploaded: $UPLOADED_FILES"
+
+          # Smoke test - validate index.html exists
+          aws s3 ls s3://${{ env.S3_BUCKET }}/index.html || exit 1
+          echo "Smoke test passed: index.html exists"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+          echo "CloudFront invalidation created: $INVALIDATION_ID"
 
   semver:
     name: Generate a semantic version number

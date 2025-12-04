@@ -22,7 +22,8 @@
     "strictPropertyInitialization": false,
     "skipLibCheck": true,
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./types"
     ]
   },
   "exclude": [

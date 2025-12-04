@@ -1,0 +1,211 @@
+name: Infrastructure
+
+on:
+  push:
+    branches:
+      - try/aws  # Change to 'main' after testing
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yaml'
+  pull_request:
+    branches:
+      - try/aws  # Change to 'main' after testing
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yaml'
+
+permissions: read-all
+
+env:
+  AWS_REGION: us-west-2
+  NODE_VERSION: '20.17.0'
+
+jobs:
+  # Infrastructure unit tests (always run)
+  infra-unit-tests:
+    name: Infrastructure Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: infra/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run infrastructure unit tests
+        run: yarn test
+
+      - name: Run lint
+        run: yarn lint
+
+  # Infrastructure E2E tests (depends on unit tests)
+  infra-e2e-tests:
+    name: Infrastructure E2E Tests
+    runs-on: ubuntu-latest
+    needs: [infra-unit-tests]
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: infra/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Run GOV.UK Notify E2E tests
+        env:
+          NOTIFY_SANDBOX_API_KEY: ${{ secrets.NOTIFY_SANDBOX_API_KEY }}
+          NOTIFY_TEMPLATE_LEASE_APPROVED: ${{ secrets.NOTIFY_TEMPLATE_LEASE_APPROVED }}
+        run: yarn test:e2e
+
+  # CDK Diff (always run on PR, shows what would change)
+  cdk-diff:
+    name: CDK Diff
+    runs-on: ubuntu-latest
+    needs: [infra-unit-tests]
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: infra/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK Diff
+        id: diff
+        run: |
+          npx cdk diff --all 2>&1 | tee diff-output.txt || true
+          # Escape for GitHub Actions output
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          head -c 60000 diff-output.txt >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with diff
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const diff = `${{ steps.diff.outputs.diff }}`;
+            const body = `## CDK Diff Results\n\n\`\`\`\n${diff}\n\`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # CDK Deploy (only on push to branch, after all tests pass)
+  cdk-deploy:
+    name: CDK Deploy
+    runs-on: ubuntu-latest
+    needs: [infra-unit-tests, infra-e2e-tests]
+    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }}  # Change to 'main' after testing
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: infrastructure
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+          cache-dependency-path: infra/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run pre-deploy validation
+        run: |
+          # Build TypeScript
+          yarn build
+          # Run tests
+          yarn test --silent
+          # Run lint
+          yarn lint
+          # Synthesize CDK
+          npx cdk synth --quiet
+
+      - name: CDK Deploy
+        run: |
+          npx cdk deploy --all \
+            --require-approval never \
+            --outputs-file cdk-outputs.json
+
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cdk-outputs
+          path: infra/cdk-outputs.json
+          retention-days: 30

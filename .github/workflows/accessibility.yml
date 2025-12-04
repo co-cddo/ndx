@@ -11,9 +11,9 @@ name: Accessibility Tests
 
 on:
   push:
-    branches: [main]
+    branches: [try/aws]  # Change to 'main' after testing
   pull_request:
-    branches: [main]
+    branches: [try/aws]  # Change to 'main' after testing
 
 jobs:
   accessibility:
@@ -25,6 +25,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,7 +35,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Build site
         run: yarn build
@@ -66,6 +69,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -73,7 +79,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Build site
         run: yarn build

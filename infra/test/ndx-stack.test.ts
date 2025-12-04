@@ -149,12 +149,12 @@ describe('NdxStaticStack', () => {
 
       // Validate both resources reference expected names/configs
       const functionEntries = Object.entries(functionResources)[0];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+       
       const functionName = functionEntries[1].Properties.Name;
       expect(functionName).toBe('ndx-cookie-router');
 
       const policyEntries = Object.entries(cachePolicyResources)[0];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+       
       const policyName = policyEntries[1].Properties.CachePolicyConfig.Name;
       expect(policyName).toBe('NdxCookieRoutingPolicy');
     });
@@ -242,7 +242,7 @@ describe('NdxStaticStack', () => {
       expect(Object.keys(bucketPolicies).length).toBe(1);
 
       const policyEntries = Object.entries(bucketPolicies)[0];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+       
       const statements = policyEntries[1].Properties.PolicyDocument.Statement;
 
       // Define types for bucket policy statement

@@ -234,7 +234,7 @@ export function validateLeaseRecord(record: Partial<FullLeaseRecord>): Validatio
  * @returns SafeLeaseRecord without filtered fields
  */
 export function filterForTemplates(record: FullLeaseRecord): SafeLeaseRecord {
-  const { meta, comments, approvedBy, ...safeRecord } = record;
+  const { meta: _meta, comments: _comments, approvedBy: _approvedBy, ...safeRecord } = record;
 
   logger.debug('Filtered sensitive fields for template', {
     originalFieldCount: Object.keys(record).length,

@@ -37,10 +37,10 @@ export interface GitHubActionsStackProps extends cdk.StackProps {
  */
 export class GitHubActionsStack extends cdk.Stack {
   /** IAM role for content deployment (S3 + CloudFront) */
-  public readonly contentDeployRole: iam.Role;
+  public readonly contentDeployRole: iam.IRole;
 
   /** IAM role for infrastructure deployment (CDK) */
-  public readonly infraDeployRole: iam.Role;
+  public readonly infraDeployRole: iam.IRole;
 
   constructor(scope: Construct, id: string, props: GitHubActionsStackProps) {
     super(scope, id, props);
@@ -66,7 +66,7 @@ export class GitHubActionsStack extends cdk.Stack {
     // Used for: S3 sync, CloudFront invalidation
     // Trigger: Push to branch when NON-infra files change
 
-    this.contentDeployRole = new iam.Role(this, 'ContentDeployRole', {
+    const contentRole = new iam.Role(this, 'ContentDeployRole', {
       roleName: 'GitHubActions-NDX-ContentDeploy',
       description: 'GitHub Actions role for NDX content deployment to S3',
       maxSessionDuration: cdk.Duration.hours(1),
@@ -85,7 +85,7 @@ export class GitHubActionsStack extends cdk.Stack {
     });
 
     // S3 permissions - write to specific bucket only
-    this.contentDeployRole.addToPolicy(
+    contentRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'S3WriteAccess',
         effect: iam.Effect.ALLOW,
@@ -104,7 +104,7 @@ export class GitHubActionsStack extends cdk.Stack {
     );
 
     // CloudFront invalidation permission - specific distribution only
-    this.contentDeployRole.addToPolicy(
+    contentRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'CloudFrontInvalidation',
         effect: iam.Effect.ALLOW,
@@ -119,13 +119,16 @@ export class GitHubActionsStack extends cdk.Stack {
       })
     );
 
+    // Assign to public property (exposed as IRole for CDK best practices)
+    this.contentDeployRole = contentRole;
+
     // =========================================================================
     // Role 2: Infrastructure Deploy Role (CDK permissions)
     // =========================================================================
     // Used for: cdk deploy, cdk diff
     // Trigger: Push to branch when infra/** files change
 
-    this.infraDeployRole = new iam.Role(this, 'InfraDeployRole', {
+    const infraRole = new iam.Role(this, 'InfraDeployRole', {
       roleName: 'GitHubActions-NDX-InfraDeploy',
       description: 'GitHub Actions role for NDX CDK infrastructure deployment',
       maxSessionDuration: cdk.Duration.hours(1),
@@ -145,7 +148,7 @@ export class GitHubActionsStack extends cdk.Stack {
 
     // CDK requires permission to assume the CDK execution roles
     // These are created by `cdk bootstrap`
-    this.infraDeployRole.addToPolicy(
+    infraRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'AssumeCDKRoles',
         effect: iam.Effect.ALLOW,
@@ -165,7 +168,7 @@ export class GitHubActionsStack extends cdk.Stack {
     );
 
     // CloudFormation permissions for CDK
-    this.infraDeployRole.addToPolicy(
+    infraRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'CloudFormationAccess',
         effect: iam.Effect.ALLOW,
@@ -180,7 +183,7 @@ export class GitHubActionsStack extends cdk.Stack {
     );
 
     // SSM Parameter Store read (for CDK context)
-    this.infraDeployRole.addToPolicy(
+    infraRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'SSMParameterRead',
         effect: iam.Effect.ALLOW,
@@ -192,7 +195,7 @@ export class GitHubActionsStack extends cdk.Stack {
     );
 
     // ECR permissions (for Lambda Docker images if used)
-    this.infraDeployRole.addToPolicy(
+    infraRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'ECRAccess',
         effect: iam.Effect.ALLOW,
@@ -205,6 +208,9 @@ export class GitHubActionsStack extends cdk.Stack {
         resources: ['*'],
       })
     );
+
+    // Assign to public property (exposed as IRole for CDK best practices)
+    this.infraDeployRole = infraRole;
 
     // Tags
     cdk.Tags.of(this).add('project', 'ndx');

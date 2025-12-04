@@ -333,7 +333,7 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
     // Slack alerts (ops events)
     if (channels.includes('slack') && isSlackAlertType(eventType)) {
       const validatedEvent = validateEvent(event);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await processSlackAlert(validatedEvent as any);
       logger.info('Slack alert sent successfully', {
         eventId,
@@ -395,7 +395,7 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
             validateLeaseStatus(leaseStatus, eventId);
 
             // N7-4 AC-2-5: Flatten lease record and include key fields
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             const { flattened } = flattenObject(leaseRecord as unknown as Record<string, unknown>, { eventId });
             enrichedData = flattened;
 

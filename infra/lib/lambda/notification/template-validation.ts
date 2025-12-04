@@ -25,7 +25,7 @@ import { Logger } from '@aws-lambda-powertools/logger';
 import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
 import { getSecrets } from './secrets';
 import { NOTIFY_TEMPLATES, TemplateConfig } from './templates';
-import { CriticalError, PermanentError } from './errors';
+import { CriticalError } from './errors';
 
 // =========================================================================
 // Types

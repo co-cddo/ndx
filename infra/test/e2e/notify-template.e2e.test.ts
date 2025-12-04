@@ -39,15 +39,13 @@ const describeE2E = skipE2E ? describe.skip : describe;
 
 describeE2E('GOV.UK Notify E2E Template Tests', () => {
   let client: NotifyTestClient;
-  let clientError: Error | null = null;
 
   beforeAll(async () => {
     try {
       // Get test client with sandbox API key (AC-8.1)
       client = await NotifyTestClient.getInstance();
     } catch (error) {
-      // Store error for tests to check
-      clientError = error as Error;
+      // Log error - tests will fail naturally if client not available
       console.warn(
         'Skipping E2E tests: Could not initialize client -',
         (error as Error).message

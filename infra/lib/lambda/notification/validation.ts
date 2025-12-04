@@ -360,25 +360,25 @@ export function validateEvent<T = unknown>(
 // =============================================================================
 
 // Permissive types - accept any fields from ISB
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseRequestedDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseApprovedDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseDeniedDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseTerminatedDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseFrozenDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseBudgetThresholdAlertDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseDurationThresholdAlertDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseFreezingThresholdAlertDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseBudgetExceededDetail = Record<string, any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type LeaseExpiredDetail = Record<string, any>;
 export type LeaseFrozenReason = z.infer<typeof LeaseFrozenReasonSchema>;
 export type LeaseTerminatedReason = z.infer<typeof LeaseTerminatedReasonSchema>;

@@ -850,7 +850,7 @@ describe('AC-6.41: Never use enriched.status in email content', () => {
 
     // Status should only be in _internalStatus (internal use only)
     expect(result._internalStatus).toBe('Active');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     expect((result as any).status).toBeUndefined();
   });
 
@@ -884,7 +884,7 @@ describe('Integration: Parallel enrichment queries', () => {
     const templateConfig = createTemplateConfig(['lease', 'account']);
     const dynamoClient = new DynamoDBClient({});
 
-    let callOrder: string[] = [];
+    const callOrder: string[] = [];
 
     dynamoMock.on(GetItemCommand).callsFake((input) => {
       const tableName = input.TableName as string;

@@ -102,7 +102,6 @@ import {
   PLACEHOLDER_PATTERN,
 } from './template-validation';
 import { NotifyClient } from 'notifications-node-client';
-import { NOTIFY_TEMPLATES } from './templates';
 
 describe('Template Validation', () => {
   beforeEach(() => {

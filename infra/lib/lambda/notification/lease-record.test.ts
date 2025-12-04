@@ -15,8 +15,6 @@ import {
   generateSchemaFingerprint,
   getExpectedFieldNames,
   type FullLeaseRecord,
-  type LeaseRecordMeta,
-  type BudgetThreshold,
 } from './lease-record';
 
 // Mock Logger to avoid console output in tests

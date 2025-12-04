@@ -24,9 +24,7 @@ import { Metrics, MetricUnit } from '@aws-lambda-powertools/metrics';
 import { SlackSender, SlackSendParams } from './slack-sender';
 import {
   SLACK_TEMPLATES,
-  SlackAlertType,
   isSlackAlertType,
-  getSlackTemplate,
 } from './slack-templates';
 import type { ValidatedEvent } from './validation';
 import { PermanentError } from './errors';

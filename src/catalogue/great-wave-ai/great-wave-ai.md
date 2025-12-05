@@ -29,15 +29,15 @@ tags:
 }) }}
 </br>
 {{ govukButton({
-  text: "Try this now for 24 hours",
-  href: "/try/great-wave-ai",
+  text: "Try this now for 24 hours [coming soon]",
+  disabled: true,
   isStartButton: true
 }) }}
 </br>
 
 {{ govukButton({
-  text: "Deploy this now",
-  href: "/access/great-wave-ai",
+  text: "Deploy this now [coming soon]",
+  disabled: true,
   isStartButton: true
 }) }}
 

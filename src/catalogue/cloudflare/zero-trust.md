@@ -22,15 +22,15 @@ tags:
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {{ govukButton({
-  text: "Try this now for 24 hours",
-  href: "/try/cloudflare-zero-trust",
+  text: "Try this now for 24 hours [coming soon]",
+  disabled: true,
   isStartButton: true
 }) }}
 </br>
 
 {{ govukButton({
-  text: "Deploy this now",
-  href: "/access/cloudflare-zero-trust",
+  text: "Deploy this now [coming soon]",
+  disabled: true,
   isStartButton: true
 }) }}
 

@@ -64,7 +64,6 @@ jobs:
 
   lighthouse:
     name: Lighthouse Accessibility Audit
-    if: false # Disabled - pre-existing Lighthouse issues (CSP, PWA, images) need separate fix
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

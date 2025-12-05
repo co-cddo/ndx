@@ -7,13 +7,39 @@ import mermaidTransformPlugin from "./lib/eleventy-mermaid-transform.js"
 import remoteImagesPlugin from "./lib/eleventy-remote-images.js"
 
 function gitRev() {
-  const rev = fs.readFileSync(".git/HEAD").toString().trim()
+  // Handle both regular repos and worktrees
+  let gitDir = ".git"
+  const stat = fs.statSync(".git")
+  if (stat.isFile()) {
+    // This is a worktree - .git is a file pointing to the actual git dir
+    const gitPath = fs.readFileSync(".git").toString().trim()
+    if (gitPath.startsWith("gitdir: ")) {
+      gitDir = gitPath.substring(8)
+    }
+  }
+
+  const headPath = `${gitDir}/HEAD`
+  const rev = fs.readFileSync(headPath).toString().trim()
   if (rev.indexOf(":") === -1) return rev
-  else
-    return fs
-      .readFileSync(".git/" + rev.substring(5))
-      .toString()
-      .trim()
+  else {
+    // For worktrees, refs might be in the main repo's .git directory
+    const refPath = rev.substring(5) // Remove "ref: " prefix
+    const worktreeRefPath = `${gitDir}/${refPath}`
+
+    // Try worktree path first, then main repo
+    try {
+      return fs.readFileSync(worktreeRefPath).toString().trim()
+    } catch {
+      // Fall back to commondir for shared refs
+      const commondirPath = `${gitDir}/commondir`
+      if (fs.existsSync(commondirPath)) {
+        const commondir = fs.readFileSync(commondirPath).toString().trim()
+        const resolvedCommondir = commondir.startsWith("/") ? commondir : `${gitDir}/${commondir}`
+        return fs.readFileSync(`${resolvedCommondir}/${refPath}`).toString().trim()
+      }
+      throw new Error(`Could not resolve git ref: ${refPath}`)
+    }
+  }
 }
 function gitSHA() {
   return gitRev().slice(0, 8)
@@ -104,7 +130,7 @@ export default function (eleventyConfig) {
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
         { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
-        { text: '<span id="auth-nav">Sign in</span>', href: "/api/auth/login" },
+        { text: "Sign in", href: "/api/auth/login" },
       ],
       // Auth navigation placeholder - rendered via slots.end in service navigation
       // This is populated by JavaScript (Story 5.1)

@@ -20,7 +20,6 @@ permissions: read-all
 jobs:
   accessibility:
     name: WCAG 2.2 AA Compliance
-    if: false # Temporarily disabled - fix duplicate auth-nav IDs and SVG role issues
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -65,7 +64,7 @@ jobs:
 
   lighthouse:
     name: Lighthouse Accessibility Audit
-    if: false # Temporarily disabled - fix duplicate auth-nav IDs and SVG role issues
+    if: false # Disabled - pre-existing Lighthouse issues (CSP, PWA, images) need separate fix
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

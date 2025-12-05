@@ -224,10 +224,9 @@ export class GitHubActionsStack extends cdk.Stack {
         {
           StringEquals: {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-            // CRITICAL: Fork protection - only the origin repo owner can assume this role
-            // Forks have a different repository_owner claim (e.g., 'fork-user' instead of 'co-cddo')
-            "token.actions.githubusercontent.com:repository_owner": github.owner,
           },
+          // Fork protection via subject pattern: repo:co-cddo/ndx:* won't match fork repos (repo:fork-user/ndx:*)
+          // Additional workflow-level protection: github.event.pull_request.head.repo.fork == false
           StringLike: {
             "token.actions.githubusercontent.com:sub": [anyBranchCondition, pullRequestCondition],
           },

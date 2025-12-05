@@ -33,10 +33,11 @@ describe("GitHubActionsStack", () => {
       })
     })
 
-    test("InfraDiffRole has repository_owner condition for fork protection", () => {
-      // This is the CRITICAL security control that prevents forks from assuming the role
-      // The repository_owner claim in GitHub OIDC tokens contains the owner of the repo
-      // that triggered the workflow. For forks, this will be the fork owner, not 'co-cddo'.
+    test("InfraDiffRole uses subject pattern for fork protection", () => {
+      // Fork protection is achieved via the subject pattern: repo:co-cddo/ndx:*
+      // This pattern inherently won't match fork repositories (e.g., repo:fork-user/ndx:*)
+      // because the subject includes the full owner/repo path from the origin repo only.
+      // Additional protection: workflow-level check `github.event.pull_request.head.repo.fork == false`
       template.hasResourceProperties("AWS::IAM::Role", {
         RoleName: "GitHubActions-NDX-InfraDiff",
         AssumeRolePolicyDocument: {
@@ -45,7 +46,7 @@ describe("GitHubActionsStack", () => {
               Action: "sts:AssumeRoleWithWebIdentity",
               Condition: {
                 StringEquals: Match.objectLike({
-                  "token.actions.githubusercontent.com:repository_owner": "co-cddo",
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
                 }),
               },
             }),
@@ -64,9 +65,7 @@ describe("GitHubActionsStack", () => {
               Action: "sts:AssumeRoleWithWebIdentity",
               Condition: {
                 StringLike: Match.objectLike({
-                  "token.actions.githubusercontent.com:sub": Match.arrayWith([
-                    "repo:co-cddo/ndx:ref:refs/heads/*",
-                  ]),
+                  "token.actions.githubusercontent.com:sub": Match.arrayWith(["repo:co-cddo/ndx:ref:refs/heads/*"]),
                 }),
               },
             }),
@@ -84,9 +83,7 @@ describe("GitHubActionsStack", () => {
               Action: "sts:AssumeRoleWithWebIdentity",
               Condition: {
                 StringLike: Match.objectLike({
-                  "token.actions.githubusercontent.com:sub": Match.arrayWith([
-                    "repo:co-cddo/ndx:pull_request",
-                  ]),
+                  "token.actions.githubusercontent.com:sub": Match.arrayWith(["repo:co-cddo/ndx:pull_request"]),
                 }),
               },
             }),
@@ -102,10 +99,7 @@ describe("GitHubActionsStack", () => {
             Match.objectLike({
               Sid: "CloudFormationReadOnly",
               Effect: "Allow",
-              Action: Match.arrayWith([
-                "cloudformation:DescribeStacks",
-                "cloudformation:GetTemplate",
-              ]),
+              Action: Match.arrayWith(["cloudformation:DescribeStacks", "cloudformation:GetTemplate"]),
             }),
           ]),
         },
@@ -143,9 +137,7 @@ describe("GitHubActionsStack", () => {
               Action: "sts:AssumeRoleWithWebIdentity",
               Condition: {
                 StringLike: Match.objectLike({
-                  "token.actions.githubusercontent.com:sub": Match.arrayWith([
-                    "repo:co-cddo/ndx:ref:refs/heads/main",
-                  ]),
+                  "token.actions.githubusercontent.com:sub": Match.arrayWith(["repo:co-cddo/ndx:ref:refs/heads/main"]),
                 }),
               },
             }),
@@ -164,12 +156,7 @@ describe("GitHubActionsStack", () => {
               Action: "sts:AssumeRole",
               Condition: {
                 StringEquals: {
-                  "iam:ResourceTag/aws-cdk:bootstrap-role": [
-                    "deploy",
-                    "lookup",
-                    "file-publishing",
-                    "image-publishing",
-                  ],
+                  "iam:ResourceTag/aws-cdk:bootstrap-role": ["deploy", "lookup", "file-publishing", "image-publishing"],
                 },
               },
             }),

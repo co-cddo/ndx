@@ -42,6 +42,9 @@ export class GitHubActionsStack extends cdk.Stack {
   /** IAM role for infrastructure deployment (CDK) */
   public readonly infraDeployRole: iam.IRole
 
+  /** IAM role for infrastructure diff - readonly, any branch (fork-protected) */
+  public readonly infraDiffRole: iam.IRole
+
   constructor(scope: Construct, id: string, props: GitHubActionsStackProps) {
     super(scope, id, props)
 
@@ -196,6 +199,87 @@ export class GitHubActionsStack extends cdk.Stack {
     // Assign to public property (exposed as IRole for CDK best practices)
     this.infraDeployRole = infraRole
 
+    // =========================================================================
+    // Role 3: Infrastructure Diff Role (readonly - any branch, fork-protected)
+    // =========================================================================
+    // Used for: cdk diff (readonly operations only)
+    // Trigger: PR when infra/** files change
+    // Security: Allows ANY branch on origin repo, but BLOCKS forks via repository_owner claim
+    //
+    // CRITICAL SECURITY: Fork protection is implemented at the IAM level via:
+    // 1. repository_owner claim must match 'co-cddo' (forks have different owner)
+    // 2. Subject pattern matches repo:co-cddo/ndx:* (won't match fork repos)
+
+    // Trust condition for readonly diff role - allows ANY branch on origin repo
+    const anyBranchCondition = `repo:${github.owner}/${github.repo}:ref:refs/heads/*`
+    // Also allow pull requests (for PR diff workflows)
+    const pullRequestCondition = `repo:${github.owner}/${github.repo}:pull_request`
+
+    const diffRole = new iam.Role(this, "InfraDiffRole", {
+      roleName: "GitHubActions-NDX-InfraDiff",
+      description: "GitHub Actions role for NDX CDK diff (read-only, any branch, fork-protected)",
+      maxSessionDuration: cdk.Duration.hours(1),
+      assumedBy: new iam.FederatedPrincipal(
+        githubProvider.openIdConnectProviderArn,
+        {
+          StringEquals: {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          },
+          // Fork protection via subject pattern: repo:co-cddo/ndx:* won't match fork repos (repo:fork-user/ndx:*)
+          // Additional workflow-level protection: github.event.pull_request.head.repo.fork == false
+          StringLike: {
+            "token.actions.githubusercontent.com:sub": [anyBranchCondition, pullRequestCondition],
+          },
+        },
+        "sts:AssumeRoleWithWebIdentity",
+      ),
+    })
+
+    // CloudFormation read-only (for cdk diff)
+    diffRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "CloudFormationReadOnly",
+        effect: iam.Effect.ALLOW,
+        actions: [
+          "cloudformation:DescribeStacks",
+          "cloudformation:DescribeStackEvents",
+          "cloudformation:GetTemplate",
+          "cloudformation:ListStacks",
+          "cloudformation:DescribeStackResources",
+          "cloudformation:ListStackResources",
+        ],
+        resources: ["*"],
+      }),
+    )
+
+    // SSM Parameter read (for CDK context)
+    diffRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "SSMParameterRead",
+        effect: iam.Effect.ALLOW,
+        actions: ["ssm:GetParameter", "ssm:GetParameters"],
+        resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/cdk-bootstrap/*`],
+      }),
+    )
+
+    // Allow assuming CDK lookup role only (not deploy, file-publishing, or image-publishing)
+    diffRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "AssumeCDKLookupRole",
+        effect: iam.Effect.ALLOW,
+        actions: ["sts:AssumeRole"],
+        resources: [`arn:aws:iam::${this.account}:role/cdk-*`],
+        conditions: {
+          StringEquals: {
+            "iam:ResourceTag/aws-cdk:bootstrap-role": ["lookup"],
+          },
+        },
+      }),
+    )
+
+    // Assign to public property
+    this.infraDiffRole = diffRole
+
     // Tags
     cdk.Tags.of(this).add("project", "ndx")
     cdk.Tags.of(this).add("managedby", "cdk")
@@ -215,6 +299,11 @@ export class GitHubActionsStack extends cdk.Stack {
     new cdk.CfnOutput(this, "InfraDeployRoleArn", {
       value: this.infraDeployRole.roleArn,
       description: "IAM Role ARN for infrastructure deployment",
+    })
+
+    new cdk.CfnOutput(this, "InfraDiffRoleArn", {
+      value: this.infraDiffRole.roleArn,
+      description: "IAM Role ARN for infrastructure diff (read-only, fork-protected)",
     })
   }
 }

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="128px" height="128px" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <title>Okta Logo</title>
-  <g id="okta-logo" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-    <path d="M64,38 C49.642,38 38,49.642 38,64 C38,78.358 49.642,90 64,90 C78.358,90 90,78.358 90,64 C90,49.642 78.358,38 64,38 M64,102 C43.028,102 26,84.972 26,64 C26,43.028 43.028,26 64,26 C84.972,26 102,43.028 102,64 C102,84.972 84.972,102 64,102" fill="#007DC1" fill-rule="nonzero"/>
-  </g>
-</svg>

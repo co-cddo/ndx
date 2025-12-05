@@ -73,7 +73,6 @@ export default function (eleventyConfig) {
   eleventyConfig.addPlugin(EleventyRenderPlugin)
 
   eleventyConfig.addPlugin(govukEleventyPlugin, {
-    rebrand: true,
     titleSuffix: "ALPHA",
     header: {
       logotype: {

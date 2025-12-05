@@ -1329,9 +1329,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rollup/plugin-commonjs@npm:^28.0.0":
-  version: 28.0.9
-  resolution: "@rollup/plugin-commonjs@npm:28.0.9"
+"@rollup/plugin-commonjs@npm:^29.0.0":
+  version: 29.0.0
+  resolution: "@rollup/plugin-commonjs@npm:29.0.0"
   dependencies:
     "@rollup/pluginutils": "npm:^5.0.1"
     commondir: "npm:^1.0.1"
@@ -1345,7 +1345,7 @@ __metadata:
   peerDependenciesMeta:
     rollup:
       optional: true
-  checksum: 10c0/b7af70614a53c549a1ba1e9647879b644bcf44ec78850f04018b929f4ee414274f867fa438308409a06ef8a3a179ed24c25e4f8ef77eb341dfddd2b0cb88c389
+  checksum: 10c0/e19f99aace255e625c3f92169108d444e522eb1119e26ec3af2e2744ec1d81d765ba1140e59afc9881a8640e0fcfe25a3b927d3c6877b850d57d6acddc1c5223
   languageName: node
   linkType: hard
 
@@ -2039,14 +2039,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@x-govuk/govuk-eleventy-plugin@npm:^7.2.1":
-  version: 7.2.1
-  resolution: "@x-govuk/govuk-eleventy-plugin@npm:7.2.1"
+"@x-govuk/govuk-eleventy-plugin@npm:^8.1.1":
+  version: 8.1.1
+  resolution: "@x-govuk/govuk-eleventy-plugin@npm:8.1.1"
   dependencies:
     "@11ty/eleventy": "npm:^3.0.0"
     "@11ty/eleventy-navigation": "npm:^1.0.0"
     "@11ty/eleventy-plugin-rss": "npm:^2.0.0"
-    "@rollup/plugin-commonjs": "npm:^28.0.0"
+    "@rollup/plugin-commonjs": "npm:^29.0.0"
     "@rollup/plugin-node-resolve": "npm:^16.0.0"
     "@rollup/plugin-terser": "npm:^0.4.4"
     "@x-govuk/govuk-prototype-components": "npm:^5.0.0"
@@ -2054,21 +2054,22 @@ __metadata:
     govuk-frontend: "npm:^5.11.0"
     markdown-it-abbr: "npm:^2.0.0"
     markdown-it-anchor: "npm:^9.0.0"
+    markdown-it-attribution: "npm:^0.1.4"
     markdown-it-attrs: "npm:^4.3.1"
     markdown-it-deflist: "npm:^3.0.0"
     markdown-it-footnote: "npm:^4.0.0"
-    markdown-it-govuk: "npm:^0.6.0"
+    markdown-it-github-alerts: "npm:^1.0.0"
+    markdown-it-govuk: "npm:^0.8.0"
     markdown-it-image-figures: "npm:^2.0.0"
     markdown-it-ins: "npm:^4.0.0"
     markdown-it-mark: "npm:^4.0.0"
     markdown-it-sub: "npm:^2.0.0"
     markdown-it-sup: "npm:^2.0.0"
-    markdown-it-table-of-contents: "npm:^0.9.0"
-    rimraf: "npm:^6.0.0"
+    markdown-it-table-of-contents: "npm:^1.0.0"
     rollup: "npm:^4.1.0"
     sass: "npm:^1.45.1"
     smartypants: "npm:^0.2.0"
-  checksum: 10c0/27149adbbdc80809fb6ddb3a99c253bb21f45ac45c0579c9e9a5a7ab798f927c4871099a2e4aab506880a563c20813742f77127249b6cf30ad1ae87b4ddffd07
+  checksum: 10c0/a3616efbcacb6e3c30b8114b60dc5595d14562bb0fae018a65283182b214a01a3dcd2ee1df4ee126d8ed53316e07a8797768e92f2f178c61c095572e89a2aa34
   languageName: node
   linkType: hard
 
@@ -5440,6 +5441,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"markdown-it-attribution@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "markdown-it-attribution@npm:0.1.4"
+  checksum: 10c0/3ed79311899cb0908ee01d2ec371c37bdad67fb3ab9a3f8e1806ea52e787d63b5149860c572cab5b7fa33b8fb4d1eb6eef8c581bf7096ee5febf1d0e3f64e310
+  languageName: node
+  linkType: hard
+
 "markdown-it-attrs@npm:^4.3.1":
   version: 4.3.1
   resolution: "markdown-it-attrs@npm:4.3.1"
@@ -5463,12 +5471,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-it-govuk@npm:^0.6.0":
-  version: 0.6.0
-  resolution: "markdown-it-govuk@npm:0.6.0"
+"markdown-it-github-alerts@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "markdown-it-github-alerts@npm:1.0.0"
+  peerDependencies:
+    markdown-it: ">= 13.0.0"
+  checksum: 10c0/2fb2186607bbd8efbafbcda2c79771a3275032710b151f58b6adf23ac3cf3579e626aab66324e4213429573ab7e6ef31a5a374569a8794b1eb318e25ab03a696
+  languageName: node
+  linkType: hard
+
+"markdown-it-govuk@npm:^0.8.0":
+  version: 0.8.0
+  resolution: "markdown-it-govuk@npm:0.8.0"
   dependencies:
     highlight.js: "npm:^11.5.0"
-  checksum: 10c0/6c1f8add1ebfaf325d774b8fb37e7379e3d614266cd6f02144bd2d4a59a2109ddca60bb89f70f16fbb096b14bbfe0ed4387724a17478652cde9ebe0efe012003
+  checksum: 10c0/9e04b28f5991ef5fae03840039d0af6fbc291d0e24c965cd18fb392bb162fdcf3ead46534046d492c330a39c320271190d65912bb2cbac1c68c9b1d910fb0724
   languageName: node
   linkType: hard
 
@@ -5509,10 +5526,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-it-table-of-contents@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "markdown-it-table-of-contents@npm:0.9.0"
-  checksum: 10c0/510f3d4dea2723984f86f0cfeffcb85208d24f9ca543762c767676b196ace15ba1bad815ac3edada04851e92afbfef637fb8cbd16ab81c3b9e5bb13fdd3e6374
+"markdown-it-table-of-contents@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "markdown-it-table-of-contents@npm:1.1.0"
+  checksum: 10c0/e1f0191ecbf1042b99db14c1251bcdb55fb0bea47433335068c7aa6a71f23b0991cf78bfeb990f3ef7dc9a0f58235c5831cc18aae7f2e11ee634b04a5901c492
   languageName: node
   linkType: hard
 
@@ -5845,7 +5862,7 @@ __metadata:
     "@axe-core/playwright": "npm:^4.11.0"
     "@playwright/test": "npm:^1.56.1"
     "@types/jest": "npm:^29.5.14"
-    "@x-govuk/govuk-eleventy-plugin": "npm:^7.2.1"
+    "@x-govuk/govuk-eleventy-plugin": "npm:^8.1.1"
     esbuild: "npm:^0.24.2"
     husky: "npm:^9.1.7"
     jest: "npm:^29.7.0"
@@ -6053,13 +6070,6 @@ __metadata:
   version: 2.2.0
   resolution: "p-try@npm:2.2.0"
   checksum: 10c0/c36c19907734c904b16994e6535b02c36c2224d433e01a2f1ab777237f4d86e6289fd5fd464850491e940379d4606ed850c03e0f9ab600b0ebddb511312e177f
-  languageName: node
-  linkType: hard
-
-"package-json-from-dist@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "package-json-from-dist@npm:1.0.1"
-  checksum: 10c0/62ba2785eb655fec084a257af34dbe24292ab74516d6aecef97ef72d4897310bc6898f6c85b5cd22770eaa1ce60d55a0230e150fb6a966e3ecd6c511e23d164b
   languageName: node
   linkType: hard
 
@@ -6527,18 +6537,6 @@ __metadata:
   version: 1.4.1
   resolution: "rfdc@npm:1.4.1"
   checksum: 10c0/4614e4292356cafade0b6031527eea9bc90f2372a22c012313be1dcc69a3b90c7338158b414539be863fa95bfcb2ddcd0587be696841af4e6679d85e62c060c7
-  languageName: node
-  linkType: hard
-
-"rimraf@npm:^6.0.0":
-  version: 6.1.2
-  resolution: "rimraf@npm:6.1.2"
-  dependencies:
-    glob: "npm:^13.0.0"
-    package-json-from-dist: "npm:^1.0.1"
-  bin:
-    rimraf: dist/esm/bin.mjs
-  checksum: 10c0/c11a6a6fad937ada03c12fe688860690df8296d7cd08dbe59e3cc087f44e43573ae26ecbe48e54cb7a6db745b8c81fe5a15b9359233cc21d52d9b5b3330fcc74
   languageName: node
   linkType: hard
 

@@ -177,9 +177,11 @@ jobs:
 
       - name: Comment PR with diff
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          DIFF_OUTPUT: ${{ steps.diff.outputs.diff }}
         with:
           script: |
-            const diff = `${{ steps.diff.outputs.diff }}`;
+            const diff = process.env.DIFF_OUTPUT || 'No diff output available';
             const body = `## CDK Diff Results\n\n\`\`\`\n${diff}\n\`\`\``;
             github.rest.issues.createComment({
               issue_number: context.issue.number,

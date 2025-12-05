@@ -168,7 +168,9 @@ jobs:
       - name: CDK Diff
         id: diff
         run: |
-          npx cdk diff --all 2>&1 | tee diff-output.txt || true
+          # Run diff and filter out expected warnings from readonly role
+          # (cannot assume deploy/file-publishing roles - this is intentional)
+          npx cdk diff --all 2>&1 | grep -v "current credentials could not be used to assume" | grep -v "but are for the right account. Proceeding anyway" | grep -v "fail: Bucket named 'cdk-hnb659fds-assets" | grep -v "Could not create a change set, will base the diff on template differences" | tee diff-output.txt || true
           # Escape for GitHub Actions output
           echo "diff<<EOF" >> $GITHUB_OUTPUT
           head -c 60000 diff-output.txt >> $GITHUB_OUTPUT

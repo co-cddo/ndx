@@ -20,15 +20,15 @@ tags:
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
 {{ govukButton({
-  text: "Try this now for 24 hours",
-  href: "/try/mindweave-labs-synaplyte",
+  text: "Try this now for 24 hours [coming soon]",
+  disabled: true,
   isStartButton: true
 }) }}
 </br>
 
 {{ govukButton({
-  text: "Deploy this now",
-  href: "/access/mindweave-labs-synaplyte",
+  text: "Deploy this now [coming soon]",
+  disabled: true,
   isStartButton: true
 }) }}
 

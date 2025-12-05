@@ -1,0 +1,229 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>4</storyId>
+    <title>Document Rollback Procedures</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-21</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-4-document-rollback-procedures.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>clear rollback procedures documented</iWant>
+    <soThat>the team can quickly revert changes if routing issues are discovered</soThat>
+    <tasks>
+- Task 1: Document Option 1 - Disable Function (AC: #1, #3, #4, #5)
+  - Document "When to use" criteria (routing logic issues)
+  - List prerequisites (AWS access, CDK knowledge)
+  - Write step-by-step procedure (edit ndx-stack.ts, comment function, deploy)
+  - Document expected duration (< 5 minutes + 10-15 min propagation)
+  - Write success criteria validation commands
+
+- Task 2: Document Option 2 - Git Revert (AC: #1, #3, #4, #5)
+  - Document "When to use" criteria (recent deployment to undo)
+  - List prerequisites (git access, deployment history)
+  - Write step-by-step procedure (git log, git revert, cdk deploy)
+  - Document expected duration (5-10 minutes + 10-15 min propagation)
+  - Write success criteria validation
+
+- Task 3: Document Option 3 - Remove Origin (AC: #1, #3, #4, #5)
+  - Document "When to use" criteria (complete removal needed)
+  - List prerequisites (CDK code understanding)
+  - Write step-by-step procedure (remove origin, function, cache policy)
+  - Document expected duration (15 minutes + 10-15 min propagation)
+  - Write success criteria validation
+
+- Task 4: Create Rollback Decision Matrix (AC: #2)
+  - Document decision criteria for each option
+  - Provide clear default recommendation (Option 1)
+  - Add escalation path (Option 1 → 2 → 3)
+
+- Task 5: Add Rollback Documentation to README (AC: #1, #2, #3, #4, #5)
+  - Create "Rollback Procedures" section in infra/README.md
+  - Format with clear headings and structure
+  - Include all three options with full details
+  - Add examples and validation commands
+
+- Task 6: Review and Validate Documentation (AC: #3, #4)
+  - Verify all commands are copy-pasteable
+  - Check AWS profile flags included
+  - Validate timing estimates are realistic
+  - Optional: Test rollback procedures in non-production
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+AC-3.4.1: Three-Tier Rollback Documentation
+- Option 1 documented: Disable function (< 5 minutes)
+- Option 2 documented: Git revert (5-10 minutes)
+- Option 3 documented: Remove origin (15 minutes)
+- Each option includes: When to use, Prerequisites, Steps, Expected duration, Success criteria, Escalation path
+
+AC-3.4.2: Rollback Decision Matrix
+- Clear decision criteria for which option to use:
+  - Option 1: Routing logic issue, origins intact
+  - Option 2: Recent deployment, clear commit to revert
+  - Option 3: Fundamental architecture issue, need complete removal
+- Default recommendation: Start with Option 1
+
+AC-3.4.3: Executable Procedures
+- All commands are copy-pasteable (correct syntax)
+- Commands include --profile flag for AWS operations
+- Steps include validation after each major action
+- Manual steps clearly marked (e.g., "Edit lib/ndx-stack.ts")
+
+AC-3.4.4: Success Validation
+- Each option documents how to verify rollback worked:
+  - Option 1: All traffic routes to existing origin (no NDX cookie routing)
+  - Option 2: Configuration matches pre-change state
+  - Option 3: CloudFront back to pre-Epic-2 state
+- Validation commands provided (e.g., aws cloudfront get-distribution)
+
+AC-3.4.5: Realistic Timing
+- Timings include CloudFront propagation (10-15 minutes)
+- Timings are realistic based on operational testing or reasonable estimates
+- Documentation notes that propagation time may vary
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- PRD: Rollback and safety requirements -->
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX CloudFront Origin Routing - Product Requirements Document</title>
+        <section>FR36-40: Rollback & Safety Requirements</section>
+        <snippet>FR36: System can disable routing function via CloudFront configuration change. FR37: System can remove new S3 origin from distribution if rollback needed. FR38: System can revert to previous CloudFront configuration via CDK version control.</snippet>
+      </doc>
+
+      <!-- Tech Spec: Story 3.4 detailed rollback procedures -->
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Testing, Validation & Operational Readiness</title>
+        <section>Story 3.4: Rollback Procedures</section>
+        <snippet>Three-tier approach: Option 1 (Disable function, < 5 minutes), Option 2 (Git revert, 5-10 minutes), Option 3 (Remove origin, 15 minutes). NFR-OPS-4: Rollback < 5 minutes requirement. Document in infra/README.md for operational visibility.</snippet>
+      </doc>
+
+      <!-- Architecture: Rollback procedures -->
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>NDX CloudFront Origin Routing - Architecture</title>
+        <section>Rollback Procedures</section>
+        <snippet>Three-tier rollback strategy from fastest to most complete. CloudFormation handles rollback automatically on failed deployments. CloudFront propagation: 10-15 minutes for global edge locations.</snippet>
+      </doc>
+
+      <!-- Existing README with basic rollback section -->
+      <doc>
+        <path>infra/README.md</path>
+        <title>NDX Infrastructure README</title>
+        <section>Rollback Procedures (existing)</section>
+        <snippet>README contains basic three-option rollback structure at lines 632-669. Needs expansion per Story 3.4 requirements: add prerequisites, validation commands, escalation paths, decision matrix.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- CDK Stack with CloudFront infrastructure -->
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>CDK Stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>12-209</lines>
+        <reason>Main CDK stack containing CloudFront Function, Cache Policy, origins. Rollback Option 1 requires editing to comment out function association. Option 3 requires removing origin, function, and cache policy.</reason>
+      </artifact>
+
+      <!-- Target documentation file -->
+      <artifact>
+        <path>infra/README.md</path>
+        <kind>Documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>632-669</lines>
+        <reason>Primary target for rollback documentation. Already has basic structure. Story 3.4 expands with prerequisites, detailed steps, validation commands, escalation paths.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <system>
+        <package name="aws-cli" version="2.x" type="runtime">AWS CLI for querying CloudFront distribution status, CloudFormation events, validating rollback success</package>
+        <package name="git" type="runtime">Git version control for identifying commits to revert (Rollback Option 2)</package>
+      </system>
+      <node>
+        <package name="aws-cdk" version="2.1032.0" type="development">CDK CLI for deployment (cdk deploy, cdk diff) used in all three rollback options</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    1. Documentation must be added to infra/README.md "Rollback Procedures" section (lines 632-669)
+    2. Three-tier rollback approach required: Option 1 (Disable Function), Option 2 (Git Revert), Option 3 (Remove Origin)
+    3. Each option must include: When to use, Prerequisites, Steps (numbered), Expected duration, Success criteria, Validation commands, Escalation path
+    4. All AWS CLI commands must include --profile NDX/InnovationSandboxHub flag
+    5. All commands must be copy-pasteable with correct syntax
+    6. Stack name is NdxStaticStack (not "NdxStatic")
+    7. CloudFront distribution ID is E3THG4UHYDHVWP
+    8. CloudFront Function name is ndx-cookie-router
+    9. Timings must account for CloudFront propagation (10-15 minutes)
+    10. Default recommendation: Start with Option 1 (fastest, least disruptive)
+    11. Escalation path: Option 1 → Option 2 → Option 3
+    12. Manual steps must be clearly marked
+    13. Validation steps required after each major action
+    14. README version must be incremented (1.2 → 1.3)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AWS CLI CloudFront Get Distribution</name>
+      <kind>AWS CLI</kind>
+      <signature>aws cloudfront get-distribution --id DISTRIBUTION_ID --profile PROFILE --query JMESPATH</signature>
+      <path>AWS CLI v2</path>
+      <description>Query CloudFront distribution status and configuration. Use --query 'Distribution.Status' to check deployment status. Use for rollback validation.</description>
+    </interface>
+
+    <interface>
+      <name>AWS CLI CloudFormation Describe Stacks</name>
+      <kind>AWS CLI</kind>
+      <signature>aws cloudformation describe-stacks --stack-name STACK_NAME --profile PROFILE --query 'Stacks[0].StackStatus'</signature>
+      <path>AWS CLI v2</path>
+      <description>Check CloudFormation stack status. Use to validate rollback deployment completed successfully.</description>
+    </interface>
+
+    <interface>
+      <name>CDK Deploy Command</name>
+      <kind>CDK CLI</kind>
+      <signature>cdk deploy --profile PROFILE</signature>
+      <path>infra directory</path>
+      <description>Deploy CDK stack to AWS. Used in all three rollback options to apply configuration changes.</description>
+    </interface>
+
+    <interface>
+      <name>Git Revert Command</name>
+      <kind>Git CLI</kind>
+      <signature>git revert COMMIT_HASH</signature>
+      <path>Project root</path>
+      <description>Create new commit that undoes changes from specified commit. Use in rollback Option 2.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Documentation validation standards: This is documentation-only story with no code tests. Validation involves reviewing documentation completeness, command accuracy, executable procedures. Each rollback option must include: decision criteria, prerequisites checklist, numbered executable steps, expected duration with propagation timing, success criteria, validation commands (copy-pasteable), escalation path. All AWS CLI commands must use --profile NDX/InnovationSandboxHub. Optional: Test rollback procedures in non-production to verify steps work and timings are accurate.
+    </standards>
+
+    <locations>
+      infra/README.md (target documentation file)
+      No code tests required (documentation-only story)
+    </locations>
+
+    <ideas>
+      AC-3.4.1 Ideas: Option 1 structure (When to use: routing logic issues; Prerequisites: AWS access, CDK CLI; Steps: Edit ndx-stack.ts, comment FunctionAssociations, deploy; Duration: < 5 min + 10-15 min propagation; Validation: test with NDX=true cookie). Option 2 structure (When to use: undo recent deployment; Prerequisites: Git access; Steps: git log, identify commit, git revert, cdk deploy; Duration: 5-10 min + propagation). Option 3 structure (When to use: complete removal; Prerequisites: Deep CDK knowledge; Steps: Remove origin, function, cache policy, deploy; Duration: 15 min + propagation).
+
+      AC-3.4.2 Ideas: Decision matrix table or tree. Criteria: Severity, time available, scope needed. Option 1 when: Routing issues, origins working, need quick fix. Option 2 when: Recent deployment, clear commit, want full undo. Option 3 when: Architecture issue, origins/cache policy problems, other options failed. Default: Always start Option 1, escalate to 2 then 3.
+
+      AC-3.4.3 Ideas: Copy-pasteable commands in ```bash blocks. Include --profile flag always. Use correct stack name NdxStaticStack. For placeholders, provide examples. Manual steps with file locations and line numbers. Validation after each step. Number steps sequentially. Mark wait periods clearly.
+
+      AC-3.4.4 Ideas: Option 1 validation: Test NDX=true cookie → still see existing site. Verify no FunctionAssociations. Option 2 validation: git log confirms revert, cdk diff shows no changes. Option 3 validation: Origin count decreased to 2, function not in list. All options: Check stack status UPDATE_COMPLETE, site loads, no errors.
+
+      AC-3.4.5 Ideas: Break down timing: Action + propagation. Option 1: 2-3 min action + 10-15 min propagation. Option 2: 5 min + 2-3 min deploy + 10-15 min. Option 3: 12 min editing + 3-5 min deploy + 10-15 min. Note propagation may vary, typically 15 min, rarely up to 24 hours.
+    </ideas>
+  </tests>
+</story-context>

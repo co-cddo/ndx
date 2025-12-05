@@ -1,0 +1,179 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.1</storyId>
+    <title>Create Root Package.json Deploy Script</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-1-create-root-package-json-deploy-script.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a `yarn deploy` command in the root package.json</iWant>
+    <soThat>deployment is triggered from the project root with a simple command</soThat>
+    <tasks>
+      - Task 1: Create scripts directory (AC: #2)
+        - Create `/Users/cns/httpdocs/cddo/ndx/scripts` directory
+        - Verify directory exists via ls command
+
+      - Task 2: Create placeholder deploy script (AC: #3, #4)
+        - Create `scripts/deploy.sh` file
+        - Add shebang line: `#!/bin/bash`
+        - Add placeholder message: `echo "Deployment script placeholder - will be implemented in Story 3.2"`
+        - Add exit 0 for successful execution
+        - Make script executable: `chmod +x scripts/deploy.sh`
+        - Test execution: `./scripts/deploy.sh`
+
+      - Task 3: Add deploy script to package.json (AC: #1, #4)
+        - Read current `/Users/cns/httpdocs/cddo/ndx/package.json`
+        - Add `"deploy": "scripts/deploy.sh"` to scripts section
+        - Verify JSON syntax is valid
+        - Save updated package.json
+        - Test: `yarn deploy` executes placeholder script
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. **Given** the root `package.json` exists
+       **When** I add the deploy script
+       **Then** `package.json` includes:
+       ```json
+       {
+         "scripts": {
+           "deploy": "scripts/deploy.sh"
+         }
+       }
+       ```
+
+    2. **And** the `scripts/` directory is created at project root
+
+    3. **And** `scripts/deploy.sh` placeholder file exists (will be implemented in Story 3.2)
+
+    4. **And** running `yarn deploy` executes the script (even if placeholder)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Project Structure</section>
+        <snippet>Deployment automation lives at root, not in `/infra`. Keeps infrastructure (CDK) separate from deployment (site files). Scripts directory manages deployment of built site files.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 3.1: Create Root Package.json Deploy Script</section>
+        <snippet>As a developer, I want a `yarn deploy` command in the root package.json, so that deployment is triggered from the project root with a simple command. Deployment automation lives at root, not in `/infra`. Architecture doc section 5.3 specifies `yarn deploy` at root.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Deployment Automation & Documentation</title>
+        <section>Deployment Script Interface</section>
+        <snippet>Command signature: `yarn deploy`. Exit codes: 0 - Deployment successful, 1 - Error. Deploy NPM Script in Root `package.json` serves as entry point for deployment, executing `scripts/deploy.sh`.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Deployment Automation & Documentation</title>
+        <section>Workflows and Sequencing - Manual Deployment Flow</section>
+        <snippet>Developer → yarn build → _site/ created → Developer → yarn deploy → scripts/deploy.sh → Validate _site/ exists → AWS CLI S3 sync to ndx-static-prod → File count validation → Smoke test → Success confirmation or error with rollback guidance</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/2-4-deploy-s3-infrastructure-to-aws.md</path>
+        <title>Story 2.4: Deploy S3 Infrastructure to AWS</title>
+        <section>Completion Notes</section>
+        <snippet>S3 Bucket: ndx-static-prod successfully deployed in us-west-2. Encryption: AES256, Versioning: Enabled, Public Access: BLOCK_ALL. AWS Profile: NDX/InnovationSandboxHub verified. Foundation established for Epic 3 deployment automation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR11: Deploy via yarn deploy command</section>
+        <snippet>Deployment can be triggered via `yarn deploy` command from project root. Deployment requires successful `yarn build` to complete before uploading files.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>package.json</path>
+        <kind>configuration</kind>
+        <symbol>scripts</symbol>
+        <lines>8-13</lines>
+        <reason>Root package.json scripts section - needs "deploy" script added. Current scripts: start, build, lint, prepare.</reason>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <packageManager>yarn@4.5.0</packageManager>
+        <engines>
+          <npm>please-use-yarn</npm>
+          <yarn>&gt;= 4.5.0</yarn>
+        </engines>
+        <devDependencies>
+          <package name="@11ty/eleventy" version="^3.1.2"/>
+          <package name="@x-govuk/govuk-eleventy-plugin" version="^7.2.1"/>
+          <package name="husky" version="^9.1.7"/>
+          <package name="lint-staged" version="^16.1.5"/>
+          <package name="prettier" version="^3.6.2"/>
+          <package name="prettier-plugin-sh" version="^0.18.0"/>
+        </devDependencies>
+        <dependencies>
+          <package name="@kevingimbel/eleventy-plugin-mermaid" version="^3.0.0"/>
+        </dependencies>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Deployment automation lives at root directory, NOT in `/infra` directory
+    - Keep infrastructure (CDK) separate from deployment (site files)
+    - Deploy script path MUST be `scripts/deploy.sh`
+    - Package.json deploy script MUST call `scripts/deploy.sh`
+    - Story 3.1 creates PLACEHOLDER only - actual implementation in Story 3.2
+    - Script must be executable via `chmod +x scripts/deploy.sh`
+    - Placeholder script must exit with code 0 (success)
+    - Use Bash for deployment script (shebang: `#!/bin/bash`)
+    - Verify `yarn deploy` command works before completing story
+    - Maintain consistency with existing package.json structure and formatting
+    - JSON must remain valid after edits
+    - Use Yarn package manager (not npm) per project standards
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>yarn deploy</name>
+      <kind>CLI command</kind>
+      <signature>yarn deploy</signature>
+      <path>package.json scripts.deploy</path>
+      <description>Entry point for deployment workflow. Executes scripts/deploy.sh. Exit code 0 on success, 1 on error.</description>
+    </interface>
+    <interface>
+      <name>scripts/deploy.sh</name>
+      <kind>Bash script</kind>
+      <signature>#!/bin/bash</signature>
+      <path>scripts/deploy.sh</path>
+      <description>Placeholder deployment script. Story 3.1 creates placeholder with success message. Story 3.2 implements full AWS S3 sync logic with error recovery.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      No automated tests required for this story. Manual verification:
+      1. Verify scripts/ directory created
+      2. Verify scripts/deploy.sh exists and is executable
+      3. Verify package.json includes deploy script
+      4. Verify `yarn deploy` command executes successfully
+      5. Verify placeholder message displays when script runs
+    </standards>
+    <locations>
+      N/A - No automated tests for infrastructure setup story
+    </locations>
+    <ideas>
+      <idea ac="1">Manual test: Verify package.json scripts section includes "deploy": "scripts/deploy.sh"</idea>
+      <idea ac="2">Manual test: Run `ls -la scripts/` to verify directory exists</idea>
+      <idea ac="3">Manual test: Run `cat scripts/deploy.sh` to verify placeholder content exists</idea>
+      <idea ac="4">Manual test: Run `yarn deploy` and verify placeholder message displays with exit code 0</idea>
+      <idea ac="4">Manual test: Run `scripts/deploy.sh` directly to verify script is executable</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,684 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
+{
+  "Mappings": {
+    "LatestNodeRuntimeMap": {
+      "af-south-1": {
+        "value": "nodejs22.x",
+      },
+      "ap-east-1": {
+        "value": "nodejs22.x",
+      },
+      "ap-east-2": {
+        "value": "nodejs22.x",
+      },
+      "ap-northeast-1": {
+        "value": "nodejs22.x",
+      },
+      "ap-northeast-2": {
+        "value": "nodejs22.x",
+      },
+      "ap-northeast-3": {
+        "value": "nodejs22.x",
+      },
+      "ap-south-1": {
+        "value": "nodejs22.x",
+      },
+      "ap-south-2": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-1": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-2": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-3": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-4": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-5": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-6": {
+        "value": "nodejs22.x",
+      },
+      "ap-southeast-7": {
+        "value": "nodejs22.x",
+      },
+      "ca-central-1": {
+        "value": "nodejs22.x",
+      },
+      "ca-west-1": {
+        "value": "nodejs22.x",
+      },
+      "cn-north-1": {
+        "value": "nodejs22.x",
+      },
+      "cn-northwest-1": {
+        "value": "nodejs22.x",
+      },
+      "eu-central-1": {
+        "value": "nodejs22.x",
+      },
+      "eu-central-2": {
+        "value": "nodejs22.x",
+      },
+      "eu-isoe-west-1": {
+        "value": "nodejs22.x",
+      },
+      "eu-north-1": {
+        "value": "nodejs22.x",
+      },
+      "eu-south-1": {
+        "value": "nodejs22.x",
+      },
+      "eu-south-2": {
+        "value": "nodejs22.x",
+      },
+      "eu-west-1": {
+        "value": "nodejs22.x",
+      },
+      "eu-west-2": {
+        "value": "nodejs22.x",
+      },
+      "eu-west-3": {
+        "value": "nodejs22.x",
+      },
+      "eusc-de-east-1": {
+        "value": "nodejs22.x",
+      },
+      "il-central-1": {
+        "value": "nodejs22.x",
+      },
+      "me-central-1": {
+        "value": "nodejs22.x",
+      },
+      "me-south-1": {
+        "value": "nodejs22.x",
+      },
+      "mx-central-1": {
+        "value": "nodejs22.x",
+      },
+      "sa-east-1": {
+        "value": "nodejs22.x",
+      },
+      "us-east-1": {
+        "value": "nodejs22.x",
+      },
+      "us-east-2": {
+        "value": "nodejs22.x",
+      },
+      "us-gov-east-1": {
+        "value": "nodejs22.x",
+      },
+      "us-gov-west-1": {
+        "value": "nodejs22.x",
+      },
+      "us-iso-east-1": {
+        "value": "nodejs22.x",
+      },
+      "us-iso-west-1": {
+        "value": "nodejs22.x",
+      },
+      "us-isob-east-1": {
+        "value": "nodejs18.x",
+      },
+      "us-isob-west-1": {
+        "value": "nodejs18.x",
+      },
+      "us-isof-east-1": {
+        "value": "nodejs22.x",
+      },
+      "us-isof-south-1": {
+        "value": "nodejs22.x",
+      },
+      "us-west-1": {
+        "value": "nodejs22.x",
+      },
+      "us-west-2": {
+        "value": "nodejs22.x",
+      },
+    },
+  },
+  "Outputs": {
+    "AlternateDomainName": {
+      "Description": "Alternate domain name configured on CloudFront",
+      "Value": "ndx.digital.cabinet-office.gov.uk",
+    },
+    "CertificateArn": {
+      "Description": "ACM Certificate ARN (us-east-1)",
+      "Value": "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
+    },
+    "CloudFrontDistributionId": {
+      "Description": "CloudFront Distribution ID",
+      "Value": "E3THG4UHYDHVWP",
+    },
+    "CookieRouterFunctionArn": {
+      "Description": "ARN of CloudFront cookie router function",
+      "Value": {
+        "Fn::GetAtt": [
+          "CookieRouterFunction6BEF430A",
+          "FunctionARN",
+        ],
+      },
+    },
+    "OriginId": {
+      "Description": "Origin ID added to CloudFront distribution",
+      "Value": "ndx-static-prod-origin",
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AddCloudFrontOrigin": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "StaticSiteBucketPolicy54AA1C72",
+        "StaticSiteBucket8958EE3F",
+      ],
+      "Properties": {
+        "DistributionId": "E3THG4UHYDHVWP",
+        "OriginAccessControlId": "E3P8MA1G9Y5BYE",
+        "OriginDomainName": {
+          "Fn::Join": [
+            "",
+            [
+              "ndx-static-prod.s3.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".amazonaws.com",
+            ],
+          ],
+        },
+        "OriginId": "ndx-static-prod-origin",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AddCloudFrontOriginFunction6EFB40B5": {
+      "DependsOn": [
+        "AddCloudFrontOriginFunctionServiceRoleDefaultPolicy817074E5",
+        "AddCloudFrontOriginFunctionServiceRole8BF8BDFD",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "df1ed630d6864a1cb3fbc78fc1673c6b76e312c4ac7d245f6160d1a104cc2b45.zip",
+        },
+        "Description": "Custom Resource: Add origin to CloudFront distribution",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AddCloudFrontOriginFunctionServiceRole8BF8BDFD",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 300,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AddCloudFrontOriginFunctionServiceRole8BF8BDFD": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AddCloudFrontOriginFunctionServiceRoleDefaultPolicy817074E5": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "cloudfront:GetDistribution",
+                "cloudfront:GetDistributionConfig",
+                "cloudfront:UpdateDistribution",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:cloudfront::",
+                    {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":distribution/E3THG4UHYDHVWP",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AddCloudFrontOriginFunctionServiceRoleDefaultPolicy817074E5",
+        "Roles": [
+          {
+            "Ref": "AddCloudFrontOriginFunctionServiceRole8BF8BDFD",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AddOriginProviderframeworkonEvent5094AA52": {
+      "DependsOn": [
+        "AddOriginProviderframeworkonEventServiceRoleDefaultPolicy218DE066",
+        "AddOriginProviderframeworkonEventServiceRole058F5778",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "bdc104ed9cab1b5b6421713c8155f0b753380595356f710400609664d3635eca.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onEvent (Ndx/AddOriginProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AddCloudFrontOriginFunction6EFB40B5",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.onEvent",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEventServiceRole058F5778",
+            "Arn",
+          ],
+        },
+        "Runtime": {
+          "Fn::FindInMap": [
+            "LatestNodeRuntimeMap",
+            {
+              "Ref": "AWS::Region",
+            },
+            "value",
+          ],
+        },
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AddOriginProviderframeworkonEventServiceRole058F5778": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AddOriginProviderframeworkonEventServiceRoleDefaultPolicy218DE066": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AddCloudFrontOriginFunction6EFB40B5",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AddCloudFrontOriginFunction6EFB40B5",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AddCloudFrontOriginFunction6EFB40B5",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AddOriginProviderframeworkonEventServiceRoleDefaultPolicy218DE066",
+        "Roles": [
+          {
+            "Ref": "AddOriginProviderframeworkonEventServiceRole058F5778",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConfigureAlternateDomainName": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "ConfigureCacheBehavior",
+      ],
+      "Properties": {
+        "AlternateDomainName": "ndx.digital.cabinet-office.gov.uk",
+        "CertificateArn": "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
+        "DistributionId": "E3THG4UHYDHVWP",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ConfigureCacheBehavior": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AddCloudFrontOrigin",
+        "CookieRouterFunction6BEF430A",
+        "NdxCookieRoutingPolicy99C7239B",
+      ],
+      "Properties": {
+        "CachePolicyId": {
+          "Ref": "NdxCookieRoutingPolicy99C7239B",
+        },
+        "DistributionId": "E3THG4UHYDHVWP",
+        "FunctionArn": {
+          "Fn::GetAtt": [
+            "CookieRouterFunction6BEF430A",
+            "FunctionARN",
+          ],
+        },
+        "FunctionEventType": "viewer-request",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CookieRouterFunction6BEF430A": {
+      "Properties": {
+        "AutoPublish": true,
+        "FunctionCode": "// CloudFront Function for NDX cookie-based origin routing
+// Runtime: cloudfront-js-2.0
+//
+// This function inspects the NDX cookie to determine which S3 origin to use:
+// - NDX=legacy: Route to default cache behavior origin (legacy S3Origin)
+// - Any other value or no cookie: Route to ndx-static-prod with OAC
+//
+// Also handles URI rewriting for S3 compatibility:
+// - Trailing slash URIs get /index.html appended
+// - URIs without file extension get /index.html appended
+import cf from "cloudfront"
+
+function handler(event) {
+  var request = event.request
+  var cookies = request.cookies || {}
+  var uri = request.uri
+
+  // Handle directory-style URLs for S3 compatibility
+  if (uri.endsWith("/")) {
+    request.uri = uri + "index.html"
+  } else if (uri.indexOf(".") === -1) {
+    // No file extension - treat as directory
+    request.uri = uri + "/index.html"
+  }
+
+  // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
+  var ndxCookie = cookies["NDX"]
+
+  if (ndxCookie && ndxCookie.value === "legacy") {
+    // Use default cache behavior origin (old S3Origin) - no modification
+    return request
+  }
+
+  // Default: route to ndx-static-prod with OAC authentication
+  cf.updateRequestOrigin({
+    domainName: "ndx-static-prod.s3.us-west-2.amazonaws.com",
+  })
+
+  return request
+}
+",
+        "FunctionConfig": {
+          "Comment": "Routes requests based on NDX cookie value",
+          "Runtime": "cloudfront-js-2.0",
+        },
+        "Name": "ndx-cookie-router",
+      },
+      "Type": "AWS::CloudFront::Function",
+    },
+    "NdxCookieRoutingPolicy99C7239B": {
+      "Properties": {
+        "CachePolicyConfig": {
+          "Comment": "Cache policy for NDX cookie-based routing",
+          "DefaultTTL": 86400,
+          "MaxTTL": 31536000,
+          "MinTTL": 1,
+          "Name": "NdxCookieRoutingPolicy",
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "CookiesConfig": {
+              "CookieBehavior": "whitelist",
+              "Cookies": [
+                "NDX",
+              ],
+            },
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": {
+              "HeaderBehavior": "none",
+            },
+            "QueryStringsConfig": {
+              "QueryStringBehavior": "all",
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::CachePolicy",
+    },
+    "StaticSiteBucket8958EE3F": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "BucketName": "ndx-static-prod",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "environment",
+            "Value": "prod",
+          },
+          {
+            "Key": "managedby",
+            "Value": "cdk",
+          },
+          {
+            "Key": "project",
+            "Value": "ndx",
+          },
+        ],
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "StaticSiteBucketPolicy54AA1C72": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "StaticSiteBucket8958EE3F",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:cloudfront::",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":distribution/E3THG4UHYDHVWP",
+                      ],
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "StaticSiteBucket8958EE3F",
+                        "Arn",
+                      ],
+                    },
+                    "/*",
+                  ],
+                ],
+              },
+              "Sid": "AllowCloudFrontServicePrincipal",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

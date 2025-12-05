@@ -1,0 +1,355 @@
+# ==============================================================
+# NDX Sprint Status Tracking
+# ==============================================================
+# Generated: 2025-11-27
+# Project: ndx
+# Project Key: ndx
+# Tracking System: file-system
+# Story Location: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts
+# ==============================================================
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#   - done: All stories completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-27
+project: ndx
+project_key: ndx
+tracking_system: file-system
+story_location: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts
+
+# Workflow Status
+workflow_status:
+  prd: /Users/cns/httpdocs/cddo/ndx/docs/prd.md
+  architecture: /Users/cns/httpdocs/cddo/ndx/docs/architecture.md
+  epics: /Users/cns/httpdocs/cddo/ndx/docs/epics
+
+# ==============================================================
+# FEATURE 1: CLOUDFRONT ORIGIN ROUTING (COMPLETED)
+# ==============================================================
+
+development_status:
+  # ----------------------------------------------------------
+  # Epic 1: CloudFront Origin Infrastructure (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: Add ndx-static-prod S3 origin with OAC to CloudFront
+  # FRs Covered: Infrastructure foundation for cookie routing
+  epic-1: done
+  1-1-import-existing-cloudfront-distribution-in-cdk: done
+  1-2-add-new-s3-origin-with-origin-access-control: done
+  1-3-verify-existing-origins-remain-unchanged: done
+  1-4-deploy-cloudfront-infrastructure-changes-to-aws: done
+  epic-1-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic 2: Cookie-Based Routing Implementation (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: CloudFront Function routes requests based on NDX cookie
+  # FRs Covered: Cookie inspection, cache policy, routing logic
+  epic-2: done
+  2-1-create-cloudfront-function-for-cookie-inspection: done
+  2-2-write-unit-tests-for-cookie-router-function: done
+  2-3-configure-cache-policy-with-ndx-cookie-allowlist: done
+  2-4-deploy-cloudfront-function-to-cdk-stack: done
+  2-5-attach-function-to-default-cache-behavior: done
+  2-6-deploy-routing-functionality-and-validate: done
+  epic-2-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic 3: Testing, Validation & Operational Readiness (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: Comprehensive testing and operations documentation
+  # FRs Covered: Snapshot tests, integration tests, rollback procedures
+  epic-3: done
+  3-1-write-cdk-snapshot-tests-for-cloudfront-configuration: done
+  3-2-write-fine-grained-assertion-tests-for-critical-properties: done
+  3-3-create-integration-test-for-real-aws-deployment: done
+  3-4-document-rollback-procedures: done
+  3-5-update-infrastructure-readme-with-operations-guide: done
+  3-6-create-pre-deployment-checklist-and-validation-script: done
+  epic-3-retrospective: optional
+
+  # ==============================================================
+  # FEATURE 2: TRY BEFORE YOU BUY (COMPLETED)
+  # ==============================================================
+
+  # ----------------------------------------------------------
+  # Epic 4: Local Development Infrastructure (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: mitmproxy-based local dev setup for ISB API integration
+  # FRs Covered: FR-TRY-1 through FR-TRY-17
+  epic-4: done
+  4-1-mitmproxy-setup-documentation: done
+  4-2-create-mitmproxy-addon-script-for-conditional-forwarding: done
+  4-3-mitmproxy-run-configuration: done
+  4-4-system-proxy-configuration-instructions: done
+  4-5-certificate-trust-setup-https-interception: done
+  4-6-setup-validation-script: done
+  epic-4-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic 5: Authentication Foundation (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: OAuth sign-in, JWT persistence, API authorization
+  # FRs Covered: FR-TRY-7 through FR-TRY-17
+  epic-5: done
+  5-1-sign-in-out-button-ui-components: done
+  5-2-sign-in-oauth-redirect-flow: done
+  5-3-jwt-token-extraction-from-url: done
+  5-4-sessionstorage-jwt-persistence: done
+  5-5-sign-out-functionality: done
+  5-6-api-authorization-header-injection: done
+  5-7-authentication-status-check-api: done # Code review complete (2025-11-25): APPROVED
+  5-8-401-unauthorized-response-handling: done # Code review complete (2025-11-25): APPROVED
+  5-9-empty-state-ui-for-unauthenticated-try-page: done # Code review complete (2025-11-25): APPROVED
+  5-10-automated-accessibility-tests-for-auth-ui: done # Code review complete (2025-11-25): APPROVED
+  5-11-authentication-e2e-test-suite: done # Code review complete (2025-11-25): 23/24 tests passing, APPROVED
+  epic-5-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic 6: Catalogue Integration & Sandbox Requests (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: Try button, tag filters, lease request modal, AUP
+  # FRs Covered: FR-TRY-18 through FR-TRY-65
+  epic-6: done
+  6-0-ux-review-checkpoint-gate: done
+  6-1-parse-try-metadata-from-product-yaml-frontmatter: done
+  6-2-generate-try-before-you-buy-tag-system: done
+  6-3-catalogue-tag-filter-for-try-before-you-buy: done
+  6-4-try-this-now-for-24-hours-button-on-product-pages: done
+  6-5-try-button-authentication-check: done # Code review complete (2025-11-25): APPROVED
+  6-6-lease-request-modal-overlay-ui: done
+  6-7-fetch-and-display-aup-from-innovation-sandbox-api: done
+  6-8-aup-checkbox-and-continue-button-state: done
+  6-9-submit-lease-request-and-handle-responses: done
+  6-10-epic-6-7-integration-testing: done
+  6-11-automated-accessibility-tests-for-catalogue-try-ui: done # Code review complete (2025-11-25): APPROVED
+  epic-6-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic 7: Try Sessions Dashboard (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: /try page with sessions table, status badges, launch button
+  # FRs Covered: FR-TRY-18 through FR-TRY-41
+  epic-7: done
+  7-1-create-try-page-route-and-layout: done
+  7-2-fetch-and-display-user-leases: done
+  7-3-render-sessions-table-with-govuk-design-system: done
+  7-4-status-badge-display-with-color-coding: done
+  7-5-expiry-date-formatting-relative-and-absolute: done
+  7-6-budget-display-with-cost-formatting: done # Code review complete (2025-11-25): APPROVED
+  7-7-launch-aws-console-button-for-active-sessions: done # Code review complete (2025-11-25): APPROVED
+  7-8-remaining-lease-duration-display-for-active-sessions: done # Implemented as part of 7-2
+  7-9-link-to-catalogue-filter-from-try-page: done
+  7-10-first-time-user-guidance-on-try-page: done # Implemented as renderFirstTimeGuidance()
+  7-11-aws-sso-portal-url-configuration: done
+  7-12-end-to-end-user-journey-validation: done # Code review complete (2025-11-25): APPROVED
+  7-13-automated-accessibility-tests-for-dashboard-ui: done
+  epic-7-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic 8: Accessible & Mobile-Friendly Experience (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: WCAG 2.2 AA compliance, mobile responsiveness
+  # FRs Covered: FR-TRY-66 through FR-TRY-79
+  epic-8: done
+  8-0-e2e-testing-infrastructure-setup-playwright-ci: done # Code review complete (2025-11-25): APPROVED
+  8-1-early-brownfield-accessibility-audit-parallel-with-epic-4: done
+  8-2-automated-accessibility-testing-in-ci-pipeline: done # Code review complete (2025-11-25): APPROVED
+  8-3-comprehensive-wcag-22-audit-for-try-feature-ui: done # Code review complete (2025-11-25): APPROVED
+  8-4-govuk-design-system-component-compliance-audit: done # Code review complete (2025-11-25): APPROVED
+  8-5-mobile-responsive-design-validation: done # Code review complete (2025-11-25): APPROVED
+  8-6-performance-and-security-validation: done # Code review complete (2025-11-25): APPROVED
+  8-7-keyboard-navigation-testing: done # Code review complete (2025-11-25): APPROVED
+  8-8-screen-reader-testing-nvda-jaws-voiceover: done # Code review complete (2025-11-25): APPROVED
+  8-9-focus-management-and-visual-focus-indicators: done # Code review complete (2025-11-25): APPROVED
+  8-10-error-messaging-accessibility: done # Code review complete (2025-11-25): APPROVED
+  8-11-wcag-22-aa-compliance-certification: done # Code review complete (2025-11-25): APPROVED
+  epic-8-retrospective: optional
+
+  # ==============================================================
+  # FEATURES 3 & 4: NOTIFICATION SYSTEM (BACKLOG)
+  # ==============================================================
+  # Source: docs/epics-notifications.md
+  # Architecture: docs/notification-architecture.md
+  # Total: 3 Epics, 27 Stories (19 original + 5 pre-mortem + 3 stakeholder), 102 FRs
+  # Estimated Cost: ~$4.30/month
+  # ELICITATION: 2025-11-27 - Pre-mortem (5 stories) + Stakeholder mapping (3 stories)
+
+  # ----------------------------------------------------------
+  # Epic N-4: Notification Infrastructure Foundation (CONTEXTED)
+  # ----------------------------------------------------------
+  # Goal: EventBridge subscription, Lambda handler, DLQ, monitoring
+  # FRs Covered: FR-NOTIFY-1-5, FR-NOTIFY-32-43, FR-SLACK-1-5, FR-SLACK-43-54
+  # User Value: Platform ready to securely receive and process ISB events
+  # Tech Spec: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/tech-spec-epic-n4.md
+  # Context Generated: 2025-11-27 - 9 stories, 68 ACs, 10 risks, 16 elicitation methods
+  epic-n4-notification-infrastructure: done # 7/9 stories complete, 2 deferred (external dependencies)
+  n4-1-cdk-stack-and-project-structure: done # Code review complete (2025-11-27): APPROVED
+  n4-2-eventbridge-subscription-to-isb-bus: done # Code review complete (2025-11-27): APPROVED
+  n4-3-lambda-handler-with-security-controls: done # Code review complete (2025-11-27): APPROVED
+  n4-4-dead-letter-queue-and-retry-configuration: done # Code review complete (2025-11-27): APPROVED
+  n4-5-secrets-manager-integration: done # Code review complete (2025-11-27): APPROVED
+  n4-6-cloudwatch-alarms-and-monitoring: done # Code review complete (2025-11-27): APPROVED - 8 alarms, dashboard, SNS topic
+  n4-7-secrets-rotation-and-expiry-alerting: done # Documentation story - rotation runbooks documented
+  n4-8-sqs-buffer-for-rate-limiting-protection: deferred # CONDITIONAL: Awaiting ISB confirmation of batch operations (>100 events/min)
+  n4-9-event-schema-versioning-strategy: deferred # Requires ISB team coordination - external dependency
+  epic-n4-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic N-5: User Email Notifications (READY)
+  # ----------------------------------------------------------
+  # Goal: GOV.UK Notify integration for professional branded emails
+  # FRs Covered: FR-NOTIFY-6-31, FR-NOTIFY-44-48
+  # User Value: Users get clear, professionally formatted notifications
+  # Dependencies: Epic N-4
+  epic-n5-user-email-notifications: contexted # UNBLOCKED 2025-11-28 - All dependencies validated
+  # Pre-N-5 Dependencies (validated 2025-11-28):
+  # ☑ N-4 Complete (done - 7/9 stories)
+  # ☑ ISB Tables Accessible (LeaseTable, SandboxAccountTable, LeaseTemplateTable - all ACTIVE)
+  # ☑ GOV.UK Notify API Key (provisioned at /ndx/notifications/credentials)
+  # ☑ Slack Webhook (provisioned at /ndx/notifications/credentials)
+  # ☑ Lambda IAM Role (DynamoDB GetItem/Query permissions - deployed 2025-11-28)
+  # ○ VPC Endpoint (Not required - tables are in same account as Lambda)
+  n5-1-govuk-notify-sdk-integration: done # Code review complete 2025-11-28: APPROVED - 181 tests passing, all MUST ACs satisfied
+  n5-2-event-schema-validation-with-zod: done # Code review complete 2025-11-28: APPROVED - 254 tests passing, all 12 ACs satisfied
+  n5-3-email-ownership-verification: done # Code review complete 2025-11-28: APPROVED - 53 tests, all MUST ACs satisfied
+  n5-4-lease-lifecycle-email-templates: done # Code review complete 2025-11-28: APPROVED - 57 tests, 3 deliverability alarms
+  n5-5-monitoring-alert-email-templates: done # Code review complete 2025-11-28: APPROVED - 133 tests, all 15 ACs satisfied
+  n5-6-dynamodb-enrichment-for-missing-fields: done # Code review complete 2025-11-28: APPROVED - 46 tests, 770 lines, all MUST ACs satisfied
+  n5-7-idempotency-with-lambda-powertools: done # Code review complete 2025-11-28: APPROVED - 41 tests, all MUST ACs satisfied
+  n5-8-govuk-notify-sandbox-integration-test: done # PRE-MORTEM: E2E test with real Notify sandbox
+  n5-9-template-field-validation-on-startup: done # Code review complete 2025-11-28: APPROVED - 27 tests, 19/19 ACs satisfied
+  epic-n5-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic N-6: Operations Slack Alerts (CONTEXTED + ELICITATION COMPLETE)
+  # ----------------------------------------------------------
+  # Goal: Slack webhook integration for ops team visibility
+  # FRs Covered: FR-SLACK-6-42 (Billing alerts deferred to Growth)
+  # User Value: Ops team gets immediate visibility into critical events
+  # Dependencies: Epic N-5 (shared infrastructure)
+  # Tech Spec: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/tech-spec-epic-n6.md
+  # Context Generated: 2025-11-27 - 8 stories, 40+ ACs, 5 risks
+  # ELICITATION COMPLETE (2025-11-28): 5 methods applied, 57 new ACs generated
+  #   - Pre-mortem Analysis: 15 ACs (5 failure scenarios)
+  #   - Edge Case Discovery: 12 ACs (16 edge cases across 4 interfaces)
+  #   - User Journey Walking: 8 ACs (5 journeys mapped)
+  #   - Stakeholder Mapping: 12 ACs (5 stakeholders analyzed)
+  #   - Constraint Analysis: 10 ACs (26 constraints identified)
+  # Priority: 9 High, 26 Medium, 22 Low | MVP: 45 ACs, Future: 12 ACs
+  epic-n6-operations-slack-alerts: done # ALL STORIES COMPLETE 2025-11-28 - 8/8 stories, 712 tests passing
+  n6-1-slack-webhook-integration: done # Code review complete 2025-11-28: APPROVED - 22/24 ACs passed, 2 deferred
+  n6-2-slack-block-kit-message-templates: done # Code review complete 2025-11-28: APPROVED - 17/17 ACs passed, 98 tests
+  n6-3-account-quarantine-alert: done # Code review complete 2025-11-28: APPROVED - 7/7 ACs passed, implemented in slack-alerts.ts
+  n6-4-account-frozen-alert: done # Code review complete 2025-11-28: APPROVED - 7/7 ACs passed, implemented in slack-alerts.ts
+  n6-5-account-cleanup-failure-alert: done # Code review complete 2025-11-28: APPROVED - 6/6 ACs passed, implemented in slack-alerts.ts
+  n6-6-account-drift-detection-alert: done # Code review complete 2025-11-28: APPROVED - 6/6 ACs passed, implemented in slack-alerts.ts
+  n6-7-daily-dlq-summary-slack-digest: done # Code review complete 2025-11-28: APPROVED - 17 tests, scheduled Lambda + CloudWatch Events
+  n6-8-runbook-links-in-slack-alerts: done # Implemented: All 4 alert templates include runbook action links
+  epic-n6-retrospective: optional
+
+  # ----------------------------------------------------------
+  # Epic N-7: DynamoDB Lease Enrichment (COMPLETED)
+  # ----------------------------------------------------------
+  # Goal: Enrich notifications with full lease data from DynamoDB
+  # FRs Covered: FR-ENRICH-1-50 (50 FRs)
+  # User Value: Context-rich notifications with complete lease details
+  # Dependencies: Epic N-5 (notification system operational)
+  # Tech Spec: /Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/tech-spec-epic-n7.md
+  # Elicitation: 2025-12-02 - 15 ACs from 5 methods (Pre-mortem, Five Whys, Devil's Advocate, Journey Mapping, Risk Matrix)
+  # COMPLETED: 2025-12-02 - 6/6 stories, 964 tests passing
+  epic-n7-dynamodb-lease-enrichment: done
+  n7-1-dynamodb-integration-setup: done # FR-ENRICH-1-6 - DynamoDB client, fetchLeaseRecord(), schema fingerprint
+  n7-2-payload-flattening-utility: done # FR-ENRICH-7-18 - flattenObject() with depth/array limits, 75 tests
+  n7-3-value-stringification-and-keys-parameter: done # FR-ENRICH-19-28 - stringifyValue(), generateKeys(), addKeysParameter()
+  n7-4-notification-integration: done # FR-ENRICH-29-35 - handler.ts integration, enriched personalisation merge
+  n7-5-error-handling-and-metrics: done # FR-ENRICH-36-42 - EnrichmentSuccess/Failure metrics, ErrorType dimensions
+  n7-6-lease-status-handling: done # FR-ENRICH-43-50 - All 9 statuses tested, UnexpectedLeaseStatus metric, 78 tests
+  epic-n7-retrospective: done # 2025-12-02 - All 6 stories complete, 964 tests passing
+
+  # ----------------------------------------------------------
+  # Epic 9: AUP Modal Dynamic Lease Details (BACKLOG)
+  # ----------------------------------------------------------
+  # Goal: AUP modal displays actual lease template duration and budget
+  # FRs Covered: FR-TRY-52, FR-TRY-53, FR-TRY-54, FR-TRY-57 (enhancement)
+  # User Value: Users see accurate session terms before accepting AUP
+  # Dependencies: None (references existing ISB API)
+  # Epic File: docs/epics/epic-9-aup-modal-dynamic-lease-details.md
+  # Prerequisites: Verify GET /api/leaseTemplates/{id} endpoint exists
+  # Elicitation: 2025-12-02 - Pre-mortem, Journey Mapping, Devil's Advocate, Decision Matrix, Empathy Map
+  epic-9-aup-modal-dynamic-lease-details: done # All 4 stories complete 2025-12-02 - 77 tests passing
+  9-1-create-lease-template-service: done # Code review complete 2025-12-02: APPROVED - 28 tests, all 10 ACs satisfied
+  9-2-display-dynamic-lease-details-in-modal: done # Code review complete 2025-12-02: APPROVED - 10/10 ACs, 18 tests
+  9-3-gate-continue-button-on-all-data-loaded: done # Code review complete 2025-12-02: APPROVED - 10/10 ACs, 66 tests
+  9-4-clear-error-states-for-failed-loads: done # Code review complete 2025-12-02: APPROVED - 5/5 ACs, 77 tests
+  epic-9-retrospective: done # 2025-12-02 - Retrospective complete, 0 blockers, 77 tests
+
+# ==============================================================
+# SUMMARY
+# ==============================================================
+# Feature 1 (CloudFront Routing): Epics 1-3 COMPLETE
+# Feature 2 (Try Before You Buy): Epics 4-8 COMPLETE, Epic 9 BACKLOG
+# Features 3, 4 & 5 (Notifications + Enrichment):
+#   - Epic N-4 (Foundation): DONE (7/9 stories, 2 deferred - external deps)
+#   - Epic N-5 (User emails): DONE (9/9 stories complete)
+#   - Epic N-6 (Ops alerts): DONE (8/8 stories complete)
+#   - Epic N-7 (DynamoDB Lease Enrichment): DONE (6/6 stories complete) - 964 tests passing
+# Feature 2 Enhancement:
+#   - Epic 9 (AUP Modal Dynamic Lease Details): BACKLOG (4 stories)
+#
+# Implementation Progress:
+# 1. Epic N-4 (Foundation) - 7/9 stories DONE, 2 deferred pending ISB coordination
+# 2. Epic N-5 (User emails) - 9/9 stories DONE
+# 3. Epic N-6 (Ops alerts) - 8/8 stories DONE
+# 4. Epic N-7 (Enrichment) - 6/6 stories DONE - All lease statuses supported
+# 5. Epic 9 (AUP Modal) - BACKLOG - Requires prerequisite verification
+#
+# PRE-MORTEM FINDINGS (2025-11-27):
+# Round 1:
+# - n4-7: Secrets rotation/expiry alerting (prevent silent API key expiry)
+# - n5-8: GOV.UK Notify sandbox E2E test (prevent template breakage)
+# - n6-7: Daily DLQ summary digest (prevent ignored failures)
+# - Enhanced ACs: Zod strict mode, mandatory email verification, 24h TTL
+# Round 2:
+# - n4-8: SQS buffer for rate limiting (prevent GOV.UK Notify 429 on batch events)
+# - n5-9: Template field validation on startup (detect template drift early)
+# - Enhanced ACs: User timezone in expiry emails, 60s lease-level dedup, no webhook in errors
+#
+# STAKEHOLDER MAPPING FINDINGS (2025-11-27):
+# - n4-9: Event schema versioning strategy (ISB team integration)
+# - n5-10: User notification preferences (GROWTH - opt-out, frequency)
+# - n6-8: Runbook links in Slack alerts (Ops team quick-action paths)
+# Key stakeholders: Ops Team, ISB Team, Product Owner (KEY PLAYERS)
+# Engagement: Ops before N-6, ISB before N-4, Security before deploy
+# ==============================================================
+
+# REGRESSION FIX HISTORY:
+# ==============================================================
+# 2025-11-24: govukEleventyPlugin header template fix
+# - Added #auth-nav via serviceNavigation.slots.end
+# - Created custom try-page.njk layout
+# - Updated auth-nav.ts CSS classes
+# ==============================================================

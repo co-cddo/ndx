@@ -1,0 +1,38 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "wait": 1000,
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+    },
+    "reporters": ["cli", "json"],
+    "ignore": ["WCAG2AA.Principle1.Guideline1_4.1_4_3.G18.BgImage"]
+  },
+  "urls": [
+    {
+      "url": "http://localhost:8080/",
+      "screenCapture": "./pa11y-screenshots/home.png"
+    },
+    {
+      "url": "http://localhost:8080/catalogue/",
+      "screenCapture": "./pa11y-screenshots/catalogue.png"
+    },
+    {
+      "url": "http://localhost:8080/catalogue/tags/try-before-you-buy/",
+      "screenCapture": "./pa11y-screenshots/catalogue-try-tag.png"
+    },
+    {
+      "url": "http://localhost:8080/catalogue/aws/innovation-sandbox/",
+      "screenCapture": "./pa11y-screenshots/product-page.png"
+    },
+    {
+      "url": "http://localhost:8080/try/",
+      "screenCapture": "./pa11y-screenshots/try-page.png"
+    },
+    {
+      "url": "http://localhost:8080/callback.html",
+      "screenCapture": "./pa11y-screenshots/callback.png"
+    }
+  ]
+}

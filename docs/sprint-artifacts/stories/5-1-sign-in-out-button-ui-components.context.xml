@@ -1,0 +1,386 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5.1</storyId>
+    <title>Sign In/Out Button UI Components</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-1-sign-in-out-button-ui-components.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>government user</asA>
+    <iWant>to see sign in/out buttons in the NDX navigation</iWant>
+    <soThat>I can authenticate to access Try features</soThat>
+    <tasks>
+- Task 1: Implement authentication state management (AC: #3, #6)
+  - 1.1: Create `src/try/auth/auth-provider.ts` module with `AuthState` class
+  - 1.2: Implement event-driven subscribe/notify pattern (ADR-024)
+  - 1.3: Add `isAuthenticated()` method that checks sessionStorage for `isb-jwt` token
+  - 1.4: Add `subscribe()` method for components to listen to auth state changes
+  - 1.5: Add `notify()` method to trigger updates when auth state changes
+  - 1.6: Export singleton instance for use across application
+
+- Task 2: Create sign in/out button components (AC: #1, #2, #4)
+  - 2.1: Create `src/try/ui/auth-nav.ts` module for navigation buttons
+  - 2.2: Implement `renderAuthNav()` function that checks auth state
+  - 2.3: Generate HTML for "Sign in" button using GOV.UK Design System classes
+  - 2.4: Generate HTML for "Sign out" button using GOV.UK Design System classes
+  - 2.5: Position buttons in top-right navigation area (GOV.UK header pattern)
+  - 2.6: Ensure only one button renders at a time based on auth state
+
+- Task 3: Integrate buttons with existing NDX navigation (AC: #4)
+  - 3.1: Identify NDX navigation template location (likely in `_includes` folder)
+  - 3.2: Add placeholder element for auth navigation in header template
+  - 3.3: Initialize auth navigation JavaScript on page load
+  - 3.4: Verify buttons appear on all pages (home, catalogue, try, product pages)
+
+- Task 4: Implement dynamic auth state updates (AC: #3)
+  - 4.1: Subscribe auth navigation component to AuthState changes
+  - 4.2: Update button display when auth state changes (without page reload)
+  - 4.3: Handle sign in event (show "Sign out" button)
+  - 4.4: Handle sign out event (show "Sign in" button)
+
+- Task 5: Apply GOV.UK Design System styling (AC: #1, #2, #5)
+  - 5.1: Use `govuk-header__navigation-item` class for button container
+  - 5.2: Use `govuk-link` class for link styling
+  - 5.3: Ensure button text size meets WCAG AA minimum (16px/19px GOV.UK standard)
+  - 5.4: Add padding to expand touch target to 44x44px minimum
+  - 5.5: Verify focus indicators use GOV.UK Design System focus ring styles
+
+- Task 6: Implement keyboard accessibility (AC: #5)
+  - 6.1: Ensure buttons are in logical tab order (Tab key navigation)
+  - 6.2: Verify Enter key activates buttons
+  - 6.3: Verify Space key activates buttons
+  - 6.4: Test focus indicators are visible on keyboard navigation
+  - 6.5: Verify no keyboard traps (user can Tab away from buttons)
+
+- Task 7: Add ARIA labels for screen readers (AC: #5)
+  - 7.1: Add descriptive text: "Sign in" (not just icon or abbreviation)
+  - 7.2: Add descriptive text: "Sign out" (not just icon or abbreviation)
+  - 7.3: Test with screen reader (VoiceOver/NVDA) to verify announcements
+  - 7.4: Ensure button role is properly conveyed (link vs button semantics)
+
+- Task 8: Add automated accessibility tests (AC: #5)
+  - 8.1: Write test for keyboard navigation (Tab, Enter, Space)
+  - 8.2: Write test for focus indicator visibility
+  - 8.3: Write test for minimum touch target size (44x44px)
+  - 8.4: Write test for ARIA attributes and screen reader announcements
+  - 8.5: Integrate accessibility tests into CI pipeline
+
+- Task 9: Test across browsers and devices (AC: #4, #5)
+  - 9.1: Test on Chrome (latest 2 versions)
+  - 9.2: Test on Firefox (latest 2 versions)
+  - 9.3: Test on Safari (macOS and iOS latest 2 versions)
+  - 9.4: Test on Edge (latest 2 versions)
+  - 9.5: Test on mobile devices (iOS Safari, Android Chrome)
+  - 9.6: Verify responsive layout on mobile (320px+ width)
+
+- Task 10: Document auth state management pattern (AC: #3)
+  - 10.1: Add JSDoc comments to `auth-provider.ts` explaining event-driven pattern
+  - 10.2: Document subscription pattern for future components
+  - 10.3: Add usage examples in code comments
+  - 10.4: Update brownfield documentation with auth state management approach
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+AC1: Sign in button displays when unauthenticated
+- Given I am on any NDX page
+- When I am not authenticated (no `isb-jwt` in sessionStorage)
+- Then I see a "Sign in" button in the top-right navigation area
+- And the button uses GOV.UK Design System button styling (`govukButton` macro)
+- And the button has accessible text: "Sign in"
+
+AC2: Sign out button displays when authenticated
+- When I am authenticated (`isb-jwt` exists in sessionStorage)
+- Then I see a "Sign out" button in the top-right navigation area
+- And the button uses GOV.UK Design System styling
+- And the button has accessible text: "Sign out"
+
+AC3: Navigation updates dynamically based on auth state
+- Given authentication state changes (sign in or sign out)
+- When the auth state changes
+- Then navigation buttons update automatically without page refresh
+- And only one button is visible at a time (either "Sign in" OR "Sign out", not both)
+
+AC4: Button placement follows GOV.UK header pattern
+- Given NDX uses GOV.UK Design System header
+- When I view any page
+- Then sign in/out button appears in top-right navigation area
+- And button placement is consistent with GOV.UK header component patterns
+- And button is visible on all NDX pages (home, catalogue, try page, product pages)
+
+AC5: Buttons meet WCAG 2.2 AA accessibility requirements
+- Given sign in/out buttons are rendered
+- When I navigate with keyboard only
+- Then buttons are focusable via Tab key
+- And buttons are activatable via Enter/Space key
+- And focus indicators are visible (WCAG 2.2 AA contrast ratio: 3:1 minimum)
+- And buttons have minimum 44x44px touch target size (WCAG 2.2 AAA)
+- And screen readers announce "Sign in button" or "Sign out button" appropriately
+
+AC6: Client-side JavaScript checks auth state on page load
+- Given page loads
+- When JavaScript initializes
+- Then script checks sessionStorage for `isb-jwt` token
+- And if token exists, displays "Sign out" button
+- And if token does not exist, displays "Sign in" button
+- And check completes before first render to avoid button flicker
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document</title>
+        <section>Feature 2: Try Before You Buy - Authentication & Session Management</section>
+        <snippet>FR-TRY-11: System displays "Sign in" button in top-right navigation when user not authenticated. FR-TRY-12: System displays "Sign out" button in top-right navigation when user authenticated. FR-TRY-15: System uses GOV.UK Design System button styling for sign in/out buttons. NFR-TRY-A11Y-1: WCAG 2.2 Level AA compliance mandatory for all try-related UI. NFR-TRY-COMPAT-1: Supports latest 2 versions of Chrome, Firefox, Safari, Edge.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-024: Authentication State Management</section>
+        <snippet>Decision: Reactive authentication state using event-driven pattern. Rationale: Multiple components need to react to auth state changes (nav links, try buttons, /try page). Centralized auth state prevents inconsistencies. Event-driven pattern allows loose coupling. Implementation: AuthState class with subscribe/notify pattern - subscribers listen for auth changes, notify() triggers updates across all subscribed components.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-017: Vanilla TypeScript (No Framework)</section>
+        <snippet>Decision: No client-side framework (React, Vue, Svelte) - use vanilla TypeScript with Web Components pattern. Rationale: Minimal bundle size (government service performance requirement), no framework overhead for small feature set, aligns with progressive enhancement philosophy, easier to maintain in brownfield Eleventy context, GOV.UK Design System components are framework-agnostic. Implementation: Custom element classes for modal and sessions table components, native browser APIs (fetch, sessionStorage, querySelector, addEventListener), progressive enhancement (static HTML first, JS enhances).</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-020: Progressive Enhancement Pattern</section>
+        <snippet>Decision: HTML-first with JavaScript enhancement (not SPA). Rationale: Aligns with GOV.UK Design System philosophy, graceful degradation if JavaScript disabled, SEO benefits (static HTML indexed), performance benefits (HTML renders before JS loads), government service standard requires progressive enhancement. Implementation: Static HTML pages generated by Eleventy, JavaScript enhances with dynamic features (adds Try buttons, transforms tables, adds modal functionality, handles OAuth callbacks), critical content available without JS.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>NDX Try Before You Buy - UX Design Specification</title>
+        <section>Component 5: Authentication State Indicator (Section 6.2)</section>
+        <snippet>Purpose: Show signed in/out state in top-right navigation. Placement: Top-right navigation in GOV.UK header (consistent across all pages). Signed Out: "Sign in" link visible (blue underlined link, GOV.UK standard). Signed In: "Sign out" link visible, optionally with username/email displayed. Touch Targets: Minimum 44x44px (WCAG 2.2 AAA) - links use padding to expand clickable area. Accessibility: Tab to focus, Enter to activate, visible blue underline focus indicator.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>NDX Try Before You Buy - UX Design Specification</title>
+        <section>User Journey 1: Authentication (Sign In/Sign Out) (Section 5.1)</section>
+        <snippet>User Flow: Click "Sign in" in top-right nav → OAuth redirect to Innovation Sandbox → Token extraction → Update nav to "Sign out". Sign Out Flow: Click "Sign out" → Clear sessionStorage → Redirect home → Update nav to "Sign in". Accessibility: Sign in/out links keyboard navigable (Tab to focus, Enter to activate), focus indicator visible, screen reader announces link state.</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>NDX Try Before You Buy - UX Design Specification</title>
+        <section>UX Principle 6: Accessible By Default (Section 2.4)</section>
+        <snippet>WCAG 2.2 AA minimum, AAA where feasible. Keyboard navigation: All interactive elements reachable via Tab, activatable via Enter/Space. Focus indicators: Visible focus rings on all interactive elements. Screen reader support: ARIA labels for status badges, budget, expiry times, loading states. Color contrast: 4.5:1 minimum for normal text, 3:1 for large text. Error announcements: ARIA live regions announce errors to screen readers.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics/epic-5-authentication-foundation.md</path>
+        <title>Epic 5: Authentication Foundation</title>
+        <section>Story 5.1: Sign In/Out Button UI Components - Architecture Context</section>
+        <snippet>ADR-024: Authentication state management using event-driven pattern. Implement AuthState class with subscribe/notify pattern. Multiple components react to auth state changes (nav links, try buttons, /try page). Reactive authentication state prevents UI inconsistencies. Module: src/try/auth/auth-provider.ts - Authentication interface & implementation. Module: src/try/auth/session-storage.ts - JWT token storage utilities.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>dependencies</symbol>
+        <lines>27-52</lines>
+        <reason>Project uses Eleventy static site generator with @x-govuk/govuk-eleventy-plugin 7.2.1 for GOV.UK Design System integration. No existing TypeScript compilation setup - will need to add esbuild for src/try/**/*.ts compilation.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@11ty/eleventy</package>
+        <version>^3.1.2</version>
+        <purpose>Static site generator - generates HTML from Nunjucks templates</purpose>
+      </node>
+      <node>
+        <package>@x-govuk/govuk-eleventy-plugin</package>
+        <version>^7.2.1</version>
+        <purpose>GOV.UK Design System integration for Eleventy - provides GOV.UK Frontend v5.x components</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **Pattern**: Event-driven AuthState (ADR-024) - subscribe/notify pattern for all auth state changes. This is CRITICAL - all components (nav links, try buttons, /try page) must subscribe to auth state, not poll sessionStorage.
+- **No Framework**: Vanilla TypeScript only (ADR-017) - no React, Vue, Svelte. Use native browser APIs (addEventListener, querySelector, fetch, sessionStorage).
+- **Progressive Enhancement**: HTML-first (ADR-020) - static HTML from Eleventy, JavaScript enhances with dynamic auth buttons. Core nav structure must work without JS.
+- **GOV.UK Design System**: Use existing @x-govuk/govuk-eleventy-plugin components - govuk-header__link, govuk-header__navigation-item classes. Maintain consistency with existing NDX patterns.
+- **sessionStorage Key**: MUST use `isb-jwt` as key (consistent across all Epic 5+ stories). Check: `sessionStorage.getItem('isb-jwt')`. Store: `sessionStorage.setItem('isb-jwt', token)`.
+- **TypeScript Compilation**: Will need to add esbuild to package.json for TypeScript compilation (src/try/**/*.ts → _site/assets/try.bundle.js). This is prerequisite for Story 5.1 implementation.
+- **Accessibility**: WCAG 2.2 AA minimum (NFR-TRY-A11Y-1). All buttons must be keyboard navigable (Tab, Enter, Space), have visible focus indicators (3:1 contrast), and meet 44x44px touch target size (WCAG 2.2 AAA).
+- **Browser Support**: Latest 2 versions of Chrome, Firefox, Safari, Edge, Samsung Internet (NFR-TRY-COMPAT-1). sessionStorage API is supported in all target browsers.
+- **Mobile-First**: 320px+ viewport support (ADR-008). Auth buttons must be visible and usable on mobile navigation (44x44px touch targets).
+- **Testing Gate**: Epic 8 accessibility testing gate (ADR-037) - Pa11y tests must pass WCAG 2.2 AA with zero violations before deployment. Story 5.10 adds automated accessibility tests to CI pipeline.
+</constraints>
+
+  <interfaces>
+    <interface>
+      <name>AuthState Class</name>
+      <kind>TypeScript class interface</kind>
+      <signature>
+class AuthState {
+  private listeners: Array&lt;(isAuthenticated: boolean) =&gt; void&gt; = [];
+
+  isAuthenticated(): boolean {
+    return sessionStorage.getItem('isb-jwt') !== null;
+  }
+
+  subscribe(listener: (isAuthenticated: boolean) =&gt; void): void {
+    this.listeners.push(listener);
+    listener(this.isAuthenticated()); // Immediately call with current state
+  }
+
+  notify(): void {
+    const isAuth = this.isAuthenticated();
+    this.listeners.forEach(listener =&gt; listener(isAuth));
+  }
+
+  login(token: string): void {
+    sessionStorage.setItem('isb-jwt', token);
+    this.notify();
+  }
+
+  logout(): void {
+    sessionStorage.removeItem('isb-jwt');
+    this.notify();
+  }
+}
+
+export const authState = new AuthState(); // Singleton instance
+      </signature>
+      <path>src/try/auth/auth-provider.ts</path>
+    </interface>
+    <interface>
+      <name>initAuthNav function</name>
+      <kind>TypeScript function signature</kind>
+      <signature>
+export function initAuthNav(): void {
+  const container = document.getElementById('auth-nav');
+  if (!container) return;
+
+  // Render initial state
+  renderAuthNav(container);
+
+  // Subscribe to auth state changes
+  authState.subscribe((isAuthenticated) =&gt; {
+    renderAuthNav(container);
+  });
+}
+
+function renderAuthNav(container: HTMLElement): void {
+  if (authState.isAuthenticated()) {
+    container.innerHTML = `
+      &lt;a href="#" class="govuk-header__link" data-module="auth-nav" data-action="signout"&gt;
+        Sign out
+      &lt;/a&gt;
+    `;
+    // Event listener for sign out will be added in Story 5.5
+  } else {
+    container.innerHTML = `
+      &lt;a href="/api/auth/login" class="govuk-header__link"&gt;
+        Sign in
+      &lt;/a&gt;
+    `;
+  }
+}
+      </signature>
+      <path>src/try/ui/auth-nav.ts</path>
+    </interface>
+    <interface>
+      <name>GOV.UK Header Navigation Pattern</name>
+      <kind>HTML structure</kind>
+      <signature>
+&lt;header class="govuk-header" role="banner"&gt;
+  &lt;div class="govuk-header__container govuk-width-container"&gt;
+    &lt;div class="govuk-header__logo"&gt;
+      &lt;a href="/" class="govuk-header__link govuk-header__link--homepage"&gt;
+        &lt;span class="govuk-header__logotype-text"&gt;National Digital Exchange&lt;/span&gt;
+      &lt;/a&gt;
+    &lt;/div&gt;
+    &lt;nav class="govuk-header__navigation" aria-label="Main navigation"&gt;
+      &lt;ul class="govuk-header__navigation-list"&gt;
+        &lt;!-- Existing nav items --&gt;
+        &lt;li class="govuk-header__navigation-item" id="auth-nav"&gt;
+          &lt;!-- Sign in/out button injected here by JavaScript --&gt;
+        &lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+  &lt;/div&gt;
+&lt;/header&gt;
+      </signature>
+      <path>_includes/layouts/base.njk (or similar navigation template)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+WCAG 2.2 AA Compliance: All auth components must meet Level AA minimum (AAA where feasible). Automated testing via Pa11y integrated into CI pipeline (Story 5.10). Manual testing with NVDA/VoiceOver for screen reader validation. Keyboard-only navigation testing required (no mouse). Color contrast testing (4.5:1 minimum for normal text). Focus indicator visibility (3:1 contrast minimum). Touch target size (44x44px minimum). Epic 8 provides comprehensive accessibility audit with government specialist sign-off (ADR-005).
+
+Testing Framework: Jest + @testing-library/dom for unit/integration tests. Pa11y or axe-core for automated WCAG validation. Manual browser testing (Chrome, Firefox, Safari, Edge, Samsung Internet - latest 2 versions). Mobile device testing (iPhone, Android, tablet).
+    </standards>
+    <locations>
+test/unit/auth/auth-provider.test.ts
+test/unit/ui/auth-nav.test.ts
+test/integration/auth-flow.test.ts
+test/accessibility/auth-a11y.test.ts
+    </locations>
+    <ideas>
+Test Idea 1 (AC1): Verify "Sign in" button displays when unauthenticated
+- Test: Clear sessionStorage → Call initAuthNav() → Assert container innerHTML contains "Sign in"
+- Test: Verify href="/api/auth/login"
+- Test: Verify govuk-header__link class applied
+
+Test Idea 2 (AC2): Verify "Sign out" button displays when authenticated
+- Test: Set sessionStorage.setItem('isb-jwt', 'mock-token') → Call initAuthNav() → Assert container innerHTML contains "Sign out"
+- Test: Verify data-action="signout" attribute
+- Test: Verify govuk-header__link class applied
+
+Test Idea 3 (AC3): Verify navigation updates dynamically on auth state change
+- Test: Call initAuthNav() → Verify "Sign in" visible
+- Test: authState.login('mock-token') → Verify authState.notify() called
+- Test: Assert container innerHTML now contains "Sign out" (without page reload)
+- Test: authState.logout() → Verify authState.notify() called
+- Test: Assert container innerHTML now contains "Sign in"
+
+Test Idea 4 (AC6): Verify sessionStorage check on page load
+- Test: Mock sessionStorage.getItem('isb-jwt') to return null → Call authState.isAuthenticated() → Assert returns false
+- Test: Mock sessionStorage.getItem('isb-jwt') to return 'token' → Call authState.isAuthenticated() → Assert returns true
+
+Test Idea 5 (AC5 - Keyboard Navigation): Verify keyboard accessibility
+- Test: Render auth-nav → Focus "Sign in" link via Tab simulation → Assert document.activeElement === link
+- Test: Trigger Enter key event → Verify navigation to /api/auth/login (or event.preventDefault for test)
+- Test: Trigger Space key event → Verify same behavior as Enter
+
+Test Idea 6 (AC5 - Touch Targets): Verify 44x44px minimum touch target size
+- Test: Render auth-nav → Get bounding rect of link element
+- Test: Assert rect.width >= 44 and rect.height >= 44 (or link has padding to expand touch area)
+
+Test Idea 7 (AC5 - Focus Indicators): Verify focus indicator visibility
+- Test: Render auth-nav → Focus link → Get computed style of link
+- Test: Assert outline or box-shadow exists (GOV.UK focus ring)
+- Test: Verify contrast ratio of focus indicator >= 3:1 (WCAG 2.2 AA)
+
+Test Idea 8 (AC5 - Screen Reader): Verify ARIA attributes and announcements
+- Test: Render auth-nav → Assert link has text content "Sign in" or "Sign out"
+- Test: Verify aria-label or accessible name announced by screen reader (manual test)
+- Test: Verify role="link" or appropriate role
+
+Test Idea 9 (AC4 - Button Placement): Verify consistent placement across pages
+- Test: Load home page → Assert #auth-nav element exists in header
+- Test: Load /catalogue page → Assert #auth-nav element exists
+- Test: Load /try page → Assert #auth-nav element exists
+- Test: Load product page → Assert #auth-nav element exists
+
+Test Idea 10 (Cross-Browser): Verify compatibility across browsers
+- Test: Chrome, Firefox, Safari, Edge, Samsung Internet (latest 2 versions)
+- Test: Verify sessionStorage API works
+- Test: Verify addEventListener works
+- Test: Verify CSS focus indicators render correctly
+- Test: Mobile: Verify responsive layout (320px+ viewport)
+    </ideas>
+  </tests>
+</story-context>

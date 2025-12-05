@@ -1,0 +1,215 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>4</storyId>
+    <title>Deploy S3 Infrastructure to AWS</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/2-4-deploy-s3-infrastructure-to-aws.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to deploy the CDK stack to AWS</iWant>
+    <soThat>the S3 bucket exists in production and is ready to receive files</soThat>
+    <tasks>
+- Task 1: Validate CDK stack before deployment (AC: #1)
+  - Run `cdk synth --profile NDX/InnovationSandboxHub` to validate template
+  - Verify CloudFormation template generated successfully
+  - Review synthesized template for correctness
+  - Ensure no synthesis errors
+
+- Task 2: Preview infrastructure changes (AC: #1, #2)
+  - Run `cdk diff --profile NDX/InnovationSandboxHub`
+  - Review changes to be applied
+  - Verify bucket properties match Story 2.2 definition
+  - Confirm changes are expected (new S3 bucket creation)
+
+- Task 3: Deploy infrastructure to AWS (AC: #1, #3, #4)
+  - Run `cdk deploy --profile NDX/InnovationSandboxHub`
+  - Monitor deployment progress in terminal
+  - Verify CloudFormation stack creation succeeds
+  - Note CloudFormation stack name and region
+
+- Task 4: Verify S3 bucket configuration (AC: #1)
+  - Verify bucket exists: `aws s3 ls s3://ndx-static-prod/ --profile NDX/InnovationSandboxHub`
+  - Verify encryption: `aws s3api get-bucket-encryption --bucket ndx-static-prod --profile NDX/InnovationSandboxHub`
+  - Verify versioning: `aws s3api get-bucket-versioning --bucket ndx-static-prod --profile NDX/InnovationSandboxHub`
+  - Verify public access block: `aws s3api get-public-access-block --bucket ndx-static-prod --profile NDX/InnovationSandboxHub`
+  - Verify tags: `aws s3api get-bucket-tagging --bucket ndx-static-prod --profile NDX/InnovationSandboxHub`
+
+- Task 5: Validate idempotent deployment (AC: #2, #4)
+  - Run `cdk diff --profile NDX/InnovationSandboxHub` after deployment
+  - Verify output shows "no differences" or equivalent
+  - Optionally re-run `cdk deploy` to confirm no changes made
+  - Document idempotency confirmation
+
+- Task 6: Verify CloudFormation events (AC: #3)
+  - Access CloudFormation console or use AWS CLI
+  - Review stack events for successful creation
+  - Confirm all resources created successfully
+  - Note stack outputs if any
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Given** the CDK stack is defined and validated via `cdk synth`
+   **When** I run `cdk deploy --profile NDX/InnovationSandboxHub`
+   **Then** the deployment succeeds with:
+   - CloudFormation stack `NdxStaticStack` created in us-west-2
+   - S3 bucket `ndx-static-prod` exists
+   - Bucket has encryption enabled (verified: `aws s3api get-bucket-encryption`)
+   - Bucket has versioning enabled (verified: `aws s3api get-bucket-versioning`)
+   - Bucket has public access blocked (verified: `aws s3api get-public-access-block`)
+   - Bucket has tags applied (verified: `aws s3api get-bucket-tagging`)
+
+2. **And** running `cdk diff --profile NDX/InnovationSandboxHub` after deployment shows no changes
+
+3. **And** CloudFormation events show successful resource creation
+
+4. **And** deployment is idempotent (re-running causes no changes - FR7)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Functional Requirements - Infrastructure Provisioning</section>
+        <snippet>FR2: System can deploy S3 bucket to AWS us-west-2 region using `NDX/InnovationSandboxHub` profile. FR6: Infrastructure can be deployed to AWS via `cdk deploy` command. FR7: Infrastructure deployments are idempotent.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>Non-Functional Requirements - Reliability</section>
+        <snippet>NFR-REL-1: CDK deployment must be idempotent (repeated deployments with no changes cause no AWS modifications). NFR-REL-2: Failed CDK deployments must rollback automatically via CloudFormation.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>Deployment Architecture</section>
+        <snippet>Region: us-west-2. AWS Profile: NDX/InnovationSandboxHub. Infrastructure Deployment: `cd infra && cdk deploy --profile NDX/InnovationSandboxHub`</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>Data Architecture - S3 Bucket Configuration</section>
+        <snippet>Bucket: ndx-static-prod. Encryption: S3_MANAGED (AES256). Public access: BLOCK_ALL. Versioning: Enabled. Tags: project=ndx, environment=prod, managedby=cdk.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 2.4: Deploy S3 Infrastructure to AWS</section>
+        <snippet>First real infrastructure deployment to AWS. CloudFormation creates stack with automatic rollback on failure. Deployment takes ~2-3 minutes. FR2: Deploy to us-west-2 ✓. FR6: Deploy via cdk deploy ✓. FR7: Idempotent deployments ✓.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/2-2-create-s3-bucket-with-cdk.md</path>
+        <title>Story 2.2: Create S3 Bucket with CDK</title>
+        <section>Dev Agent Record</section>
+        <snippet>CDK stack defined in infra/lib/ndx-stack.ts. CloudFormation template validates successfully via `cdk synth`. ESLint passes with zero errors. TypeScript compiles successfully. Stack ready for deployment to AWS.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/2-3-validate-s3-access-pattern-for-mvp.md</path>
+        <title>Story 2.3: Validate S3 Access Pattern</title>
+        <section>Decision</section>
+        <snippet>CloudFront Required for MVP (Option A chosen). S3 bucket configured with BLOCK_ALL public access (correct for production security). Site will be dark after deployment until CloudFront added in growth phase. Verification uses AWS CLI commands, not HTTP endpoint checks.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>1-35</lines>
+        <reason>Main CDK stack defining S3 bucket infrastructure to be deployed. Contains bucket configuration with encryption, versioning, public access blocking, and tags.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/bin/infra.ts</path>
+        <kind>app</kind>
+        <symbol>NdxStatic</symbol>
+        <lines>1-16</lines>
+        <reason>CDK app entry point instantiating NdxStaticStack with environment configuration (account, region). Used by cdk deploy command.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>1-31</lines>
+        <reason>CDK project dependencies and scripts. Contains aws-cdk-lib 2.215.0, cdk script for deployment commands.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <dependency name="aws-cdk-lib" version="2.215.0" dev="false" />
+        <dependency name="constructs" version="^10.0.0" dev="false" />
+        <dependency name="aws-cdk" version="2.1032.0" dev="true" />
+        <dependency name="typescript" version="~5.9.3" dev="true" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- Deployment Region: Must deploy to us-west-2 region
+- AWS Profile: Must use NDX/InnovationSandboxHub profile for all AWS operations
+- Stack Name: CloudFormation stack named "NdxStatic" (defined in infra/bin/infra.ts line 6)
+- Bucket Name: Must be "ndx-static-prod" (validated as available in Story 2.1)
+- Idempotency: Re-running cdk deploy with no code changes must not modify AWS resources
+- Rollback: CloudFormation automatic rollback on deployment failure (NFR-REL-2)
+- Prerequisite: CDK bootstrap must be complete (Story 1.5 - CDKToolkit stack exists)
+- Working Directory: All cdk commands must be executed from /Users/cns/httpdocs/cddo/ndx/infra directory
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AWS CDK CLI</name>
+      <kind>command-line</kind>
+      <signature>cdk synth --profile NDX/InnovationSandboxHub</signature>
+      <path>infra/</path>
+    </interface>
+    <interface>
+      <name>AWS CDK CLI</name>
+      <kind>command-line</kind>
+      <signature>cdk diff --profile NDX/InnovationSandboxHub</signature>
+      <path>infra/</path>
+    </interface>
+    <interface>
+      <name>AWS CDK CLI</name>
+      <kind>command-line</kind>
+      <signature>cdk deploy --profile NDX/InnovationSandboxHub</signature>
+      <path>infra/</path>
+    </interface>
+    <interface>
+      <name>AWS CLI - S3</name>
+      <kind>command-line</kind>
+      <signature>aws s3 ls s3://ndx-static-prod/ --profile NDX/InnovationSandboxHub</signature>
+      <path>N/A</path>
+    </interface>
+    <interface>
+      <name>AWS CLI - S3 API</name>
+      <kind>command-line</kind>
+      <signature>aws s3api get-bucket-encryption --bucket ndx-static-prod --profile NDX/InnovationSandboxHub</signature>
+      <path>N/A</path>
+    </interface>
+    <interface>
+      <name>AWS CloudFormation Stack</name>
+      <kind>infrastructure</kind>
+      <signature>NdxStatic</signature>
+      <path>AWS us-west-2</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>No automated tests required for this story. Validation is manual via AWS CLI commands to verify deployed infrastructure configuration matches specifications. Future stories will add CDK snapshot and assertion tests.</standards>
+    <locations>infra/lib/*.test.ts (future), infra/test/ (future)</locations>
+    <ideas>
+- Verify CloudFormation template synthesis succeeds (AC#1 prerequisite)
+- Verify bucket encryption property in deployed resource (AC#1)
+- Verify bucket versioning property in deployed resource (AC#1)
+- Verify bucket public access block configuration in deployed resource (AC#1)
+- Verify bucket tags applied correctly in deployed resource (AC#1)
+- Verify cdk diff shows no changes after deployment (AC#2 - idempotency)
+- Verify CloudFormation stack events show successful CREATE_COMPLETE status (AC#3)
+    </ideas>
+  </tests>
+</story-context>

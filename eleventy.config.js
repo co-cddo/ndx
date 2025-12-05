@@ -3,7 +3,8 @@ import { EleventyRenderPlugin } from "@11ty/eleventy"
 import fs from "fs"
 import util from "util"
 
-import pluginMermaid from "@kevingimbel/eleventy-plugin-mermaid"
+import mermaidTransformPlugin from "./lib/eleventy-mermaid-transform.js"
+import remoteImagesPlugin from "./lib/eleventy-remote-images.js"
 
 function gitRev() {
   const rev = fs.readFileSync(".git/HEAD").toString().trim()
@@ -27,6 +28,32 @@ function useExternalUrl(item) {
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+// UUID validation for try_id field (Story 6.1)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUUID(value) {
+  return UUID_REGEX.test(value)
+}
+
+function validateTryMetadata(data, inputPath) {
+  // Only validate catalogue pages that have try metadata
+  if (!inputPath.includes("/catalogue/") || !data.try_id) {
+    return
+  }
+
+  // Validate try_id format if present
+  if (data.try_id && !isValidUUID(data.try_id)) {
+    console.warn(
+      `⚠️ Invalid try_id format in ${inputPath}: Expected UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000)`,
+    )
+  }
+
+  // Warn if try_id present but try not set to true
+  if (data.try_id && data.try !== true) {
+    console.warn(`⚠️ ${inputPath} has try_id but try is not set to true`)
+  }
 }
 
 function extractContent(markdown, start, end) {
@@ -58,15 +85,12 @@ export default function (eleventyConfig) {
       },
     },
     stylesheets: ["/assets/styles.css"],
+    scripts: ["/assets/try.bundle.js"],
     serviceNavigation: {
       home: "/",
       navigation: [
         { text: "Home", href: "/" },
         { text: "About", href: "/About/" },
-        {
-          text: "Discover",
-          href: "/discover",
-        },
         {
           text: "Learn",
           href: "/learn",
@@ -80,7 +104,13 @@ export default function (eleventyConfig) {
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
         { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
+        { text: '<span id="auth-nav">Sign in</span>', href: "/api/auth/login" },
       ],
+      // Auth navigation placeholder - rendered via slots.end in service navigation
+      // This is populated by JavaScript (Story 5.1)
+      slots: {
+        end: '<span id="auth-nav" class="app-auth-nav"></span>',
+      },
     },
     footer: {
       meta: {
@@ -88,7 +118,14 @@ export default function (eleventyConfig) {
       },
     },
   })
-  eleventyConfig.addPlugin(pluginMermaid)
+  eleventyConfig.addPlugin(mermaidTransformPlugin, {
+    theme: "default",
+  })
+
+  // Fetch remote images at build time to avoid external dependencies
+  eleventyConfig.addPlugin(remoteImagesPlugin, {
+    domains: ["img.shields.io", "cdn.jsdelivr.net"],
+  })
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")
@@ -122,12 +159,19 @@ export default function (eleventyConfig) {
     return date.toLocaleDateString("en-GB")
   })
 
-  eleventyConfig.addCollection("catalogue", (collection) =>
-    collection
+  eleventyConfig.addCollection("catalogue", (collection) => {
+    const items = collection
       .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")
       .map(useExternalUrl)
-      .sort((a, b) => a.data.title.localeCompare(b.data.title)),
-  )
+      .sort((a, b) => a.data.title.localeCompare(b.data.title))
+
+    // Validate try metadata for each catalogue item (Story 6.1)
+    items.forEach((item) => {
+      validateTryMetadata(item.data, item.inputPath)
+    })
+
+    return items
+  })
 
   // Tag-filtered catalogue collections
   eleventyConfig.addCollection("catalogueByTag", (collection) => {
@@ -150,6 +194,15 @@ export default function (eleventyConfig) {
     })
 
     return byTag
+  })
+
+  // Story 6.3: Collection for "Try Before You Buy" filtered products
+  eleventyConfig.addCollection("catalogueTryable", (collection) => {
+    return collection
+      .getFilteredByGlob("src/catalogue/**/*.md", "!**/index.md", "!**/tags.md")
+      .map(useExternalUrl)
+      .filter((item) => item.data.try === true)
+      .sort((a, b) => a.data.title.localeCompare(b.data.title))
   })
 
   eleventyConfig.addCollection("challenges", (collection) =>
@@ -185,6 +238,7 @@ export default function (eleventyConfig) {
     "./node_modules/govuk-frontend/dist/govuk/assets": "./assets",
   })
   eleventyConfig.addPassthroughCopy("./src/assets")
+  eleventyConfig.addPassthroughCopy("./src/robots.txt")
 
   return {
     pathPrefix: process.env.PATH_PREFIX || "/",

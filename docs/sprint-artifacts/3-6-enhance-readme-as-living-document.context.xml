@@ -1,0 +1,218 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.6</storyId>
+    <title>Enhance README as Living Document</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-6-enhance-readme-as-living-document.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>the `/infra/README.md` updated with deployment details and maintenance process</iWant>
+    <soThat>documentation evolves with the infrastructure and remains accurate</soThat>
+    <tasks>
+      - Task 1: Analyze current README structure and identify gaps (AC: #1)
+      - Task 2: Add Deployment Process section (AC: #1, #3)
+      - Task 3: Enhance Testing section (AC: #1)
+      - Task 4: Add Infrastructure Changes section (AC: #1, #3)
+      - Task 5: Add Maintenance section (AC: #1, #2)
+      - Task 6: Update document header (AC: #2)
+      - Task 7: Verify all command examples use correct AWS profile (AC: #3)
+      - Task 8: Validate README completeness (AC: #1, #2, #3, #4)
+      - Task 9: Commit README changes (AC: #4)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. README includes new sections:
+       - Section 6: Deployment Process (build, deploy, verify, access pattern)
+       - Section 7: Testing (unit tests, integration test, linting)
+       - Section 8: Infrastructure Changes (when to redeploy infrastructure vs files)
+       - Section 9: Maintenance (document version, review cadence, update responsibility)
+
+    2. Document header includes:
+       - Last Updated: 2025-11-18
+       - Document Version: 1.1
+       - Review: Update this README when infrastructure changes
+
+    3. All command examples use correct AWS profile (NDX/InnovationSandboxHub)
+
+    4. README updated in git with commit: `docs(infra): enhance README with deployment and maintenance`
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <item>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 3.6: Enhance README as Living Document</section>
+        <snippet>Documentation as living document, not one-time artifact. Include version/date to track when last updated. Maintenance section establishes update responsibility. Monthly review cadence or when infrastructure changes.</snippet>
+      </item>
+      <item>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification</title>
+        <section>AC6: Living Documentation, NFR-MAINT-5</section>
+        <snippet>README includes version and last updated date. Maintenance section establishes update responsibility. Monthly review cadence or when infrastructure changes. Developer making changes updates documentation.</snippet>
+      </item>
+      <item>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Data Architecture, Access Pattern Decision</section>
+        <snippet>CloudFront required for site access. Site not publicly accessible in MVP. Files uploaded successfully but return 403 Forbidden. Bucket has BLOCK_ALL public access per security requirements.</snippet>
+      </item>
+      <item>
+        <path>docs/sprint-artifacts/3-5-create-integration-test-for-aws-deployment.md</path>
+        <title>Story 3.5: Create Integration Test for AWS Deployment</title>
+        <section>Dev Agent Record, Completion Notes</section>
+        <snippet>Integration test documentation added to README (lines 101-130). Documentation pattern established: clear structure with "What it does", "Issues caught", "When to run" subsections. AWS profile consistency maintained throughout.</snippet>
+      </item>
+      <item>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 3.1 & 3.2: Deployment Automation</section>
+        <snippet>Root package.json has yarn deploy script pointing to scripts/deploy.sh. Deploy script validates _site/ exists, uses AWS CLI S3 sync with profile, includes file count validation, sets cache control headers, error recovery via idempotent re-runs.</snippet>
+      </item>
+    </docs>
+    <code>
+      <item>
+        <path>infra/README.md</path>
+        <kind>documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>1-325</lines>
+        <reason>Current README file to be enhanced. Contains version 1.0, last updated 2025-11-18. Existing sections: Overview, Prerequisites, Initial Setup, Development Workflow, Site Access, Troubleshooting, Project Structure, Additional Resources. Integration test documentation added in Story 3.5 (lines 101-130).</reason>
+      </item>
+      <item>
+        <path>scripts/deploy.sh</path>
+        <kind>bash script</kind>
+        <symbol>deploy.sh</symbol>
+        <lines>1-29</lines>
+        <reason>Deployment script referenced in new Deployment Process section. Uses AWS CLI S3 sync with --profile NDX/InnovationSandboxHub, validates _site/ exists, includes file count validation, outputs success message.</reason>
+      </item>
+      <item>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>scripts.deploy</symbol>
+        <lines>11</lines>
+        <reason>Root package.json deploy script (line 11: "deploy": "scripts/deploy.sh"). Referenced in Deployment Process section as the command to run from project root.</reason>
+      </item>
+      <item>
+        <path>infra/package.json</path>
+        <kind>config</kind>
+        <symbol>scripts</symbol>
+        <lines>1-30</lines>
+        <reason>Infrastructure package.json with lint and test scripts referenced in Testing section. Contains: "lint": "eslint .", "test": "jest".</reason>
+      </item>
+    </code>
+    <dependencies>
+      <node>
+        <name>@11ty/eleventy</name>
+        <version>^3.1.2</version>
+        <scope>devDependencies</scope>
+        <reason>Static site generator - builds _site/ directory that gets deployed</reason>
+      </node>
+      <aws>
+        <tool>AWS CLI v2.x</tool>
+        <profile>NDX/InnovationSandboxHub</profile>
+        <region>us-west-2</region>
+        <reason>Required for S3 sync operations in deployment script. All commands must use --profile flag.</reason>
+      </aws>
+      <cdk>
+        <tool>AWS CDK</tool>
+        <version>2.x</version>
+        <reason>Infrastructure deployment tool. Commands must use --profile flag for infrastructure changes.</reason>
+      </cdk>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - All AWS CLI commands MUST include `--profile NDX/InnovationSandboxHub` flag
+    - All CDK commands MUST include `--profile NDX/InnovationSandboxHub` flag
+    - Document version must be incremented from 1.0 to 1.1
+    - Last updated date must be set to 2025-11-18 (or current date)
+    - Follow existing README structure and markdown formatting patterns
+    - Preserve existing content quality and documentation style from Story 3.5
+    - Maintain consistency with subsection patterns: purpose, commands, expected output
+    - Document must explain CloudFront is required for site access (per Story 2.3 decision)
+    - Git commit message must be: `docs(infra): enhance README with deployment and maintenance`
+    - Only modify infra/README.md file (no other files)
+    - README sections must be logically ordered and numbered
+  </constraints>
+
+  <interfaces>
+    <item>
+      <name>yarn deploy</name>
+      <kind>CLI command</kind>
+      <signature>yarn deploy (from project root)</signature>
+      <path>package.json line 11</path>
+    </item>
+    <item>
+      <name>scripts/deploy.sh</name>
+      <kind>Bash script</kind>
+      <signature>bash scripts/deploy.sh</signature>
+      <path>scripts/deploy.sh</path>
+    </item>
+    <item>
+      <name>AWS CLI S3 sync</name>
+      <kind>CLI command</kind>
+      <signature>aws s3 sync _site/ s3://ndx-static-prod/ --profile NDX/InnovationSandboxHub --delete --exact-timestamps --cache-control "public, max-age=3600" --exclude ".DS_Store"</signature>
+      <path>scripts/deploy.sh lines 12-17</path>
+    </item>
+    <item>
+      <name>CDK deploy</name>
+      <kind>CLI command</kind>
+      <signature>cdk deploy --profile NDX/InnovationSandboxHub</signature>
+      <path>Referenced in Infrastructure Changes section</path>
+    </item>
+    <item>
+      <name>yarn build</name>
+      <kind>CLI command</kind>
+      <signature>yarn build (from project root)</signature>
+      <path>package.json line 10</path>
+    </item>
+  </interfaces>
+
+  <tests>
+    <standards>
+      README validation standards:
+      - All sections present and complete (Overview, Prerequisites, Initial Setup, Development Workflow, Testing, Deployment Process, Infrastructure Changes, Site Access, Troubleshooting, Project Structure, Maintenance, Additional Resources)
+      - All command examples use correct AWS profile (NDX/InnovationSandboxHub)
+      - Markdown formatting valid (no broken links, proper code blocks, heading hierarchy)
+      - Links to other documents working (../docs/*.md paths)
+      - Commands are copy-paste ready (include full flags and parameters)
+      - No typos or clarity issues
+      - Version header updated (1.0 → 1.1)
+      - Last updated date current (2025-11-18)
+    </standards>
+
+    <locations>
+      infra/README.md - Target file to be enhanced
+    </locations>
+
+    <ideas>
+      AC1 Testing Ideas:
+      - Verify all 4 new sections added (Deployment Process, Testing, Infrastructure Changes, Maintenance)
+      - Verify Deployment Process section includes: build command, deploy command, smoke test placeholder, access pattern explanation
+      - Verify Testing section reorganized from Development Workflow with unit tests, integration tests, linting
+      - Verify Infrastructure Changes section explains when to use cdk deploy vs yarn deploy
+      - Verify Maintenance section includes version 1.1, last updated date, review cadence, update responsibility, version history table
+
+      AC2 Testing Ideas:
+      - Verify document header updated with Last Updated: 2025-11-18
+      - Verify document header updated with Document Version: 1.1
+      - Verify document header includes Review instruction
+
+      AC3 Testing Ideas:
+      - Scan README for all bash command examples
+      - Verify all aws commands include --profile NDX/InnovationSandboxHub
+      - Verify all cdk commands include --profile NDX/InnovationSandboxHub
+      - Check existing sections and new sections for profile consistency
+
+      AC4 Testing Ideas:
+      - Verify git commit created with exact message: "docs(infra): enhance README with deployment and maintenance"
+      - Verify only infra/README.md included in commit (no unintended files)
+    </ideas>
+  </tests>
+</story-context>

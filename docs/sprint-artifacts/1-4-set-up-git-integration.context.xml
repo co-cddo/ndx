@@ -1,0 +1,256 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.4</storyId>
+    <title>Set Up Git Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-4-set-up-git-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>the `/infra` directory properly configured for version control</iWant>
+    <soThat>infrastructure code is tracked while CDK artifacts are excluded</soThat>
+    <tasks>
+      <task id="1" ac="1,2">
+        <summary>Verify and enhance `.gitignore`</summary>
+        <subtasks>
+          <subtask>Read existing `/infra/.gitignore` created by `cdk init`</subtask>
+          <subtask>Verify all required patterns present: node_modules/, cdk.out/, cdk.context.json, *.js, *.d.ts, coverage/, .DS_Store</subtask>
+          <subtask>Add any missing patterns to .gitignore</subtask>
+          <subtask>Verify yarn.lock is NOT in .gitignore (must be tracked)</subtask>
+          <subtask>Save .gitignore if modifications made</subtask>
+        </subtasks>
+      </task>
+      <task id="2" ac="3">
+        <summary>Validate git tracking</summary>
+        <subtasks>
+          <subtask>Run `git status` in `/infra` directory</subtask>
+          <subtask>Verify only source files (.ts) and config files shown as untracked/modified</subtask>
+          <subtask>Verify generated files (*.js, *.d.ts, cdk.out/) are not shown</subtask>
+          <subtask>Verify node_modules/ is not shown</subtask>
+          <subtask>Document git status output</subtask>
+        </subtasks>
+      </task>
+      <task id="3" ac="4">
+        <summary>Document commit message convention</summary>
+        <subtasks>
+          <subtask>Add commit convention section to `/infra/README.md`</subtask>
+          <subtask>Document prefix patterns: feat(infra):, test(infra):, fix(deploy):, docs(infra):, chore(infra):</subtask>
+          <subtask>Provide examples of good commit messages</subtask>
+          <subtask>Explain rationale (prefixes enable filtering, scoping, and changelog generation)</subtask>
+        </subtasks>
+      </task>
+      <task id="4">
+        <summary>Stage and verify tracking</summary>
+        <subtasks>
+          <subtask>Run `git add infra/` to stage all trackable files</subtask>
+          <subtask>Run `git status` to confirm only appropriate files staged</subtask>
+          <subtask>Verify no compiled JavaScript files staged</subtask>
+          <subtask>Verify no node_modules/ content staged</subtask>
+          <subtask>Document which files are now tracked</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      <given>the CDK project exists with generated `.gitignore`</given>
+      <when>I verify and enhance the `.gitignore`</when>
+      <then>the following are excluded from git: `node_modules/`, `cdk.out/`, `cdk.context.json`, `*.js` (compiled TypeScript), `*.d.ts` (TypeScript declarations), `coverage/` (test coverage reports), `.DS_Store` (macOS files)</then>
+    </criterion>
+    <criterion id="2">
+      <then>the following ARE tracked in git: `yarn.lock`, `cdk.json`, `tsconfig.json`, `eslint.config.mjs`, `package.json`, All `.ts` source files</then>
+    </criterion>
+    <criterion id="3">
+      <then>running `git status` in `/infra` shows only source files and configs as trackable</then>
+    </criterion>
+    <criterion id="4">
+      <then>commit message convention documented: `feat(infra):`, `test(infra):`, `fix(deploy):`</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>Consistency Rules - Version Control</section>
+        <snippet>Infrastructure code must be in main repo. CDK artifacts must be excluded from version control. Source files and configuration must be tracked. Lockfiles (yarn.lock) must be committed for reproducibility.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>Consistency Rules - Commit Message Convention</section>
+        <snippet>Standard format: &lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;. Types: feat, fix, test, docs, chore, refactor. Scopes: infra, deploy, app. Example: feat(infra): add S3 bucket with versioning</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture</title>
+        <section>Project Structure</section>
+        <snippet>Complete file structure showing tracked vs excluded files. TRACKED: yarn.lock, cdk.json, tsconfig.json, eslint.config.mjs, package.json, all .ts source files. EXCLUDED: node_modules/, cdk.out/, cdk.context.json, *.js (compiled), *.d.ts, coverage/, .DS_Store</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.4: Set Up Git Integration</section>
+        <snippet>Complete acceptance criteria defining what must be excluded from git (node_modules/, cdk.out/, cdk.context.json, *.js, *.d.ts, coverage/, .DS_Store) and what must be tracked (yarn.lock, cdk.json, tsconfig.json, eslint.config.mjs, package.json, all .ts files). Commit message convention must be documented.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR17: Version Control</section>
+        <snippet>Infrastructure code can be version-controlled in git with appropriate .gitignore for CDK artifacts.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Foundation &amp; CDK Setup</title>
+        <section>Data Models and Contracts - Git Ignore Patterns</section>
+        <snippet>Complete .gitignore specification: CDK artifacts (*.js, !jest.config.js, *.d.ts, node_modules, cdk.out, cdk.context.json), Testing (coverage, *.log), macOS (.DS_Store)</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-3-configure-eslint-with-aws-cdk-plugin.md</path>
+        <title>Story 1.3: Configure ESLint with AWS CDK Plugin</title>
+        <section>Completion Notes</section>
+        <snippet>eslint.config.mjs successfully created. Build and tests pass. Files created/modified: infra/eslint.config.mjs (NEW - must be tracked), infra/package.json (MODIFIED), infra/bin/infra.ts (MODIFIED). Existing: infra/.gitignore created by cdk init in Story 1.1.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/.gitignore</path>
+        <kind>config</kind>
+        <symbol>.gitignore</symbol>
+        <lines>1-9</lines>
+        <reason>Current gitignore from cdk init. Contains baseline patterns: *.js, !jest.config.js, *.d.ts, node_modules, .cdk.staging, cdk.out. Missing patterns: cdk.context.json, coverage/, .DS_Store need to be added.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>config</kind>
+        <symbol>package.json</symbol>
+        <lines>1-30</lines>
+        <reason>Package configuration that must be tracked in git. Contains dependencies (aws-cdk-lib, constructs) and devDependencies (eslint packages, jest, typescript) that define the project. Lockfile (yarn.lock) ensures reproducible installs.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/eslint.config.mjs</path>
+        <kind>config</kind>
+        <symbol>eslint.config.mjs</symbol>
+        <lines>all</lines>
+        <reason>ESLint flat config created in Story 1.3. Must be tracked in git. Currently exists but needs verification it's included in git tracking (not in .gitignore).</reason>
+      </artifact>
+      <artifact>
+        <path>infra/README.md</path>
+        <kind>documentation</kind>
+        <symbol>README.md</symbol>
+        <lines>all</lines>
+        <reason>Infrastructure documentation file that exists. Needs new section added for commit message convention (feat(infra):, test(infra):, fix(deploy):, docs(infra):, chore(infra):).</reason>
+      </artifact>
+      <artifact>
+        <path>infra/bin/infra.ts</path>
+        <kind>source</kind>
+        <symbol>CDK App Entry Point</symbol>
+        <lines>all</lines>
+        <reason>TypeScript source file that must be tracked in git. Modified in Story 1.3 (stack ID changed). Compiled to infra/bin/infra.js which must be excluded.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/infra-stack.ts</path>
+        <kind>source</kind>
+        <symbol>InfraStack</symbol>
+        <lines>all</lines>
+        <reason>TypeScript source file that must be tracked in git. Example stack from cdk init. Compiled to infra/lib/infra-stack.js and infra/lib/infra-stack.d.ts which must be excluded.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/infra-stack.test.ts</path>
+        <kind>test</kind>
+        <symbol>InfraStack tests</symbol>
+        <lines>all</lines>
+        <reason>TypeScript test file that must be tracked in git. Jest test suite for example stack.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <dependency name="aws-cdk-lib" version="2.215.0" scope="production">Core CDK library</dependency>
+        <dependency name="constructs" version="^10.0.0" scope="production">CDK constructs</dependency>
+        <dependency name="aws-cdk" version="2.1032.0" scope="dev">CDK CLI tool</dependency>
+        <dependency name="typescript" version="~5.9.3" scope="dev">TypeScript compiler</dependency>
+        <dependency name="jest" version="^29.7.0" scope="dev">Testing framework</dependency>
+        <dependency name="ts-jest" version="^29.2.5" scope="dev">Jest TypeScript preprocessor</dependency>
+        <dependency name="eslint" version="^9.39.1" scope="dev">Linting tool</dependency>
+        <dependency name="typescript-eslint" version="^8.47.0" scope="dev">TypeScript ESLint parser</dependency>
+        <dependency name="eslint-plugin-awscdk" version="^4.0.4" scope="dev">AWS CDK ESLint rules</dependency>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Infrastructure code must remain in main repository (not separate repo)</constraint>
+    <constraint>CDK artifacts (cdk.out/, *.js, *.d.ts, cdk.context.json) must be excluded from version control</constraint>
+    <constraint>Essential config files (yarn.lock, cdk.json, tsconfig.json, eslint.config.mjs, package.json) must be tracked</constraint>
+    <constraint>All TypeScript source files (.ts) must be tracked in git</constraint>
+    <constraint>Lockfile (yarn.lock) is CRITICAL for reproducible builds and must be committed</constraint>
+    <constraint>jest.config.js is JavaScript but must be tracked (exception to *.js exclusion)</constraint>
+    <constraint>Commit messages must follow convention: type(scope): subject format</constraint>
+    <constraint>Commit types: feat, fix, test, docs, chore, refactor</constraint>
+    <constraint>Commit scopes: infra (infrastructure code), deploy (deployment scripts), app (main application)</constraint>
+    <constraint>Git ignore patterns must not prevent tracking of .mjs files (ESLint config uses .mjs extension)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>git status</name>
+      <kind>command-line</kind>
+      <signature>git status [path]</signature>
+      <path>infra/</path>
+      <description>Shows working tree status. Used to verify only appropriate files are tracked. Should show untracked/modified .ts and config files, but not compiled .js/.d.ts, node_modules/, or cdk.out/</description>
+    </interface>
+    <interface>
+      <name>git add</name>
+      <kind>command-line</kind>
+      <signature>git add [path]</signature>
+      <path>infra/</path>
+      <description>Stage files for commit. Used to stage all trackable files in /infra directory. Will respect .gitignore patterns.</description>
+    </interface>
+    <interface>
+      <name>.gitignore patterns</name>
+      <kind>configuration</kind>
+      <signature>glob patterns (one per line)</signature>
+      <path>infra/.gitignore</path>
+      <description>Git exclusion patterns. Supports wildcards (*.js), negation (!jest.config.js), directories (node_modules/), specific files (cdk.context.json)</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      No automated tests for git configuration. Validation is manual via `git status` commands and verification that:
+      1. Compiled files (*.js, *.d.ts) are not shown in git status
+      2. node_modules/ and cdk.out/ are not shown
+      3. Essential config files (yarn.lock, cdk.json, tsconfig.json, eslint.config.mjs, package.json) are trackable
+      4. TypeScript source files (.ts) are trackable
+      5. README.md contains documented commit message convention
+    </standards>
+    <locations>
+      <location>infra/.gitignore - Configuration file being tested</location>
+      <location>Manual verification via git commands</location>
+    </locations>
+    <ideas>
+      <idea ac="1">
+        <description>Verify .gitignore excludes all 7 required patterns</description>
+        <approach>Read infra/.gitignore, check for: node_modules/, cdk.out/, cdk.context.json, *.js (with !jest.config.js exception), *.d.ts, coverage/, .DS_Store</approach>
+      </idea>
+      <idea ac="2">
+        <description>Verify essential files are tracked (not in .gitignore)</description>
+        <approach>Confirm yarn.lock, cdk.json, tsconfig.json, eslint.config.mjs, package.json are NOT listed in .gitignore or negated patterns</approach>
+      </idea>
+      <idea ac="3">
+        <description>Validate git status shows clean tracking</description>
+        <approach>Run `git status` in /infra, parse output, verify only .ts files and config files shown, no *.js, *.d.ts, node_modules/, or cdk.out/ appear</approach>
+      </idea>
+      <idea ac="4">
+        <description>Verify commit convention is documented in README</description>
+        <approach>Read infra/README.md, search for section containing "commit message" or similar, verify examples include feat(infra):, test(infra):, fix(deploy): patterns</approach>
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

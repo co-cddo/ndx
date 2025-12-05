@@ -1,0 +1,194 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>N5</epicId>
+    <storyId>5</storyId>
+    <title>Monitoring Alert Email Templates</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n5-5-monitoring-alert-email-templates.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>lease user</asA>
+    <iWant>to receive clear, informative emails for budget, duration, and freeze threshold events</iWant>
+    <soThat>I can take action before my sandbox lease is impacted or terminated</soThat>
+    <tasks>
+      <task id="1" acs="5.1,5.2,5.4,5.5,5.6,5.7">Add 6 monitoring alert templates to NOTIFY_TEMPLATES registry</task>
+      <task id="2" acs="5.1,5.8,5.10">Implement buildBudgetThresholdPersonalisation() with GBP and % formatting</task>
+      <task id="3" acs="5.2,5.3,5.9">Implement buildDurationThresholdPersonalisation() with UK date format and timezone default</task>
+      <task id="4" acs="5.4,5.9">Implement buildFreezingThresholdPersonalisation() with UK date format</task>
+      <task id="5" acs="5.5,5.6,5.7,5.8,5.9">Implement terminal state templates (BudgetExceeded, LeaseExpired, LeaseFrozen)</task>
+      <task id="6" acs="5.11,5.12,5.13,5.14,5.15">Implement enrichment data handling with conflict detection</task>
+      <task id="7" acs="5.8,5.9,5.10">Create formatting utilities (formatCurrency, formatUKDate, formatPercentage)</task>
+      <task id="8" acs="5.1-5.15">Write unit tests for all template functionality with AC ID traceability</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <category name="Core Alert Templates (MUST)">
+      <ac id="5.1">LeaseBudgetThresholdAlert email includes: userName, currentSpend, budgetLimit, percentUsed</ac>
+      <ac id="5.2">LeaseDurationThresholdAlert email includes: userName, hoursRemaining, expiryDate, timezone</ac>
+      <ac id="5.4">LeaseFreezingThresholdAlert email includes: userName, reason, freezeTime</ac>
+      <ac id="5.5">LeaseBudgetExceeded email includes: userName, finalSpend, budgetLimit</ac>
+      <ac id="5.6">LeaseExpired email includes: userName, accountId, expiryTime</ac>
+      <ac id="5.7">LeaseFrozen email includes: userName, accountId, reason, resumeInstructions</ac>
+    </category>
+    <category name="Formatting Requirements (SHOULD)">
+      <ac id="5.3">Timezone defaults to Europe/London if not in user preferences</ac>
+      <ac id="5.8">Budget amounts formatted with currency symbol (GBP: £)</ac>
+      <ac id="5.9">Dates formatted in UK format (DD MMM YYYY, HH:MM)</ac>
+      <ac id="5.10">Percentage thresholds formatted with % symbol</ac>
+    </category>
+    <category name="Enrichment Data Handling (MUST/SHOULD)">
+      <ac id="5.11">Budget emails include both event.budgetLimit AND enriched.maxSpend if different</ac>
+      <ac id="5.12">Add disclaimer "Budget data as of [timestamp]" to show data age</ac>
+      <ac id="5.13">Never use enriched data that contradicts event type (MUST)</ac>
+      <ac id="5.14">Always prioritise event data over enriched data for status fields (MUST)</ac>
+      <ac id="5.15">Template never displays enriched.status (only use enriched data for non-status fields) (MUST)</ac>
+    </category>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="Template Registry" snippet="Templates are selected based on event type. NotifySender wraps GOV.UK Notify SDK with error handling and security controls."/>
+      <doc path="docs/epics-notifications.md" title="Epic Breakdown" section="Story 5.5" snippet="Goal: Configure and send emails for budget, duration, and freeze threshold events."/>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-n5.md" title="Tech Spec Epic N5" section="Story n5-5" snippet="6 monitoring alert templates: LeaseBudgetThresholdAlert, LeaseDurationThresholdAlert, LeaseFreezingThresholdAlert, LeaseBudgetExceeded, LeaseExpired, LeaseFrozen. Currency/date formatting requirements."/>
+    </docs>
+    <code>
+      <file path="infra/lib/lambda/notification/templates.ts" kind="module" symbol="NOTIFY_TEMPLATES, TemplateConfig, buildPersonalisation" lines="1-551" reason="Existing template registry to extend with monitoring alert templates"/>
+      <file path="infra/lib/lambda/notification/templates.test.ts" kind="test" symbol="describe blocks for templates" lines="1-886" reason="Existing test file to extend with monitoring alert template tests"/>
+      <file path="infra/lib/lambda/notification/errors.ts" kind="module" symbol="PermanentError, RetriableError, SecurityError, CriticalError" lines="1-133" reason="Error classes to throw for missing required fields"/>
+      <file path="infra/lib/lambda/notification/types.ts" kind="types" symbol="NotificationEventType" lines="1-75" reason="Event types including monitoring alerts (LeaseBudgetThresholdAlert, etc.)"/>
+      <file path="infra/lib/lambda/notification/validation.ts" kind="module" symbol="LeaseKeySchema, ValidatedEvent" lines="1-400" reason="Validated event types containing leaseKey for portal links"/>
+      <file path="infra/lib/lambda/notification/notify-sender.ts" kind="service" symbol="NotifySender, NotifyParams" lines="1-220" reason="Interface for sending emails - templates module provides personalisation"/>
+      <file path="infra/lib/lambda/notification/ownership.ts" kind="module" symbol="hashForLog" lines="1-350" reason="PII redaction utility for logging"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="notifications-node-client" version="8.2.1" reason="GOV.UK Notify SDK for email sending"/>
+        <package name="@aws-lambda-powertools/logger" version="2.29.0" reason="Structured logging"/>
+        <package name="@aws-lambda-powertools/metrics" version="2.29.0" reason="CloudWatch metrics emission"/>
+        <package name="zod" version="3.23.8" reason="Schema validation"/>
+        <package name="isomorphic-dompurify" version="2.22.0" reason="Input sanitisation"/>
+      </node>
+      <devDependencies>
+        <package name="jest" version="29.7.0" reason="Unit testing framework"/>
+        <package name="ts-jest" version="29.2.5" reason="TypeScript Jest support"/>
+        <package name="aws-sdk-client-mock" version="4.1.0" reason="AWS SDK mocking"/>
+      </devDependencies>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Extend existing NOTIFY_TEMPLATES registry pattern from templates.ts</constraint>
+    <constraint type="pattern">Use class-based pattern with dependency injection from notify-sender.ts</constraint>
+    <constraint type="security">Never log raw email addresses - use hashForLog() from ownership.ts for PII redaction</constraint>
+    <constraint type="security">Never use enriched.status in email content - only use event.type (AC-5.15)</constraint>
+    <constraint type="security">Event data ALWAYS takes precedence over enriched data for status fields (AC-5.14)</constraint>
+    <constraint type="testing">All ACs require explicit test coverage with AC ID traceability in test names</constraint>
+    <constraint type="error">Missing required personalisation fields must throw PermanentError (no retry)</constraint>
+    <constraint type="env">Template IDs loaded from environment variables (NOTIFY_TEMPLATE_*)</constraint>
+    <constraint type="format">GBP currency: £X.XX with thousands separator</constraint>
+    <constraint type="format">UK date: DD MMM YYYY, HH:MM in specified timezone</constraint>
+    <constraint type="format">Percentage: X% with optional decimal</constraint>
+    <constraint type="timezone">Default to Europe/London if user timezone not specified (AC-5.3)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="NOTIFY_TEMPLATES" kind="Registry constant">
+      <signature>
+export const NOTIFY_TEMPLATES: Record&lt;string, TemplateConfig&gt; = {
+  // Existing lease lifecycle templates
+  LeaseRequested: { ... },
+  LeaseApproved: { ... },
+  LeaseDenied: { ... },
+  LeaseTerminated: { ... },
+  // NEW: Monitoring alert templates (this story)
+  LeaseBudgetThresholdAlert: { ... },
+  LeaseDurationThresholdAlert: { ... },
+  LeaseFreezingThresholdAlert: { ... },
+  LeaseBudgetExceeded: { ... },
+  LeaseExpired: { ... },
+  LeaseFrozen: { ... },
+};
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="TemplateConfig" kind="TypeScript interface">
+      <signature>
+export interface TemplateConfig {
+  templateIdEnvVar: string;
+  requiredFields: string[];
+  optionalFields: string[];
+  enrichmentQueries: EnrichmentQuery[];
+}
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="formatCurrency" kind="function (new)">
+      <signature>
+function formatCurrency(amount: number): string
+// Returns £X.XX with thousands separator
+// formatCurrency(1234.56) => "£1,234.56"
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="formatUKDate" kind="function (new)">
+      <signature>
+function formatUKDate(date: Date | string, timezone?: string): string
+// Returns DD MMM YYYY, HH:MM in specified timezone
+// formatUKDate('2024-03-15T14:30:00Z', 'Europe/London') => "15 Mar 2024, 14:30"
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="formatPercentage" kind="function (new)">
+      <signature>
+function formatPercentage(percent: number): string
+// Returns X% with optional decimal
+// formatPercentage(75.5) => "75.5%"
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="buildMonitoringPersonalisation" kind="function (new)">
+      <signature>
+function buildMonitoringPersonalisation(
+  eventType: NotificationEventType,
+  event: ValidatedEvent,
+  enrichedData?: EnrichedData
+): Record&lt;string, string | number&gt;
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Jest with ts-jest for TypeScript. ESM mock patterns using jest.Mock without type parameters.
+AC ID traceability: test names must include AC ID (e.g., "AC-5.1: LeaseBudgetThresholdAlert includes required fields").
+Unit tests in same directory as source files (templates.test.ts).
+Mock environment variables using process.env in beforeEach/afterEach.
+Use hashForLog() for any logged email addresses in test assertions.
+    </standards>
+    <locations>
+      <location>infra/lib/lambda/notification/templates.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="5.1">Test LeaseBudgetThresholdAlert personalisation includes userName, currentSpend, budgetLimit, percentUsed</idea>
+      <idea ac="5.2">Test LeaseDurationThresholdAlert personalisation includes userName, hoursRemaining, expiryDate, timezone</idea>
+      <idea ac="5.3">Test timezone defaults to Europe/London when not provided</idea>
+      <idea ac="5.4">Test LeaseFreezingThresholdAlert personalisation includes userName, reason, freezeTime</idea>
+      <idea ac="5.5">Test LeaseBudgetExceeded personalisation includes userName, finalSpend, budgetLimit</idea>
+      <idea ac="5.6">Test LeaseExpired personalisation includes userName, accountId, expiryTime</idea>
+      <idea ac="5.7">Test LeaseFrozen personalisation includes userName, accountId, reason, resumeInstructions</idea>
+      <idea ac="5.8">Test formatCurrency returns GBP symbol with correct formatting (£1,234.56)</idea>
+      <idea ac="5.9">Test formatUKDate returns UK format (15 Mar 2024, 14:30)</idea>
+      <idea ac="5.10">Test formatPercentage returns number with % symbol</idea>
+      <idea ac="5.11">Test budget emails include both event and enriched values when different</idea>
+      <idea ac="5.12">Test disclaimer with timestamp is included in budget-related emails</idea>
+      <idea ac="5.13">Test that enriched data contradicting event type throws PermanentError</idea>
+      <idea ac="5.14">Test that event data takes precedence over enriched data for status</idea>
+      <idea ac="5.15">Test that enriched.status is never included in personalisation output</idea>
+    </ideas>
+  </tests>
+</story-context>

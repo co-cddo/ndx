@@ -1,0 +1,35 @@
+{% extends "layouts/product.njk" %}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block content %}
+  {# Story 6.2: Add Try Before You Buy tag at top of content for tryable products #}
+  {% if try %}
+  <div class="govuk-!-margin-bottom-4">
+    {{ govukTag({
+      text: "Try Before You Buy",
+      classes: "govuk-tag--green"
+    }) }}
+  </div>
+
+  {# Story 6.4: Add Try button for tryable products #}
+  {# Note: We only use data-try-id, not data-module="try-button" because #}
+  {# govukButton already sets data-module="govuk-button" and HTML ignores duplicates #}
+  <div class="govuk-!-margin-bottom-6">
+    {{ govukButton({
+      text: "Try this now for 24 hours",
+      isStartButton: true,
+      attributes: {
+        "data-try-id": try_id
+      }
+    }) }}
+  </div>
+  {% endif %}
+
+  {{ appProseScope(content) if content }}
+
+  {% include "layouts/shared/related.njk" %}
+{% endblock %}
+
+{# Note: try.bundle.js is loaded by base template (govuk/template.njk) for all pages #}
+{# This ensures OAuth callbacks work on all pages and Try button handlers initialize #}

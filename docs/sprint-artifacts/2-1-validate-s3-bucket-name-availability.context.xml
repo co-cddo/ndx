@@ -1,0 +1,139 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.1</storyId>
+    <title>Validate S3 Bucket Name Availability</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/2-1-validate-s3-bucket-name-availability.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to verify the bucket name `ndx-static-prod` is available in AWS</iWant>
+    <soThat>deployment won't fail due to global bucket name conflicts</soThat>
+    <tasks>
+      - Task 1: Verify bucket name availability (AC: #1)
+        - Run AWS CLI command to check if `ndx-static-prod` bucket exists
+        - Document the outcome (404 = available, 200/403 = exists)
+        - If bucket exists, investigate ownership via AWS CLI or Console
+        - If exists and owned by us, document decision to use existing bucket
+        - If exists and not owned by us, choose alternative bucket name
+      - Task 2: Document bucket name decision (AC: #2, #3)
+        - Update docs/infrastructure-architecture.md with final bucket name
+        - Update docs/epics.md if bucket name changed from `ndx-static-prod`
+        - Document rationale for bucket name decision
+        - If alternative name chosen, update naming pattern in architecture doc
+      - Task 3: Verify decision propagated to all documentation (AC: #2)
+        - Confirm bucket name is consistent across all docs (PRD, Architecture, Epics)
+        - Update sprint-status.yaml if story description needs adjustment
+        - Verify no hardcoded bucket names remain that need updating
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Given I have AWS CLI access with `NDX/InnovationSandboxHub` profile, when I run `aws s3api head-bucket --bucket ndx-static-prod --profile NDX/InnovationSandboxHub 2>&amp;1`, then one of two outcomes occurs:
+       - Case 1: Bucket does not exist (desired) - Command returns 404 error, proceed with bucket creation in Story 2.2
+       - Case 2: Bucket exists - Command returns 200 or 403, document bucket name conflict, choose alternative: `ndx-static-prod-SUFFIX` or use CDK auto-generated names
+    2. And document the final bucket name decision in architecture doc
+    3. And if bucket exists, investigate ownership and determine if we control it
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Naming Conventions</section>
+        <snippet>Resource Naming Pattern: ndx-{resource-type}-{environment}. Examples: S3 Bucket: ndx-static-prod, ndx-static-notprod. Environments: prod - Production environment, notprod - Non-production.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Data Architecture - S3 Bucket Configuration</section>
+        <snippet>Bucket: `ndx-static-prod`. Bucket configuration includes: Name: ndx-static-prod (or validated alternative), Encryption: SSE-S3, Public access: Completely blocked, Versioning: Enabled, Removal policy: RETAIN.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Story 2.1 Technical Notes</section>
+        <snippet>S3 bucket names are globally unique across all AWS accounts. Hard-coding ndx-static-prod assumes it's available. Failure discovered at deploy time is too late. If name taken, CDK can generate unique names with logical ID + hash.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>ndx - Product Requirements Document</title>
+        <section>Infrastructure-Specific Requirements - AWS Resource Configuration</section>
+        <snippet>S3 Bucket: Bucket name: `ndx-static-prod`, Purpose: Static asset storage, Public access: Configured for CloudFront origin access, Versioning: To be determined (recommended for rollback capability).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/1-6-create-initial-infrastructure-readme.md</path>
+        <title>Story 1.6 Previous Context</title>
+        <section>Learnings from Previous Story</section>
+        <snippet>Bootstrap Complete: AWS account 568672915267 confirmed ready for CDK deployments. AWS Profile Confirmed: NDX/InnovationSandboxHub profile configured and working. Account 568672915267 ready for resource creation in us-west-2 region.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>dependency-manifest</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Defines CDK and AWS CLI dependencies required for bucket validation and infrastructure deployment</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <dependency name="aws-cdk-lib" version="2.215.0" />
+        <dependency name="constructs" version="^10.0.0" />
+        <dependency name="aws-cdk" version="2.1032.0" devDependency="true" />
+        <dependency name="typescript" version="~5.9.3" devDependency="true" />
+        <dependency name="jest" version="^29.7.0" devDependency="true" />
+        <dependency name="eslint" version="^9.39.1" devDependency="true" />
+        <dependency name="eslint-plugin-awscdk" version="^4.0.4" devDependency="true" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - S3 bucket names are globally unique across ALL AWS accounts - must validate availability before proceeding
+    - Must use AWS CLI with NDX/InnovationSandboxHub profile for all AWS operations
+    - AWS account: 568672915267, Region: us-west-2
+    - If bucket name changes, must update ALL documentation files (PRD, Architecture, Epics) for consistency
+    - Bucket naming pattern must follow: ndx-{resource-type}-{environment}
+    - Alternative naming options: (1) Add account ID suffix: ndx-static-prod-568672915267, (2) Add random suffix, (3) Use CDK auto-generated names
+    - Documentation quality standards: CommonMark format, syntax highlighting, verified links
+    - All commands must include `--profile NDX/InnovationSandboxHub`
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AWS CLI S3 API - head-bucket</name>
+      <kind>AWS CLI command</kind>
+      <signature>aws s3api head-bucket --bucket BUCKET_NAME --profile PROFILE_NAME</signature>
+      <path>N/A (AWS CLI tool)</path>
+      <description>Checks if an S3 bucket exists and is accessible. Returns 404 if bucket doesn't exist, 200 if exists and accessible, 403 if exists but access denied.</description>
+    </interface>
+    <interface>
+      <name>AWS CLI STS - get-caller-identity</name>
+      <kind>AWS CLI command</kind>
+      <signature>aws sts get-caller-identity --profile NDX/InnovationSandboxHub</signature>
+      <path>N/A (AWS CLI tool)</path>
+      <description>Validates AWS profile configuration and returns account ID, user ARN. Confirmed working in previous story.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>This story is a validation/discovery story with no code implementation. Testing consists of: (1) Manual validation of AWS CLI command execution, (2) Documentation quality checks (CommonMark format, link verification), (3) Consistency validation across all documentation files if bucket name changes. No unit tests or integration tests required for this story.</standards>
+    <locations>
+      - infra/test/ (for future CDK infrastructure tests in Story 2.2+)
+      - Jest test framework configured in infra/package.json
+    </locations>
+    <ideas>
+      <idea ac="1">Manual execution test: Run `aws s3api head-bucket` command and verify output matches expected outcomes (404, 200, or 403)</idea>
+      <idea ac="1">Profile validation test: Confirm NDX/InnovationSandboxHub profile works via `aws sts get-caller-identity`</idea>
+      <idea ac="2">Documentation consistency test: If bucket name changes, grep all documentation files for old name and verify all instances updated</idea>
+      <idea ac="3">Ownership investigation test: If bucket exists, run `aws s3api get-bucket-location --bucket ndx-static-prod --profile NDX/InnovationSandboxHub` to determine ownership</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,219 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.2</storyId>
+    <title>Create S3 Bucket with CDK</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/2-2-create-s3-bucket-with-cdk.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to define the S3 bucket infrastructure using AWS CDK TypeScript</iWant>
+    <soThat>the bucket is created with proper security, versioning, and tags as code</soThat>
+    <tasks>
+      <task id="1" ac="1,2">Create NdxStaticStack with S3 bucket definition
+        <subtask>Replace example stack in lib/ with ndx-stack.ts</subtask>
+        <subtask>Import S3 construct from aws-cdk-lib/aws-s3</subtask>
+        <subtask>Define S3 bucket with all required properties</subtask>
+        <subtask>Configure encryption (SSE-S3 managed keys)</subtask>
+        <subtask>Configure public access block (all 4 settings enabled)</subtask>
+        <subtask>Enable versioning</subtask>
+        <subtask>Set removal policy to RETAIN</subtask>
+        <subtask>Add resource tags (project, environment, managedby)</subtask>
+      </task>
+      <task id="2" ac="1">Update CDK app entry point to use NdxStaticStack
+        <subtask>Update bin/infra.ts to instantiate NdxStaticStack</subtask>
+        <subtask>Configure stack with us-west-2 region</subtask>
+        <subtask>Set account from environment or CDK defaults</subtask>
+      </task>
+      <task id="3" ac="3,4">Validate CloudFormation template generation
+        <subtask>Run cdk synth --profile NDX/InnovationSandboxHub</subtask>
+        <subtask>Verify CloudFormation template generated in cdk.out/</subtask>
+        <subtask>Verify AWS::S3::Bucket resource present</subtask>
+        <subtask>Verify bucket properties match acceptance criteria</subtask>
+        <subtask>Verify no synthesis errors</subtask>
+      </task>
+      <task id="4" ac="1">Verify ESLint and TypeScript compilation
+        <subtask>Run yarn lint in /infra directory</subtask>
+        <subtask>Run yarn build in /infra directory</subtask>
+        <subtask>Fix any linting or compilation errors</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      <given>the CDK project is set up and bucket name validated</given>
+      <when>I create lib/ndx-stack.ts defining the S3 bucket</when>
+      <then>the stack includes proper TypeScript CDK code importing aws-cdk-lib and aws-s3, exporting NdxStaticStack with S3 bucket definition</then>
+    </criterion>
+    <criterion id="2">
+      <description>Bucket configuration includes:
+        - Name: ndx-static-prod (validated in Story 2.1)
+        - Encryption: SSE-S3 (AWS managed keys)
+        - Public access: Completely blocked (all 4 settings)
+        - Versioning: Enabled
+        - Removal policy: RETAIN (protect data on stack deletion)
+        - Tags: { project: 'ndx', environment: 'prod', managedby: 'cdk' }
+      </description>
+    </criterion>
+    <criterion id="3">
+      <description>Running cdk synth --profile NDX/InnovationSandboxHub generates valid CloudFormation</description>
+    </criterion>
+    <criterion id="4">
+      <description>CloudFormation template includes AWS::S3::Bucket resource with correct properties</description>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Data Architecture - S3 Bucket Configuration</section>
+        <snippet>Bucket name ndx-static-prod validated available on 2025-11-18. Configuration: SSE-S3 encryption, BLOCK_ALL public access, versioning enabled, RETAIN removal policy, tags (project/environment/managedby lowercase).</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Implementation Patterns - Testing Patterns</section>
+        <snippet>Snapshot tests capture full CloudFormation template. Fine-grained assertions validate bucket name, encryption, versioning, public access block, tags using Template.hasResourceProperties().</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Architecture Decision Records</section>
+        <snippet>ADR-001: Use AWS CDK v2 with TypeScript. ADR-002: Single monolithic stack (NdxStaticStack) for MVP. ADR-003: Enable S3 versioning from day one for government service safety.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>ndx - Product Requirements Document</title>
+        <section>Infrastructure-Specific Requirements - AWS Resource Configuration</section>
+        <snippet>S3 bucket ndx-static-prod for static asset storage. Static website hosting disabled (prepared for CloudFront). Public access configured for CloudFront origin access. Versioning recommended for rollback capability.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>ndx - Product Requirements Document</title>
+        <section>Non-Functional Requirements - Security</section>
+        <snippet>NFR-SEC-1: S3 bucket must block all public access. NFR-SEC-2: Server-side encryption required (AWS managed keys acceptable). NFR-SEC-3: No hardcoded credentials. NFR-SEC-5: Infrastructure changes auditable via CDK diff.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Epic 2, Story 2.2 - Create S3 Bucket with CDK</section>
+        <snippet>Complete code example provided showing NdxStaticStack class with S3 bucket configuration including bucketName, encryption, blockPublicAccess, versioned, removalPolicy, and tags. Replaces example stack from Story 1.1.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/2-1-validate-s3-bucket-name-availability.md</path>
+        <title>Story 2.1 Completion</title>
+        <section>Dev Agent Record - Completion Notes</section>
+        <snippet>Bucket name ndx-static-prod confirmed available via AWS CLI (404 response). Safe to use in CDK stack definition. Account 568672915267, us-west-2 region, NDX/InnovationSandboxHub profile ready.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/lib/infra-stack.ts</path>
+        <kind>cdk-stack</kind>
+        <symbol>InfraStack</symbol>
+        <lines>1-16</lines>
+        <reason>Example stack from cdk init that will be replaced with NdxStaticStack. Shows CDK stack structure pattern to follow.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/bin/infra.ts</path>
+        <kind>cdk-app-entrypoint</kind>
+        <symbol>app</symbol>
+        <lines>1-21</lines>
+        <reason>CDK app entry point that needs to be updated to instantiate NdxStaticStack instead of InfraStack. Currently imports InfraStack from lib/infra-stack.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>dependencies</kind>
+        <symbol>dependencies/devDependencies</symbol>
+        <lines>26-29</lines>
+        <reason>Shows aws-cdk-lib v2.215.0 and constructs ^10.0.0 available for S3 bucket definition.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="aws-cdk-lib" version="2.215.0" />
+        <package name="constructs" version="^10.0.0" />
+        <package name="aws-cdk" version="2.1032.0" dev="true" />
+        <package name="typescript" version="~5.9.3" dev="true" />
+        <package name="eslint" version="^9.39.1" dev="true" />
+        <package name="typescript-eslint" version="^8.47.0" dev="true" />
+        <package name="eslint-plugin-awscdk" version="^4.0.4" dev="true" />
+        <package name="jest" version="^29.7.0" dev="true" />
+        <package name="ts-jest" version="^29.2.5" dev="true" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Stack name must be NdxStaticStack (replaces InfraStack from cdk init example)</constraint>
+    <constraint type="architecture">Import S3 construct from aws-cdk-lib/aws-s3, not separate package</constraint>
+    <constraint type="security">Bucket must use BucketEncryption.S3_MANAGED (NFR-SEC-2)</constraint>
+    <constraint type="security">Bucket must use BlockPublicAccess.BLOCK_ALL (NFR-SEC-1)</constraint>
+    <constraint type="security">No hardcoded credentials or sensitive values in code (NFR-SEC-3)</constraint>
+    <constraint type="data-protection">Bucket versioning must be enabled (FR22, ADR-003)</constraint>
+    <constraint type="data-protection">Removal policy must be RETAIN to protect production data on stack deletion</constraint>
+    <constraint type="governance">Resource tags must be lowercase: project, environment, managedby (NFR-OPS-4)</constraint>
+    <constraint type="testing">Code must pass ESLint with zero errors before completion (NFR-MAINT-1)</constraint>
+    <constraint type="testing">Code must compile with TypeScript (yarn build must succeed)</constraint>
+    <constraint type="validation">CloudFormation template must be valid (cdk synth must succeed without errors - NFR-REL-4)</constraint>
+    <constraint type="deployment">This story does NOT deploy to AWS - only creates infrastructure definition. Deployment is Story 2.4.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>aws-cdk-lib/aws-s3 Bucket</name>
+      <kind>CDK Construct</kind>
+      <signature>new s3.Bucket(scope: Construct, id: string, props?: BucketProps)</signature>
+      <path>node_modules/aws-cdk-lib/aws-s3</path>
+      <details>
+        Required props for this story:
+        - bucketName: string = 'ndx-static-prod'
+        - encryption: BucketEncryption.S3_MANAGED
+        - blockPublicAccess: BlockPublicAccess.BLOCK_ALL
+        - versioned: boolean = true
+        - removalPolicy: RemovalPolicy.RETAIN
+        - tags: CfnTag[] (project, environment, managedby)
+      </details>
+    </interface>
+    <interface>
+      <name>aws-cdk-lib Stack</name>
+      <kind>CDK Base Class</kind>
+      <signature>export class NdxStaticStack extends cdk.Stack</signature>
+      <path>node_modules/aws-cdk-lib/core</path>
+      <details>
+        Stack must extend cdk.Stack and call super(scope, id, props) in constructor.
+        Resources defined in constructor body.
+      </details>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing for this story is validation-based (not unit tests yet - those come in Story 3.3):
+      1. CDK Synthesis: Run `cdk synth --profile NDX/InnovationSandboxHub` to validate infrastructure code generates valid CloudFormation
+      2. ESLint: Run `yarn lint` in /infra to ensure code follows AWS CDK best practices and TypeScript standards
+      3. TypeScript Compilation: Run `yarn build` in /infra to ensure type safety
+      4. Manual CloudFormation Review: Inspect cdk.out/NdxStaticStack.template.json to verify AWS::S3::Bucket resource properties match acceptance criteria
+
+      Unit tests (Jest snapshots and assertions) will be added in Epic 3, Story 3.3 and 3.4.
+    </standards>
+    <locations>
+      <location>infra/test/</location>
+      <location>infra/cdk.out/ (CloudFormation templates for manual inspection)</location>
+    </locations>
+    <ideas>
+      <idea ac="1,2">Validate cdk synth succeeds and produces CloudFormation template</idea>
+      <idea ac="4">Manually inspect cdk.out/NdxStaticStack.template.json for AWS::S3::Bucket resource with properties: BucketName=ndx-static-prod, BucketEncryption.ServerSideEncryptionConfiguration, PublicAccessBlockConfiguration (all 4 settings true), VersioningConfiguration.Status=Enabled, Tags array</idea>
+      <idea ac="1">Validate yarn lint passes with zero errors</idea>
+      <idea ac="1">Validate yarn build compiles TypeScript successfully</idea>
+      <idea ac="3">Verify cdk synth exits with code 0 (no synthesis errors)</idea>
+    </ideas>
+  </tests>
+</story-context>

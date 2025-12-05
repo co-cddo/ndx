@@ -1,0 +1,360 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>2</storyId>
+    <title>Sign In OAuth Redirect Flow</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/5-2-sign-in-oauth-redirect-flow.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a government user</asA>
+    <iWant>to be redirected to Innovation Sandbox OAuth when I click "Sign in"</iWant>
+    <soThat>I can authenticate using AWS credentials</soThat>
+    <tasks>
+- [ ] Task 1: Update sign in button to trigger OAuth flow (AC: #1)
+  - [ ] 1.1: Verify sign in button already links to `/api/auth/login` (created in Story 5.1)
+  - [ ] 1.2: Test that clicking "Sign in" initiates browser redirect to `/api/auth/login`
+  - [ ] 1.3: Verify Innovation Sandbox API automatically redirects to AWS OAuth login page
+  - [ ] 1.4: Document expected OAuth flow sequence in dev notes
+
+- [ ] Task 2: Store original page URL before OAuth redirect (AC: #3)
+  - [ ] 2.1: Create `src/try/auth/oauth-flow.ts` module for OAuth utilities
+  - [ ] 2.2: Implement `storeReturnURL()` function that saves current page URL to sessionStorage
+  - [ ] 2.3: Call `storeReturnURL()` when user clicks "Sign in" (before redirect)
+  - [ ] 2.4: Use sessionStorage key `auth-return-to` for return URL
+  - [ ] 2.5: Handle edge cases (e.g., already on callback page, URL too long)
+
+- [ ] Task 3: Create OAuth callback page (AC: #2)
+  - [ ] 3.1: Create `/callback.html` static page in Eleventy `src/` directory
+  - [ ] 3.2: Add minimal HTML structure (GOV.UK layout, loading indicator)
+  - [ ] 3.3: Add placeholder for callback JavaScript (will be implemented in Story 5.3)
+  - [ ] 3.4: Verify callback page renders correctly (no 404 errors)
+
+- [ ] Task 4: Verify OAuth configuration (AC: #1, #2, #4)
+  - [ ] 4.1: Confirm Innovation Sandbox API OAuth callback URL is configured
+  - [ ] 4.2: Verify callback URL points to `https://ndx.gov.uk/callback` (production) or equivalent dev/staging URL
+  - [ ] 4.3: Test that OAuth redirect includes correct callback URL parameter
+  - [ ] 4.4: Verify HTTPS is enforced (no HTTP redirects)
+
+- [ ] Task 5: Test OAuth redirect flow end-to-end (AC: #1, #2)
+  - [ ] 5.1: Click "Sign in" button on home page
+  - [ ] 5.2: Verify redirect to Innovation Sandbox OAuth login page
+  - [ ] 5.3: Complete OAuth authentication with test credentials
+  - [ ] 5.4: Verify redirect back to NDX callback page with `?token=...` parameter
+  - [ ] 5.5: Inspect token format (JWT structure: `eyJ...`)
+
+- [ ] Task 6: Implement OAuth error handling (AC: #5)
+  - [ ] 6.1: Identify possible OAuth error scenarios (user cancels, invalid credentials, API down)
+  - [ ] 6.2: Handle OAuth error query parameters (e.g., `?error=access_denied`)
+  - [ ] 6.3: Display user-friendly error message on callback page
+  - [ ] 6.4: Redirect to home page after 3-second delay (or "Continue" button click)
+  - [ ] 6.5: Test error scenarios manually (cancel OAuth, use invalid credentials)
+
+- [ ] Task 7: Update AuthState to handle OAuth flow (AC: #3)
+  - [ ] 7.1: Import `storeReturnURL()` in `auth-nav.ts` sign in button handler
+  - [ ] 7.2: Call `storeReturnURL()` before `/api/auth/login` redirect
+  - [ ] 7.3: Document OAuth flow in AuthState JSDoc comments
+  - [ ] 7.4: Verify sessionStorage `auth-return-to` is set correctly
+
+- [ ] Task 8: Write unit tests for OAuth flow utilities (AC: #3, #5)
+  - [ ] 8.1: Test `storeReturnURL()` saves current URL to sessionStorage
+  - [ ] 8.2: Test return URL is not stored if on callback page (avoid loop)
+  - [ ] 8.3: Test error query parameter detection and parsing
+  - [ ] 8.4: Test user-friendly error message mapping
+  - [ ] 8.5: Achieve 80%+ code coverage for OAuth flow module
+
+- [ ] Task 9: Write integration tests for OAuth redirect (AC: #1, #2, #6)
+  - [ ] 9.1: Test clicking "Sign in" triggers redirect to `/api/auth/login`
+  - [ ] 9.2: Mock OAuth callback with token parameter
+  - [ ] 9.3: Test callback page loads without errors
+  - [ ] 9.4: Test no console errors during flow
+  - [ ] 9.5: Test HTTPS is used for all redirects
+
+- [ ] Task 10: Update developer documentation (AC: #1, #2, #3)
+  - [ ] 10.1: Document OAuth flow sequence diagram in `docs/development/authentication-state-management.md`
+  - [ ] 10.2: Document return URL mechanism
+  - [ ] 10.3: Document error handling approach
+  - [ ] 10.4: Add troubleshooting section for common OAuth issues
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC1: Sign in button initiates OAuth redirect**
+- **Given** I am on any NDX page and not authenticated
+- **When** I click the "Sign in" button
+- **Then** the browser redirects to `/api/auth/login`
+- **And** the Innovation Sandbox API handles OAuth redirect automatically
+- **And** I am redirected to AWS OAuth login page
+
+**AC2: OAuth callback returns JWT token in URL**
+- **Given** I have successfully authenticated with AWS OAuth
+- **When** the OAuth provider completes authentication
+- **Then** I am redirected back to NDX with JWT token in URL query parameter
+- **And** the token appears as `?token=eyJ...` in the callback URL
+- **And** the callback URL is the NDX callback page (not the originating page)
+
+**AC3: OAuth flow preserves original page context**
+- **Given** I am viewing a specific NDX page when I click "Sign in"
+- **When** the OAuth flow completes
+- **Then** the system remembers which page I was on (return URL)
+- **And** after token extraction and storage, I am redirected back to the original page
+- **And** the redirect happens automatically without user action
+
+**AC4: OAuth redirect uses HTTPS security**
+- **Given** OAuth flow is initiated
+- **When** redirecting to OAuth provider and back
+- **Then** all redirects use HTTPS protocol
+- **And** no HTTP fallback occurs
+- **And** the browser does not warn about insecure connections
+
+**AC5: OAuth errors are handled gracefully**
+- **Given** OAuth authentication fails (user cancels or credentials invalid)
+- **When** the OAuth provider returns an error
+- **Then** the system displays a user-friendly error message
+- **And** the user is returned to the NDX home page
+- **And** no JavaScript errors are logged to the console
+- **And** the error message provides guidance on what to do next
+
+**AC6: No console errors during OAuth flow**
+- **Given** OAuth flow executes successfully
+- **When** I monitor the browser console
+- **Then** no JavaScript errors are logged
+- **And** no network request errors are logged (except expected OAuth redirects)
+- **And** the browser developer tools show clean console output
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- PRD References -->
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document - Try Before You Buy</title>
+        <section>FR-TRY-2: System can initiate OAuth login by redirecting to `/api/auth/login`</section>
+        <snippet>FR-TRY-2: System can initiate OAuth login by redirecting to `/api/auth/login` - This is the entry point for the OAuth flow, handled by the Innovation Sandbox backend.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document - Try Before You Buy</title>
+        <section>FR-TRY-13: Sign in button triggers OAuth redirect to `/api/auth/login`</section>
+        <snippet>FR-TRY-13: Sign in button triggers OAuth redirect to `/api/auth/login` - The "Sign in" link in the header initiates the authentication flow.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document - Try Before You Buy</title>
+        <section>NFR-TRY-SEC-4: API calls use HTTPS only (no HTTP fallback)</section>
+        <snippet>NFR-TRY-SEC-4: API calls use HTTPS only (no HTTP fallback) - Security requirement ensuring all OAuth redirects use secure protocol.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document - Try Before You Buy</title>
+        <section>NFR-TRY-REL-5: Browser back button works correctly after OAuth redirect</section>
+        <snippet>NFR-TRY-REL-5: Browser back button works correctly after OAuth redirect (no broken states) - Ensures proper URL cleanup and state management.</snippet>
+      </doc>
+
+      <!-- Architecture References -->
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy Architecture - ADR-023</title>
+        <section>ADR-023: OAuth Callback Page Pattern</section>
+        <snippet>Dedicated `/callback` page handles OAuth redirect and token extraction. Separates OAuth flow from application logic, prevents token exposure in URL history on application pages, simplifies OAuth redirect configuration (single callback URL). Implementation: Eleventy generates static `/callback.html`, JavaScript extracts token, redirects to original destination.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy Architecture - ADR-024</title>
+        <section>ADR-024: Authentication State Management</section>
+        <snippet>Reactive auth state updates navigation when OAuth completes. Story 5.2 stores return URL in sessionStorage for post-auth redirect. Event-driven pattern allows multiple components to subscribe to auth state changes.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy Architecture - ADR-035</title>
+        <section>ADR-035: Environment Configuration</section>
+        <snippet>Different OAuth endpoints for dev/staging/production. Development: `http://localhost:3000/api/auth/login`, Staging: `https://staging.ndx.gov.uk/api/auth/login`, Production: `https://ndx.gov.uk/api/auth/login`.</snippet>
+      </doc>
+
+      <!-- UX Design References -->
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>NDX UX Design - User Journey 1: Authentication Sign In</title>
+        <section>Section 5.1 - OAuth Flow Steps</section>
+        <snippet>Step 1: User clicks "Sign in" → Redirect to `/api/auth/login`. Step 2: OAuth redirect to Innovation Sandbox login page (external to NDX). Step 3: After auth, OAuth provider redirects back to NDX callback URL with token in query param. Loading state: Brief "Signing you in..." message during token extraction (implemented in Story 5.3).</snippet>
+      </doc>
+      <doc>
+        <path>docs/ux-design-specification.md</path>
+        <title>NDX UX Design - UX Principle 5: Calm Through Predictability</title>
+        <section>Section 2.3</section>
+        <snippet>OAuth errors should not surprise users. Clear error messages explain what happened. Recovery path provided (return to home page, try again). Users always know what's happening and what will happen next.</snippet>
+      </doc>
+
+      <!-- Epic References -->
+      <doc>
+        <path>docs/epics/epic-5-authentication-foundation.md</path>
+        <title>Epic 5: Authentication Foundation - Story 5.2</title>
+        <section>Story 5.2: Sign In OAuth Redirect Flow - Technical Notes</section>
+        <snippet>Sign in button href: `/api/auth/login`. Innovation Sandbox OAuth endpoint handles redirect automatically. OAuth redirects to callback URL with token. Production cross-gov SSO replaces AWS OAuth (zero NDX code changes). OAuth flow is external to NDX (handled by Innovation Sandbox backend).</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- Existing Code from Story 5.1 -->
+      <artifact>
+        <path>src/try/auth/auth-provider.ts</path>
+        <kind>authentication-module</kind>
+        <symbol>AuthState</symbol>
+        <lines>entire-file</lines>
+        <reason>Provides AuthState class with subscribe/notify pattern. Story 5.2 extends this by storing return URL before OAuth redirect and calling notify() after successful authentication.</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/ui/auth-nav.ts</path>
+        <kind>ui-component</kind>
+        <symbol>initAuthNav</symbol>
+        <lines>entire-file</lines>
+        <reason>Renders sign in/out buttons in navigation. Story 5.2 will update this to call storeReturnURL() before OAuth redirect when sign in button is clicked.</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/auth/auth-provider.test.ts</path>
+        <kind>test</kind>
+        <symbol>AuthState tests</symbol>
+        <lines>entire-file</lines>
+        <reason>Existing unit tests for AuthState class. Story 5.2 will add similar test patterns for oauth-flow.ts module (storeReturnURL, parseOAuthError tests).</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>build-config</kind>
+        <symbol>build:try-js script</symbol>
+        <lines>11</lines>
+        <reason>esbuild compilation script for TypeScript. Story 5.2 will add oauth-flow.ts module which will be bundled by this existing build process.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>typescript</package>
+        <version>^5.7.2</version>
+        <reason>TypeScript language for src/try/auth/oauth-flow.ts module</reason>
+      </node>
+      <node>
+        <package>esbuild</package>
+        <version>^0.24.2</version>
+        <reason>Bundles TypeScript modules including new oauth-flow.ts</reason>
+      </node>
+      <node>
+        <package>jest</package>
+        <version>^29.7.0</version>
+        <reason>Unit testing framework for oauth-flow.test.ts</reason>
+      </node>
+      <node>
+        <package>jest-environment-jsdom</package>
+        <version>^29.7.0</version>
+        <reason>DOM environment for testing browser APIs (sessionStorage, window.location)</reason>
+      </node>
+      <node>
+        <package>@11ty/eleventy</package>
+        <version>^3.1.2</version>
+        <reason>Static site generator for creating callback.html page</reason>
+      </node>
+      <node>
+        <package>@x-govuk/govuk-eleventy-plugin</package>
+        <version>^7.2.1</version>
+        <reason>GOV.UK Design System integration for callback page layout and styling</reason>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **sessionStorage for return URL**: Use sessionStorage key `auth-return-to` for storing original page URL (ADR-024). Must check if sessionStorage is available before use (defensive programming pattern from auth-provider.ts).
+- **Callback page path**: Must be `/callback` not `/callback.html` in URLs (Eleventy generates clean URLs). File created as `src/callback.html` but accessed as `/callback`.
+- **No callback page redirect loop**: Do NOT store return URL if already on `/callback` page. Check `window.location.pathname === '/callback'` before calling storeReturnURL().
+- **URL cleanup required**: Token will be in URL as `?token=eyJ...` - must remove from browser history after extraction (Story 5.3 will implement cleanup using `window.history.replaceState()`).
+- **HTTPS enforcement**: All OAuth redirects must use HTTPS (NFR-TRY-SEC-4). Development environment can use HTTP localhost, staging/production must use HTTPS.
+- **Error message mapping**: OAuth error codes must map to user-friendly messages (UX Principle 5). Example: `error=access_denied` → "You cancelled the sign in process. Please try again if you want to access Try features."
+- **GOV.UK Design System styling**: Callback page must use GOV.UK layout template (`layouts/base.njk`) and GOV.UK components for consistency with existing NDX pages.
+- **Module organization**: New oauth-flow.ts module goes in `src/try/auth/` directory following ADR-019 module-based code organization.
+- **TypeScript strict mode**: All new TypeScript code must compile with strict mode enabled (tsconfig.json configuration from Story 5.1).
+- **Progressive enhancement**: Callback page HTML should work without JavaScript (show "JavaScript required" message), but full OAuth callback handling requires JavaScript.
+</constraints>
+
+  <interfaces>
+    <interface>
+      <name>storeReturnURL</name>
+      <kind>function-signature</kind>
+      <signature>function storeReturnURL(): void</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Stores current page URL to sessionStorage for post-OAuth redirect. Skips storage if already on callback page to avoid redirect loops.</description>
+    </interface>
+    <interface>
+      <name>getReturnURL</name>
+      <kind>function-signature</kind>
+      <signature>function getReturnURL(): string</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Retrieves stored return URL from sessionStorage. Returns home page ('/') if no return URL stored.</description>
+    </interface>
+    <interface>
+      <name>clearReturnURL</name>
+      <kind>function-signature</kind>
+      <signature>function clearReturnURL(): void</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Removes return URL from sessionStorage after successful redirect.</description>
+    </interface>
+    <interface>
+      <name>parseOAuthError</name>
+      <kind>function-signature</kind>
+      <signature>function parseOAuthError(): { code: string; message: string } | null</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Parses OAuth error from URL query parameters. Returns error object with code and user-friendly message, or null if no error.</description>
+    </interface>
+    <interface>
+      <name>Innovation Sandbox OAuth Endpoint</name>
+      <kind>REST-endpoint</kind>
+      <signature>GET /api/auth/login</signature>
+      <path>External - Innovation Sandbox API</path>
+      <description>Initiates OAuth redirect to AWS login page. Handled by Innovation Sandbox backend, not NDX code. Callback URL configured server-side.</description>
+    </interface>
+    <interface>
+      <name>OAuth Callback URL</name>
+      <kind>URL-parameter</kind>
+      <signature>/callback?token={jwt}&amp;error={error_code}</signature>
+      <path>src/callback.html</path>
+      <description>OAuth provider redirects to this URL after authentication. Token parameter contains JWT (success case), error parameter contains error code (failure case).</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Jest test framework with TypeScript support (ts-jest). Unit tests use jest-environment-jsdom for browser API mocking (sessionStorage, window.location). Test files named `*.test.ts` and located alongside source files. Aim for 80%+ code coverage for business logic. Integration tests mock external API calls. Manual testing required for OAuth redirect flow (cannot fully automate external OAuth provider interaction).
+</standards>
+
+    <locations>
+- `src/try/auth/oauth-flow.test.ts` - Unit tests for OAuth utility functions
+- `src/try/ui/auth-nav.test.ts` - Integration tests for sign in button behavior (existing file from Story 5.1, will be extended)
+- Manual testing checklist in story Dev Notes section
+</locations>
+
+    <ideas>
+**Unit Tests (oauth-flow.test.ts):**
+- **AC3**: Test storeReturnURL() saves `window.location.href` to sessionStorage with key `auth-return-to`
+- **AC3**: Test storeReturnURL() does NOT save URL if `window.location.pathname === '/callback'` (prevent redirect loop)
+- **AC3**: Test getReturnURL() retrieves stored URL from sessionStorage
+- **AC3**: Test getReturnURL() returns '/' if no URL stored
+- **AC3**: Test clearReturnURL() removes sessionStorage key
+- **AC5**: Test parseOAuthError() returns null if no `?error=` in URL
+- **AC5**: Test parseOAuthError() returns error object with code 'access_denied' and user-friendly message for `?error=access_denied`
+- **AC5**: Test parseOAuthError() handles unknown error codes gracefully (fallback message)
+
+**Integration Tests (auth-nav.test.ts extension):**
+- **AC1**: Test clicking sign in button calls storeReturnURL() before redirect
+- **AC1**: Test sign in button has href="/api/auth/login"
+- **AC6**: Test sessionStorage operations do not throw errors
+
+**Manual Testing:**
+- **AC1**: Click sign in button → verify redirect to Innovation Sandbox OAuth page
+- **AC2**: Complete OAuth authentication → verify redirect to `/callback?token=eyJ...`
+- **AC3**: Start on specific page (e.g., /catalogue) → sign in → verify return to /catalogue after OAuth
+- **AC4**: Verify all URLs use HTTPS in staging/production environments
+- **AC5**: Cancel OAuth authentication → verify error message and redirect to home page
+- **AC6**: Monitor browser console during OAuth flow → verify no errors logged
+</ideas>
+  </tests>
+</story-context>

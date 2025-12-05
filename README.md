@@ -34,6 +34,7 @@ To run this website locally:
 - `_site/`: Output directory for the built site (generated)
 - `.eleventy.js`: Eleventy configuration file
 - `package.json`: Project dependencies and scripts
+- `tests/`: E2E tests (Playwright)
 
 ## Key Features
 
@@ -46,9 +47,89 @@ To run this website locally:
 
 We welcome contributions to improve the NDX website. Please read our [Contributing Guidelines](CODE_OF_CONDUCT.md) for more details.
 
+## Running Tests
+
+### Unit Tests (Jest)
+
+```bash
+# Run all unit tests
+yarn test
+
+# Run tests in watch mode
+yarn test:watch
+```
+
+### End-to-End Tests (Playwright)
+
+**Prerequisites:**
+
+- mitmproxy installed and configured (see Epic 4 documentation)
+- Local app server running
+- Playwright browsers installed: `npx playwright install`
+
+**Execution:**
+
+```bash
+# Terminal 1: Start mitmproxy
+yarn dev:proxy
+
+# Terminal 2: Start local server
+yarn start
+
+# Terminal 3: Run E2E tests
+yarn test:e2e
+
+# Run specific test suites
+yarn test:e2e:auth          # Authentication tests
+yarn test:e2e:accessibility # Accessibility tests
+
+# Debug mode (headed browser)
+yarn test:e2e --headed
+
+# View test report
+npx playwright show-report
+```
+
+**Troubleshooting:**
+
+- **Tests timeout:** Verify mitmproxy running on port 8081
+- **Proxy errors:** Check certificate trust (Epic 4, Story 4.5)
+- **Authentication fails:** Verify OAuth mock configuration
+
+**CI Testing:**
+
+Tests run automatically on pull requests via GitHub Actions. View results in PR checks.
+
 ## Content Management
 
 Content is managed through Markdown files located in the `src/` directory. The site uses Eleventy's collections to organize and display content.
+
+## Try Before You Buy Configuration
+
+The Try Before You Buy feature connects to Innovation Sandbox for AWS account provisioning.
+
+### Environment Variables
+
+| Variable             | Description                           | Default                                  |
+| -------------------- | ------------------------------------- | ---------------------------------------- |
+| `AWS_SSO_PORTAL_URL` | AWS SSO portal URL for console access | `https://d-9267e1e371.awsapps.com/start` |
+| `API_BASE_URL`       | Innovation Sandbox API base URL       | `/api`                                   |
+| `REQUEST_TIMEOUT`    | API request timeout in milliseconds   | `10000`                                  |
+
+### Development
+
+For local development with mitmproxy, default values work out of the box.
+
+### Production
+
+Set environment variables in your deployment configuration:
+
+```bash
+# Production SSO portal
+export AWS_SSO_PORTAL_URL="https://your-portal.awsapps.com/start"
+```
+
+Configuration is centralized in `src/try/config.ts`.
 
 ## Deployment
 

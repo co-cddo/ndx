@@ -1,0 +1,103 @@
+<story-context id="n5-2" v="1.0">
+  <metadata>
+    <epicId>n5</epicId>
+    <storyId>2</storyId>
+    <title>ISB Event Schema Validation with Zod</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n5-2-event-schema-validation-with-zod.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>notification system</asA>
+    <iWant>to validate incoming ISB events against Zod schemas with strict mode</iWant>
+    <soThat>malformed events fail fast with clear error messages and the system only processes well-formed events</soThat>
+    <tasks>
+      <task id="1">Install and configure Zod dependency (AC: 2.1)</task>
+      <task id="2">Implement base schemas (AC: 2.2, 2.6, 2.11, 2.12)</task>
+      <task id="3">Implement discriminated union schemas (AC: 2.3, 2.4)</task>
+      <task id="4">Implement event schemas with strict mode (AC: 2.1, 2.5)</task>
+      <task id="5">Implement validateEvent dispatcher (AC: 2.7, 2.8, 2.9, 2.10)</task>
+      <task id="6">Write unit tests (AC: 2.1-2.12)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-2.1" priority="MUST">Zod schemas defined for all 10 user notification event types</criterion>
+    <criterion id="AC-2.2" priority="MUST">LeaseKeySchema validates composite key: { userEmail: email, uuid: uuid }</criterion>
+    <criterion id="AC-2.3" priority="MUST">LeaseFrozenReasonSchema uses discriminated union on type field</criterion>
+    <criterion id="AC-2.4" priority="MUST">LeaseTerminatedReasonSchema handles 5 termination types</criterion>
+    <criterion id="AC-2.5" priority="MUST">Zod strict mode (.strict()) rejects unknown fields</criterion>
+    <criterion id="AC-2.6" priority="MUST">accountId fields validate 12-digit AWS account ID pattern</criterion>
+    <criterion id="AC-2.7" priority="MUST">validateEvent() returns typed ValidatedEvent on success</criterion>
+    <criterion id="AC-2.8" priority="MUST">Invalid events throw PermanentError with Zod error details</criterion>
+    <criterion id="AC-2.9" priority="MUST">Schema validation errors are logged with field paths</criterion>
+    <criterion id="AC-2.10" priority="MUST">Unknown event types throw PermanentError('Unknown event type')</criterion>
+    <criterion id="AC-2.11" priority="MUST">UUID field validation rejects non-UUID formats (no query strings, protocols, special chars)</criterion>
+    <criterion id="AC-2.12" priority="MUST">Email field validation uses strict RFC 5322 mode (rejects +injection addresses)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-n5.md" title="Tech Spec Epic N-5" section="Story n5-2" snippet="Detailed AC definitions for Zod validation, schema patterns, discriminated unions for freeze/terminate reasons." />
+      <doc path="docs/notification-architecture.md" title="Notification Architecture" section="Integration Points" snippet="Project structure shows validation.ts as entry point after handler.ts processes events." />
+      <doc path="docs/epics-notifications.md" title="Epic N-5: User Email Notifications" section="Story 5.2" snippet="Event schema validation with Zod - validates against ISB schemas, strict mode, PermanentError on failure." />
+    </docs>
+    <code>
+      <file path="infra/lib/lambda/notification/types.ts" kind="types" symbol="NotificationEventType" lines="28-44" reason="Defines 10 notification event types that need Zod schemas" />
+      <file path="infra/lib/lambda/notification/types.ts" kind="interface" symbol="EventBridgeEvent" lines="12-22" reason="Base event structure to validate against" />
+      <file path="infra/lib/lambda/notification/errors.ts" kind="class" symbol="PermanentError" lines="51-62" reason="Error class to throw for validation failures (AC-2.8)" />
+      <file path="infra/lib/lambda/notification/errors.ts" kind="class" symbol="NotificationError" lines="14-27" reason="Base error class for error hierarchy" />
+      <file path="infra/lib/lambda/notification/notify-sender.ts" kind="function" symbol="validateUUID" lines="186-194" reason="Existing UUID validation pattern to extend for Zod schemas" />
+      <file path="infra/lib/lambda/notification/handler.ts" kind="function" symbol="handler" lines="1-100" reason="Main handler will call validateEvent() from new validation module" />
+    </code>
+    <dependencies>
+      <package ecosystem="node" name="zod" version="^3.23.0" status="TO_ADD" reason="Core dependency for schema validation" />
+      <package ecosystem="node" name="@aws-lambda-powertools/logger" version="2.29.0" status="EXISTING" reason="For logging validation errors with field paths" />
+      <package ecosystem="node" name="typescript" version="5.9.3" status="EXISTING" reason="TypeScript for Zod type inference" />
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="security">UUID validation must reject query strings, protocols, special chars to prevent injection (AC-2.11)</constraint>
+    <constraint type="security">Email validation must use RFC 5322 strict mode to reject +injection patterns (AC-2.12)</constraint>
+    <constraint type="security">Log field paths but not field values to prevent PII leakage (AC-2.9)</constraint>
+    <constraint type="pattern">All schemas must use .strict() to reject unknown fields (AC-2.5)</constraint>
+    <constraint type="pattern">Use discriminated unions for LeaseFrozenReason and LeaseTerminatedReason (AC-2.3, AC-2.4)</constraint>
+    <constraint type="error-handling">Invalid events throw PermanentError (no retry, goes to DLQ)</constraint>
+    <constraint type="architecture">validation.ts is placed in infra/lib/lambda/notification/ directory</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="validateEvent" kind="function" signature="validateEvent(event: EventBridgeEvent): ValidatedEvent" path="infra/lib/lambda/notification/validation.ts" />
+    <interface name="LeaseKeySchema" kind="zod-schema" signature="z.object({ userEmail: EmailSchema, uuid: UuidSchema }).strict()" path="infra/lib/lambda/notification/validation.ts" />
+    <interface name="EVENT_SCHEMAS" kind="registry" signature="Record<NotificationEventType, z.ZodSchema>" path="infra/lib/lambda/notification/validation.ts" />
+    <interface name="ValidatedEvent" kind="type" signature="{ eventType: NotificationEventType, detail: z.infer<typeof EventSchema> }" path="infra/lib/lambda/notification/validation.ts" />
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest with ts-jest for TypeScript support. Tests co-located with source files (*.test.ts).
+      All 12 ACs require explicit test coverage. Use ESM mock patterns from n5-1.
+      Security edge cases explicitly tested (injection attempts, malformed inputs).
+    </standards>
+    <locations>
+      <location>infra/lib/lambda/notification/validation.test.ts</location>
+    </locations>
+    <ideas>
+      <idea acRef="AC-2.1">Test each of 10 event type schemas with valid input</idea>
+      <idea acRef="AC-2.2">Test LeaseKeySchema with valid email+uuid, invalid email, invalid uuid</idea>
+      <idea acRef="AC-2.3">Test LeaseFrozenReasonSchema with Expired, BudgetExceeded, ManuallyFrozen types</idea>
+      <idea acRef="AC-2.4">Test LeaseTerminatedReasonSchema with all 5 termination types</idea>
+      <idea acRef="AC-2.5">Test strict mode rejects event with extra unknown field</idea>
+      <idea acRef="AC-2.6">Test accountId pattern accepts 12 digits, rejects 11/13 digits and non-numeric</idea>
+      <idea acRef="AC-2.7">Test validateEvent returns correctly typed ValidatedEvent</idea>
+      <idea acRef="AC-2.8">Test invalid event throws PermanentError with Zod details</idea>
+      <idea acRef="AC-2.9">Test error message includes field path (e.g., "detail.leaseId.uuid")</idea>
+      <idea acRef="AC-2.10">Test unknown event type throws PermanentError</idea>
+      <idea acRef="AC-2.11">Test UUID rejects: "uuid?redirect=x", "uuid/../", "uuid;drop", query strings</idea>
+      <idea acRef="AC-2.12">Test email rejects: "user++admin@x.com", "user@x..com", consecutive dots</idea>
+    </ideas>
+  </tests>
+</story-context>

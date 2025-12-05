@@ -1,0 +1,105 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.3</storyId>
+    <title>Write CDK Snapshot Tests</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-3-write-cdk-snapshot-tests.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>snapshot tests for the CDK stack</iWant>
+    <soThat>unintended infrastructure changes are detected automatically</soThat>
+    <tasks>
+      <task id="1">Create snapshot test file with Template.fromStack() and expect().toMatchSnapshot()</task>
+      <task id="2">Generate initial snapshot by running yarn test in infra directory</task>
+      <task id="3">Validate snapshot test behavior: passes on re-run, fails with clear diff when CDK code changes</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Test file infra/lib/ndx-stack.test.ts created with snapshot test importing Template, NdxStaticStack, using toMatchSnapshot()</criterion>
+    <criterion id="AC2">Running yarn test generates __snapshots__/ndx-stack.test.ts.snap file</criterion>
+    <criterion id="AC3">Snapshot captures complete CloudFormation template including S3 bucket resource, properties (encryption, versioning, public access block), and tags</criterion>
+    <criterion id="AC4">Subsequent test runs pass when snapshot matches current template</criterion>
+    <criterion id="AC5">Intentional CDK code changes cause test failure</criterion>
+    <criterion id="AC6">Test failure message clearly shows CloudFormation differences</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/epics.md" title="Epic Breakdown" section="Story 3.3: Write CDK Snapshot Tests">
+        Snapshot tests provide broad coverage with minimal code. Catches ANY unintended CloudFormation changes. Jest toMatchSnapshot() creates __snapshots__/ directory. Snapshots committed to git for version control.
+      </doc>
+      <doc path="docs/infrastructure-architecture.md" title="Infrastructure Architecture" section="Testing Patterns">
+        Snapshot test example provided showing Template.fromStack() usage. Tests co-located as lib/*.test.ts alongside source per ADR-005 standard CDK pattern. Jest framework from CDK init used.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="AC2: CDK Snapshot Testing">
+        Generate complete CloudFormation template snapshot. Compare current template to committed snapshot. Detect any unintended infrastructure changes. Fail if CloudFormation differs from snapshot with clear diff output.
+      </doc>
+      <doc path="docs/infrastructure-architecture.md" title="Infrastructure Architecture" section="ADR-005: Co-locate Tests with Source">
+        Co-locate tests lib/ndx-stack.test.ts alongside lib/ndx-stack.ts. Standard CDK pattern for easier maintenance. Simpler imports. test/ directory only contains Jest config.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="infra/lib/ndx-stack.ts" kind="stack" symbol="NdxStaticStack" lines="5-34" reason="Main CDK stack defining S3 bucket - this is what snapshot test will validate">
+        Stack creates S3 bucket with encryption, versioning, public access blocking, and tags. This stack will be synthesized into CloudFormation template for snapshot validation.
+      </artifact>
+      <artifact path="infra/test/infra.test.ts" kind="test" symbol="SQS Queue Created" lines="1-17" reason="Example test file from CDK init (commented out) - shows test structure pattern to follow">
+        Contains commented-out example showing Template.fromStack() and hasResourceProperties() usage. Can be replaced or removed as new test file will be created in lib/ directory.
+      </artifact>
+      <artifact path="infra/jest.config.js" kind="config" symbol="N/A" lines="1-8" reason="Jest configuration determining test environment, roots, and transform">
+        Currently configured with roots: ['&lt;rootDir&gt;/test'] - may need updating to include lib/ directory for co-located tests, or tests can follow existing pattern.
+      </artifact>
+    </code>
+    <dependencies>
+      <npm>
+        <package name="aws-cdk-lib" version="2.215.0">Provides Template from aws-cdk-lib/assertions for test validation</package>
+        <package name="jest" version="^29.7.0">Testing framework for snapshot tests</package>
+        <package name="ts-jest" version="^29.2.5">TypeScript Jest transformer</package>
+        <package name="@types/jest" version="^29.5.14">Jest TypeScript type definitions</package>
+      </npm>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Test files MUST be co-located: create lib/ndx-stack.test.ts next to lib/ndx-stack.ts per ADR-005</constraint>
+    <constraint>Use Template.fromStack() from aws-cdk-lib/assertions to extract CloudFormation template</constraint>
+    <constraint>Use Jest toMatchSnapshot() for CloudFormation template validation</constraint>
+    <constraint>Snapshot files MUST be committed to version control (not gitignored)</constraint>
+    <constraint>Jest config currently has roots: ['&lt;rootDir&gt;/test'] - verify if lib/ tests auto-discovered or update config</constraint>
+    <constraint>Test file naming pattern: ndx-stack.test.ts (matches source file name with .test.ts suffix)</constraint>
+    <constraint>Snapshot directory will be auto-created: lib/__snapshots__/ndx-stack.test.ts.snap</constraint>
+    <constraint>NFR-MAINT-2: 100% snapshot coverage required - all CDK stacks must have snapshot tests</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Template.fromStack()" kind="CDK Test API" signature="Template.fromStack(stack: Stack): Template" path="aws-cdk-lib/assertions">
+      Extracts CloudFormation template from CDK stack for testing. Returns Template object with assertion methods.
+    </interface>
+    <interface name="Template.toJSON()" kind="CDK Test API" signature="template.toJSON(): any" path="aws-cdk-lib/assertions">
+      Converts CloudFormation template to JSON for snapshot comparison.
+    </interface>
+    <interface name="expect().toMatchSnapshot()" kind="Jest API" signature="expect(value).toMatchSnapshot(): void" path="jest">
+      Creates or compares against stored snapshot. Auto-creates __snapshots__/ directory and .snap file on first run.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest testing framework with ts-jest transformer. Tests use Template.fromStack() from aws-cdk-lib/assertions to extract CloudFormation. Snapshot tests via toMatchSnapshot() capture full template for change detection. Test files co-located as lib/*.test.ts alongside source per ADR-005. Run tests with 'yarn test' from infra/ directory. Update snapshots with 'yarn test -u' for intentional changes.
+    </standards>
+    <locations>
+      <location>infra/lib/*.test.ts (co-located with source)</location>
+      <location>infra/lib/__snapshots__/*.test.ts.snap (auto-generated)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1,AC2,AC3">Create snapshot test capturing full CloudFormation template with S3 bucket resource, encryption, versioning, public access block, and tags</idea>
+      <idea ac="AC4,AC5,AC6">Validate snapshot test detects changes by intentionally modifying stack (e.g., add tag), running test to see failure, reviewing diff output</idea>
+      <idea ac="AC6">Test that failure message shows clear CloudFormation diff (Jest snapshot diff format)</idea>
+    </ideas>
+  </tests>
+</story-context>

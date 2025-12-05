@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Story Context: n5-3-email-ownership-verification
+  Generated: 2025-11-28
+  Purpose: Email ownership verification against DynamoDB lease records
+-->
+<story-context story-id="n5-3" epic="N-5">
+
+  <metadata>
+    <title>Email Ownership Verification</title>
+    <goal>Verify that notification recipients own the lease they're receiving notifications about</goal>
+    <security-level>HIGH - MANDATORY verification before sending any email</security-level>
+  </metadata>
+
+  <!-- =========================================================================
+       CODE ARTIFACTS - Existing patterns to follow/extend
+       ========================================================================= -->
+
+  <code-artifacts>
+
+    <!-- SecurityError class for ownership mismatches -->
+    <artifact path="infra/lib/lambda/notification/errors.ts" type="error-class">
+      <description>SecurityError class already exists for source validation failures.
+      Extend usage for email ownership mismatches.</description>
+      <pattern><![CDATA[
+export class SecurityError extends NotificationError {
+  readonly isRetriable = false;
+  readonly severity = 'high' as const;
+
+  constructor(
+    message: string,
+    public readonly securityContext: {
+      expectedSource?: string;
+      actualSource?: string;
+      eventId?: string;
+    },
+    cause?: Error
+  ) {
+    super(message, cause);
+  }
+}
+      ]]></pattern>
+      <usage>Use SecurityError for ownership mismatches - add expectedEmail/actualEmail to securityContext</usage>
+    </artifact>
+
+    <!-- PII redaction pattern -->
+    <artifact path="infra/lib/lambda/notification/notify-sender.ts" type="utility">
+      <description>hashForLog function for PII redaction in logs</description>
+      <pattern><![CDATA[
+import { createHash } from 'crypto';
+
+export function hashForLog(value: string): string {
+  if (!value) return 'empty';
+  const hash = createHash('sha256').update(value).digest('hex');
+  return hash.substring(0, 12);
+}
+      ]]></pattern>
+      <usage>Use hashForLog for redacting emails in log messages - never log raw PII</usage>
+    </artifact>
+
+    <!-- Validation types from n5-2 -->
+    <artifact path="infra/lib/lambda/notification/validation.ts" type="types">
+      <description>ValidatedEvent type returned by validateEvent on success</description>
+      <pattern><![CDATA[
+export interface ValidatedEvent<T = unknown> {
+  eventType: NotificationEventType;
+  eventId: string;
+  source: string;
+  timestamp: string;
+  detail: T;
+}
+      ]]></pattern>
+      <usage>verifyEmailOwnership receives ValidatedEvent from validateEvent</usage>
+    </artifact>
+
+    <!-- Email domain validation pattern -->
+    <artifact path="infra/lib/lambda/notification/handler.ts" type="function">
+      <description>Existing email domain validation pattern</description>
+      <pattern><![CDATA[
+function checkEmailDomain(email: string | undefined): boolean {
+  if (!email) return false;
+  const domain = email.split('@')[1]?.toLowerCase();
+  return domain?.endsWith('.gov.uk') ?? false;
+}
+      ]]></pattern>
+      <usage>Follow this pattern for domain checks in ownership verification</usage>
+    </artifact>
+
+    <!-- DynamoDB permissions already configured -->
+    <artifact path="infra/lib/notification-stack.ts" type="iam">
+      <description>DynamoDB IAM permissions already configured</description>
+      <pattern><![CDATA[
+notificationLambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    effect: iam.Effect.ALLOW,
+    actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+    resources: [
+      isbTableArn(config.isbStackName, 'LeaseTable'),
+      isbTableArn(config.isbStackName, 'LeaseTemplateTable'),
+      isbTableArn(config.isbStackName, 'SandboxAccountTable'),
+    ],
+  })
+);
+      ]]></pattern>
+      <usage>IAM already grants GetItem/Query on LeaseTable and SandboxAccountTable</usage>
+    </artifact>
+
+  </code-artifacts>
+
+  <!-- =========================================================================
+       DEPENDENCIES
+       ========================================================================= -->
+
+  <dependencies>
+    <dependency name="@aws-sdk/client-dynamodb" version="latest">
+      <usage>DynamoDB client for GetItem operations</usage>
+      <import>import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';</import>
+    </dependency>
+    <dependency name="@aws-sdk/util-dynamodb" version="latest">
+      <usage>unmarshall for converting DynamoDB items to JS objects</usage>
+      <import>import { unmarshall } from '@aws-sdk/util-dynamodb';</import>
+    </dependency>
+    <dependency name="@aws-lambda-powertools/logger" version="2.29.0">
+      <usage>Structured logging with PII redaction</usage>
+      <import>import { Logger } from '@aws-lambda-powertools/logger';</import>
+    </dependency>
+    <dependency name="@aws-lambda-powertools/metrics" version="2.29.0">
+      <usage>Emit OwnershipMismatch metrics</usage>
+      <import>import { Metrics, MetricUnits } from '@aws-lambda-powertools/metrics';</import>
+    </dependency>
+  </dependencies>
+
+  <!-- =========================================================================
+       DYNAMODB SCHEMA - Tables to query
+       ========================================================================= -->
+
+  <data-schema>
+
+    <!-- LeaseTable structure -->
+    <table name="LeaseTable">
+      <description>Primary table for lease records. Key is composite: userEmail + uuid</description>
+      <key>
+        <partition name="userEmail" type="S">User's email address (owner of lease)</partition>
+        <sort name="uuid" type="S">Lease UUID</sort>
+      </key>
+      <attributes>
+        <attribute name="accountId" type="S">AWS account ID (12 digits)</attribute>
+        <attribute name="leaseStatus" type="S">Active, Frozen, Terminated, etc.</attribute>
+        <attribute name="templateName" type="S">Template used for lease</attribute>
+        <attribute name="maxSpend" type="N">Budget limit</attribute>
+        <attribute name="expirationDate" type="S">ISO8601 expiration timestamp</attribute>
+      </attributes>
+      <access-pattern>
+        <operation>GetItem with ConsistentRead=true</operation>
+        <key-structure>{ userEmail: event.detail.userEmail, uuid: event.detail.leaseId.uuid }</key-structure>
+      </access-pattern>
+    </table>
+
+    <!-- SandboxAccountTable structure -->
+    <table name="SandboxAccountTable">
+      <description>Cross-verification table for account ownership</description>
+      <key>
+        <partition name="accountId" type="S">AWS account ID (12 digits)</partition>
+      </key>
+      <attributes>
+        <attribute name="ownerEmail" type="S">Email of account owner</attribute>
+        <attribute name="status" type="S">Account status</attribute>
+      </attributes>
+      <access-pattern>
+        <operation>GetItem with ConsistentRead=true</operation>
+        <key-structure>{ accountId: event.detail.accountId }</key-structure>
+      </access-pattern>
+    </table>
+
+  </data-schema>
+
+  <!-- =========================================================================
+       SECURITY CONSTRAINTS - MANDATORY requirements
+       ========================================================================= -->
+
+  <constraints>
+
+    <constraint id="C1" priority="CRITICAL">
+      <rule>MANDATORY: Ownership verification MUST occur before any email is sent</rule>
+      <implementation>verifyEmailOwnership() called from handler before sendNotification()</implementation>
+    </constraint>
+
+    <constraint id="C2" priority="CRITICAL">
+      <rule>Use ConsistentRead=true for all DynamoDB reads</rule>
+      <reason>Eventual consistency could allow stale data to bypass ownership checks</reason>
+    </constraint>
+
+    <constraint id="C3" priority="CRITICAL">
+      <rule>Case-insensitive email comparison</rule>
+      <implementation>email.toLowerCase() === leaseOwner.toLowerCase()</implementation>
+    </constraint>
+
+    <constraint id="C4" priority="HIGH">
+      <rule>Never log raw PII (email addresses)</rule>
+      <implementation>Use hashForLog(email) for all log messages</implementation>
+    </constraint>
+
+    <constraint id="C5" priority="HIGH">
+      <rule>Ownership mismatch throws SecurityError (non-retriable)</rule>
+      <implementation>throw new SecurityError with expectedEmail/actualEmail in context</implementation>
+    </constraint>
+
+    <constraint id="C6" priority="HIGH">
+      <rule>Missing lease record throws PermanentError (non-retriable)</rule>
+      <reason>If lease doesn't exist, this is a data integrity issue, not transient</reason>
+    </constraint>
+
+    <constraint id="C7" priority="MEDIUM">
+      <rule>Cross-verify with SandboxAccountTable when accountId present</rule>
+      <implementation>If accountId in event, also check SandboxAccountTable.ownerEmail</implementation>
+    </constraint>
+
+    <constraint id="C8" priority="MEDIUM">
+      <rule>Domain validation: only *.gov.uk emails proceed</rule>
+      <implementation>Use checkEmailDomain() pattern for validation</implementation>
+    </constraint>
+
+  </constraints>
+
+  <!-- =========================================================================
+       INTERFACE DEFINITIONS
+       ========================================================================= -->
+
+  <interfaces>
+
+    <!-- Main verification function -->
+    <interface name="verifyEmailOwnership">
+      <signature><![CDATA[
+export async function verifyEmailOwnership(
+  event: ValidatedEvent,
+  dynamoClient: DynamoDBClient
+): Promise<OwnershipResult>
+      ]]></signature>
+      <returns>
+        <type name="OwnershipResult">
+          <field name="verified" type="boolean">True if ownership confirmed</field>
+          <field name="leaseOwner" type="string">Email from DynamoDB record</field>
+          <field name="accountOwner" type="string | undefined">Email from SandboxAccountTable if checked</field>
+        </type>
+      </returns>
+      <throws>
+        <error type="SecurityError">Email doesn't match lease owner</error>
+        <error type="PermanentError">Lease record not found in DynamoDB</error>
+        <error type="RetriableError">DynamoDB transient failure</error>
+      </throws>
+    </interface>
+
+    <!-- LeaseKey extraction -->
+    <interface name="extractLeaseKey">
+      <signature><![CDATA[
+function extractLeaseKey(event: ValidatedEvent): { userEmail: string; uuid: string }
+      ]]></signature>
+      <description>Extract userEmail and uuid from event.detail.leaseId or event.detail</description>
+    </interface>
+
+  </interfaces>
+
+  <!-- =========================================================================
+       TEST SCENARIOS - Derived from ACs
+       ========================================================================= -->
+
+  <test-scenarios>
+
+    <scenario id="T1" ac="3.1">
+      <name>Matching ownership - happy path</name>
+      <given>Event userEmail matches LeaseTable record userEmail</given>
+      <then>verifyEmailOwnership returns { verified: true }</then>
+    </scenario>
+
+    <scenario id="T2" ac="3.2, 3.3">
+      <name>Ownership mismatch - SecurityError</name>
+      <given>Event userEmail !== LeaseTable record userEmail</given>
+      <then>Throws SecurityError with hashedExpected/hashedActual in context</then>
+    </scenario>
+
+    <scenario id="T3" ac="3.4">
+      <name>Missing lease - PermanentError</name>
+      <given>GetItem returns empty (no Item)</given>
+      <then>Throws PermanentError('Lease not found')</then>
+    </scenario>
+
+    <scenario id="T4" ac="3.5">
+      <name>Case-insensitive comparison</name>
+      <given>Event: User@GOV.UK, DynamoDB: user@gov.uk</given>
+      <then>Ownership verified (lowercase comparison matches)</then>
+    </scenario>
+
+    <scenario id="T5" ac="3.6, 3.7">
+      <name>ConsistentRead required</name>
+      <given>Any ownership verification call</given>
+      <then>GetItemCommand includes ConsistentRead: true</then>
+    </scenario>
+
+    <scenario id="T6" ac="3.8, 3.9">
+      <name>SandboxAccountTable cross-verification</name>
+      <given>Event contains accountId</given>
+      <then>Also verifies SandboxAccountTable.ownerEmail matches</then>
+    </scenario>
+
+    <scenario id="T7" ac="3.10, 3.11">
+      <name>PII never logged</name>
+      <given>Any log message mentioning email</given>
+      <then>Email is hashed via hashForLog(), never raw</then>
+    </scenario>
+
+    <scenario id="T8" ac="3.12">
+      <name>Ops events skip ownership check</name>
+      <given>Event type is AccountCleanupFailed/AccountQuarantined/AccountDriftDetected</given>
+      <then>verifyEmailOwnership returns early with skip flag</then>
+    </scenario>
+
+    <scenario id="T9" ac="3.13">
+      <name>DynamoDB transient error - RetriableError</name>
+      <given>DynamoDB throws ProvisionedThroughputExceededException</given>
+      <then>Throws RetriableError for SQS retry</then>
+    </scenario>
+
+    <scenario id="T10" ac="3.14">
+      <name>Metrics emission</name>
+      <given>Ownership mismatch detected</given>
+      <then>Metrics.addMetric('OwnershipMismatch', MetricUnits.Count, 1)</then>
+    </scenario>
+
+  </test-scenarios>
+
+  <!-- =========================================================================
+       LEARNINGS FROM PREVIOUS STORIES
+       ========================================================================= -->
+
+  <learnings>
+    <learning from="n5-1">
+      Use Lambda Powertools Logger with structured context for all log entries.
+      Initialize logger at module level with serviceName.
+    </learning>
+    <learning from="n5-2">
+      Use Zod for input validation, .strict() mode rejects unknown fields.
+      ValidatedEvent type is the interface between validation and downstream processing.
+    </learning>
+    <learning from="n5-1">
+      Error classification is critical: RetriableError for transient failures,
+      PermanentError for validation failures, SecurityError for auth/ownership issues.
+    </learning>
+  </learnings>
+
+</story-context>

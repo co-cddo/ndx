@@ -1,0 +1,153 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>3</storyId>
+    <title>Validate S3 Access Pattern for MVP</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/2-3-validate-s3-access-pattern-for-mvp.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>to verify how files in the S3 bucket will be accessed in MVP</iWant>
+    <soThat>the site is actually reachable after deployment, not just uploaded</soThat>
+    <tasks>
+      - Task 1: Analyze access pattern options and consequences
+      - Task 2: Document access decision in architecture
+      - Task 3: Update infra README with access information
+      - Task 4: Update CDK stack if static hosting chosen
+      - Task 5: Document decision impact on Epic 3
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      Given the S3 bucket has BlockPublicAccess: BLOCK_ALL, when I analyze the access requirements, then I document the chosen access method with two options:
+      - Option A: CloudFront Required for MVP (bucket remains private, files accessible only via CloudFront CDN, site dark until CloudFront added in growth phase)
+      - Option B: Temporary Static Website Hosting (enable static hosting, adjust public access, files accessible via S3 website endpoint, requires migration later when adding CloudFront)
+    </criterion>
+    <criterion id="2">
+      The access decision is documented in: /infra/README.md Deployment section, Architecture doc Data Architecture section, and Epic 3 Story 3.2 deployment script knows which endpoint to verify
+    </criterion>
+    <criterion id="3">
+      If CloudFront required, README clearly states "Site not publicly accessible until CloudFront configured"
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown - Story 2.3</title>
+        <section>Story 2.3: Validate S3 Access Pattern for MVP</section>
+        <snippet>Architecture says "static hosting: disabled" but doesn't clarify MVP access. Team could deploy files successfully but site returns 403 Forbidden. Must decide NOW: enable static hosting temporarily or require CloudFront from day 1. Architecture doc says "prepared for CloudFront" - suggests CloudFront IS the plan.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture - Data Architecture</title>
+        <section>S3 Bucket Configuration</section>
+        <snippet>Bucket configured with blockPublicAccess: BLOCK_ALL, encryption: S3_MANAGED, versioned: true. Prepared for CloudFront origin access in growth phase. Static website hosting: Disabled (prepared for CloudFront in growth phase).</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>PRD - Infrastructure-Specific Requirements</title>
+        <section>S3 Bucket Configuration</section>
+        <snippet>S3 bucket purpose: Static asset storage (files only, not static website hosting). Static website hosting: **Disabled** (prepared for CloudFront in growth phase). Public access: Configured for CloudFront origin access (not direct public bucket).</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>Infrastructure Architecture - ADR-006</title>
+        <section>Manual Deployment for MVP, GitHub Actions for Growth</section>
+        <snippet>Solo developer doesn't need CI/CD immediately. Proves deployment pattern first. Clear migration path defined. Foundation ready for automation later.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/2-2-create-s3-bucket-with-cdk.md</path>
+        <title>Story 2.2 - Completion Notes</title>
+        <section>Dev Agent Record</section>
+        <snippet>S3 bucket defined with BLOCK_ALL public access, S3_MANAGED encryption, versioning enabled, RETAIN removal policy. CloudFormation template validated. Current bucket configuration has BLOCK_ALL public access. Need to confirm if MVP can accept "dark site until CloudFront" or needs immediate access.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>CDK Stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>11-26</lines>
+        <reason>Current S3 bucket definition with BLOCK_ALL public access. May need modification if static hosting chosen (Option B).</reason>
+      </artifact>
+      <artifact>
+        <path>infra/README.md</path>
+        <kind>Documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>1-264</lines>
+        <reason>Infrastructure documentation that needs Site Access section added based on access decision.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="aws-cdk-lib" version="2.215.0" />
+        <package name="constructs" version="^10.0.0" />
+        <package name="aws-cdk" version="2.1032.0" devDependency="true" />
+        <package name="typescript" version="~5.9.3" devDependency="true" />
+        <package name="eslint" version="^9.39.1" devDependency="true" />
+        <package name="eslint-plugin-awscdk" version="^4.0.4" devDependency="true" />
+        <package name="jest" version="^29.7.0" devDependency="true" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Security Constraint (NFR-SEC-1): S3 bucket must block all public access by default
+    - Architectural Intent: PRD and architecture docs clearly indicate CloudFront is the intended access method
+    - Current Configuration: S3 bucket already defined with BLOCK_ALL public access in Story 2.2
+    - Migration Cost: If Option B chosen (static hosting), requires CDK stack changes now and CloudFront migration later
+    - Production Pattern: Option A (CloudFront required) aligns with production-ready security and architecture plan
+    - Decision Framework: Option A recommended if team accepts delayed site access and prioritizes production pattern. Option B recommended if immediate site access critical and team willing to migrate later.
+    - Documentation Impact: Decision affects Story 3.2 (deployment script endpoint), Story 3.7 (smoke test approach), and README user expectations
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>S3 Bucket Static Hosting Properties</name>
+      <kind>CDK Construct Properties</kind>
+      <signature>
+        // Option A: Current configuration (no changes needed)
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL
+
+        // Option B: Static hosting configuration (if chosen)
+        websiteIndexDocument: 'index.html'
+        websiteErrorDocument: 'error.html'
+        // Note: publicAccessBlock may need adjustment for static hosting
+      </signature>
+      <path>infra/lib/ndx-stack.ts</path>
+    </interface>
+    <interface>
+      <name>S3 Website Endpoint</name>
+      <kind>HTTP Endpoint</kind>
+      <signature>
+        // Option B only - S3 static website URL pattern
+        http://ndx-static-prod.s3-website-us-west-2.amazonaws.com
+      </signature>
+      <path>N/A - Generated by AWS if static hosting enabled</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing for this story is primarily documentation validation. No code changes required for Option A (CloudFront required). If Option B chosen, CDK changes must be validated via: cdk synth (generates valid CloudFormation), yarn lint (ESLint passes with zero errors), yarn build (TypeScript compiles successfully). Documentation changes validated through peer review.
+    </standards>
+    <locations>
+      - infra/lib/*.test.ts (CDK tests, if code changes made)
+      - Manual validation of documentation accuracy
+    </locations>
+    <ideas>
+      <idea ac="1">Decision analysis test: Verify that chosen option is documented with clear rationale, consequences, and migration path</idea>
+      <idea ac="2">Documentation completeness test: Verify all three documentation targets updated (README, architecture doc, Epic 3 Story 3.2 reference)</idea>
+      <idea ac="3">README clarity test: If CloudFront required, verify warning message is clear and prominent</idea>
+      <idea ac="1">If Option B chosen: CDK synthesis test validates static hosting properties in CloudFormation template</idea>
+      <idea ac="1">If Option B chosen: Verify publicAccessBlock settings allow static hosting while maintaining security</idea>
+    </ideas>
+  </tests>
+</story-context>

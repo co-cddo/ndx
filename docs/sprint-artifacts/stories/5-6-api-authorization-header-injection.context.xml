@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context version="1.0" story-id="5-6" generated="2025-11-24">
+  <metadata>
+    <story-file>docs/sprint-artifacts/stories/5-6-api-authorization-header-injection.md</story-file>
+    <epic>Epic 5: Authentication Foundation</epic>
+    <dependencies>
+      <dependency story="5.4" status="done">sessionStorage JWT persistence</dependency>
+      <dependency story="5.5" status="done">Sign out functionality</dependency>
+    </dependencies>
+  </metadata>
+
+  <documentation>
+    <doc type="architecture" path="docs/try-before-you-buy-architecture.md">
+      <excerpt name="ADR-021">
+        Centralized API client with authentication interceptor.
+        Single api-client.ts module handles all Innovation Sandbox API calls.
+        Automatic Authorization header injection (DRY principle).
+        Automatic 401 handling (Story 5.8 will implement).
+        Type-safe API responses with TypeScript interfaces.
+      </excerpt>
+    </doc>
+    <doc type="prd" path="docs/prd.md">
+      <excerpt name="FR-TRY-6">API calls must include Authorization header with JWT token</excerpt>
+      <excerpt name="FR-TRY-10">Centralized authentication handling for all API requests</excerpt>
+    </doc>
+  </documentation>
+
+  <artifacts>
+    <code type="existing" path="src/try/auth/auth-provider.ts" relevance="high">
+      <purpose>AuthState class with JWT token management - uses same TOKEN_KEY pattern</purpose>
+      <patterns>
+        <pattern name="TOKEN_KEY">Uses 'isb-jwt' key for sessionStorage - MUST reuse this constant</pattern>
+        <pattern name="sessionStorage">Defensive programming with typeof checks for SSR safety</pattern>
+      </patterns>
+      <key-lines>
+        <line n="15">TOKEN_KEY = "isb-jwt" - constant to reuse</line>
+        <line n="35-42">isAuthenticated() - checks sessionStorage for token</line>
+        <line n="108-115">login(token) - stores token in sessionStorage</line>
+        <line n="131-138">logout() - removes token from sessionStorage</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/auth/oauth-flow.ts" relevance="medium">
+      <purpose>OAuth flow handling - defines JWT_TOKEN_KEY constant</purpose>
+      <patterns>
+        <pattern name="JWT_TOKEN_KEY">Line 198: const JWT_TOKEN_KEY = "isb-jwt" - duplicate definition</pattern>
+        <pattern name="extractTokenFromURL">Stores token in sessionStorage using same key</pattern>
+      </patterns>
+    </code>
+
+    <code type="existing" path="src/try/main.ts" relevance="medium">
+      <purpose>Entry point - bundles all try modules into try.bundle.js</purpose>
+      <notes>New api-client module will need to be exported here if needed externally</notes>
+    </code>
+
+    <code type="existing" path="src/assets/try.bundle.js" relevance="low">
+      <purpose>Bundled output - reference for current module structure</purpose>
+      <notes>Build with 'yarn build' after creating new module</notes>
+    </code>
+
+    <code type="to-create" path="src/try/api/api-client.ts" relevance="critical">
+      <purpose>Centralized API client with automatic auth header injection</purpose>
+      <implementation-notes>
+        <note>Create new directory: src/try/api/</note>
+        <note>Import or define JWT_TOKEN_KEY constant (use 'isb-jwt')</note>
+        <note>Export callISBAPI(endpoint, options) function</note>
+        <note>Add Authorization: Bearer {token} header when token exists</note>
+        <note>Preserve other headers passed in options</note>
+        <note>Handle missing token gracefully (no header, no error)</note>
+      </implementation-notes>
+    </code>
+
+    <code type="to-create" path="src/try/api/api-client.test.ts" relevance="critical">
+      <purpose>Unit tests for API client</purpose>
+      <test-cases>
+        <case>Adds Authorization header when token exists in sessionStorage</case>
+        <case>Does NOT add Authorization header when token is missing</case>
+        <case>Preserves other headers passed in options</case>
+        <case>Uses correct Bearer token format</case>
+        <case>Handles empty string token as no token</case>
+      </test-cases>
+    </code>
+
+    <test type="existing" path="tests/e2e/auth/sign-out.spec.ts" relevance="medium">
+      <purpose>Reference for E2E test patterns using page.evaluate</purpose>
+      <patterns>
+        <pattern name="sessionStorage-mock">Uses page.evaluate to manipulate sessionStorage</pattern>
+        <pattern name="auth-header-check">Line 81-99: Tests API client logic for auth header</pattern>
+      </patterns>
+    </test>
+  </artifacts>
+
+  <constraints>
+    <constraint type="consistency">
+      JWT token key MUST be 'isb-jwt' - consistent with auth-provider.ts and oauth-flow.ts
+    </constraint>
+    <constraint type="defensive">
+      Must handle typeof sessionStorage === 'undefined' for SSR/testing environments
+    </constraint>
+    <constraint type="non-breaking">
+      API client should be additive - no changes to existing auth modules required
+    </constraint>
+    <constraint type="testing">
+      Unit tests must mock sessionStorage and fetch - use jest.fn() for fetch mock
+    </constraint>
+  </constraints>
+
+  <acceptance-criteria-mapping>
+    <ac number="1" description="Authorization Header Injection">
+      <implementation>callISBAPI reads token from sessionStorage, adds Bearer header if present</implementation>
+      <validation>Unit test verifies header format and presence</validation>
+    </ac>
+    <ac number="2" description="Conditional Header Behavior">
+      <implementation>Spread options.headers into new headers object before adding Authorization</implementation>
+      <validation>Unit test verifies custom headers preserved alongside Authorization</validation>
+    </ac>
+    <ac number="3" description="No Token Behavior">
+      <implementation>Check if token is null/empty before adding Authorization header</implementation>
+      <validation>Unit test verifies no Authorization header when token missing</validation>
+    </ac>
+    <ac number="4" description="Centralized API Client">
+      <implementation>Single callISBAPI function exported from api-client.ts</implementation>
+      <validation>Code review verifies no duplicate auth logic elsewhere</validation>
+    </ac>
+    <ac number="5" description="DevTools Verification">
+      <implementation>Standard fetch() call - Authorization visible in DevTools Network tab</implementation>
+      <validation>Manual verification or E2E test with network interception</validation>
+    </ac>
+  </acceptance-criteria-mapping>
+
+  <learnings-from-previous>
+    <learning story="5.5" key="e2e-pattern">
+      Use page.evaluate() for resilient E2E testing when UI elements may not exist in deployed site.
+      Core logic tests more reliable than UI-dependent tests.
+    </learning>
+    <learning story="5.5" key="existing-code">
+      Check for existing implementations before writing new code.
+      auth-provider.ts already had logout() - only needed to wire event handler.
+    </learning>
+    <learning story="5.4" key="build-process">
+      Run 'yarn build' to bundle try.bundle.js after TypeScript changes.
+      Run 'yarn test' to execute Jest unit tests.
+    </learning>
+  </learnings-from-previous>
+</story-context>

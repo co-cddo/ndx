@@ -1,0 +1,184 @@
+/**
+ * Sessions Table Responsive Styles
+ *
+ * Implements ADR-027: CSS-based responsive table transformation
+ * - Desktop (≥769px): Traditional HTML table
+ * - Mobile (<769px): Stacked card layout with inline labels
+ *
+ * Story 7.3: Render Sessions Table with GOV.UK Design System
+ */
+
+/* Desktop table (default) - uses GOV.UK table styles */
+.sessions-table {
+  margin-top: 30px;
+}
+
+.sessions-table-container {
+  overflow-x: auto; /* Horizontal scroll fallback if needed */
+}
+
+/* Mobile responsive card layout (<769px) */
+@media (max-width: 768px) {
+  /* Hide table headers on mobile */
+  .sessions-table thead {
+    display: none;
+  }
+
+  /* Transform table elements to block display */
+  .sessions-table,
+  .sessions-table tbody,
+  .sessions-table tr,
+  .sessions-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Each row becomes a card */
+  .sessions-table tr {
+    border: 2px solid #b1b4b6; /* GOV.UK border grey */
+    margin-bottom: 20px;
+    padding: 15px;
+    position: relative;
+    background: white;
+  }
+
+  /* Table cells with inline labels */
+  .sessions-table td {
+    text-align: left;
+    padding: 8px 0;
+    border: none; /* Remove default table cell borders */
+  }
+
+  /* Add label before each cell value using data-label attribute */
+  .sessions-table td::before {
+    content: attr(data-label) ": ";
+    font-weight: bold;
+    display: inline;
+    margin-right: 5px;
+  }
+
+  /* Status badge positioned top-right of card */
+  .sessions-table td[data-label="Status"] {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+
+  /* Hide "Status:" label prefix for badge (redundant in top-right) */
+  .sessions-table td[data-label="Status"]::before {
+    content: "";
+    display: none;
+  }
+
+  /* Actions cell (Launch button) - full width at bottom */
+  .sessions-table td[data-label="Actions"] {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #b1b4b6;
+  }
+
+  /* Hide "Actions:" label prefix */
+  .sessions-table td[data-label="Actions"]::before {
+    content: "";
+    display: none;
+  }
+
+  /* Launch button full width on mobile */
+  .sessions-table td[data-label="Actions"] .govuk-button {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+
+  /* Expiry cell - add spacing for remaining duration */
+  .sessions-table td[data-label="Expiry"] small {
+    display: block;
+    margin-top: 5px;
+    color: #505a5f; /* GOV.UK grey */
+  }
+}
+
+/* Empty state when no leases exist */
+.sessions-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f3f2f1; /* GOV.UK light grey */
+  border: 2px dashed #b1b4b6;
+  margin-top: 30px;
+}
+
+.sessions-empty-state h2 {
+  margin-bottom: 20px;
+}
+
+.sessions-empty-state p {
+  max-width: 600px;
+  margin: 0 auto 30px;
+}
+
+/* Catalogue link styling */
+.catalogue-link {
+  display: inline-block;
+  margin-top: 30px;
+  font-size: 19px;
+}
+
+/* Budget progress bar - Story 7.6 */
+.sessions-budget-progress {
+  width: 100px;
+  height: 8px;
+  border-radius: 4px;
+  border: 1px solid #b1b4b6; /* GOV.UK border grey */
+}
+
+/* Mobile: full-width progress bar */
+@media (max-width: 768px) {
+  .sessions-budget-progress {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 5px;
+  }
+}
+
+/* Loading state (skeleton) */
+.sessions-loading {
+  margin-top: 30px;
+}
+
+.sessions-loading-row {
+  height: 60px;
+  background: linear-gradient(90deg, #f3f2f1 0%, #e8e8e8 50%, #f3f2f1 100%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* First-time user guidance panel */
+.first-time-guidance {
+  background: #f3f2f1;
+  padding: 20px;
+  margin-top: 30px;
+  border-left: 5px solid #1d70b8; /* GOV.UK blue */
+}
+
+.first-time-guidance h2 {
+  margin-top: 0;
+}
+
+.first-time-guidance ol {
+  margin-left: 20px;
+}
+
+.first-time-guidance li {
+  margin-bottom: 10px;
+}

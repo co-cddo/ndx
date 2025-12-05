@@ -1,0 +1,266 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>3</storyId>
+    <title>mitmproxy Run Configuration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-3-mitmproxy-run-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a simple command to start mitmproxy with the addon script</iWant>
+    <soThat>I can quickly start local development environment</soThat>
+    <tasks>
+- [ ] Task 1: Add npm script to package.json (AC: #1, #2)
+  - [ ] 1.1: Open package.json in project root
+  - [ ] 1.2: Add "dev:proxy" script to "scripts" section
+  - [ ] 1.3: Specify mitmproxy command with correct flags:
+    - `--listen-port 8081` (avoid port 8080 conflict)
+    - `--mode transparent` (enable domain interception)
+    - `--set confdir=~/.mitmproxy` (SSL cert directory)
+    - `-s scripts/mitmproxy-addon.py` (load addon script)
+
+- [ ] Task 2: Validate npm script execution (AC: #2, #3)
+  - [ ] 2.1: Run `yarn dev:proxy` in terminal
+  - [ ] 2.2: Verify mitmproxy starts without errors
+  - [ ] 2.3: Check console output shows:
+    - Port 8081 listening confirmation
+    - Addon script loaded confirmation
+    - Interactive console ready message
+  - [ ] 2.4: Verify no syntax errors in command
+
+- [ ] Task 3: Test clean shutdown (AC: #4)
+  - [ ] 3.1: Start mitmproxy with `yarn dev:proxy`
+  - [ ] 3.2: Press `q` in mitmproxy console
+  - [ ] 3.3: Verify proxy stops cleanly
+  - [ ] 3.4: Verify terminal returns to prompt without errors or warnings
+  - [ ] 3.5: Verify no orphaned processes remain (check port 8081 released)
+
+- [ ] Task 4: Update documentation (AC: #1-#4)
+  - [ ] 4.1: Update `/docs/development/local-try-setup.md` with npm script reference
+  - [ ] 4.2: Add usage example: "Run `yarn dev:proxy` to start mitmproxy"
+  - [ ] 4.3: Document shutdown procedure: "Press `q` to stop proxy"
+  - [ ] 4.4: Add note about port 8081 usage and conflicts
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC1: npm script added to package.json**
+- **Given** the repository has a package.json file
+- **When** I add the dev:proxy script
+- **Then** package.json includes:
+```json
+{
+  "scripts": {
+    "dev:proxy": "mitmproxy --listen-port 8081 --mode transparent --set confdir=~/.mitmproxy -s scripts/mitmproxy-addon.py"
+  }
+}
+```
+
+**AC2: mitmproxy starts with correct configuration**
+- **Given** the addon script exists at `scripts/mitmproxy-addon.py`
+- **When** I run `yarn dev:proxy`
+- **Then** mitmproxy starts with:
+  - Listen port: 8081
+  - Mode: transparent proxy
+  - Addon script: scripts/mitmproxy-addon.py loaded
+  - Configuration directory: ~/.mitmproxy
+
+**AC3: Console output confirms startup**
+- **Given** mitmproxy is starting
+- **When** I observe console output
+- **Then** I see confirmation messages:
+  - Proxy server running on localhost:8081
+  - Addon loaded: mitmproxy-addon.py (or similar confirmation)
+  - mitmproxy interactive console ready for requests
+
+**AC4: Clean shutdown capability**
+- **Given** mitmproxy is running
+- **When** I press `q` in the mitmproxy console
+- **Then** the proxy stops cleanly
+- **And** the terminal returns to prompt without errors
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- PRD References -->
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document - Feature 2: Try Before You Buy</title>
+        <section>Phase 1: Local Development Setup</section>
+        <snippet>**Phase 1: Local Development Setup (Dev Infrastructure)** - mitmproxy Configuration: Proxy `https://d7roov8fndsis.cloudfront.net/` to localhost for development. API Route Exclusion: Exclude `/api/*` routes (proxy only UI, not API calls)</snippet>
+      </artifact>
+
+      <!-- Tech Spec Epic 4 -->
+      <artifact>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Workflows and Sequencing</section>
+        <snippet>**Developer Daily Workflow (After Epic 4 Complete):** 1. Terminal 1: Start mitmproxy - $ yarn dev:proxy → mitmproxy listens on localhost:8081 → Addon loaded: scripts/mitmproxy-addon.py. 2. Terminal 2: Start NDX server - $ yarn dev → Eleventy server listens on localhost:8080</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Non-Functional Requirements - Performance</section>
+        <snippet>**Developer Experience Performance:** Setup Validation: `yarn validate-setup` completes in < 1 second. Proxy Startup: `yarn dev:proxy` starts mitmproxy in < 5 seconds (ready state). Request Latency: mitmproxy adds < 10ms overhead to UI requests (localhost routing)</snippet>
+      </artifact>
+
+      <!-- Architecture References -->
+      <artifact>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-018: esbuild for TypeScript Compilation</section>
+        <snippet>**Decision:** Use esbuild for TypeScript → JavaScript compilation and bundling. npm script: `npm run build:try-js` → esbuild compiles. Development mode with watch flag for live reloading. **Impact:** Fast builds, simple configuration, development team productivity</snippet>
+      </artifact>
+
+      <artifact>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-033: Static Site Deployment with Client-Side Assets</section>
+        <snippet>**Build Pipeline:** Build steps (npm scripts): 1. npm run build:eleventy - Generate static HTML. 2. npm run build:try-js - Compile TypeScript → JavaScript (esbuild). 3. npm run build:css - Compile SCSS → CSS. 4. npm run build:assets - Copy static assets. 5. npm run build - Run all build steps</snippet>
+      </artifact>
+
+      <!-- Documentation File -->
+      <artifact>
+        <path>docs/development/local-try-setup.md</path>
+        <title>Local Development Setup for Try Before You Buy Feature</title>
+        <section>Overview</section>
+        <snippet>This guide covers the one-time setup required to develop the Try Before You Buy feature locally. The setup uses mitmproxy to intercept CloudFront domain requests and route UI assets to your local server while passing API calls through to the real Innovation Sandbox backend</snippet>
+      </artifact>
+    </docs>
+
+    <code>
+      <!-- package.json - will be modified -->
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>scripts</symbol>
+        <lines>8-14</lines>
+        <reason>Existing npm scripts section where "dev:proxy" script will be added. Currently has: start, build, deploy, lint, prepare</reason>
+      </artifact>
+
+      <!-- mitmproxy addon script created in Story 4.2 -->
+      <artifact>
+        <path>scripts/mitmproxy-addon.py</path>
+        <kind>script</kind>
+        <symbol>request</symbol>
+        <lines>N/A</lines>
+        <reason>Addon script created in Story 4.2 that will be loaded by the dev:proxy npm script. Required for mitmproxy to function correctly</reason>
+      </artifact>
+
+      <!-- Documentation that will be updated -->
+      <artifact>
+        <path>docs/development/local-try-setup.md</path>
+        <kind>documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Documentation file that needs to be updated with npm script usage instructions and shutdown procedures</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <dependency name="@11ty/eleventy" version="^3.1.2">Eleventy static site generator - runs local server on port 8080</dependency>
+        <dependency name="husky" version="^9.1.7">Git hooks for pre-commit checks</dependency>
+        <dependency name="prettier" version="^3.6.2">Code formatting</dependency>
+      </node>
+
+      <python>
+        <dependency name="mitmproxy" version="10.x+">Transparent HTTPS proxy for local development - required to be installed globally or in Python environment</dependency>
+      </python>
+
+      <system>
+        <tool name="lsof">Port availability checking on macOS/Linux</tool>
+        <tool name="netstat">Port availability checking on Windows</tool>
+      </system>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <!-- From Tech Spec -->
+    <constraint>Port Allocation: Port 8080 for NDX server (Eleventy), Port 8081 for mitmproxy (avoid conflicts)</constraint>
+    <constraint>Brownfield System: Cannot modify Innovation Sandbox CloudFront distribution (external system)</constraint>
+    <constraint>Development Only: mitmproxy setup is for local development, not production deployment</constraint>
+
+    <!-- From Architecture -->
+    <constraint>npm scripts pattern: Follow existing package.json script conventions (yarn-based execution)</constraint>
+    <constraint>Python requirement: mitmproxy requires Python 3.8+ to be installed on developer machine</constraint>
+    <constraint>Platform compatibility: npm script must work on macOS, Windows, and Linux</constraint>
+
+    <!-- From Story Dev Notes -->
+    <constraint>Configuration directory: Use ~/.mitmproxy for SSL certificates (user home directory)</constraint>
+    <constraint>Transparent mode: Use --mode transparent for CloudFront domain interception</constraint>
+    <constraint>Command syntax: mitmproxy command-line flags must be correctly ordered and formatted</constraint>
+  </constraints>
+
+  <interfaces>
+    <!-- package.json scripts interface -->
+    <interface>
+      <name>npm scripts - dev:proxy</name>
+      <kind>CLI command</kind>
+      <signature>yarn dev:proxy</signature>
+      <path>package.json</path>
+    </interface>
+
+    <!-- mitmproxy CLI interface -->
+    <interface>
+      <name>mitmproxy command-line interface</name>
+      <kind>CLI tool</kind>
+      <signature>mitmproxy --listen-port 8081 --mode transparent --set confdir=~/.mitmproxy -s scripts/mitmproxy-addon.py</signature>
+      <path>system PATH (installed via pip)</path>
+    </interface>
+
+    <!-- Port binding interface -->
+    <interface>
+      <name>Port 8081 binding</name>
+      <kind>Network socket</kind>
+      <signature>localhost:8081 HTTP/HTTPS proxy listener</signature>
+      <path>System network stack</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Story 4.3 focuses on npm script functionality and mitmproxy startup validation using manual testing. The test approach validates that the npm script correctly starts mitmproxy with all required flags, confirms startup via console output, and verifies clean shutdown. Story 4.6 will add automated validation script for checking prerequisites. Manual testing for this infrastructure story ensures the developer experience works correctly across platforms (macOS, Windows, Linux)
+    </standards>
+
+    <locations>
+      <location>Manual testing in terminal (story acceptance)</location>
+      <location>Integration testing will be added in Story 4.6 (validate-local-setup.sh)</location>
+    </locations>
+
+    <ideas>
+      <!-- AC1 Testing -->
+      <test acRef="AC1" idea="Manual review: Check package.json scripts section contains dev:proxy with correct mitmproxy command string" />
+      <test acRef="AC1" idea="Syntax validation: Verify command string has all required flags: --listen-port 8081, --mode transparent, --set confdir=~/.mitmproxy, -s scripts/mitmproxy-addon.py" />
+
+      <!-- AC2 Testing -->
+      <test acRef="AC2" idea="Integration test: Run `yarn dev:proxy` and verify mitmproxy process starts (check lsof -Pi :8081)" />
+      <test acRef="AC2" idea="Configuration test: Verify mitmproxy loads addon script by checking console output for script path" />
+      <test acRef="AC2" idea="Port test: Verify mitmproxy binds to port 8081 (not 8080) to avoid conflict with Eleventy server" />
+
+      <!-- AC3 Testing -->
+      <test acRef="AC3" idea="Console output test: Capture mitmproxy startup output and verify presence of confirmation messages (port, addon, ready state)" />
+      <test acRef="AC3" idea="Timing test: Verify mitmproxy startup completes within < 5 seconds (NFR performance requirement)" />
+
+      <!-- AC4 Testing -->
+      <test acRef="AC4" idea="Shutdown test: Press 'q' in mitmproxy console, verify process exits cleanly (exit code 0)" />
+      <test acRef="AC4" idea="Cleanup test: After shutdown, verify port 8081 released (lsof -Pi :8081 returns empty)" />
+      <test acRef="AC4" idea="Error detection test: Verify terminal returns to prompt without error messages or Python tracebacks" />
+
+      <!-- Task 4 (Documentation) Testing -->
+      <test acRef="Task4" idea="Documentation review: Verify docs/development/local-try-setup.md updated with yarn dev:proxy usage instructions" />
+      <test acRef="Task4" idea="Documentation completeness: Verify shutdown procedure documented ('Press q to stop proxy')" />
+      <test acRef="Task4" idea="Documentation clarity: Verify port 8081 usage and conflict resolution notes present" />
+
+      <!-- Edge Cases -->
+      <test acRef="Edge" idea="Port conflict test: Start service on port 8081 first, then run yarn dev:proxy - verify clear error message about port already in use" />
+      <test acRef="Edge" idea="Missing addon test: Delete scripts/mitmproxy-addon.py temporarily, run yarn dev:proxy - verify error about missing script file" />
+      <test acRef="Edge" idea="mitmproxy not installed test: Remove mitmproxy from PATH, run yarn dev:proxy - verify 'command not found' error (Story 4.6 will add automated detection)" />
+    </ideas>
+  </tests>
+</story-context>

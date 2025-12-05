@@ -1,0 +1,199 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>5</storyId>
+    <title>Create Integration Test for AWS Deployment</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-5-create-integration-test-for-aws-deployment.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>an integration test that deploys to a test AWS environment</iWant>
+    <soThat>I can catch real AWS deployment issues before production</soThat>
+    <tasks>
+- [ ] Task 1: Create integration test script (AC: #1, #2, #3, #4)
+  - [ ] Create test/integration.sh in infra directory
+  - [ ] Add bash shebang and set -e for error handling
+  - [ ] Add echo "Running integration test..." for visibility
+  - [ ] Add cdk deploy with test context and no-approval flags
+  - [ ] Add S3 bucket verification command
+  - [ ] Add cdk destroy with test context and force flag
+  - [ ] Add success echo message
+  - [ ] Make script executable (chmod +x)
+
+- [ ] Task 2: Update CDK stack to support test context (AC: #2)
+  - [ ] Open lib/ndx-stack.ts for editing
+  - [ ] Read env context value from CDK app
+  - [ ] Use context to determine bucket name (prod vs test)
+  - [ ] If env=test, use bucket name ndx-static-test
+  - [ ] If env=prod or undefined, use bucket name ndx-static-prod
+  - [ ] Ensure tag values also reflect environment context
+
+- [ ] Task 3: Test integration script locally (AC: #3, #4, #6)
+  - [ ] Run test/integration.sh from infra directory
+  - [ ] Verify CDK deploys stack with test bucket name
+  - [ ] Verify S3 bucket verification succeeds
+  - [ ] Verify CDK destroys stack and cleans up resources
+  - [ ] Verify script exits with code 0 on success
+  - [ ] Test failure scenarios (incorrect profile, region issues)
+
+- [ ] Task 4: Document integration test in README (AC: #5)
+  - [ ] Open infra/README.md for editing
+  - [ ] Add Integration Test subsection to Testing section
+  - [ ] Document test/integration.sh purpose and usage
+  - [ ] Explain test deploys to real AWS with test bucket
+  - [ ] Explain cleanup happens automatically
+  - [ ] Mark as optional quality gate (not required for MVP)
+  - [ ] Document issues caught (bucket conflicts, IAM, region)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Given** I have access to a test AWS account or namespace
+   **When** I create an integration test script
+   **Then** `test/integration.sh` includes:
+   - Bash shebang and set -e error handling
+   - cdk deploy with --context env=test --profile NDX/InnovationSandboxHub --require-approval never
+   - S3 bucket verification: aws s3 ls s3://ndx-static-test/
+   - cdk destroy with --context env=test --force for cleanup
+   - Success echo message
+
+2. **And** test uses CDK context to deploy to test bucket name (ndx-static-test)
+
+3. **And** test verifies stack deploys successfully to real AWS
+
+4. **And** test cleans up resources after validation (no manual cleanup)
+
+5. **And** test is documented in README as optional quality gate
+
+6. **And** test catches issues like:
+   - Bucket name conflicts
+   - IAM permission problems
+   - Region availability issues
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Deployment Automation & Documentation</title>
+        <section>AC4: Integration Testing</section>
+        <snippet>Integration test validates real AWS deployment: deploys stack to test environment via CDK context, verifies bucket exists and accessible, cleans up test resources, catches environment-specific failures (bucket conflicts, IAM permissions, region issues)</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>FR26 - Multi-Environment Support</section>
+        <snippet>Infrastructure structure supports future multi-environment contexts (dev/staging/prod). Use CDK context to parameterize resource names for test vs production environments.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Story 3.5 Technical Notes</section>
+        <snippet>Integration test deploys to actual AWS, catches environment-specific failures. Uses CDK context (--context env=test) to parameterize bucket name. Optional for MVP, can be run manually pre-production. Cleanup prevents resource accumulation.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>5-34</lines>
+        <reason>Main CDK stack definition. Must be enhanced to support context-based bucket naming (prod vs test)</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/ndx-stack.test.ts</path>
+        <kind>test</kind>
+        <symbol>snapshot and assertion tests</symbol>
+        <lines>1-43</lines>
+        <reason>Existing unit tests validate CloudFormation template. Integration test will validate real AWS deployment.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/test/infra.test.ts</path>
+        <kind>test</kind>
+        <symbol>existing CDK test</symbol>
+        <lines>all</lines>
+        <reason>Example of existing test structure. Integration test will be a new bash script, not TypeScript Jest test.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="aws-cdk-lib" version="2.215.0"/>
+        <package name="constructs" version="^10.0.0"/>
+        <package name="aws-cdk" version="2.1032.0" dev="true"/>
+        <package name="jest" version="^29.7.0" dev="true"/>
+        <package name="typescript" version="~5.9.3" dev="true"/>
+      </ecosystem>
+      <ecosystem name="system">
+        <tool name="AWS CLI" version="v2.x" required="true"/>
+        <tool name="Bash" version="any" required="true"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- Integration test script must be bash (not TypeScript) for standalone execution
+- Use AWS CLI profile: NDX/InnovationSandboxHub (same as existing deployments)
+- Test bucket name must differ from production: ndx-static-test (not ndx-static-prod)
+- Script must clean up test resources automatically (cdk destroy at end)
+- Use set -e for error handling (script exits on first failure)
+- CDK context flag: --context env=test to trigger test environment
+- Stack must read context and adjust bucket name accordingly
+- Script location: infra/test/integration.sh
+- Mark script executable: chmod +x test/integration.sh
+- Optional quality gate (not required for MVP, manual execution only)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>CDK Context API</name>
+      <kind>CDK Context Parameter</kind>
+      <signature>this.node.tryGetContext('env')</signature>
+      <path>infra/lib/ndx-stack.ts</path>
+      <usage>Read env context value in stack constructor to determine bucket name (test vs prod)</usage>
+    </interface>
+    <interface>
+      <name>AWS CLI S3 List</name>
+      <kind>CLI Command</kind>
+      <signature>aws s3 ls s3://ndx-static-test/ --profile NDX/InnovationSandboxHub</signature>
+      <path>infra/test/integration.sh</path>
+      <usage>Verify deployed bucket exists and is accessible after CDK deployment</usage>
+    </interface>
+    <interface>
+      <name>CDK Deploy with Context</name>
+      <kind>CLI Command</kind>
+      <signature>cdk deploy NdxStaticStack --context env=test --profile NDX/InnovationSandboxHub --require-approval never</signature>
+      <path>infra/test/integration.sh</path>
+      <usage>Deploy stack to test environment without manual approval prompts</usage>
+    </interface>
+    <interface>
+      <name>CDK Destroy with Force</name>
+      <kind>CLI Command</kind>
+      <signature>cdk destroy NdxStaticStack --context env=test --profile NDX/InnovationSandboxHub --force</signature>
+      <path>infra/test/integration.sh</path>
+      <usage>Clean up test resources after validation without confirmation prompts</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Integration testing validates real AWS deployment using actual AWS API calls. Test script is bash (not Jest) for standalone execution. Uses CDK CLI to deploy/destroy stack with test context. Validates bucket existence via AWS CLI. Script must be idempotent and clean up all resources. Exit code 0 indicates success, 1 indicates failure. All commands use NDX/InnovationSandboxHub AWS profile.
+    </standards>
+    <locations>
+- infra/test/integration.sh (NEW - this story creates it)
+- infra/lib/ndx-stack.test.ts (existing unit tests)
+- infra/test/infra.test.ts (existing CDK test example)
+    </locations>
+    <ideas>
+- AC1: Test script deploys stack with test bucket name (verify ndx-static-test created)
+- AC2: Test script uses CDK context correctly (--context env=test flag works)
+- AC3: Test verifies bucket exists after deployment (aws s3 ls succeeds)
+- AC4: Test cleans up resources (cdk destroy removes bucket, no manual cleanup needed)
+- AC5: Test failure scenarios (incorrect profile, IAM permissions, region issues return exit code 1)
+- AC6: Stack context support (env=test creates ndx-static-test, env=prod creates ndx-static-prod)
+    </ideas>
+  </tests>
+</story-context>

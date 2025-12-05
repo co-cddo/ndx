@@ -110,12 +110,17 @@ jobs:
           NOTIFY_TEMPLATE_LEASE_APPROVED: ${{ secrets.NOTIFY_TEMPLATE_LEASE_APPROVED }}
         run: yarn test:e2e
 
-  # CDK Diff (only run on PR when infra files changed)
+  # CDK Diff (only run on PR when infra files changed - NEVER on forks)
   cdk-diff:
     name: CDK Diff
     runs-on: ubuntu-latest
     needs: [infra-unit-tests]
-    if: ${{ github.event_name == 'pull_request' && needs.infra-unit-tests.outputs.infra-changed == 'true' }}
+    # Run on PRs when infra changed, but NEVER on forks (security requirement)
+    # Fork protection is also enforced at the IAM level via repository_owner condition
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.infra-unit-tests.outputs.infra-changed == 'true' &&
+      github.event.pull_request.head.repo.fork == false
     permissions:
       id-token: write
       contents: read
@@ -129,6 +134,13 @@ jobs:
         uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
         with:
           egress-policy: audit
+
+      # Defense-in-depth: Explicit fork check in case workflow conditions are bypassed
+      - name: Security - Block Fork PRs
+        if: github.event.pull_request.head.repo.fork == true
+        run: |
+          echo "::error::Fork PRs are not allowed to assume AWS roles for security reasons"
+          exit 1
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -145,10 +157,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Configure AWS credentials via OIDC
+      # Use readonly diff role (not deploy role) - allows any branch on origin repo
+      # Fork protection is enforced at IAM level via repository_owner condition
+      - name: Configure AWS credentials via OIDC (Readonly)
         uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
         with:
-          role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDeploy
+          role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDiff
           aws-region: ${{ env.AWS_REGION }}
 
       - name: CDK Diff

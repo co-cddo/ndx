@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context version="1.0" story-id="5-7" generated="2025-11-24">
+  <metadata>
+    <story-file>docs/sprint-artifacts/stories/5-7-authentication-status-check-api.md</story-file>
+    <epic>Epic 5: Authentication Foundation</epic>
+    <dependencies>
+      <dependency story="5.6" status="done">API Authorization Header Injection - callISBAPI() function</dependency>
+    </dependencies>
+  </metadata>
+
+  <documentation>
+    <doc type="architecture" path="docs/try-before-you-buy-architecture.md">
+      <excerpt name="ADR-021">
+        Centralized API client with authentication interceptor.
+        checkAuthStatus() method validates token server-side.
+        Returns typed response: { authenticated: boolean; user?: UserData }
+        Used by UI components for personalization and auth state verification.
+      </excerpt>
+    </doc>
+    <doc type="prd" path="docs/prd.md">
+      <excerpt name="FR-TRY-16">System can call GET /api/auth/login/status to check authentication status</excerpt>
+      <excerpt name="FR-TRY-17">System can parse user session data (email, displayName, userName, roles) from status API</excerpt>
+    </doc>
+  </documentation>
+
+  <artifacts>
+    <code type="existing" path="src/try/api/api-client.ts" relevance="critical">
+      <purpose>API client module to extend with checkAuthStatus function</purpose>
+      <patterns>
+        <pattern name="callISBAPI">Existing function for making authenticated API calls - MUST reuse</pattern>
+        <pattern name="JWT_TOKEN_KEY">Uses 'isb-jwt' key - already defined in this file</pattern>
+        <pattern name="defensive-programming">Handles missing sessionStorage, empty tokens</pattern>
+      </patterns>
+      <key-lines>
+        <line n="21">JWT_TOKEN_KEY = 'isb-jwt'</line>
+        <line n="52-73">callISBAPI() function - use this for API call</line>
+        <line n="138-142">_internal export pattern - can add checkAuthStatus for testing</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/api/api-client.test.ts" relevance="high">
+      <purpose>Existing unit tests to extend with checkAuthStatus tests</purpose>
+      <patterns>
+        <pattern name="createMockResponse">Factory function for mock responses - reuse for 200/401/500 scenarios</pattern>
+        <pattern name="mockFetch">Global fetch mock pattern - already set up</pattern>
+        <pattern name="sessionStorage-mock">jsdom provides sessionStorage - no additional setup needed</pattern>
+      </patterns>
+      <key-lines>
+        <line n="14-15">mockFetch setup</line>
+        <line n="18-27">createMockResponse factory - extend for typed responses</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/auth/auth-provider.ts" relevance="medium">
+      <purpose>AuthState class - may use checkAuthStatus for server-side validation</purpose>
+      <patterns>
+        <pattern name="isAuthenticated">Client-side check - sessionStorage presence</pattern>
+        <pattern name="notify">Event notification pattern for UI updates</pattern>
+      </patterns>
+      <notes>
+        Story 5.7 provides server-side validation complement to client-side isAuthenticated().
+        Future: AuthState could call checkAuthStatus() to validate token with server.
+      </notes>
+    </code>
+
+    <code type="to-create" path="(in api-client.ts)">
+      <purpose>checkAuthStatus() function and TypeScript types</purpose>
+      <implementation-notes>
+        <note>Add UserData interface: { email, displayName, userName, roles }</note>
+        <note>Add AuthStatusResult type: { authenticated: boolean; user?: UserData }</note>
+        <note>Implement checkAuthStatus() calling callISBAPI('/api/auth/login/status')</note>
+        <note>Handle 200, 401, and other HTTP errors</note>
+        <note>Handle network errors with try/catch</note>
+        <note>Export checkAuthStatus from module</note>
+      </implementation-notes>
+    </code>
+  </artifacts>
+
+  <api-contract>
+    <endpoint method="GET" path="/api/auth/login/status">
+      <description>Returns current user session data if authenticated</description>
+      <request>
+        <header name="Authorization">Bearer {jwt-token}</header>
+      </request>
+      <response status="200">
+        <body format="json">
+          {
+            "email": "user@example.gov.uk",
+            "displayName": "Jane Smith",
+            "userName": "jane.smith",
+            "roles": ["user"]
+          }
+        </body>
+      </response>
+      <response status="401">
+        <description>Token invalid or expired</description>
+      </response>
+    </endpoint>
+  </api-contract>
+
+  <constraints>
+    <constraint type="consistency">
+      Must use callISBAPI() for API call - do NOT duplicate Authorization header logic
+    </constraint>
+    <constraint type="error-handling">
+      All error cases must return { authenticated: false } - never throw to caller
+    </constraint>
+    <constraint type="logging">
+      Log errors to console for debugging but don't expose to UI
+    </constraint>
+    <constraint type="type-safety">
+      Return type must be AuthStatusResult - TypeScript interfaces required
+    </constraint>
+  </constraints>
+
+  <acceptance-criteria-mapping>
+    <ac number="1" description="Auth Status API Call">
+      <implementation>Call callISBAPI('/api/auth/login/status'), parse 200 response</implementation>
+      <validation>Unit test verifies correct endpoint and response parsing</validation>
+    </ac>
+    <ac number="2" description="Response Parsing">
+      <implementation>await response.json() on 200 OK, return { authenticated: true, user: userData }</implementation>
+      <validation>Unit test verifies return structure matches AuthStatusResult type</validation>
+    </ac>
+    <ac number="3" description="401 Response Handling">
+      <implementation>Check response.status === 401, return { authenticated: false }</implementation>
+      <validation>Unit test verifies 401 returns authenticated: false without error</validation>
+    </ac>
+    <ac number="4" description="Network Error Handling">
+      <implementation>try/catch around fetch, log error, return { authenticated: false }</implementation>
+      <validation>Unit test mocks fetch rejection, verifies graceful handling</validation>
+    </ac>
+    <ac number="5" description="TypeScript Type Safety">
+      <implementation>UserData and AuthStatusResult interfaces, typed return value</implementation>
+      <validation>TypeScript compilation verifies type correctness</validation>
+    </ac>
+  </acceptance-criteria-mapping>
+
+  <learnings-from-previous>
+    <learning story="5.6" key="callISBAPI">
+      Use callISBAPI() for all Innovation Sandbox API calls - handles Authorization header automatically.
+      Don't duplicate auth logic - single source of truth in api-client.ts.
+    </learning>
+    <learning story="5.6" key="mock-response">
+      Use createMockResponse(body, status) factory for unit tests.
+      Handle jsdom environment limitations with simple mock objects.
+    </learning>
+    <learning story="5.6" key="export-pattern">
+      Export functions directly from module, use _internal for test-only exports if needed.
+    </learning>
+  </learnings-from-previous>
+</story-context>

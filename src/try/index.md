@@ -1,15 +1,16 @@
 ---
-layout: product
-title: Try
+layout: layouts/try-page.njk
+title: Your Try Sessions
 includeInBreadcrumbs: true
-image:
-  src: /assets/icons/try.svg
 ---
 
-You can use NDX to create a secure short lived cloud environment for learning, experiments and proof of concept/value.
-
-Simply find a product you want to try in the catalogue that is available to try and click the button to create your environment.
-
-You will be guided through the process of creating your environment and provided with a secure URL to access your environment.
-
-You can also create an environment using the API.
+<div id="try-sessions-container">
+  <noscript>
+    <p class="govuk-body">
+      JavaScript is required to view and manage your try sessions.
+    </p>
+    <p class="govuk-body">
+      <a href="/api/auth/login" class="govuk-link">Sign in</a> to continue.
+    </p>
+  </noscript>
+</div>

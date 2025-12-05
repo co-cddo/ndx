@@ -1,0 +1,203 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.2</storyId>
+    <title>Implement Deployment Script with Error Recovery</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-2-implement-deployment-script-with-error-recovery.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>a robust deployment script that uploads files to S3 with error handling</iWant>
+    <soThat>deployments are reliable and recoverable from failures</soThat>
+    <tasks>
+      - Task 1: Replace placeholder with AWS S3 sync implementation (AC: #1, #3, #4, #5)
+        - Update scripts/deploy.sh with full implementation
+        - Add set -e for fail-fast error handling
+        - Add _site directory prerequisite check
+        - Implement aws s3 sync command with all required flags
+        - Test sync uploads files to ndx-static-prod bucket
+
+      - Task 2: Add file count validation (AC: #1, #6)
+        - Count expected files in _site directory
+        - Count uploaded files in S3 bucket
+        - Compare counts and exit with error if mismatch
+        - Test validation catches incomplete uploads
+
+      - Task 3: Add deployment completion message (AC: #1)
+        - Display success message with file count
+        - Test message displays after successful deployment
+        - Verify exit code 0 on success
+
+      - Task 4: Test deployment workflow end-to-end (AC: #1-#7)
+        - Run yarn build to create _site directory
+        - Run yarn deploy to upload files
+        - Verify files exist in S3 bucket
+        - Verify MIME types are correct (check sample .html, .css, .js files)
+        - Verify --delete flag removes old files (test by removing local file and redeploying)
+        - Verify --exact-timestamps enables idempotent re-run (re-run deploy, only changed files upload)
+        - Verify cache-control headers set on S3 objects
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Given the `_site/` directory exists with built Eleventy site
+       When I run `yarn deploy`
+       Then `scripts/deploy.sh` executes with complete AWS S3 sync implementation including:
+       - set -e for fail-fast error handling
+       - Prerequisite check for _site directory
+       - AWS S3 sync command with --profile, --delete, --exact-timestamps, --cache-control, --exclude flags
+       - File count validation comparing local vs S3
+       - Success message with file count
+
+    2. Script is executable (chmod +x scripts/deploy.sh)
+
+    3. --delete flag removes files not in `_site/` (keeps bucket clean)
+
+    4. --exact-timestamps enables idempotent re-runs (only uploads changed files)
+
+    5. --cache-control sets headers for future CloudFront optimization
+
+    6. File count validation ensures complete upload
+
+    7. MIME types are auto-detected by AWS CLI (.html, .css, .js, .svg)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>NDX Epic Breakdown</title>
+        <section>Story 3.2: Implement Deployment Script with Error Recovery</section>
+        <snippet>Complete deployment script specification with error handling via set -e, prerequisite validation, AWS S3 sync with specific flags (--delete, --exact-timestamps, --cache-control), file count validation post-upload, and clear success/failure messaging. Pre-mortem insight: Network failures mid-upload leave bucket in broken state, --exact-timestamps makes script idempotent, file count check catches incomplete uploads.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Data Architecture - S3 Bucket Configuration</section>
+        <snippet>S3 bucket ndx-static-prod in us-west-2 region using NDX/InnovationSandboxHub profile. CloudFront required for public access (site dark after upload until CloudFront added). Public access blocked (NFR-SEC-1). MIME types auto-detected by AWS CLI for .html, .css, .js, .json, .svg files.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Deployment Architecture - Deployment Components</section>
+        <snippet>Deployment script location: scripts/deploy.sh. Executes from project root via yarn deploy command. Uses AWS CLI for S3 sync operations with NDX/InnovationSandboxHub profile. File deployment pattern: yarn build (creates _site/), then yarn deploy (uploads to S3).</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document</title>
+        <section>Functional Requirements - File Deployment (FR8-FR12)</section>
+        <snippet>FR8: Upload all files from _site/ to ndx-static-prod. FR9: Use AWS CLI with NDX/InnovationSandboxHub profile. FR10: Preserve file structure and MIME types. FR11: Deploy via yarn deploy command. FR12: Require successful yarn build before uploading. NFR-REL-3: Clear error messages for failures.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/3-1-create-root-package-json-deploy-script.md</path>
+        <title>Story 3.1: Create Root Package.json Deploy Script</title>
+        <section>Completion Notes and Learnings</section>
+        <snippet>Deploy command structure ready: yarn deploy executes scripts/deploy.sh successfully. Placeholder script exists with shebang, placeholder message, exit 0. File permissions set (chmod +x already applied). Package.json updated with deploy script entry. Foundation established for Story 3.2 full implementation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/2-4-deploy-s3-infrastructure-to-aws.md</path>
+        <title>Story 2.4: Deploy S3 Infrastructure to AWS</title>
+        <section>Completion Notes</section>
+        <snippet>S3 bucket ndx-static-prod deployed in us-west-2. CloudFormation Stack: NdxStatic successfully deployed. Bucket configuration: encryption enabled, versioning enabled, public access blocked. AWS profile NDX/InnovationSandboxHub configured and verified. Access pattern decision: CloudFront required for public access.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>scripts/deploy.sh</path>
+        <kind>bash-script</kind>
+        <symbol>deploy.sh</symbol>
+        <lines>1-5</lines>
+        <reason>Placeholder deployment script to be replaced with full AWS S3 sync implementation. Currently contains shebang, placeholder message, and exit 0. Already executable (chmod +x applied in Story 3.1).</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>scripts.deploy</symbol>
+        <lines>11</lines>
+        <reason>Deploy script entry pointing to scripts/deploy.sh. Executes when running yarn deploy command from project root.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@11ty/eleventy" version="^3.1.2" />
+        <note>Static site generator that creates _site/ directory output. Deployment script depends on _site/ existing (created by yarn build).</note>
+      </node>
+      <external>
+        <tool name="AWS CLI" version="v2.x" />
+        <note>Required for aws s3 sync command. Must be configured with NDX/InnovationSandboxHub profile pointing to us-west-2 region.</note>
+      </external>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Error handling: Use set -e for fail-fast behavior (exit on any error)
+    - Prerequisite validation: Must check _site directory exists before attempting deployment
+    - AWS Profile: Must use NDX/InnovationSandboxHub profile for all AWS CLI commands
+    - S3 Bucket: Must deploy to ndx-static-prod bucket in us-west-2 region
+    - Idempotency: Use --exact-timestamps flag to only upload changed files on re-runs
+    - Cleanup: Use --delete flag to remove files from S3 not present in local _site/
+    - Cache optimization: Use --cache-control "public, max-age=3600" for future CloudFront integration
+    - Exclusions: Use --exclude ".DS_Store" to skip macOS metadata files
+    - File count validation: Compare local file count vs S3 file count to ensure complete upload
+    - Clear messaging: Provide clear error messages for missing _site and file count mismatches
+    - Exit codes: Exit 0 on success, exit 1 on failure
+    - MIME types: Rely on AWS CLI auto-detection for .html, .css, .js, .svg files (no manual override needed)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AWS CLI - S3 Sync</name>
+      <kind>CLI command</kind>
+      <signature>aws s3 sync SOURCE DEST [--delete] [--exact-timestamps] [--cache-control VALUE] [--exclude PATTERN] [--profile PROFILE]</signature>
+      <path>External tool (AWS CLI)</path>
+      <note>Synchronizes local directory to S3 bucket. Preserves file structure and auto-detects MIME types. Returns exit code 0 on success, non-zero on failure.</note>
+    </interface>
+    <interface>
+      <name>AWS CLI - S3 List</name>
+      <kind>CLI command</kind>
+      <signature>aws s3 ls s3://BUCKET/ --recursive [--profile PROFILE]</signature>
+      <path>External tool (AWS CLI)</path>
+      <note>Lists all files in S3 bucket recursively. Used for file count validation. Output can be piped to wc -l for counting.</note>
+    </interface>
+    <interface>
+      <name>Yarn Deploy</name>
+      <kind>NPM script</kind>
+      <signature>yarn deploy</signature>
+      <path>package.json scripts section</path>
+      <note>Entry point for deployment. Executes scripts/deploy.sh from project root. Defined in package.json line 11.</note>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      This infrastructure deployment story uses manual verification rather than automated tests. Validation approach includes:
+      - Test prerequisite check (run without _site directory, verify error message)
+      - Test successful deployment (verify files uploaded to S3 via AWS CLI)
+      - Test MIME type detection (check sample .html, .css, .js files in S3 metadata)
+      - Test --delete flag (remove local file, redeploy, verify removed from S3)
+      - Test --exact-timestamps idempotency (redeploy unchanged site, verify minimal AWS operations)
+      - Test file count validation (manually verify counts match, test error handling if possible)
+      Success criteria: Script exits with error if _site missing, all files uploaded, file count validation passes, MIME types correctly set, idempotent re-runs work.
+    </standards>
+    <locations>
+      Manual testing only - no automated test files for this infrastructure story.
+      Verification performed via:
+      - Command line execution (yarn deploy)
+      - AWS CLI inspection (aws s3 ls, aws s3api head-object)
+      - Exit code validation (echo $?)
+    </locations>
+    <ideas>
+      AC1: Test prerequisite check - Remove _site directory and run yarn deploy, verify error message "Error: _site/ directory not found. Run 'yarn build' first." and exit code 1
+      AC1: Test AWS S3 sync execution - Run yarn build, then yarn deploy, verify success message and exit code 0
+      AC3: Test --delete flag - Create file in _site, deploy, remove file from _site, redeploy, verify file removed from S3
+      AC4: Test --exact-timestamps - Run yarn deploy twice without changes, verify second run only uploads changed files (minimal AWS operations)
+      AC5: Test cache-control headers - Use aws s3api head-object to check Cache-Control header is set to "public, max-age=3600"
+      AC6: Test file count validation - Compare expected vs uploaded file counts, verify they match
+      AC7: Test MIME type detection - Use aws s3api head-object to verify Content-Type for .html (text/html), .css (text/css), .js (application/javascript), .svg (image/svg+xml)
+    </ideas>
+  </tests>
+</story-context>

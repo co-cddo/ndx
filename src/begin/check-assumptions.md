@@ -6,7 +6,6 @@ includeInBreadcrumbs: true
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/radios/macro.njk" import govukRadios %}
-{% mermaid_js %}
 
 ## Please review the following assumptions made based on what you've described
 

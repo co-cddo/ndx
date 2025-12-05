@@ -1,0 +1,203 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>N5</epicId>
+    <storyId>8</storyId>
+    <title>GOV.UK Notify Sandbox E2E Test</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n5-8-govuk-notify-sandbox-integration-test.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>notification system maintainer</asA>
+    <iWant>an end-to-end test that uses the GOV.UK Notify sandbox environment</iWant>
+    <soThat>template API changes are detected before they break production emails</soThat>
+    <tasks>
+      <task id="1" status="pending">
+        <title>Set up sandbox environment</title>
+        <acs>8.1, 8.6</acs>
+        <subtasks>
+          <subtask>Document process to obtain GOV.UK Notify sandbox API key</subtask>
+          <subtask>Configure test environment with sandbox credentials</subtask>
+          <subtask>Create separate Secrets Manager entry for sandbox API key</subtask>
+          <subtask>Verify sandbox API key has correct permissions</subtask>
+        </subtasks>
+      </task>
+      <task id="2" status="pending">
+        <title>Create E2E test infrastructure</title>
+        <acs>8.1, 8.2</acs>
+        <subtasks>
+          <subtask>Create e2e/ directory for integration tests</subtask>
+          <subtask>Set up test framework (Jest with extended timeout)</subtask>
+          <subtask>Configure test inbox for receiving emails</subtask>
+          <subtask>Implement email retrieval from test inbox</subtask>
+        </subtasks>
+      </task>
+      <task id="3" status="pending">
+        <title>Implement template validation test</title>
+        <acs>8.2, 8.7, 8.3</acs>
+        <subtasks>
+          <subtask>Send test email using LeaseApproved template</subtask>
+          <subtask>Parse HTML email body from test inbox</subtask>
+          <subtask>Assert no ((placeholder)) patterns remain in body</subtask>
+          <subtask>Validate expected personalisation fields are populated</subtask>
+          <subtask>Validate email subject contains expected content</subtask>
+        </subtasks>
+      </task>
+      <task id="4" status="pending">
+        <title>CI pipeline integration</title>
+        <acs>8.4, 8.5, 8.9</acs>
+        <subtasks>
+          <subtask>Add E2E test job to CI workflow</subtask>
+          <subtask>Configure staging environment for E2E tests</subtask>
+          <subtask>Set up deployment gate based on E2E test results</subtask>
+          <subtask>Configure secrets for CI environment (sandbox API key)</subtask>
+        </subtasks>
+      </task>
+      <task id="5" status="pending">
+        <title>Post-deployment smoke test</title>
+        <acs>8.8</acs>
+        <subtasks>
+          <subtask>Create lightweight smoke test for production</subtask>
+          <subtask>Configure ops inbox for smoke test emails</subtask>
+          <subtask>Implement post-deployment hook to trigger smoke test</subtask>
+          <subtask>Add alerting if smoke test fails</subtask>
+        </subtasks>
+      </task>
+      <task id="6" status="pending">
+        <title>Documentation</title>
+        <acs>8.6</acs>
+        <subtasks>
+          <subtask>Document sandbox API key provisioning process</subtask>
+          <subtask>Document test inbox setup and configuration</subtask>
+          <subtask>Add troubleshooting guide for E2E test failures</subtask>
+          <subtask>Document how to run E2E tests locally</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <category name="Core E2E Testing" priority="MUST">
+      <ac id="8.1">E2E test uses GOV.UK Notify sandbox API key (not production)</ac>
+      <ac id="8.2">E2E test sends real email to test inbox for at least one template</ac>
+      <ac id="8.7">E2E test parses email body HTML, asserts all personalisation fields populated (no ((field)))</ac>
+      <ac id="8.9">E2E test failure blocks deployment (prevent bad code reaching prod)</ac>
+    </category>
+    <category name="CI Integration" priority="SHOULD">
+      <ac id="8.4">E2E test runs in CI pipeline (staging environment)</ac>
+      <ac id="8.5">E2E test failure blocks deployment</ac>
+      <ac id="8.8">Smoke test runs post-deployment in prod, sends test email to ops inbox</ac>
+    </category>
+    <category name="Documentation" priority="MUST">
+      <ac id="8.6">Test documentation includes how to obtain sandbox API key</ac>
+    </category>
+    <category name="Validation" priority="SHOULD">
+      <ac id="8.3">E2E test validates email subject and body contain expected personalisation</ac>
+    </category>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="GOV.UK Notify SDK">
+        Defines the NotifySender class architecture using notifications-node-client SDK. Documents the "one brain, two mouths" pattern where a single Lambda processes events and routes to Notify or Slack.
+      </doc>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="Secrets Structure">
+        Path: /ndx/notifications/credentials contains notifyApiKey and slackWebhookUrl. Sandbox API key (notifySandboxApiKey) needs to be added for this story.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-n5.md" title="Tech Spec Epic N5" section="Story n5-8">
+        Contains acceptance criteria AC-8.1 through AC-8.9 for GOV.UK Notify sandbox E2E testing. Defines test requirements, CI integration, and documentation needs.
+      </doc>
+    </docs>
+    <code>
+      <file path="infra/lib/lambda/notification/notify-sender.ts" kind="service" symbol="NotifySender" lines="223-595">
+        Main GOV.UK Notify SDK wrapper. Provides getInstance() singleton pattern with API key from Secrets Manager. Implements send() method with email verification, sanitisation, and error classification. Needs createWithSandbox() method for E2E testing.
+      </file>
+      <file path="infra/lib/lambda/notification/notify-sender.test.ts" kind="test" symbol="NotifySender tests">
+        Unit tests for NotifySender. Pattern to follow for E2E test structure.
+      </file>
+      <file path="infra/lib/lambda/notification/secrets.ts" kind="service" symbol="getSecrets">
+        Retrieves credentials from Secrets Manager. May need getSandboxSecrets() or sandbox flag support.
+      </file>
+      <file path="infra/lib/lambda/notification/templates.ts" kind="config" symbol="TEMPLATES">
+        Template registry with templateId and requiredFields. LeaseApproved template suitable for E2E testing.
+      </file>
+      <file path="infra/lib/lambda/notification/types.ts" kind="types" symbol="NotificationEventType">
+        TypeScript type definitions for event types. Reference for personalisation field names.
+      </file>
+      <file path="infra/lib/lambda/notification/validation.ts" kind="service" symbol="validateSchema">
+        Zod schemas for event validation. E2E test can use schemas to construct valid test payloads.
+      </file>
+      <file path="infra/package.json" kind="config">
+        Dependencies include notifications-node-client 8.2.1, jest 29.7.0, zod 3.23.8. No e2e test script currently defined.
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="notifications-node-client" version="8.2.1">Official GOV.UK Notify SDK for sending emails</package>
+        <package name="jest" version="29.7.0">Testing framework - extend with e2e config</package>
+        <package name="zod" version="3.23.8">Schema validation for test payload construction</package>
+        <package name="@aws-sdk/client-secrets-manager" version="3.699.0">Secrets Manager access for sandbox API key</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="security">Sandbox API key must be stored in Secrets Manager, not environment variables or code</constraint>
+    <constraint type="security">E2E tests must never use production API key - verify key prefix includes "sandbox" or "test"</constraint>
+    <constraint type="testing">E2E tests should have extended timeout (30-60 seconds) for external API calls</constraint>
+    <constraint type="testing">E2E tests should be isolated in separate jest config to avoid running during unit tests</constraint>
+    <constraint type="ci">CI must configure NOTIFY_SANDBOX_API_KEY secret before E2E tests can run</constraint>
+    <constraint type="pattern">Follow existing test patterns in infra/lib/lambda/notification/*.test.ts</constraint>
+    <constraint type="pattern">Use Lambda Powertools Logger for structured logging in test utilities</constraint>
+    <constraint type="govuk">GOV.UK Notify sandbox emails are not delivered - use Notify API to retrieve sent message content</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="NotifySender.getInstance" kind="async-method" path="infra/lib/lambda/notification/notify-sender.ts">
+      static async getInstance(): Promise&lt;NotifySender&gt;
+      - Returns singleton instance with production API key from Secrets Manager
+      - E2E: Need createWithSandbox() or constructor modification for sandbox key
+    </interface>
+    <interface name="NotifySender.send" kind="async-method" path="infra/lib/lambda/notification/notify-sender.ts">
+      async send(params: NotifyParams, options?: SendOptions): Promise&lt;NotifyResponse&gt;
+      - params: { templateId, email, personalisation, eventId, eventUserEmail }
+      - Returns: { id, content: { body, subject }, template: { id, version } }
+      - E2E: Response includes body and subject for validation
+    </interface>
+    <interface name="NotifyClient.getNotificationById" kind="sdk-method">
+      From notifications-node-client SDK:
+      client.getNotificationById(notificationId): Promise&lt;NotificationResponse&gt;
+      - Use to retrieve sent email content from Notify API
+      - Returns full email body for placeholder validation
+    </interface>
+    <interface name="getSecrets" kind="async-function" path="infra/lib/lambda/notification/secrets.ts">
+      async getSecrets(): Promise&lt;{ notifyApiKey: string; slackWebhookUrl: string }&gt;
+      - E2E: May need getSandboxSecrets() or environment-aware variant
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Jest 29.7.0 with ts-jest transformer. Tests follow pattern: describe blocks with it/test assertions.
+      Use beforeEach for setup, afterEach for cleanup. Mock external dependencies with jest.mock().
+      AWS SDK mocking via aws-sdk-client-mock. Structured test files in same directory as source.
+      E2E tests should be in separate directory (test/e2e/) with separate jest config.
+    </standards>
+    <locations>
+      <location>infra/lib/lambda/notification/*.test.ts - Unit tests (current pattern)</location>
+      <location>infra/test/e2e/ - E2E tests (to be created)</location>
+      <location>infra/test/smoke/ - Post-deployment smoke tests (to be created)</location>
+    </locations>
+    <ideas>
+      <idea ac="8.1">Test that E2E uses sandbox API key by checking key prefix or separate secret path</idea>
+      <idea ac="8.2">Test sends real email to sandbox, retrieves via getNotificationById(), validates received</idea>
+      <idea ac="8.3">Assert email.subject contains expected strings (e.g., "Sandbox approved")</idea>
+      <idea ac="8.7">Regex test: /\(\([^)]+\)\)/.test(body) should be false - no unfilled placeholders</idea>
+      <idea ac="8.7">Assert body contains each personalisation value (userName, accountId, etc.)</idea>
+      <idea ac="8.9">Test job in CI workflow has needs: [e2e-test] dependency on deploy job</idea>
+      <idea ac="8.8">Smoke test sends to ops@example.gov.uk (configured), checks 200 response</idea>
+    </ideas>
+  </tests>
+</story-context>

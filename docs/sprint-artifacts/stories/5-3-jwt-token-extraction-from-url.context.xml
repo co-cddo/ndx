@@ -1,0 +1,294 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>3</storyId>
+    <title>JWT Token Extraction from URL</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/stories/5-3-jwt-token-extraction-from-url.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to extract JWT token from URL query parameters after OAuth redirect</iWant>
+    <soThat>I can store the token for authenticated API calls</soThat>
+    <tasks>
+      - Task 1: Implement token extraction function (AC: #1, #2)
+      - Task 2: Implement URL cleanup function (AC: #3)
+      - Task 3: Implement callback page redirect logic (AC: #4)
+      - Task 4: Update callback page to call OAuth callback handler (AC: #1, #4)
+      - Task 5: Integrate with AuthState event-driven pattern (AC: #5)
+      - Task 6: Write unit tests for token extraction (AC: #1, #2, #3, #6)
+      - Task 7: Write integration tests for OAuth callback flow (AC: #4, #5)
+      - Task 8: Manual end-to-end testing (AC: #1, #2, #3, #4, #5)
+      - Task 9: Test error scenarios and edge cases (AC: #6)
+      - Task 10: Update developer documentation (AC: #1, #2, #3, #4)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC1: Token extraction runs automatically on callback page
+    - Given: Redirected back to NDX after OAuth authentication
+    - When: Callback page loads with JWT token in URL (?token=eyJ...)
+    - Then: Client-side JavaScript automatically extracts token from URL query parameter
+    - And: Token extraction runs on DOMContentLoaded event (no user action required)
+    - And: Extraction logic is defensive (handles missing token, malformed URL)
+
+    AC2: Token stored in sessionStorage with correct key
+    - Given: JWT token is successfully extracted from URL
+    - When: Token is stored in sessionStorage
+    - Then: sessionStorage key is 'isb-jwt' (matches Story 5.1 AuthState convention)
+    - And: Token value is complete JWT string
+    - And: Storage operation handles sessionStorage unavailability gracefully
+
+    AC3: URL cleaned after token extraction
+    - Given: Token has been extracted and stored in sessionStorage
+    - When: URL cleanup runs
+    - Then: Token parameter is removed from browser address bar
+    - And: URL shows callback page without query parameters
+    - And: window.history.replaceState() is used (not pushState - no extra history entry)
+    - And: Cleaned URL does not cause page reload
+
+    AC4: User redirected to original page after token extraction
+    - Given: Token extraction and URL cleanup are complete
+    - When: Redirect logic executes
+    - Then: User is automatically redirected to return URL from sessionStorage (key: 'auth-return-to')
+    - And: If no return URL stored, user is redirected to home page (/)
+    - And: Return URL is cleared from sessionStorage after redirect
+    - And: Redirect happens immediately (no user action required)
+
+    AC5: AuthState notified of authentication success
+    - Given: Token is stored in sessionStorage
+    - When: AuthState checks authentication status
+    - Then: authState.isAuthenticated() returns true
+    - And: All AuthState subscribers are notified of auth state change
+    - And: Sign in/out buttons update to show "Sign out"
+    - And: AuthState integration uses existing event-driven pattern from Story 5.1
+
+    AC6: Token extraction handles error scenarios gracefully
+    - Given: Callback page loads without token parameter
+    - When: Token extraction logic runs
+    - Then: No error is thrown (defensive programming)
+    - And: User is redirected to home page (graceful degradation)
+    - And: sessionStorage 'isb-jwt' is not set (remains unauthenticated)
+    - And: sessionStorage 'auth-return-to' is cleared
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/epics/epic-5-authentication-foundation.md</path>
+        <title>Epic 5: Authentication Foundation</title>
+        <section>Story 5.3: JWT Token Extraction from URL</section>
+        <snippet>URLSearchParams API for query parameter parsing. window.history.replaceState() removes token from URL without reload. sessionStorage vs localStorage: sessionStorage preferred (FR-TRY-8, FR-TRY-9). Token cleanup prevents token exposure in browser history (NFR-TRY-SEC-6).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-023: OAuth Callback Page Pattern</section>
+        <snippet>Dedicated /callback page handles OAuth redirect and token extraction. Extract token → Store in sessionStorage → Clean URL → Redirect to original destination. Callback page has minimal UI (just loading indicator). Token extraction prevents token exposure in URL history on application pages.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-024: Authentication State Management</section>
+        <snippet>AuthState event-driven pattern: Story 5.3 triggers authState.notify() after token storage. All subscribers (nav links, try buttons, /try page) react to auth state change. Reactive pattern ensures UI consistency: "Sign out" button appears after successful OAuth.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-016: sessionStorage for JWT tokens</section>
+        <snippet>Key: isb-jwt (consistent across all auth modules, established in Story 5.1). sessionStorage clears on browser close (security benefit). sessionStorage accessible across tabs (UX convenience, Story 5.4 validates). Story 5.3 stores JWT in sessionStorage immediately after extraction.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/ux-design-specification.md</path>
+        <title>NDX Try Before You Buy - UX Design Specification</title>
+        <section>Journey 1: Authentication (Sign In / Sign Out) - Step 3: Token extraction and storage</section>
+        <snippet>User sees: Brief loading indicator "Signing you in...". System: Extracts JWT token from URL query parameter ?token=..., Stores token in sessionStorage with key isb-jwt, Cleans up URL (removes ?token=... from browser history), Calls /api/auth/login/status to verify token and get user info, Redirects to original destination or home page.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document - Try Before You Buy</title>
+        <section>Functional Requirements: Authentication & Session Management</section>
+        <snippet>FR-TRY-3: System can extract JWT token from URL query parameter ?token=eyJ... FR-TRY-4: System can store JWT token in sessionStorage with key isb-jwt. FR-TRY-5: System can clean up URL query parameters after extracting token. FR-TRY-6: System can retrieve stored JWT token from sessionStorage for API calls. FR-TRY-8: System persists authentication across browser tabs. FR-TRY-9: System clears authentication on browser restart.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>Product Requirements Document - Try Before You Buy</title>
+        <section>Non-Functional Requirements: Security</section>
+        <snippet>NFR-TRY-SEC-1: JWT tokens stored in sessionStorage only (never localStorage or cookies). NFR-TRY-SEC-6: No sensitive data stored in URL query params after OAuth redirect (token cleaned up). NFR-TRY-REL-5: Browser back button works correctly after OAuth redirect (no broken states).</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/try/auth/oauth-flow.ts</path>
+        <kind>module</kind>
+        <symbol>getReturnURL, clearReturnURL</symbol>
+        <lines>99-141</lines>
+        <reason>Story 5.2 implemented return URL management. Story 5.3 reuses getReturnURL() for post-auth redirect and clearReturnURL() to clean up sessionStorage after redirect.</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/auth/oauth-flow.ts</path>
+        <kind>module</kind>
+        <symbol>parseOAuthError</symbol>
+        <lines>170-197</lines>
+        <reason>Story 5.2 implemented OAuth error handling. Story 5.3 must preserve this error flow - if ?error= parameter exists, skip token extraction.</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/auth/auth-provider.ts</path>
+        <kind>module</kind>
+        <symbol>authState, AuthState.login, AuthState.notify</symbol>
+        <lines>49-217</lines>
+        <reason>Story 5.1 implemented AuthState with event-driven pattern. Story 5.3 calls authState.login(token) or manually sets sessionStorage and calls authState.notify() to trigger UI updates after token storage.</reason>
+      </artifact>
+      <artifact>
+        <path>src/callback.html</path>
+        <kind>page</kind>
+        <symbol>callback page structure</symbol>
+        <lines>1-79</lines>
+        <reason>Story 5.2 created callback page with OAuth error handling (lines 46-67). Story 5.3 adds token extraction logic (lines 69-76 placeholder to be replaced).</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>typescript</package>
+        <version>^5.7.2</version>
+        <purpose>TypeScript language support for type-safe token extraction functions</purpose>
+      </node>
+      <node>
+        <package>esbuild</package>
+        <version>^0.24.2</version>
+        <purpose>TypeScript compilation and bundling for src/try/main.ts → src/assets/try.bundle.js</purpose>
+      </node>
+      <node>
+        <package>jest</package>
+        <version>^29.7.0</version>
+        <purpose>Unit testing framework for token extraction, URL cleanup, and callback handler tests</purpose>
+      </node>
+      <node>
+        <package>jest-environment-jsdom</package>
+        <version>^29.7.0</version>
+        <purpose>DOM simulation for testing sessionStorage, window.location, window.history browser APIs</purpose>
+      </node>
+      <node>
+        <package>ts-jest</package>
+        <version>^29.2.5</version>
+        <purpose>TypeScript support in Jest tests for oauth-flow.test.ts</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>sessionStorage key MUST be 'isb-jwt' (established in Story 5.1, consistent across Epic 5+)</constraint>
+    <constraint>Return URL key MUST be 'auth-return-to' (established in Story 5.2, already in oauth-flow.ts)</constraint>
+    <constraint>URLSearchParams API for query parameter parsing (defensive, handles malformed URLs)</constraint>
+    <constraint>window.history.replaceState() MUST be used (not pushState - no extra history entry)</constraint>
+    <constraint>Token extraction MUST NOT break OAuth error handling from Story 5.2 (check ?error= first)</constraint>
+    <constraint>All sessionStorage access MUST be wrapped in try-catch (Story 5.2 pattern)</constraint>
+    <constraint>Functions MUST return booleans for success/failure (defensive programming pattern from Story 5.2)</constraint>
+    <constraint>Add new functions to existing src/try/auth/oauth-flow.ts (do NOT create new auth modules)</constraint>
+    <constraint>Callback page JavaScript MUST replace lines 69-76 placeholder (preserve error handling lines 46-67)</constraint>
+    <constraint>AuthState integration MUST use existing event-driven pattern from Story 5.1 (subscribe/notify)</constraint>
+    <constraint>Module organization follows ADR-019 (auth/ module for OAuth utilities)</constraint>
+    <constraint>Progressive enhancement pattern (ADR-020): HTML-first, JavaScript enhances</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>extractTokenFromURL</name>
+      <kind>function signature</kind>
+      <signature>function extractTokenFromURL(): boolean</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Extracts JWT from ?token=... parameter, stores in sessionStorage['isb-jwt'], returns true if successful</description>
+    </interface>
+    <interface>
+      <name>cleanupURLAfterExtraction</name>
+      <kind>function signature</kind>
+      <signature>function cleanupURLAfterExtraction(): void</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Removes token from URL using window.history.replaceState(), preserves pathname</description>
+    </interface>
+    <interface>
+      <name>handleOAuthCallback</name>
+      <kind>function signature</kind>
+      <signature>function handleOAuthCallback(): void</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Orchestrates extract → cleanup → redirect flow, calls on DOMContentLoaded</description>
+    </interface>
+    <interface>
+      <name>getReturnURL (existing from Story 5.2)</name>
+      <kind>function signature</kind>
+      <signature>function getReturnURL(): string</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Retrieves stored return URL from sessionStorage or returns '/' as fallback</description>
+    </interface>
+    <interface>
+      <name>clearReturnURL (existing from Story 5.2)</name>
+      <kind>function signature</kind>
+      <signature>function clearReturnURL(): void</signature>
+      <path>src/try/auth/oauth-flow.ts</path>
+      <description>Clears return URL from sessionStorage after successful redirect</description>
+    </interface>
+    <interface>
+      <name>authState.login (existing from Story 5.1)</name>
+      <kind>method signature</kind>
+      <signature>authState.login(token: string): void</signature>
+      <path>src/try/auth/auth-provider.ts</path>
+      <description>Stores JWT in sessionStorage and notifies all subscribers of auth state change</description>
+    </interface>
+    <interface>
+      <name>sessionStorage browser API</name>
+      <kind>Web API</kind>
+      <signature>sessionStorage.setItem(key: string, value: string): void</signature>
+      <path>browser global</path>
+      <description>Store JWT token with key 'isb-jwt' (persists across tabs, clears on browser close)</description>
+    </interface>
+    <interface>
+      <name>URLSearchParams browser API</name>
+      <kind>Web API</kind>
+      <signature>new URLSearchParams(window.location.search).get('token')</signature>
+      <path>browser global</path>
+      <description>Parse URL query parameters to extract ?token=... (defensive, handles malformed URLs)</description>
+    </interface>
+    <interface>
+      <name>window.history.replaceState browser API</name>
+      <kind>Web API</kind>
+      <signature>window.history.replaceState(state: any, title: string, url: string): void</signature>
+      <path>browser global</path>
+      <description>Remove token from URL without page reload (no extra history entry)</description>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+      Testing follows Story 5.2 patterns with Jest + ts-jest + jest-environment-jsdom.
+      Framework: Jest 29.7.0 with TypeScript support via ts-jest.
+      Environment: jsdom for browser API simulation (sessionStorage, window.location, window.history).
+      Coverage target: 80%+ code coverage for new functions (extractTokenFromURL, cleanupURLAfterExtraction, handleOAuthCallback).
+      Test structure: AAA pattern (Arrange-Act-Assert), describe blocks for function grouping, edge case coverage.
+      Existing tests: Story 5.2 added 24 tests to oauth-flow.test.ts (100% coverage). Story 5.3 adds 15+ tests for token extraction.
+      Mock strategy: Mock sessionStorage, window.location, window.history using jest.spyOn() and manual mocks.
+      Integration tests: Test full callback flow (extract → cleanup → redirect) with mocked browser APIs.
+    </standards>
+    <locations>
+      <location>src/try/auth/oauth-flow.test.ts</location>
+      <location>src/try/auth/auth-provider.test.ts (existing from Story 5.1, verify AuthState integration)</location>
+    </locations>
+    <ideas>
+      <test ac="AC1" id="1">Unit test: extractTokenFromURL() with valid token parameter - returns true, stores in sessionStorage['isb-jwt']</test>
+      <test ac="AC1" id="2">Unit test: extractTokenFromURL() with missing token parameter - returns false, sessionStorage not modified</test>
+      <test ac="AC1" id="3">Unit test: extractTokenFromURL() with empty token value (?token=) - returns false, sessionStorage not modified</test>
+      <test ac="AC2" id="4">Unit test: extractTokenFromURL() stores token with correct key 'isb-jwt' (verify sessionStorage.setItem call)</test>
+      <test ac="AC2" id="5">Unit test: extractTokenFromURL() handles sessionStorage unavailability (mock setItem to throw error, returns false)</test>
+      <test ac="AC3" id="6">Unit test: cleanupURLAfterExtraction() calls window.history.replaceState with pathname only (no query params)</test>
+      <test ac="AC3" id="7">Unit test: cleanupURLAfterExtraction() preserves pathname (/callback stays /callback)</test>
+      <test ac="AC3" id="8">Unit test: cleanupURLAfterExtraction() handles missing history API gracefully (no error thrown)</test>
+      <test ac="AC4" id="9">Integration test: handleOAuthCallback() extracts token, cleans URL, retrieves return URL, redirects</test>
+      <test ac="AC4" id="10">Integration test: handleOAuthCallback() redirects to home page (/) if no return URL stored</test>
+      <test ac="AC4" id="11">Integration test: handleOAuthCallback() clears return URL from sessionStorage after redirect</test>
+      <test ac="AC6" id="12">Integration test: handleOAuthCallback() with no token parameter - redirects to home page without error</test>
+      <test ac="AC6" id="13">Integration test: handleOAuthCallback() with malformed URL - handles gracefully, returns false</test>
+      <test ac="AC5" id="14">Integration test: Verify AuthState.login() called after token extraction (or manual sessionStorage + notify)</test>
+      <test ac="AC5" id="15">Integration test: Verify authState.isAuthenticated() returns true after token stored</test>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,241 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>2</storyId>
+    <title>Convert to Yarn Package Manager</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-2-convert-to-yarn-package-manager.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to convert the CDK project from npm to Yarn</iWant>
+    <soThat>package management is consistent with the main NDX application</soThat>
+    <tasks>
+      - [ ] Task 1: Remove npm lockfile and install dependencies via Yarn (AC: #1)
+        - [ ] Delete `package-lock.json` from `/infra` directory
+        - [ ] Run `yarn install` in `/infra` directory
+        - [ ] Verify `yarn.lock` is created
+        - [ ] Verify `node_modules/` is populated correctly
+        - [ ] Verify all dependencies resolve without errors
+      - [ ] Task 2: Validate TypeScript compilation with Yarn (AC: #2)
+        - [ ] Run `yarn build` in `/infra` directory
+        - [ ] Verify TypeScript compiles without errors
+        - [ ] Verify compiled JavaScript files are generated
+      - [ ] Task 3: Validate Jest tests with Yarn (AC: #3)
+        - [ ] Run `yarn test` in `/infra` directory
+        - [ ] Verify tests execute successfully
+        - [ ] Verify test output shows passing tests
+      - [ ] Task 4: Verify Git tracking configuration (AC: #4)
+        - [ ] Check `.gitignore` does not exclude `yarn.lock`
+        - [ ] Verify `yarn.lock` will be tracked in version control
+        - [ ] Confirm `node_modules/` remains gitignored
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Given the CDK project is initialized with npm
+       When I run `rm package-lock.json && yarn install`
+       Then the project uses Yarn:
+       - `package-lock.json` is deleted
+       - `yarn.lock` is created
+       - `node_modules/` is populated via Yarn
+       - All dependencies resolve correctly
+
+    2. And running `yarn build` compiles TypeScript successfully
+
+    3. And running `yarn test` executes Jest tests successfully
+
+    4. And `.gitignore` includes `yarn.lock` is NOT ignored (track lockfile)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/prd.md</path>
+        <title>ndx - Product Requirements Document</title>
+        <section>CDK Project Structure</section>
+        <snippet>Package manager: Yarn (consistent with main application). Main NDX application uses Yarn 4.5.0 (Berry). CDK project should use Yarn for consistency.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Project Initialization</section>
+        <snippet>Convert from npm to Yarn for consistency with main app: cd infra, rm package-lock.json, yarn install. This establishes consistency with main application package manager.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Decision Summary</section>
+        <snippet>Package Manager: Yarn 4.5.0 - Consistency with main application. Yarn workspaces not needed (separate package.json in /infra).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Consistency Rules - Package Manager Commands</section>
+        <snippet>Install: yarn install (not yarn add), Build: yarn build (runs npm run build script from package.json), Test: yarn test (runs npm test script from package.json). Note: package.json scripts remain unchanged, Yarn simply executes them.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Story 1.2: Convert to Yarn Package Manager</section>
+        <snippet>Convert the CDK project from npm to Yarn for package management consistency with main NDX application (Yarn 4.5.0 Berry). Reduces context switching for developers. Standard practice: one package manager per repository.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/index.md</path>
+        <title>National Digital Exchange (NDX) - Project Documentation Index</title>
+        <section>Quick Reference</section>
+        <snippet>Package Manager: Yarn 4.5.0 (npm blocked). Main NDX application uses Yarn as the package manager across the entire project.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/sprint-artifacts/1-1-initialize-cdk-project.md</path>
+        <title>Story 1.1: Initialize CDK Project</title>
+        <section>Dev Agent Record - Completion Notes</section>
+        <snippet>CDK project initialized successfully with npm. Package manager currently using npm with package-lock.json. Next story (1.2) will convert to Yarn for consistency with main application. TypeScript compilation and Jest tests passing with npm - must remain working after Yarn conversion.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>package manifest</kind>
+        <symbol>infra dependencies</symbol>
+        <lines>all</lines>
+        <reason>Contains dependency definitions that Yarn will read and install. Scripts remain unchanged - Yarn executes them identically to npm.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/package-lock.json</path>
+        <kind>npm lockfile</kind>
+        <symbol>npm dependency lock</symbol>
+        <lines>all</lines>
+        <reason>Must be deleted as part of AC#1. This npm-specific file will be replaced by yarn.lock.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/.gitignore</path>
+        <kind>git ignore config</kind>
+        <symbol>version control exclusions</symbol>
+        <lines>all</lines>
+        <reason>Must be verified to ensure yarn.lock is NOT excluded (should be tracked in git). Confirms node_modules/ remains gitignored.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/bin/infra.ts</path>
+        <kind>CDK entry point</kind>
+        <symbol>CDK app initialization</symbol>
+        <lines>all</lines>
+        <reason>TypeScript entry point that must compile successfully with yarn build to validate Yarn conversion.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/lib/infra-stack.ts</path>
+        <kind>CDK stack definition</kind>
+        <symbol>example stack</symbol>
+        <lines>all</lines>
+        <reason>Example stack from Story 1.1 that must compile with yarn build to validate Yarn setup works correctly.</reason>
+      </artifact>
+      <artifact>
+        <path>infra/test/infra.test.ts</path>
+        <kind>Jest test file</kind>
+        <symbol>example test</symbol>
+        <lines>all</lines>
+        <reason>Jest test that must execute successfully with yarn test to validate Yarn can run test suite.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>root package manifest</kind>
+        <symbol>main app config</symbol>
+        <lines>all</lines>
+        <reason>Main application uses Yarn 4.5.0 - provides reference for consistency requirement driving this story.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>aws-cdk-lib</package>
+        <version>2.215.0</version>
+        <reason>Core CDK library - must resolve correctly via Yarn</reason>
+      </node>
+      <node>
+        <package>constructs</package>
+        <version>^10.0.0</version>
+        <reason>CDK constructs library - must resolve correctly via Yarn</reason>
+      </node>
+      <node>
+        <package>aws-cdk</package>
+        <version>2.1032.0</version>
+        <dev>true</dev>
+        <reason>CDK CLI - must resolve correctly via Yarn</reason>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>~5.9.3</version>
+        <dev>true</dev>
+        <reason>TypeScript compiler - yarn build must compile successfully</reason>
+      </node>
+      <node>
+        <package>jest</package>
+        <version>^29.7.0</version>
+        <dev>true</dev>
+        <reason>Jest testing framework - yarn test must execute successfully</reason>
+      </node>
+      <node>
+        <package>ts-jest</package>
+        <version>^29.2.5</version>
+        <dev>true</dev>
+        <reason>TypeScript Jest transformer - required for yarn test</reason>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Package manager must be Yarn 4.5.0+ (Berry) - same as main application for consistency</constraint>
+    <constraint>Package.json scripts remain unchanged - Yarn executes npm scripts identically</constraint>
+    <constraint>All existing functionality (build, test) must continue working after conversion</constraint>
+    <constraint>yarn.lock must be tracked in version control (not gitignored)</constraint>
+    <constraint>node_modules/ must remain gitignored (never tracked)</constraint>
+    <constraint>package-lock.json must be completely removed (npm and Yarn lockfiles never coexist)</constraint>
+    <constraint>Conversion happens in /infra directory only (root already uses Yarn)</constraint>
+    <constraint>Yarn workspaces NOT needed - separate package.json in /infra is intentional</constraint>
+    <constraint>Dependency versions must remain identical (Yarn reads from package.json)</constraint>
+    <constraint>Exit code must be 0 for yarn build and yarn test (success validation)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>yarn install</name>
+      <kind>CLI command</kind>
+      <signature>yarn install</signature>
+      <path>infra/</path>
+      <description>Installs dependencies from package.json, creates yarn.lock, populates node_modules/</description>
+    </interface>
+    <interface>
+      <name>yarn build</name>
+      <kind>CLI command</kind>
+      <signature>yarn build</signature>
+      <path>infra/</path>
+      <description>Executes "build": "tsc" script from package.json to compile TypeScript</description>
+    </interface>
+    <interface>
+      <name>yarn test</name>
+      <kind>CLI command</kind>
+      <signature>yarn test</signature>
+      <path>infra/</path>
+      <description>Executes "test": "jest" script from package.json to run Jest test suite</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Testing framework is Jest with TypeScript support via ts-jest. Example stack includes basic snapshot test validating CDK synthesis. All tests must pass after Yarn conversion. Test execution via yarn test must succeed with exit code 0.</standards>
+    <locations>infra/test/*.test.ts</locations>
+    <ideas>
+      <idea ac="1">Test that package-lock.json is deleted and yarn.lock exists after conversion</idea>
+      <idea ac="1">Test that node_modules/ is populated with expected packages after yarn install</idea>
+      <idea ac="1">Test that all dependencies resolve without errors or warnings</idea>
+      <idea ac="2">Test that yarn build compiles TypeScript without errors (exit code 0)</idea>
+      <idea ac="2">Test that compiled JavaScript files exist in expected locations after build</idea>
+      <idea ac="3">Test that yarn test executes Jest test suite successfully (exit code 0)</idea>
+      <idea ac="3">Test that example test from Story 1.1 still passes after Yarn conversion</idea>
+      <idea ac="4">Test that .gitignore does NOT include yarn.lock pattern</idea>
+      <idea ac="4">Test that .gitignore DOES include node_modules/ pattern</idea>
+      <idea ac="4">Test that git status shows yarn.lock as trackable (not ignored)</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,211 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>N5</epicId>
+    <storyId>6</storyId>
+    <title>DynamoDB Enrichment for Missing Fields</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-28</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/n5-6-dynamodb-enrichment-for-missing-fields.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>notification system</asA>
+    <iWant>to enrich events with additional context from DynamoDB</iWant>
+    <soThat>emails have all the information users need</soThat>
+    <tasks>
+      <task id="1" acs="6.1,6.2,6.3,6.4,6.5,6.8,6.11,6.14">Create enrichment.ts module with enrichIfNeeded(), parallel DynamoDB queries</task>
+      <task id="2" acs="6.9,6.34">Create DynamoDB client with read-only IAM permissions</task>
+      <task id="3" acs="6.38,6.39,6.16,6.7">Implement 2-second timeout and graceful degradation</task>
+      <task id="4" acs="6.17,6.29">Implement circuit breaker for DynamoDB throttles</task>
+      <task id="5" acs="6.20,6.21,6.22,6.26,6.27,6.37,6.41">Implement conflict detection with SECURITY alerts</task>
+      <task id="6" acs="6.6,6.12,6.13,6.33,6.40">Add EnrichmentLatency metric and logging</task>
+      <task id="7" acs="6.10,6.19">URL construction with encoding</task>
+      <task id="8" acs="6.44,6.45,6.46,6.47,6.48">Contract tests for ISB table schemas</task>
+      <task id="9" acs="6.1-6.51">Unit tests with AC traceability</task>
+      <task id="10" acs="6.23,6.32,6.50,6.51">Documentation for schemas and runbooks</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <category name="Core Enrichment (MUST)">
+      <ac id="6.1">enrichIfNeeded() identifies missing required fields from template config</ac>
+      <ac id="6.2">Enrichment queries LeaseTable for lease-specific fields</ac>
+      <ac id="6.3">Enrichment queries SandboxAccountTable for account name</ac>
+      <ac id="6.4">Enrichment queries LeaseTemplateTable for template name</ac>
+      <ac id="6.8">Still-missing REQUIRED fields after enrichment throw PermanentError</ac>
+      <ac id="6.9">DynamoDB access uses read-only IAM permissions (GetItem, Query)</ac>
+      <ac id="6.11">All enrichment reads use ConsistentRead: true</ac>
+      <ac id="6.14">Lambda container cache cleared on each cold start</ac>
+      <ac id="6.38">Enrichment timeout: 2-second max</ac>
+    </category>
+    <category name="Security (MUST)">
+      <ac id="6.19">Never construct URLs from untrusted fields without URL encoding</ac>
+      <ac id="6.21">If lease.status conflicts with event type, log SECURITY alert</ac>
+      <ac id="6.26">Enrichment conflicts create ticket in ops queue</ac>
+      <ac id="6.41">Never use enriched.status in email content</ac>
+    </category>
+    <category name="Performance (SHOULD)">
+      <ac id="6.5">Multiple enrichment queries execute in parallel (Promise.all)</ac>
+      <ac id="6.6">Enrichment latency tracked via EnrichmentLatency metric</ac>
+      <ac id="6.10">SSO URL constructed from config</ac>
+      <ac id="6.12">Enrichment result includes lastModified timestamp</ac>
+      <ac id="6.13">If enriched.maxSpend differs from event.budget by >10%, log WARNING</ac>
+      <ac id="6.33">Enrichment latency SLA: 99th percentile < 100ms</ac>
+    </category>
+    <category name="Reliability (SHOULD)">
+      <ac id="6.7">Missing enrichment data logs WARNING but continues</ac>
+      <ac id="6.16">Enrichment failure downgrades to partial send</ac>
+      <ac id="6.17">Circuit breaker: after 5 consecutive throttles, skip enrichment for 60s</ac>
+      <ac id="6.29">Circuit breaker: After 3 consecutive throttles, skip enrichment</ac>
+      <ac id="6.39">Graceful degradation: send with partial data if unavailable</ac>
+      <ac id="6.40">Data staleness check: Log WARNING if data > 5 min old</ac>
+    </category>
+    <category name="Conflict Detection (SHOULD)">
+      <ac id="6.20">Log enriched data that CONFLICTS with event payload</ac>
+      <ac id="6.22">Send metric: EnrichmentConflict when details conflict</ac>
+      <ac id="6.27">Automatic conflict resolution: Only use enriched if event.time < lease.lastModified</ac>
+      <ac id="6.37">EnrichmentConflict metric emitted when mismatch</ac>
+    </category>
+    <category name="Contract Tests (MUST)">
+      <ac id="6.44">Contract test: ISB table schemas (query real data)</ac>
+      <ac id="6.45">Contract test: LeaseTable includes userEmail, uuid, status, templateName, expiryDate, accountId</ac>
+      <ac id="6.46">Contract test: SandboxAccountTable includes accountId, accountName, ownerEmail</ac>
+      <ac id="6.47">Contract test: LeaseTemplateTable includes templateName, templateDescription</ac>
+      <ac id="6.48">Integration test: Enrichment queries all 3 ISB tables concurrently</ac>
+      <ac id="6.50">Documentation: ISB table schema assumptions</ac>
+      <ac id="6.51">Documentation: N-5 requires ISB tables with specific schema</ac>
+    </category>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/notification-architecture.md" title="NDX Notification Architecture" section="DynamoDB Enrichment" snippet="Enrichment queries ISB DynamoDB tables (LeaseTable, SandboxAccountTable, LeaseTemplateTable) to fill missing personalisation fields."/>
+      <doc path="docs/epics-notifications.md" title="Epic Breakdown" section="Story 5.6" snippet="DynamoDB Enrichment for Missing Fields. Query ISB tables for userName, expiryDate, maxSpend, accountName, templateName."/>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-n5.md" title="Tech Spec Epic N5" section="Story n5-6" snippet="51 ACs covering enrichment queries, conflict detection, circuit breaker, and contract tests."/>
+    </docs>
+    <code>
+      <file path="infra/lib/lambda/notification/ownership.ts" kind="module" symbol="queryLeaseTable, DynamoDBClient, GetItemCommand" lines="238-280" reason="DynamoDB query pattern to reuse for enrichment queries"/>
+      <file path="infra/lib/lambda/notification/templates.ts" kind="module" symbol="EnrichedData, detectEnrichmentConflict, TemplateConfig, enrichmentQueries" lines="356-419" reason="EnrichedData interface and conflict detection already implemented"/>
+      <file path="infra/lib/lambda/notification/errors.ts" kind="module" symbol="PermanentError, RetriableError, SecurityError" lines="1-133" reason="Error classes for enrichment failures"/>
+      <file path="infra/lib/lambda/notification/validation.ts" kind="types" symbol="ValidatedEvent, LeaseKey" lines="1-400" reason="Validated event types with leaseId for queries"/>
+      <file path="infra/lib/lambda/notification/types.ts" kind="types" symbol="NotificationEventType" lines="1-75" reason="Event types for enrichment routing"/>
+      <file path="infra/lib/lambda/notification/notify-sender.ts" kind="service" symbol="NotifySender" lines="1-220" reason="Consumer of enriched personalisation data"/>
+      <file path="infra/lib/lambda/notification/templates.test.ts" kind="test" symbol="describe blocks" lines="1177-1261" reason="Existing enrichment conflict tests to extend"/>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@aws-sdk/client-dynamodb" version="3.699.0" reason="DynamoDB queries for enrichment"/>
+        <package name="@aws-sdk/util-dynamodb" version="3.699.0" reason="Unmarshall DynamoDB responses"/>
+        <package name="@aws-lambda-powertools/logger" version="2.29.0" reason="Structured logging"/>
+        <package name="@aws-lambda-powertools/metrics" version="2.29.0" reason="CloudWatch metrics emission"/>
+        <package name="zod" version="3.23.8" reason="Schema validation"/>
+      </node>
+      <devDependencies>
+        <package name="jest" version="29.7.0" reason="Unit testing framework"/>
+        <package name="ts-jest" version="29.2.5" reason="TypeScript Jest support"/>
+        <package name="aws-sdk-client-mock" version="4.1.0" reason="AWS SDK mocking"/>
+      </devDependencies>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Reuse DynamoDB query pattern from ownership.ts:queryLeaseTable</constraint>
+    <constraint type="pattern">Extend EnrichedData interface from templates.ts:356-378</constraint>
+    <constraint type="pattern">Use detectEnrichmentConflict() from templates.ts:386-419</constraint>
+    <constraint type="security">Never log raw email addresses - use hashForLog() from ownership.ts</constraint>
+    <constraint type="security">Never use enriched.status in email content (AC-6.41) - event.type only</constraint>
+    <constraint type="security">URL encode all untrusted fields (AC-6.19)</constraint>
+    <constraint type="security">Conflict detection is MUST - log SECURITY alert for status mismatch (AC-6.21)</constraint>
+    <constraint type="testing">All ACs require explicit test coverage with AC ID traceability</constraint>
+    <constraint type="error">Missing required fields after enrichment throw PermanentError (AC-6.8)</constraint>
+    <constraint type="env">Table names from CloudFormation imports: LEASE_TABLE_NAME, SANDBOX_ACCOUNT_TABLE_NAME, LEASE_TEMPLATE_TABLE_NAME</constraint>
+    <constraint type="performance">Enrichment timeout: 2 seconds max (AC-6.38)</constraint>
+    <constraint type="performance">Parallel queries with Promise.all (AC-6.5)</constraint>
+    <constraint type="resilience">Circuit breaker after 3-5 consecutive throttles (AC-6.17, AC-6.29)</constraint>
+    <constraint type="consistency">ConsistentRead: true for all DynamoDB reads (AC-6.11)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="enrichIfNeeded" kind="function (new)">
+      <signature>
+async function enrichIfNeeded(
+  event: ValidatedEvent,
+  templateConfig: TemplateConfig,
+  dynamoClient: DynamoDBClient
+): Promise&lt;EnrichedData&gt;
+      </signature>
+      <path>infra/lib/lambda/notification/enrichment.ts</path>
+    </interface>
+    <interface name="EnrichedData" kind="TypeScript interface (existing)">
+      <signature>
+export interface EnrichedData {
+  userName?: string;
+  accountId?: string;
+  accountName?: string;
+  expiryDate?: string;
+  budgetLimit?: number;
+  currentSpend?: number;
+  templateName?: string;
+  ssoUrl?: string;
+  userTimezone?: string;
+  _internalStatus?: string; // NEVER use in templates (AC-5.15)
+  _lastModified?: string;
+  _enrichmentTimestamp?: string;
+}
+      </signature>
+      <path>infra/lib/lambda/notification/templates.ts</path>
+    </interface>
+    <interface name="CircuitBreaker" kind="class (new)">
+      <signature>
+class CircuitBreaker {
+  constructor(maxFailures: number, cooldownMs: number);
+  recordSuccess(): void;
+  recordFailure(): void;
+  isOpen(): boolean;
+  reset(): void;
+}
+      </signature>
+      <path>infra/lib/lambda/notification/enrichment.ts</path>
+    </interface>
+    <interface name="queryLeaseTable" kind="function (existing pattern)">
+      <signature>
+async function queryLeaseTable(
+  dynamoClient: DynamoDBClient,
+  userEmail: string,
+  uuid: string,
+  eventId: string
+): Promise&lt;LeaseRecord | null&gt;
+      </signature>
+      <path>infra/lib/lambda/notification/ownership.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Jest with ts-jest for TypeScript. ESM mock patterns using jest.Mock without type parameters.
+AC ID traceability: test names must include AC ID (e.g., "AC-6.1: enrichIfNeeded identifies missing fields").
+Unit tests in same directory as source files (enrichment.test.ts).
+Mock DynamoDB using aws-sdk-client-mock.
+Use hashForLog() for any logged email addresses in test assertions.
+    </standards>
+    <locations>
+      <location>infra/lib/lambda/notification/enrichment.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="6.1">Test enrichIfNeeded() correctly identifies missing required fields</idea>
+      <idea ac="6.2">Test LeaseTable query returns expected fields</idea>
+      <idea ac="6.3">Test SandboxAccountTable query returns accountName</idea>
+      <idea ac="6.4">Test LeaseTemplateTable query returns templateName</idea>
+      <idea ac="6.5">Test parallel query execution with Promise.all</idea>
+      <idea ac="6.7">Test missing enrichment data logs WARNING and continues</idea>
+      <idea ac="6.8">Test missing REQUIRED fields after enrichment throws PermanentError</idea>
+      <idea ac="6.11">Test ConsistentRead: true is set on all queries</idea>
+      <idea ac="6.17">Test circuit breaker opens after consecutive throttles</idea>
+      <idea ac="6.21">Test status conflict logs SECURITY alert</idea>
+      <idea ac="6.38">Test 2-second timeout for enrichment operations</idea>
+      <idea ac="6.39">Test graceful degradation sends with partial data</idea>
+      <idea ac="6.41">Test enriched.status is never included in output</idea>
+    </ideas>
+  </tests>
+</story-context>

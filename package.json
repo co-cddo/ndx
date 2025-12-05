@@ -7,7 +7,19 @@
   "type": "module",
   "scripts": {
     "start": "rm -r _site ; eleventy --serve",
-    "build": "eleventy",
+    "build": "yarn build:try-js && eleventy",
+    "build:try-js": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --format=esm",
+    "build:try-js:watch": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --format=esm --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:auth": "playwright test tests/e2e/auth",
+    "test:e2e:accessibility": "playwright test tests/e2e/accessibility",
+    "deploy": "scripts/deploy.sh",
+    "dev:proxy": "mitmdump --listen-port 8081 --set confdir=~/.mitmproxy -s scripts/mitmproxy-addon.py",
+    "validate-setup": "bash scripts/validate-local-setup.sh",
     "lint": "prettier -c .",
     "prepare": "husky"
   },
@@ -23,11 +35,20 @@
   "homepage": "https://github.com/co-cddo/ndx#readme",
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
+    "@axe-core/playwright": "^4.11.0",
+    "@playwright/test": "^1.56.1",
+    "@types/jest": "^29.5.14",
     "@x-govuk/govuk-eleventy-plugin": "^7.2.1",
+    "esbuild": "^0.24.2",
     "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^16.1.5",
+    "mermaid-isomorphic": "^3.0.4",
     "prettier": "^3.6.2",
-    "prettier-plugin-sh": "^0.18.0"
+    "prettier-plugin-sh": "^0.18.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
   },
   "engines": {
     "npm": "please-use-yarn",
@@ -43,8 +64,5 @@
       "prettier-plugin-sh"
     ]
   },
-  "packageManager": "yarn@4.5.0",
-  "dependencies": {
-    "@kevingimbel/eleventy-plugin-mermaid": "^3.0.0"
-  }
+  "packageManager": "yarn@4.5.0"
 }

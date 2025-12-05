@@ -1,0 +1,149 @@
+# Sprint Change Proposal - Rendering Regression Fix
+
+**Date:** 2025-11-24
+**Status:** Approved
+**Classification:** Minor (Direct Fix)
+**Prepared by:** Scrum Master Agent (Bob)
+
+---
+
+## Section 1: Issue Summary
+
+### Problem Statement
+
+The custom header template (`src/_includes/components/header/template.njk`) containing the `#auth-nav` placeholder is NOT being rendered in the built output. The `govukEleventyPlugin` is providing its own default header template, which lacks navigation items and authentication UI elements.
+
+### Discovery Context
+
+- E2E test run: 9/24 authentication tests failing
+- Manual inspection of `/try` page showed empty content
+- Built HTML at `_site/try/index.html` confirmed missing elements
+
+### Evidence
+
+| Component        | Expected                             | Actual                              |
+| ---------------- | ------------------------------------ | ----------------------------------- |
+| Header template  | Custom header with nav + `#auth-nav` | Plugin's minimal header (logo only) |
+| `<main>` content | `#try-sessions-container` div        | Empty `<main>` element              |
+| Navigation       | Header navigation items + auth       | Service navigation in separate div  |
+| `try.bundle.js`  | Included in page                     | Missing from output                 |
+| E2E tests        | 24/24 passing                        | 15/24 passing (9 failures)          |
+
+---
+
+## Section 2: Impact Analysis
+
+### Epic Impact
+
+| Epic   | Status | Stories Affected    |
+| ------ | ------ | ------------------- |
+| Epic 5 | Review | 5-1, 5-5, 5-9, 5-11 |
+| Epic 7 | Review | 7-1                 |
+| Epic 8 | Review | 8-0                 |
+
+### Root Cause
+
+The `govukEleventyPlugin` uses TWO different header patterns:
+
+1. **Header Navigation Pattern** - Navigation in header (what custom template uses)
+2. **Service Navigation Pattern** - Separate service nav below header (what plugin renders)
+
+The custom header template exists at `src/_includes/components/header/template.njk` but the plugin doesn't recognize it as an override. The plugin likely expects overrides in a specific location or with specific configuration.
+
+### Artifact Conflicts
+
+- **PRD:** None
+- **Architecture:** None
+- **UI/UX:** None
+- **Build Configuration:** Plugin override mechanism not correctly configured
+
+---
+
+## Section 3: Recommended Approach
+
+### Selected Path: Direct Adjustment
+
+**Rationale:** This is a build configuration issue, not a fundamental design problem. The code is correct (Story 5-1 completion notes confirm `#auth-nav` was added to custom header template). The fix involves configuring the plugin correctly.
+
+**Effort:** Low (hours)
+**Risk:** Low (configuration change only)
+
+---
+
+## Section 4: Detailed Change Proposals
+
+### Change 1: Investigate govukEleventyPlugin Header Override
+
+**Action:** Research how @x-govuk/govuk-eleventy-plugin handles header template overrides
+
+**Options to investigate:**
+
+1. Plugin may need `header.template` config option pointing to custom template
+2. Custom template may need to be in `_includes/layouts/` not `_includes/components/`
+3. Plugin may use Nunjucks block override pattern (extending base template)
+
+### Change 2: Add `#auth-nav` to Service Navigation (Fallback)
+
+If header override fails, add placeholder to service navigation:
+
+```javascript
+// eleventy.config.js
+serviceNavigation: {
+  navigation: [
+    ...existing items...,
+    { html: '<span id="auth-nav"></span>' }
+  ]
+}
+```
+
+### Change 3: Fix Try Page Content Rendering
+
+**Investigation:**
+
+- Check if `layout: base.njk` is correctly resolving
+- Verify Nunjucks template inheritance is working
+- Check if content block is being rendered
+
+---
+
+## Section 5: Implementation Handoff
+
+### Scope Classification
+
+**Minor** - Can be implemented directly by development team
+
+### Implementation Steps
+
+1. Research @x-govuk/govuk-eleventy-plugin header override documentation
+2. Test header override configuration options
+3. If override works: Configure plugin to use custom header
+4. If override fails: Move `#auth-nav` to service navigation config
+5. Fix try page content rendering
+6. Run E2E tests to verify 24/24 passing
+7. Update sprint-status.yaml to mark stories as done
+
+### Success Criteria
+
+- [ ] `#auth-nav` element present in rendered HTML on all pages
+- [ ] Try page content (`#try-sessions-container`) renders correctly
+- [ ] `try.bundle.js` included in page output
+- [ ] E2E tests: 24/24 passing
+- [ ] Build completes without errors
+
+### Files to Investigate/Modify
+
+- `eleventy.config.js` - Plugin configuration
+- `src/_includes/components/header/template.njk` - Custom header template
+- `src/try/index.md` - Try page source
+- Plugin documentation: https://x-govuk.github.io/govuk-eleventy-plugin/
+
+---
+
+## Approval
+
+**Approved:** 2025-11-24
+**Approved by:** cns (via correct-course workflow)
+
+---
+
+_Generated by BMAD Correct Course Workflow v1.0_

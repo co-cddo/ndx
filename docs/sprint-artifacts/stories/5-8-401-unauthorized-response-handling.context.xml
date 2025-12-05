@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context version="1.0" story-id="5-8" generated="2025-11-24">
+  <metadata>
+    <story-file>docs/sprint-artifacts/stories/5-8-401-unauthorized-response-handling.md</story-file>
+    <epic>Epic 5: Authentication Foundation</epic>
+    <dependencies>
+      <dependency story="5.6" status="done">API Authorization Header Injection - callISBAPI() function</dependency>
+      <dependency story="5.7" status="done">Authentication Status Check API - checkAuthStatus() function</dependency>
+    </dependencies>
+  </metadata>
+
+  <documentation>
+    <doc type="architecture" path="docs/try-before-you-buy-architecture.md">
+      <excerpt name="ADR-021">
+        Centralized 401 handling in API client.
+        All API calls automatically handle 401 responses.
+        Clear invalid token -> Redirect to OAuth -> Return to original page.
+        Prevents scattered 401 handling logic across codebase.
+      </excerpt>
+      <excerpt name="ADR-024">
+        AuthState notifies subscribers of auth state change on 401.
+        Nav links update to "Sign in".
+        Seamless user experience (no stale UI).
+      </excerpt>
+    </doc>
+    <doc type="prd" path="docs/prd.md">
+      <excerpt name="FR-TRY-23">System automatically redirects to OAuth when 401 received</excerpt>
+      <excerpt name="FR-TRY-24">System clears invalid token before redirect to prevent infinite loops</excerpt>
+    </doc>
+  </documentation>
+
+  <artifacts>
+    <code type="existing" path="src/try/api/api-client.ts" relevance="critical">
+      <purpose>API client module to extend with 401 handling</purpose>
+      <patterns>
+        <pattern name="callISBAPI">Function that makes authenticated API calls - MUST extend with 401 handling</pattern>
+        <pattern name="checkAuthStatus">Function that checks auth - should NOT trigger 401 redirect</pattern>
+        <pattern name="JWT_TOKEN_KEY">Uses 'isb-jwt' key for sessionStorage</pattern>
+      </patterns>
+      <key-lines>
+        <line n="51">JWT_TOKEN_KEY = 'isb-jwt'</line>
+        <line n="82-103">callISBAPI() function - add 401 handling after line 99</line>
+        <line n="132-155">checkAuthStatus() - already handles 401 gracefully, do NOT modify</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/api/api-client.test.ts" relevance="high">
+      <purpose>Existing unit tests to extend with 401 redirect tests</purpose>
+      <patterns>
+        <pattern name="createMockResponse">Factory function for mock responses</pattern>
+        <pattern name="mockFetch">Global fetch mock pattern</pattern>
+        <pattern name="sessionStorage-mock">jsdom provides sessionStorage</pattern>
+      </patterns>
+      <key-lines>
+        <line n="14-15">mockFetch setup</line>
+        <line n="20-29">createMockResponse factory</line>
+      </key-lines>
+    </code>
+
+    <code type="existing" path="src/try/auth/oauth-flow.ts" relevance="medium">
+      <purpose>OAuth redirect handling - reference for redirect pattern</purpose>
+      <notes>
+        OAuth flow uses window.location.href for redirects.
+        401 handler should follow same pattern.
+      </notes>
+    </code>
+
+    <code type="to-modify" path="src/try/api/api-client.ts">
+      <purpose>Add 401 response handling to callISBAPI()</purpose>
+      <implementation-notes>
+        <note>Check response.status === 401 before returning</note>
+        <note>Clear sessionStorage with removeItem(JWT_TOKEN_KEY)</note>
+        <note>Redirect with window.location.href = '/api/auth/login'</note>
+        <note>Throw error to stop promise chain</note>
+        <note>IMPORTANT: checkAuthStatus() already handles 401 - verify it doesn't use redirect</note>
+      </implementation-notes>
+    </code>
+  </artifacts>
+
+  <api-contract>
+    <endpoint method="*" path="/api/*">
+      <description>Any ISB API endpoint may return 401</description>
+      <response status="401">
+        <description>Token invalid, expired, or missing</description>
+        <action>Clear token, redirect to OAuth</action>
+      </response>
+    </endpoint>
+    <endpoint method="GET" path="/api/auth/login">
+      <description>OAuth login initiation endpoint</description>
+      <action>Redirects to Innovation Sandbox OAuth provider</action>
+    </endpoint>
+  </api-contract>
+
+  <constraints>
+    <constraint type="no-infinite-loops">
+      Must clear token BEFORE redirect to prevent infinite 401 loop
+    </constraint>
+    <constraint type="preserve-checkAuthStatus">
+      checkAuthStatus() already handles 401 gracefully (returns {authenticated: false}).
+      Do NOT modify checkAuthStatus to redirect - it checks auth status, not forcing re-auth.
+    </constraint>
+    <constraint type="window-redirect">
+      Use window.location.href for redirect (full page navigation required for OAuth)
+    </constraint>
+    <constraint type="test-mocking">
+      window.location cannot be directly mocked in jsdom - use alternative patterns
+    </constraint>
+  </constraints>
+
+  <acceptance-criteria-mapping>
+    <ac number="1" description="Automatic 401 Detection">
+      <implementation>Check response.status === 401 in callISBAPI, clear sessionStorage</implementation>
+      <validation>Unit test verifies sessionStorage.removeItem called on 401</validation>
+    </ac>
+    <ac number="2" description="Automatic Redirect to OAuth">
+      <implementation>window.location.href = '/api/auth/login' after clearing token</implementation>
+      <validation>Unit test verifies redirect URL (may need mock or spy)</validation>
+    </ac>
+    <ac number="3" description="Return to Original Page">
+      <implementation>OAuth callback handles return URL (existing behavior)</implementation>
+      <validation>Manual browser test - verify return to original page</validation>
+    </ac>
+    <ac number="4" description="No Infinite Loops">
+      <implementation>Clear token before redirect</implementation>
+      <validation>Code review ensures token cleared before redirect</validation>
+    </ac>
+    <ac number="5" description="Integration with Existing API Client">
+      <implementation>Extend existing callISBAPI, preserve all existing behavior</implementation>
+      <validation>All existing 33 tests still pass</validation>
+    </ac>
+  </acceptance-criteria-mapping>
+
+  <learnings-from-previous>
+    <learning story="5.7" key="checkAuthStatus-401">
+      checkAuthStatus() already handles 401 by returning {authenticated: false}.
+      It does NOT redirect because it's checking status, not forcing login.
+      The 401 redirect should only happen in callISBAPI for actual API failures.
+    </learning>
+    <learning story="5.6" key="callISBAPI-structure">
+      callISBAPI returns fetch Response object directly.
+      401 handling should check response.status before returning.
+      All existing tests expect Response object returned for non-401 cases.
+    </learning>
+    <learning story="5.5" key="redirect-pattern">
+      signOut() uses window.location.href = '/' for redirect.
+      Same pattern for 401 redirect to OAuth.
+    </learning>
+  </learnings-from-previous>
+
+  <testing-notes>
+    <note name="window-location-mocking">
+      jsdom window.location is not easily mockable.
+      Options:
+      1. Use Object.defineProperty to mock window.location.href setter
+      2. Use jest.spyOn on a wrapper function
+      3. Verify sessionStorage clear happens (proxy for redirect)
+    </note>
+    <note name="existing-tests-must-pass">
+      All 33 existing tests must continue to pass.
+      401 handling should not affect non-401 responses.
+    </note>
+  </testing-notes>
+</story-context>

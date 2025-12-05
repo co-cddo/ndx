@@ -1,0 +1,147 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9</epicId>
+    <storyId>4</storyId>
+    <title>Clear Error States for Failed Loads</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-02</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/9-4-clear-error-states-for-failed-loads.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user interacting with the AUP modal</asA>
+    <iWant>clear, helpful error messages when session details fail to load</iWant>
+    <soThat>I understand why I cannot proceed and what options I have</soThat>
+    <tasks>
+      <task id="1" acs="2">Add 404-specific error message
+        <subtask id="1.1">Check for `errorCode: 'NOT_FOUND'` in loadLeaseTemplate response</subtask>
+        <subtask id="1.2">Display "This sandbox is currently unavailable" for 404 errors</subtask>
+        <subtask id="1.3">Use existing showError() method with 404-specific message</subtask>
+        <subtask id="1.4">ARIA announce the specific error state</subtask>
+      </task>
+      <task id="2" acs="1">Add generic API error message
+        <subtask id="2.1">Display "Unable to load session details" for non-404 errors</subtask>
+        <subtask id="2.2">Include retry guidance in error message</subtask>
+        <subtask id="2.3">ARIA announce the error state</subtask>
+      </task>
+      <task id="3" acs="3">Verify Continue button stays disabled on error
+        <subtask id="3.1">Verify isFullyLoaded is false when error occurs</subtask>
+        <subtask id="3.2">Verify button text shows "Continue" (not "Loading...")</subtask>
+        <subtask id="3.3">Test button cannot be clicked with error state</subtask>
+      </task>
+      <task id="4" acs="4">Verify Cancel button works normally
+        <subtask id="4.1">Test Cancel button is enabled during error state</subtask>
+        <subtask id="4.2">Test Cancel button closes modal correctly</subtask>
+        <subtask id="4.3">Test modal can be reopened after cancel during error</subtask>
+      </task>
+      <task id="5" acs="5">Add enhanced error logging
+        <subtask id="5.1">Log template ID (tryId) with error</subtask>
+        <subtask id="5.2">Log errorCode from API response</subtask>
+        <subtask id="5.3">Log error message for debugging</subtask>
+        <subtask id="5.4">Follow existing logging pattern `[AupModal]` prefix</subtask>
+      </task>
+      <task id="6" acs="1-5">Write unit tests
+        <subtask id="6.1">Test 404 error displays correct message</subtask>
+        <subtask id="6.2">Test generic error displays correct message</subtask>
+        <subtask id="6.3">Test Continue button disabled during error</subtask>
+        <subtask id="6.4">Test Cancel button works during error</subtask>
+        <subtask id="6.5">Test error logging includes ID and code</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1">API error displays "Unable to load session details"</criterion>
+    <criterion id="AC-2">404 displays "This sandbox is currently unavailable"</criterion>
+    <criterion id="AC-3">Continue button remains disabled on error</criterion>
+    <criterion id="AC-4">Cancel button works normally on error</criterion>
+    <criterion id="AC-5">Error logging captures template ID and error code</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-9.md" title="Epic 9 Tech Spec" section="Story 9.4, Reliability/Availability">
+        AC-9.4.1-5 defined here. Error handling patterns: API error shows "Unable to load session details", 404 shows "This sandbox is currently unavailable", all errors keep Continue disabled.
+      </doc>
+      <doc path="docs/try-before-you-buy-architecture.md" title="Try Architecture" section="ADR-026">
+        Accessible Modal Pattern - WCAG 2.2 AA compliance, errors must be announced assertively to screen readers.
+      </doc>
+      <doc path="docs/sprint-artifacts/9-3-gate-continue-button-on-all-data-loaded.md" title="Story 9.3" section="Dev Agent Record">
+        Previous story: showError() at :444-455, leaseTemplateError state, isFullyLoaded checks data !== null.
+      </doc>
+    </docs>
+    <code>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="230-290" reason="loadLeaseTemplate() method - need to add 404-specific handling and enhanced logging">
+        <symbol>loadLeaseTemplate</symbol>
+        <symbol>updateSessionTermsDisplay</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="444-455" reason="showError() method - existing error display with ARIA announce">
+        <symbol>showError</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.ts" kind="component" lines="647-678" reason="updateButtons() method - verify Continue disabled on error">
+        <symbol>updateButtons</symbol>
+      </file>
+      <file path="src/try/api/lease-templates-service.ts" kind="service" lines="22-28" reason="LeaseTemplateErrorCode type - check for NOT_FOUND">
+        <symbol>LeaseTemplateErrorCode</symbol>
+        <symbol>LeaseTemplateResult</symbol>
+      </file>
+      <file path="src/try/ui/components/aup-modal.test.ts" kind="test" lines="504-535" reason="Error handling tests - follow pattern for new tests">
+        <symbol>describe Error handling</symbol>
+      </file>
+      <file path="src/try/ui/utils/aria-live.ts" kind="utility" reason="announce() function for ARIA announcements">
+        <symbol>announce</symbol>
+      </file>
+    </code>
+    <dependencies>
+      <node>
+        <package name="typescript" version="^5.x" />
+        <package name="jest" version="^29.x" />
+        <package name="jsdom" version="test environment" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint source="ADR-026">WCAG 2.2 AA compliance - errors must be announced assertively to screen readers</constraint>
+    <constraint source="tech-spec">404 error: Display "This sandbox is currently unavailable" (distinct from generic errors)</constraint>
+    <constraint source="tech-spec">Generic error: Display "Unable to load session details"</constraint>
+    <constraint source="tech-spec">Use textContent for dynamic text, never innerHTML</constraint>
+    <constraint source="patterns">Use existing showError() method which handles ARIA announcements</constraint>
+    <constraint source="Story 9.3">Continue button already disabled via isFullyLoaded when leaseTemplateData is null</constraint>
+    <constraint source="patterns">Follow existing [AupModal] prefix pattern for logging</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="LeaseTemplateResult" kind="TypeScript interface" path="src/try/api/lease-templates-service.ts:34-50">
+      interface LeaseTemplateResult {
+        success: boolean;
+        data?: { leaseDurationInHours: number; maxSpend: number; name?: string; };
+        error?: string;
+        errorCode?: 'NOT_FOUND' | 'UNAUTHORIZED' | 'TIMEOUT' | 'SERVER_ERROR' | 'NETWORK_ERROR' | 'INVALID_UUID';
+      }
+    </interface>
+    <interface name="showError" kind="method" path="src/try/ui/components/aup-modal.ts:444-455">
+      showError(message: string): void - Displays error message and announces assertively
+    </interface>
+    <interface name="announce" kind="function" path="src/try/ui/utils/aria-live.ts">
+      function announce(message: string, priority?: 'polite' | 'assertive'): void
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with jsdom environment for DOM testing. Test error messages with textContent assertions. Test ARIA announcements with jest.spyOn on announce(). Test logging with console.warn spies. Follow patterns established in Story 9.3 tests.</standards>
+    <locations>
+      <location>src/try/ui/components/aup-modal.test.ts</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test generic API error displays "Unable to load session details" (non-404 errors)</idea>
+      <idea ac="2">Test 404 error displays "This sandbox is currently unavailable"</idea>
+      <idea ac="3">Test Continue button remains disabled when leaseTemplateError is set</idea>
+      <idea ac="4">Test Cancel button is enabled and works during error state</idea>
+      <idea ac="5">Test console.warn logs include tryId and errorCode</idea>
+      <idea ac="1,2">Test ARIA announces error message assertively</idea>
+      <idea ac="4">Test modal can be reopened after canceling during error</idea>
+    </ideas>
+  </tests>
+</story-context>

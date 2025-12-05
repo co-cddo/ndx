@@ -1,0 +1,954 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<story-context
+  story-id="4-2-create-mitmproxy-addon-script-for-conditional-forwarding"
+  epic-id="4"
+  generated="2025-11-23"
+  project="NDX Try Before You Buy">
+
+  <!-- ================================================================ -->
+  <!-- STORY SUMMARY -->
+  <!-- ================================================================ -->
+  <story-summary>
+    <title>Create mitmproxy Addon Script for Conditional Forwarding</title>
+    <objective>
+      Develop a Python addon script for mitmproxy that conditionally routes incoming requests:
+      - UI routes (/, /catalogue/*, /try, /assets/*) forward to localhost:8080
+      - API routes (/api/*) pass through to CloudFront (d7roov8fndsis.cloudfront.net)
+      - All other requests pass through to CloudFront unchanged
+
+      This enables local Try feature development with real Innovation Sandbox API integration
+      while hot-reloading UI changes from the local Eleventy server.
+    </objective>
+
+    <acceptance-criteria>
+      <criterion id="AC1">
+        Addon script created at scripts/mitmproxy-addon.py with request interception logic
+      </criterion>
+      <criterion id="AC2">
+        UI routes (/, /catalogue/*, /try, /assets/*) forward to http://localhost:8080
+      </criterion>
+      <criterion id="AC3">
+        API routes (/api/*) pass through to https://d7roov8fndsis.cloudfront.net unchanged
+      </criterion>
+      <criterion id="AC4">
+        All other routes pass through to CloudFront unchanged (OAuth callbacks, etc.)
+      </criterion>
+      <criterion id="AC5">
+        Host header preserved as CloudFront domain for all requests (OAuth compatibility)
+      </criterion>
+      <criterion id="AC6">
+        Script loads without errors when mitmproxy starts with --scripts flag
+      </criterion>
+      <criterion id="AC7">
+        Logging added to track routing decisions (UI vs API vs passthrough)
+      </criterion>
+    </acceptance-criteria>
+
+    <technical-constraints>
+      <constraint>Python 3.8+ compatibility (mitmproxy requirement)</constraint>
+      <constraint>Must use mitmproxy addon API (not inline scripts)</constraint>
+      <constraint>CloudFront domain (d7roov8fndsis.cloudfront.net) must be preserved for OAuth redirect validation</constraint>
+      <constraint>localhost:8080 is where NDX Eleventy development server runs</constraint>
+      <constraint>Script must handle HTTPS requests (mitmproxy handles SSL termination/re-encryption)</constraint>
+    </technical-constraints>
+  </story-summary>
+
+  <!-- ================================================================ -->
+  <!-- PRODUCT REQUIREMENTS CONTEXT -->
+  <!-- ================================================================ -->
+  <product-requirements-context>
+    <prd-excerpt source="docs/prd.md">
+      <section name="FR-TRY-INFRA-3: Local Try Feature Development Infrastructure">
+        <requirement>
+          Enable local development of Try feature UI while preserving real Innovation Sandbox API integration.
+          Developers should be able to modify catalogue UI, /try page, and client-side JavaScript
+          with hot-reload workflow without rebuilding CloudFront distribution.
+        </requirement>
+
+        <rationale>
+          The Innovation Sandbox CloudFront distribution is an external system that cannot be modified
+          for local development. A transparent proxy solution (mitmproxy) is required to route UI requests
+          to localhost while passing API requests to production backend.
+        </rationale>
+      </section>
+
+      <section name="NFR-TRY-PERF-4: Local Development Performance">
+        <requirement>
+          Local UI changes must hot-reload in less than 2 seconds. mitmproxy routing overhead
+          must not exceed 50ms per request.
+        </requirement>
+      </section>
+
+      <section name="NFR-TRY-SEC-6: OAuth Domain Preservation">
+        <requirement>
+          OAuth callback URLs must remain on CloudFront domain (d7roov8fndsis.cloudfront.net)
+          for Innovation Sandbox OAuth provider validation. The mitmproxy addon must NOT
+          modify Host headers or redirect URLs for OAuth flows.
+        </requirement>
+      </section>
+    </prd-excerpt>
+  </product-requirements-context>
+
+  <!-- ================================================================ -->
+  <!-- TECHNICAL SPECIFICATION CONTEXT -->
+  <!-- ================================================================ -->
+  <technical-specification-context>
+    <tech-spec-excerpt source="docs/sprint-artifacts/tech-spec-epic-4.md">
+      <section name="Story 4.2: Technical Specification">
+        <architecture>
+          The mitmproxy addon acts as a conditional router:
+
+          1. Browser navigates to CloudFront domain (d7roov8fndsis.cloudfront.net)
+          2. System proxy routes request to mitmproxy (localhost:8081)
+          3. Addon intercepts request and inspects request.path
+          4. Based on path pattern:
+             - UI routes: Change upstream to localhost:8080
+             - API routes: Pass through to CloudFront
+             - Other routes: Pass through to CloudFront
+          5. mitmproxy forwards request to determined upstream
+          6. Response returns to browser via mitmproxy
+        </architecture>
+
+        <implementation-details>
+          **File Location:** scripts/mitmproxy-addon.py
+
+          **Addon Structure:**
+          - Class-based addon (inherits from mitmproxy addon base)
+          - Implements request() hook for interception
+          - Uses Python regex or startswith() for path matching
+
+          **Routing Logic:**
+          ```python
+          UI_ROUTES = ['/', '/catalogue/', '/try', '/assets/']
+          API_ROUTES = ['/api/']
+          CLOUDFRONT_DOMAIN = 'd7roov8fndsis.cloudfront.net'
+          LOCAL_SERVER = 'localhost:8080'
+
+          if request.path matches UI_ROUTES:
+              forward to http://localhost:8080
+              preserve Host header as CLOUDFRONT_DOMAIN
+          elif request.path matches API_ROUTES:
+              pass through to https://CLOUDFRONT_DOMAIN
+          else:
+              pass through to https://CLOUDFRONT_DOMAIN
+          ```
+
+          **Host Header Preservation:**
+          Critical for OAuth callbacks. The Innovation Sandbox OAuth provider validates
+          callback URLs match the registered domain. If Host header is changed to localhost,
+          OAuth redirects will fail validation.
+
+          Solution: Change request.host to localhost:8080 for routing, but preserve
+          request.headers["Host"] as CloudFront domain for OAuth compatibility.
+        </implementation-details>
+
+        <mitmproxy-addon-api-reference>
+          **Key mitmproxy Addon Hooks:**
+          - request(flow: http.HTTPFlow): Called for each HTTP request before forwarding
+          - response(flow: http.HTTPFlow): Called for each HTTP response (optional for logging)
+
+          **Flow Object Properties:**
+          - flow.request.scheme: 'http' or 'https'
+          - flow.request.host: Destination host (modify for routing)
+          - flow.request.port: Destination port (modify for routing)
+          - flow.request.path: Request path (e.g., '/catalogue/aws/lambda.html')
+          - flow.request.headers: HTTP headers (preserve Host header)
+
+          **Example Addon Pattern:**
+          ```python
+          from mitmproxy import http
+          import logging
+
+          class ConditionalForwardingAddon:
+              def request(self, flow: http.HTTPFlow) -&gt; None:
+                  # Inspect flow.request.path
+                  # Modify flow.request.host and flow.request.port
+                  # Log routing decision
+                  pass
+
+          addons = [ConditionalForwardingAddon()]
+          ```
+        </mitmproxy-addon-api-reference>
+
+        <testing-approach>
+          **Manual Testing (Story 4.2 scope):**
+          1. Start mitmproxy with addon: `mitmproxy --scripts scripts/mitmproxy-addon.py --listen-port 8081`
+          2. Start NDX server: `yarn start` (runs on port 8080)
+          3. Configure system proxy to localhost:8081 (manual for Story 4.2, automated in Story 4.4)
+          4. Navigate browser to https://d7roov8fndsis.cloudfront.net
+          5. Verify in mitmproxy console:
+             - Request to / shows destination localhost:8080
+             - Request to /catalogue/aws/lambda.html shows destination localhost:8080
+             - Request to /api/configurations shows destination d7roov8fndsis.cloudfront.net
+
+          **Validation Criteria:**
+          - mitmproxy console logs show correct routing decisions
+          - Browser loads NDX homepage from localhost:8080 (local HTML, not CloudFront cached version)
+          - API requests (if any) receive responses from CloudFront backend
+        </testing-approach>
+      </section>
+    </tech-spec-excerpt>
+  </technical-specification-context>
+
+  <!-- ================================================================ -->
+  <!-- ARCHITECTURE CONTEXT -->
+  <!-- ================================================================ -->
+  <architecture-context>
+    <architecture-excerpt source="docs/try-before-you-buy-architecture.md">
+      <section name="Local Development Proxy Architecture">
+        <decision>
+          Use mitmproxy with custom addon for conditional request forwarding to enable
+          local Try feature UI development with real Innovation Sandbox API integration.
+        </decision>
+
+        <rationale>
+          The Innovation Sandbox CloudFront distribution cannot be modified for local development.
+          Developers need to:
+          1. Test Try feature UI changes locally (fast iteration)
+          2. Integrate with real Innovation Sandbox API (OAuth, leases, AUP)
+          3. Preserve OAuth callback domain requirements (CloudFront domain validation)
+
+          Alternative approaches considered:
+          - Mock API: Does not test real OAuth flows, JWT token handling, API edge cases
+          - Local API clone: Infeasible (Innovation Sandbox is external AWS service)
+          - CloudFront distribution per developer: Cost-prohibitive, slow deployment
+
+          mitmproxy with conditional forwarding provides production parity while enabling
+          fast local UI iteration.
+        </rationale>
+
+        <constraints>
+          - OAuth callback URLs MUST remain on CloudFront domain (external OAuth provider validation)
+          - System proxy configuration required (per-developer setup, documented in Story 4.4)
+          - SSL certificate trust required (mitmproxy CA cert, documented in Story 4.5)
+          - Two-process workflow: mitmproxy + NDX server (both must run concurrently)
+        </constraints>
+      </section>
+
+      <section name="Request Flow: Browser to Local Server">
+        <flow-diagram>
+          1. Browser requests https://d7roov8fndsis.cloudfront.net/catalogue/aws/lambda.html
+          2. System proxy (configured in Story 4.4) routes to localhost:8081 (mitmproxy)
+          3. mitmproxy SSL termination (decrypts HTTPS)
+          4. Addon request() hook inspects path: /catalogue/aws/lambda.html
+          5. Path matches UI_ROUTES pattern (/catalogue/*)
+          6. Addon changes flow.request.host to 'localhost' and flow.request.port to 8080
+          7. Addon preserves flow.request.headers["Host"] as 'd7roov8fndsis.cloudfront.net'
+          8. mitmproxy forwards HTTP request to localhost:8080
+          9. NDX Eleventy server (yarn start) responds with HTML from local _site directory
+          10. mitmproxy receives response, re-encrypts as HTTPS
+          11. Browser receives HTTPS response with CloudFront domain in URL bar
+        </flow-diagram>
+
+        <key-architectural-principle>
+          The browser always sees CloudFront domain in the URL bar. The mitmproxy addon
+          transparently routes UI requests to localhost without modifying URLs, Host headers,
+          or OAuth callback domains. This preserves OAuth provider validation while enabling
+          local development.
+        </key-architectural-principle>
+      </section>
+    </architecture-excerpt>
+  </architecture-context>
+
+  <!-- ================================================================ -->
+  <!-- UX DESIGN CONTEXT -->
+  <!-- ================================================================ -->
+  <ux-design-context>
+    <ux-excerpt source="docs/ux-design-specification.md">
+      <note>
+        Story 4.2 is infrastructure-only (Python addon script). No direct UX impact.
+        However, this story enables local development of all Try feature UX components
+        documented in the UX Design Specification.
+      </note>
+
+      <developer-experience-impact>
+        The mitmproxy addon enables developers to:
+        1. Modify Try button placement on product pages (local HTML changes)
+        2. Iterate on AUP modal design (local CSS/JavaScript changes)
+        3. Refine /try page layout and responsive table behavior (local Eleventy template changes)
+        4. Test OAuth authentication flows with real Innovation Sandbox (no mocking required)
+
+        All UX changes hot-reload via Eleventy's watch mode (yarn start) without
+        rebuilding CloudFront distribution. This accelerates UX iteration from hours (CloudFront deploy)
+        to seconds (local reload).
+      </developer-experience-impact>
+    </ux-excerpt>
+  </ux-design-context>
+
+  <!-- ================================================================ -->
+  <!-- EXISTING CODEBASE CONTEXT -->
+  <!-- ================================================================ -->
+  <existing-codebase-context>
+    <repository-structure>
+      <directory path="/Users/cns/httpdocs/cddo/ndx">
+        <file path="package.json">
+          NDX project configuration with Eleventy build system.
+
+          Relevant scripts:
+          - "start": "rm -r _site ; eleventy --serve" (runs on port 8080 by default)
+          - "build": "eleventy" (generates static site to _site directory)
+
+          Dependencies:
+          - @11ty/eleventy: Static site generator
+          - @x-govuk/govuk-eleventy-plugin: GOV.UK Design System integration
+        </file>
+
+        <directory path="scripts">
+          <file path="deploy.sh">
+            Existing deployment script for production CloudFront distribution.
+            NOT relevant to Story 4.2 (production deployment only).
+          </file>
+
+          <note>
+            Story 4.2 creates new file: scripts/mitmproxy-addon.py
+            This directory already exists, no mkdir required.
+          </note>
+        </directory>
+
+        <directory path="docs/development">
+          <file path="local-try-setup.md">
+            Story 4.1 deliverable: mitmproxy installation and prerequisite setup guide.
+
+            Relevant sections for Story 4.2:
+            - Architecture diagram showing mitmproxy flow
+            - Port configuration (8080 for NDX, 8081 for mitmproxy)
+            - Validation steps referencing Story 4.2 addon script
+
+            Story 4.2 addon script referenced but not yet created.
+          </file>
+        </directory>
+      </directory>
+    </repository-structure>
+
+    <dependencies-analysis>
+      <dependency name="mitmproxy" version="10.x+" language="Python">
+        Installed via pip (Story 4.1). Provides addon API for request interception.
+
+        Key modules to import in addon script:
+        - from mitmproxy import http (HTTPFlow object)
+        - import logging (for routing decision logs)
+      </dependency>
+
+      <dependency name="Eleventy" version="3.1.2" language="Node.js">
+        Static site generator for NDX. Runs development server on port 8080 via "yarn start".
+        Serves content from _site directory with hot-reload on file changes.
+
+        Addon script forwards UI requests to this server (http://localhost:8080).
+      </dependency>
+    </dependencies-analysis>
+
+    <code-patterns-to-follow>
+      <pattern name="Python Scripts in NDX Project">
+        Observation: No existing Python scripts in repository (scripts/deploy.sh is Bash).
+
+        Implication: Story 4.2 introduces first Python script to NDX project.
+
+        Best Practice:
+        - Add Python version requirement comment at top of file (# Requires Python 3.8+)
+        - Use standard Python logging module (not print statements)
+        - Follow PEP 8 style guide (4-space indentation, snake_case naming)
+        - Add docstrings to class and methods
+      </pattern>
+
+      <pattern name="Development Tooling Scripts">
+        Observation: Existing scripts/deploy.sh follows pattern:
+        - Shebang (#!/bin/bash)
+        - Purpose comment at top
+        - Exit on error (set -e)
+
+        Apply similar pattern to mitmproxy-addon.py:
+        - Shebang (#!/usr/bin/env python3)
+        - Module docstring explaining purpose
+        - Logging for visibility into script behavior
+      </pattern>
+    </code-patterns-to-follow>
+  </existing-codebase-context>
+
+  <!-- ================================================================ -->
+  <!-- DEPENDENCIES AND INTEGRATION POINTS -->
+  <!-- ================================================================ -->
+  <dependencies-and-integration>
+    <upstream-dependencies>
+      <dependency story-id="4-1" status="DONE">
+        Story 4.1: mitmproxy Setup and Installation Documentation
+
+        Provides:
+        - mitmproxy installed on developer machine (pip install mitmproxy)
+        - Documentation at docs/development/local-try-setup.md
+        - Port configuration defined (8080 for NDX, 8081 for mitmproxy)
+
+        Story 4.2 uses:
+        - mitmproxy addon API (requires mitmproxy installed)
+        - Port 8081 for mitmproxy listener (documented in Story 4.1)
+      </dependency>
+    </upstream-dependencies>
+
+    <downstream-dependencies>
+      <dependency story-id="4-3" status="DRAFTED">
+        Story 4.3: Configure npm Script for Starting mitmproxy with Addon
+
+        Will use:
+        - scripts/mitmproxy-addon.py (created in Story 4.2)
+        - Adds yarn dev:proxy script to package.json
+        - Runs: mitmproxy --scripts scripts/mitmproxy-addon.py --listen-port 8081
+
+        Blocker: Story 4.3 cannot be completed until Story 4.2 addon script exists.
+      </dependency>
+
+      <dependency story-id="4-4" status="DRAFTED">
+        Story 4.4: System Proxy Configuration Instructions
+
+        Enables:
+        - Browser routing to mitmproxy (localhost:8081)
+        - End-to-end testing of addon routing logic
+
+        Partial dependency: Story 4.2 can be manually tested with system proxy configured,
+        but Story 4.4 provides documented setup instructions for all developers.
+      </dependency>
+
+      <dependency story-id="4-6" status="DRAFTED">
+        Story 4.6: Create Automated Validation Script
+
+        Will validate:
+        - scripts/mitmproxy-addon.py exists
+        - Addon script has no syntax errors
+        - mitmproxy can load addon without errors
+
+        Uses Story 4.2 deliverable as validation input.
+      </dependency>
+    </downstream-dependencies>
+
+    <integration-points>
+      <integration-point name="mitmproxy Addon Loading">
+        mitmproxy discovers addons via --scripts flag:
+
+        Command: mitmproxy --scripts scripts/mitmproxy-addon.py --listen-port 8081
+
+        Requirements:
+        - Addon file must define `addons = [AddonClass()]` at module level
+        - AddonClass must implement request(flow: http.HTTPFlow) method
+        - File must be executable Python 3.8+ script
+
+        Validation:
+        - mitmproxy console shows "Addon loaded: scripts/mitmproxy-addon.py"
+        - No Python exceptions on startup
+      </integration-point>
+
+      <integration-point name="NDX Eleventy Server">
+        Addon forwards UI requests to http://localhost:8080
+
+        Requirements:
+        - NDX server must be running (yarn start)
+        - Server must listen on port 8080 (Eleventy default)
+        - Server must serve content from _site directory
+
+        Validation:
+        - curl http://localhost:8080/ returns NDX homepage HTML
+        - mitmproxy addon forwards request and receives HTML response
+      </integration-point>
+
+      <integration-point name="CloudFront Backend API">
+        Addon passes API requests through to https://d7roov8fndsis.cloudfront.net
+
+        Requirements:
+        - CloudFront domain resolvable (DNS lookup succeeds)
+        - HTTPS connection succeeds (SSL certificate valid)
+        - Innovation Sandbox API responds to /api/* requests
+
+        Validation:
+        - curl https://d7roov8fndsis.cloudfront.net/api/configurations returns JSON
+        - mitmproxy addon passes request unchanged, receives API response
+      </integration-point>
+    </integration-points>
+  </dependencies-and-integration>
+
+  <!-- ================================================================ -->
+  <!-- TECHNICAL GUIDANCE AND BEST PRACTICES -->
+  <!-- ================================================================ -->
+  <technical-guidance>
+    <best-practices>
+      <practice category="mitmproxy Addon Development">
+        **Class-Based Addon Pattern:**
+
+        Prefer class-based addons over module-level functions for maintainability:
+
+        ```python
+        from mitmproxy import http
+
+        class ConditionalForwardingAddon:
+            def request(self, flow: http.HTTPFlow) -&gt; None:
+                # Routing logic here
+                pass
+
+        addons = [ConditionalForwardingAddon()]
+        ```
+
+        Benefits:
+        - State can be stored in self.* attributes (e.g., request counters)
+        - Multiple hook methods can be added (request, response, error)
+        - Easier to test and mock
+      </practice>
+
+      <practice category="Path Matching">
+        **Use startswith() for Performance:**
+
+        For simple prefix matching, startswith() is faster than regex:
+
+        ```python
+        # Good (fast)
+        if flow.request.path.startswith('/api/'):
+            # Route to CloudFront
+
+        # Avoid (slower, unnecessary for prefix matching)
+        import re
+        if re.match(r'^/api/.*', flow.request.path):
+            # Route to CloudFront
+        ```
+
+        Use regex only for complex patterns (e.g., /catalogue/*.html).
+      </practice>
+
+      <practice category="Host Header Preservation">
+        **Critical for OAuth Compatibility:**
+
+        Changing flow.request.host modifies the upstream destination but does NOT
+        automatically update the Host HTTP header. Preserve Host header explicitly:
+
+        ```python
+        # Route to localhost but preserve CloudFront Host header
+        original_host = flow.request.headers.get("Host", "")
+        flow.request.host = "localhost"
+        flow.request.port = 8080
+        flow.request.scheme = "http"
+        flow.request.headers["Host"] = original_host  # Preserve for OAuth
+        ```
+
+        Why: Innovation Sandbox OAuth provider validates redirect URLs match CloudFront domain.
+        If Host header changes to localhost, OAuth callback validation fails.
+      </practice>
+
+      <practice category="Logging">
+        **Structured Logging for Debugging:**
+
+        Use Python logging module with INFO level for routing decisions:
+
+        ```python
+        import logging
+
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
+        def request(self, flow: http.HTTPFlow) -&gt; None:
+            if is_ui_route(flow.request.path):
+                logging.info(f"UI Route: {flow.request.path} -&gt; localhost:8080")
+            elif is_api_route(flow.request.path):
+                logging.info(f"API Route: {flow.request.path} -&gt; CloudFront")
+            else:
+                logging.info(f"Passthrough: {flow.request.path} -&gt; CloudFront")
+        ```
+
+        Benefits:
+        - Developers can verify routing decisions in mitmproxy console
+        - Debugging incorrect routes (e.g., /assets/* not forwarding to localhost)
+        - Performance monitoring (track request counts per route type)
+      </practice>
+    </best-practices>
+
+    <pitfalls-to-avoid>
+      <pitfall name="Forgetting http:// vs https://">
+        When forwarding to localhost:8080, use HTTP (not HTTPS):
+
+        ```python
+        flow.request.scheme = "http"  # Correct
+        # NOT "https" - localhost:8080 does not have SSL certificate
+        ```
+
+        NDX Eleventy server (yarn start) runs on HTTP. CloudFront uses HTTPS.
+        mitmproxy handles SSL termination/re-encryption externally.
+      </pitfall>
+
+      <pitfall name="Modifying Host Header for All Requests">
+        Only preserve Host header for UI routes forwarded to localhost.
+        API routes should NOT modify Host header:
+
+        ```python
+        if is_ui_route(path):
+            # Forward to localhost, preserve Host header
+            flow.request.host = "localhost"
+            flow.request.headers["Host"] = cloudfront_domain
+        else:
+            # Pass through to CloudFront, leave Host header untouched
+            pass  # No modification
+        ```
+      </pitfall>
+
+      <pitfall name="Hardcoding CloudFront Domain">
+        Make CloudFront domain configurable (constant at top of file):
+
+        ```python
+        CLOUDFRONT_DOMAIN = "d7roov8fndsis.cloudfront.net"
+        LOCAL_SERVER_HOST = "localhost"
+        LOCAL_SERVER_PORT = 8080
+        ```
+
+        Benefits:
+        - Easy to update if CloudFront domain changes
+        - Clear what the script is configured for
+        - Easier to test with different domains (future)
+      </pitfall>
+    </pitfalls-to-avoid>
+
+    <testing-guidance>
+      <manual-testing>
+        **Test Case 1: UI Route Forwarding**
+
+        Setup:
+        1. Start mitmproxy: mitmproxy --scripts scripts/mitmproxy-addon.py --listen-port 8081
+        2. Start NDX server: yarn start (port 8080)
+        3. Configure system proxy to localhost:8081 (manual for Story 4.2)
+
+        Steps:
+        1. Navigate browser to https://d7roov8fndsis.cloudfront.net/
+        2. Observe mitmproxy console
+
+        Expected:
+        - mitmproxy log shows: "UI Route: / -&gt; localhost:8080"
+        - Browser loads NDX homepage from local server (check for local changes)
+        - No SSL certificate warnings (after Story 4.5 CA cert trust)
+
+        **Test Case 2: API Route Passthrough**
+
+        Setup: Same as Test Case 1
+
+        Steps:
+        1. Navigate browser to https://d7roov8fndsis.cloudfront.net/api/configurations
+        2. Observe mitmproxy console
+
+        Expected:
+        - mitmproxy log shows: "API Route: /api/configurations -&gt; CloudFront"
+        - Browser receives JSON response from Innovation Sandbox backend
+        - Response is NOT from localhost:8080 (verify via response headers or content)
+
+        **Test Case 3: Catalogue Page Forwarding**
+
+        Setup: Same as Test Case 1
+
+        Steps:
+        1. Navigate browser to https://d7roov8fndsis.cloudfront.net/catalogue/aws/lambda.html
+        2. Observe mitmproxy console
+
+        Expected:
+        - mitmproxy log shows: "UI Route: /catalogue/aws/lambda.html -&gt; localhost:8080"
+        - Browser loads product page from local _site directory
+
+        **Test Case 4: Assets Forwarding**
+
+        Setup: Same as Test Case 1
+
+        Steps:
+        1. Navigate browser to https://d7roov8fndsis.cloudfront.net/assets/stylesheets/main.css
+        2. Observe mitmproxy console
+
+        Expected:
+        - mitmproxy log shows: "UI Route: /assets/stylesheets/main.css -&gt; localhost:8080"
+        - Browser loads CSS from local _site/assets directory
+      </manual-testing>
+
+      <validation-checklist>
+        <item>mitmproxy starts without errors when loading addon script</item>
+        <item>mitmproxy console shows "Addon loaded: scripts/mitmproxy-addon.py"</item>
+        <item>UI routes (/, /catalogue/*, /try, /assets/*) forward to localhost:8080</item>
+        <item>API routes (/api/*) pass through to CloudFront</item>
+        <item>Host header preserved as CloudFront domain for UI routes</item>
+        <item>Logging messages appear in mitmproxy console for each request</item>
+        <item>Browser loads local NDX HTML (not cached CloudFront version)</item>
+        <item>No Python exceptions or tracebacks in mitmproxy console</item>
+      </validation-checklist>
+    </testing-guidance>
+  </technical-guidance>
+
+  <!-- ================================================================ -->
+  <!-- IMPLEMENTATION CHECKLIST -->
+  <!-- ================================================================ -->
+  <implementation-checklist>
+    <task id="TASK-1" priority="HIGH">
+      Create scripts/mitmproxy-addon.py file with module docstring and imports
+    </task>
+
+    <task id="TASK-2" priority="HIGH">
+      Define ConditionalForwardingAddon class with request() hook method
+    </task>
+
+    <task id="TASK-3" priority="HIGH">
+      Implement path matching logic:
+      - UI routes: /, /catalogue/*, /try, /assets/*
+      - API routes: /api/*
+      - Default: passthrough to CloudFront
+    </task>
+
+    <task id="TASK-4" priority="HIGH">
+      Implement UI route forwarding to localhost:8080 with Host header preservation
+    </task>
+
+    <task id="TASK-5" priority="HIGH">
+      Implement API route passthrough to CloudFront (no modification)
+    </task>
+
+    <task id="TASK-6" priority="MEDIUM">
+      Add logging for routing decisions (INFO level, structured messages)
+    </task>
+
+    <task id="TASK-7" priority="MEDIUM">
+      Define constants at top of file:
+      - CLOUDFRONT_DOMAIN
+      - LOCAL_SERVER_HOST
+      - LOCAL_SERVER_PORT
+    </task>
+
+    <task id="TASK-8" priority="MEDIUM">
+      Add module-level addons list: addons = [ConditionalForwardingAddon()]
+    </task>
+
+    <task id="TASK-9" priority="LOW">
+      Add Python shebang and version requirement comment
+    </task>
+
+    <task id="TASK-10" priority="LOW">
+      Add docstrings to class and request() method
+    </task>
+
+    <task id="TEST-1" priority="HIGH">
+      Manual test: Start mitmproxy with addon, verify no errors
+    </task>
+
+    <task id="TEST-2" priority="HIGH">
+      Manual test: Navigate to CloudFront domain, verify UI route forwards to localhost
+    </task>
+
+    <task id="TEST-3" priority="HIGH">
+      Manual test: Navigate to /api/configurations, verify passthrough to CloudFront
+    </task>
+
+    <task id="TEST-4" priority="MEDIUM">
+      Manual test: Check mitmproxy console logs show routing decisions
+    </task>
+
+    <task id="DOC-1" priority="LOW">
+      Update docs/development/local-try-setup.md with reference to completed Story 4.2
+    </task>
+  </implementation-checklist>
+
+  <!-- ================================================================ -->
+  <!-- REFERENCES AND RESOURCES -->
+  <!-- ================================================================ -->
+  <references>
+    <document type="story" path="docs/sprint-artifacts/4-2-create-mitmproxy-addon-script-for-conditional-forwarding.md">
+      Story 4.2 markdown file with full description, acceptance criteria, and technical notes
+    </document>
+
+    <document type="tech-spec" path="docs/sprint-artifacts/tech-spec-epic-4.md">
+      Epic 4 Technical Specification with detailed addon implementation guidance
+    </document>
+
+    <document type="setup-guide" path="docs/development/local-try-setup.md">
+      Story 4.1 deliverable: mitmproxy installation and prerequisite setup
+    </document>
+
+    <document type="architecture" path="docs/try-before-you-buy-architecture.md">
+      High-level architecture decision for local development proxy approach
+    </document>
+
+    <external-resource name="mitmproxy Addon Documentation" url="https://docs.mitmproxy.org/stable/addons-overview/">
+      Official mitmproxy documentation for addon development
+    </external-resource>
+
+    <external-resource name="mitmproxy Addon Examples" url="https://docs.mitmproxy.org/stable/addons-examples/">
+      Example addon scripts demonstrating request/response modification
+    </external-resource>
+
+    <external-resource name="mitmproxy HTTP Flow API" url="https://docs.mitmproxy.org/stable/api/mitmproxy/http.html">
+      API reference for http.HTTPFlow object (flow.request, flow.response)
+    </external-resource>
+  </references>
+
+  <!-- ================================================================ -->
+  <!-- EDGE CASES AND ERROR HANDLING -->
+  <!-- ================================================================ -->
+  <edge-cases>
+    <edge-case name="localhost:8080 Not Running">
+      **Scenario:** Developer starts mitmproxy but forgets to start NDX server (yarn start)
+
+      **Behavior:** UI requests forwarded to localhost:8080 fail with connection refused
+
+      **Handling:**
+      - mitmproxy shows connection error in console
+      - Browser displays "Unable to connect" or "502 Bad Gateway"
+
+      **Mitigation:**
+      - Add logging message on addon load: "Ensure NDX server is running on localhost:8080"
+      - Document in local-try-setup.md validation steps (Story 4.1)
+    </edge-case>
+
+    <edge-case name="CloudFront Domain DNS Failure">
+      **Scenario:** CloudFront domain (d7roov8fndsis.cloudfront.net) is unavailable or DNS fails
+
+      **Behavior:** API passthrough requests fail with DNS resolution error
+
+      **Handling:**
+      - mitmproxy shows DNS error in console
+      - Browser displays "Server not found" or "503 Service Unavailable"
+
+      **Mitigation:**
+      - Document in troubleshooting section: verify CloudFront domain is accessible
+      - Test: curl https://d7roov8fndsis.cloudfront.net/api/configurations
+    </edge-case>
+
+    <edge-case name="Ambiguous Path Patterns">
+      **Scenario:** Request path matches multiple route patterns (e.g., /api/catalogue/aws/lambda.html)
+
+      **Behavior:** Addon should prioritize most specific match
+
+      **Handling:**
+      - Check /api/* pattern BEFORE /catalogue/* pattern
+      - Order of if/elif checks matters (most specific first)
+
+      **Implementation:**
+      ```python
+      if path.startswith('/api/'):
+          # API route (highest priority)
+      elif path.startswith('/catalogue/') or path.startswith('/assets/'):
+          # UI routes
+      elif path == '/' or path == '/try':
+          # Specific UI routes
+      else:
+          # Passthrough (lowest priority)
+      ```
+    </edge-case>
+
+    <edge-case name="Query Parameters in UI Routes">
+      **Scenario:** Request to /catalogue/aws/lambda.html?ref=try includes query parameters
+
+      **Behavior:** Path matching should ignore query parameters
+
+      **Handling:**
+      - Use flow.request.path (excludes query string)
+      - NOT flow.request.pretty_url (includes query string)
+
+      **Validation:**
+      - Test: Navigate to https://d7roov8fndsis.cloudfront.net/?test=1
+      - Expected: Routes to localhost:8080 (query param ignored)
+    </edge-case>
+
+    <edge-case name="OAuth Callback Routes">
+      **Scenario:** OAuth redirect to /callback?token=... after authentication
+
+      **Behavior:** /callback route should passthrough to CloudFront (NOT forward to localhost)
+
+      **Handling:**
+      - /callback is not in UI_ROUTES list
+      - Default behavior: passthrough to CloudFront
+      - Host header NOT modified (OAuth validation)
+
+      **Validation:**
+      - OAuth callback URL remains: https://d7roov8fndsis.cloudfront.net/callback?token=...
+      - mitmproxy log shows: "Passthrough: /callback -&gt; CloudFront"
+    </edge-case>
+  </edge-cases>
+
+  <!-- ================================================================ -->
+  <!-- PERFORMANCE CONSIDERATIONS -->
+  <!-- ================================================================ -->
+  <performance-considerations>
+    <consideration name="Request Routing Overhead">
+      **Requirement (NFR-TRY-PERF-4):** mitmproxy routing overhead must not exceed 50ms per request
+
+      **Measurement:**
+      - Use mitmproxy built-in timing logs
+      - Compare: Direct localhost:8080 request vs proxied request
+
+      **Optimization:**
+      - Use startswith() for path matching (O(n) string comparison, fast)
+      - Avoid regex unless necessary (regex compilation overhead)
+      - No network calls in addon request() hook (synchronous, blocking)
+    </consideration>
+
+    <consideration name="Logging Volume">
+      **Risk:** Logging every request to mitmproxy console may impact performance
+
+      **Mitigation:**
+      - Use INFO level (not DEBUG) - fewer messages
+      - Log only routing decision, not full request details
+      - mitmproxy handles console buffering efficiently
+
+      **Monitoring:**
+      - If console lag observed, reduce logging verbosity
+      - Growth phase: Add optional --quiet flag to suppress logs
+    </consideration>
+
+    <consideration name="Connection Pooling">
+      **Observation:** mitmproxy reuses connections to localhost:8080 (HTTP keep-alive)
+
+      **Benefit:** Reduced connection overhead for multiple UI requests
+
+      **No Action Required:** mitmproxy handles connection pooling automatically
+    </consideration>
+  </performance-considerations>
+
+  <!-- ================================================================ -->
+  <!-- SECURITY CONSIDERATIONS -->
+  <!-- ================================================================ -->
+  <security-considerations>
+    <consideration name="Local Development Only">
+      **Critical:** This addon script is for LOCAL DEVELOPMENT ONLY, never production
+
+      **Risk:** Exposing mitmproxy listener (port 8081) on public network would allow
+      interception of HTTPS traffic by attackers
+
+      **Mitigation:**
+      - mitmproxy listens on localhost:8081 (not 0.0.0.0:8081)
+      - System firewall blocks external connections to port 8081
+      - Document in local-try-setup.md: "For local development only"
+    </consideration>
+
+    <consideration name="SSL Certificate Trust">
+      **Risk:** Trusting mitmproxy CA certificate system-wide enables interception of ALL HTTPS traffic
+
+      **Mitigation (Story 4.5):**
+      - Document: Only trust CA cert on development machines
+      - Recommend: Use browser-specific certificate trust (Firefox profile, not system-wide)
+      - Warning: Remove CA cert trust when not actively developing Try feature
+    </consideration>
+
+    <consideration name="Host Header Preservation">
+      **Security Requirement:** OAuth callback domain validation prevents redirect attacks
+
+      **Implementation:**
+      - Preserve Host header as CloudFront domain for UI routes
+      - Innovation Sandbox OAuth provider validates redirect URL matches CloudFront domain
+      - If Host header changed to localhost, OAuth provider rejects redirect (security feature working as designed)
+    </consideration>
+
+    <consideration name="API Token Exposure">
+      **Risk:** JWT tokens visible in mitmproxy console if logging request headers
+
+      **Mitigation:**
+      - Story 4.2 logs only request paths, NOT headers or bodies
+      - Growth phase: Add option to log headers for debugging, with clear warning about token exposure
+    </consideration>
+  </security-considerations>
+
+  <!-- ================================================================ -->
+  <!-- STORY METADATA -->
+  <!-- ================================================================ -->
+  <story-metadata>
+    <epic-id>4</epic-id>
+    <epic-title>Local Try Feature Development Infrastructure</epic-title>
+    <story-id>4.2</story-id>
+    <story-title>Create mitmproxy Addon Script for Conditional Forwarding</story-title>
+    <story-status>drafted</story-status>
+    <story-points>3</story-points>
+    <assignee>unassigned</assignee>
+    <created-date>2025-11-23</created-date>
+    <sprint>Sprint 1 (Epic 4 - Local Development Infrastructure)</sprint>
+  </story-metadata>
+
+</story-context>

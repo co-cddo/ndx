@@ -1,0 +1,130 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.7</storyId>
+    <title>Add Post-Deployment Smoke Test</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-7-add-post-deployment-smoke-test.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>automated validation after deployment</iWant>
+    <soThat>I know the site is actually working, not just uploaded</soThat>
+    <tasks>
+      - Task 1: Review Story 2.3 access pattern decision (AC: #1, #2, #3)
+      - Task 2: Implement smoke test for current access pattern (AC: #1, #2, #3, #4, #5)
+      - Task 3: Test smoke test failure scenarios (AC: #4, #5)
+      - Task 4: Test smoke test success scenario (AC: #1, #2, #3, #4)
+      - Task 5: Update infra/README.md with smoke test documentation (AC: #1)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. **Given** the deployment script completes successfully
+       **When** I add smoke test validation to `scripts/deploy.sh`
+       **Then** the script includes post-deployment verification for CloudFront-required configuration
+
+    2. **And** if static hosting enabled (from Story 2.3):
+       - Script makes HTTP request to S3 website endpoint
+       - Validates 200 response
+       - Validates index.html contains expected content
+
+    3. **And** if CloudFront required (from Story 2.3):
+       - Script validates index.html exists in bucket
+       - Script outputs message: "Site deployed but not publicly accessible until CloudFront configured"
+
+    4. **And** deployment only reports success if smoke test passes
+
+    5. **And** smoke test failure provides actionable error message
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/epics.md" title="Epic Breakdown" section="Story 3.7: Add Post-Deployment Smoke Test">
+        Pre-mortem insight: "Deployment complete" doesn't mean "site works". Smoke test validates actual accessibility/functionality. Implementation depends on Story 2.3 access decision. For CloudFront: validate file presence only.
+      </doc>
+      <doc path="docs/infrastructure-architecture.md" title="Infrastructure Architecture" section="Data Architecture">
+        S3 bucket configured with BlockPublicAccess: BLOCK_ALL. CloudFront required for public access. Site not publicly accessible until CDN configured.
+      </doc>
+      <doc path="docs/sprint-artifacts/tech-spec-epic-3.md" title="Epic 3 Technical Specification" section="Smoke Test">
+        Validates files uploaded to S3, reports site not publicly accessible (CloudFront required). Deployment only reports success if smoke test passes.
+      </doc>
+      <doc path="docs/sprint-artifacts/3-6-enhance-readme-as-living-document.md" title="Story 3.6 Completion" section="Learnings">
+        README version 1.1 established. Deployment Process section at lines 185-260. Smoke test placeholder present noting Story 3.7 will add validation. Follow documentation patterns.
+      </doc>
+      <doc path="docs/sprint-artifacts/2-3-validate-s3-access-pattern-for-mvp.md" title="Story 2.3 Access Pattern Decision" section="Access Decision">
+        CloudFront required for MVP (not static website hosting). Bucket has BLOCK_ALL public access. Files uploaded but site returns 403 until CloudFront configured.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="scripts/deploy.sh" kind="deployment script" symbol="deploy" lines="1-29" reason="Current deployment script - needs smoke test added after file count validation (line 26)">
+        Validates _site/ exists, syncs to S3, validates file count. Smoke test should be added after line 26 before final success message.
+      </artifact>
+      <artifact path="infra/README.md" kind="documentation" symbol="Deployment Process" lines="185-260" reason="README section documenting deployment - needs smoke test documentation added">
+        Deployment Process section established in Story 3.6. Needs smoke test subsection documenting validation behavior.
+      </artifact>
+      <artifact path="package.json" kind="configuration" symbol="deploy script" lines="11" reason="Entry point for deployment command">
+        Root package.json defines "deploy": "scripts/deploy.sh" command.
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <aws-cli>System dependency for S3 operations (aws s3 ls, aws s3 sync)</aws-cli>
+        <bash>System dependency for shell scripting</bash>
+        <curl>System dependency for HTTP requests (if static hosting enabled)</curl>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Smoke test must validate file presence (aws s3 ls) not HTTP access (BLOCK_ALL configuration)
+    - Must check critical files: index.html, CSS files (assets/css/globus.css, assets/css/govuk-frontend.min.css), JS files
+    - Error messages must be actionable: "index.html not found in bucket. Run 'yarn build' and retry."
+    - Deployment reports success ONLY after smoke test passes
+    - Use AWS CLI with --profile NDX/InnovationSandboxHub for all S3 operations
+    - Add smoke test after file count validation (line 26) before final success message
+    - Output message: "Site deployed but not publicly accessible until CloudFront configured"
+    - Follow bash scripting patterns from existing deploy.sh (set -e, echo statements, exit codes)
+    - Update infra/README.md following documentation patterns from Story 3.6
+    - Maintain README version tracking (may increment to 1.2 or keep 1.1 with changelog)
+  </constraints>
+
+  <interfaces>
+    <interface name="AWS S3 ls command" kind="AWS CLI command" signature="aws s3 ls s3://ndx-static-prod/[path] --profile NDX/InnovationSandboxHub" path="scripts/deploy.sh">
+      Validates file existence in S3 bucket. Returns 0 if file exists, non-zero if not found.
+    </interface>
+    <interface name="Deployment script exit codes" kind="shell exit codes" signature="0=success, 1=failure" path="scripts/deploy.sh">
+      Script must exit 0 only if all validations pass (file count + smoke test). Exit 1 for any failure.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing standards for deployment scripts:
+      - Manual testing required: run yarn build && yarn deploy to verify success path
+      - Failure scenario testing: manually delete index.html from bucket to test error handling
+      - Output validation: verify error messages are actionable and specific
+      - Exit code validation: script exits 1 on failure, 0 on success
+      - AWS profile validation: all commands use --profile NDX/InnovationSandboxHub
+      - README documentation: smoke test behavior documented in Deployment Process section
+    </standards>
+    <locations>
+      - Manual test execution from project root
+      - Verify scripts/deploy.sh behavior with yarn deploy command
+      - Validate infra/README.md documentation completeness
+    </locations>
+    <ideas>
+      - AC1: Test smoke test validates index.html existence using aws s3 ls
+      - AC3: Test smoke test outputs CloudFront required message
+      - AC4: Test deployment exits 0 only after smoke test passes
+      - AC5: Test smoke test failure provides actionable error (simulate missing index.html)
+      - Task3: Test incomplete upload by manually deleting file from S3
+      - Task3: Test error messages are clear and actionable
+      - Task4: Test full deployment success path (yarn build && yarn deploy)
+      - Task5: Test README documentation includes smoke test details
+    </ideas>
+  </tests>
+</story-context>

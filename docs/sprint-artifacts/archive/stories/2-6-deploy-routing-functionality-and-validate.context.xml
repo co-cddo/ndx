@@ -1,0 +1,481 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.6</storyId>
+    <title>Validate Cookie-Based Routing Functionality</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-21</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>/Users/cns/httpdocs/cddo/ndx/docs/sprint-artifacts/2-6-deploy-routing-functionality-and-validate.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>to validate that the cookie-based routing infrastructure works correctly in production</iWant>
+    <soThat>testers can safely access the new UI via the NDX cookie while all other users remain unaffected</soThat>
+    <tasks>
+- [ ] Task 1: Capture baseline metrics (AC: Production impact verification)
+  - [ ] Record current CloudWatch metrics: error rate, latency P95, cache hit rate
+  - [ ] Document baseline values for comparison
+  - [ ] Verify metrics collection working
+
+- [ ] Task 2: Execute core routing validation tests (AC: Core routing validation)
+  - [ ] Test 1: No cookie → existing origin (200 response)
+  - [ ] Test 2: NDX=true → new origin (200 response, different content)
+  - [ ] Test 3: NDX=false/1/empty → existing origin (graceful fallback)
+  - [ ] Verify response times acceptable (< +50ms from baseline)
+
+- [ ] Task 3: Execute error scenario tests (AC: Error scenario validation)
+  - [ ] Test 4: Multiple cookies (NDX parsed correctly)
+  - [ ] Test 5: Malformed cookies (graceful handling)
+  - [ ] Test 6: Missing cookie header (no errors)
+  - [ ] Document any edge cases discovered
+
+- [ ] Task 4: Verify API Gateway protection (AC: API Gateway protection)
+  - [ ] Test API endpoint: curl to /prod/ route
+  - [ ] Verify response code matches expected (200 or appropriate)
+  - [ ] Verify latency unchanged (< baseline + 50ms)
+  - [ ] Confirm API Gateway origin completely unaffected
+
+- [ ] Task 5: Staged propagation validation (AC: Staged validation timeline)
+  - [ ] Wait 15 minutes for CloudFront propagation
+  - [ ] Repeat core routing tests (Tests 1-3)
+  - [ ] Verify consistent behavior across edge locations
+  - [ ] Document any propagation delays observed
+
+- [ ] Task 6: Production monitoring validation (AC: Production impact verification)
+  - [ ] Monitor CloudWatch metrics for 1 hour
+  - [ ] Compare post-deployment metrics to baseline
+  - [ ] Verify error rate < 0.1%
+  - [ ] Verify latency P95 < baseline + 50ms
+  - [ ] Verify cache hit rate > baseline - 5%
+
+- [ ] Task 7: CloudWatch Logs validation (AC: Production impact verification)
+  - [ ] Check CloudFront Function logs for errors (expect zero)
+  - [ ] Verify NDX cookie appears in function request logs
+  - [ ] Verify correct origin selection logged
+  - [ ] Document any warnings or anomalies
+
+- [ ] Task 8: Operational readiness verification (AC: Operational verification)
+  - [ ] Verify CloudWatch dashboard shows both origins
+  - [ ] Verify team can interpret routing metrics
+  - [ ] Verify rollback procedures documented in infra/README.md
+  - [ ] Test curl commands work for troubleshooting
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+### Core Routing Validation
+
+**Test 1: Baseline (no cookie) - Routes to existing origin**
+```bash
+curl -I https://d7roov8fndsis.cloudfront.net/
+# Expected: 200 status, X-Cache header present, content from existing S3Origin
+```
+
+**Test 2: Cookie routing (NDX=true) - Routes to new origin**
+```bash
+curl -I -H "Cookie: NDX=true" https://d7roov8fndsis.cloudfront.net/
+# Expected: 200 status, content from ndx-static-prod origin
+```
+
+**Test 3: Cookie value validation - Non-"true" values route to default**
+```bash
+curl -I -H "Cookie: NDX=false" https://d7roov8fndsis.cloudfront.net/
+curl -I -H "Cookie: NDX=1" https://d7roov8fndsis.cloudfront.net/
+curl -I -H "Cookie: NDX=" https://d7roov8fndsis.cloudfront.net/
+# Expected: All route to existing S3Origin (graceful fallback)
+```
+
+### Error Scenario Validation
+
+**Test 4: Multiple cookies - Correctly parses NDX**
+```bash
+curl -I -H "Cookie: session=abc123; NDX=true; other=xyz" https://d7roov8fndsis.cloudfront.net/
+# Expected: Routes to ndx-static-prod (NDX parsed correctly from multiple cookies)
+```
+
+**Test 5: Malformed cookie header - Graceful handling**
+```bash
+curl -I -H "Cookie: invalid;;;NDX=true" https://d7roov8fndsis.cloudfront.net/
+# Expected: Routes correctly or gracefully falls back to default origin
+```
+
+**Test 6: Missing cookie header - Default routing**
+```bash
+curl -I https://d7roov8fndsis.cloudfront.net/
+# Expected: Routes to existing S3Origin (no errors)
+```
+
+### API Gateway Protection
+
+**Test 7: API routes unaffected by routing function**
+```bash
+curl -I https://d7roov8fndsis.cloudfront.net/prod/
+# Expected: 200 or appropriate API response, latency < baseline + 50ms
+# API Gateway origin completely unchanged
+```
+
+### Staged Validation Timeline
+
+**And** validation occurs in stages:
+- **Immediate (< 5 minutes):** Execute core routing tests (Tests 1-7)
+- **Propagation check (15 minutes):** Repeat tests, verify consistent behavior
+- **Production monitoring (1 hour):** Monitor CloudWatch metrics, compare to baseline
+
+### Production Impact Verification
+
+**And** production metrics show acceptable variance:
+- Error rate: < 0.1% across both origins
+- Latency P95: < baseline + 50ms
+- Cache hit rate: > baseline - 5%
+- No 5xx errors for non-cookied users
+
+**And** CloudWatch Logs show:
+- Zero CloudFront Function errors
+- NDX cookie successfully forwarded to function
+- Correct origin selection logged
+
+**And** operational verification confirms:
+- CloudWatch dashboard displays metrics for both origins
+- Team can identify which origin served each request
+- Rollback procedures documented and accessible
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+<!-- PRD: Product Requirements Document -->
+<doc>
+  <path>docs/prd.md</path>
+  <title>NDX CloudFront Origin Routing - Product Requirements Document</title>
+  <section>Cookie-Based Routing Implementation</section>
+  <snippet>FR9: System routes requests to ndx-static-prod origin when NDX cookie value equals true (exact match, case-sensitive). FR10: System routes requests to existing S3Origin when NDX cookie is missing. FR11: System routes requests to existing S3Origin when NDX cookie exists but value is not true. FR13: Routing logic does NOT execute for API Gateway routes (preserves existing API routing).</snippet>
+</doc>
+
+<doc>
+  <path>docs/prd.md</path>
+  <title>NDX CloudFront Origin Routing - Product Requirements Document</title>
+  <section>Testing & Validation</section>
+  <snippet>FR35: System can execute smoke tests post-deployment (manual cookie setting and verification). NFR-REL-1: CloudFront distribution must maintain 99.9% availability during and after deployment. NFR-PERF-6: CloudFront global propagation must complete within 15 minutes of deployment.</snippet>
+</doc>
+
+<!-- Architecture: System architecture and decisions -->
+<doc>
+  <path>docs/architecture.md</path>
+  <title>NDX CloudFront Origin Routing - Architecture</title>
+  <section>ADR-001: CloudFront Functions over Lambda@Edge</section>
+  <snippet>CloudFront Functions chosen for sub-millisecond execution (vs 5-100ms for Lambda@Edge), 6x cheaper ($0.10 vs $0.60 per 1M invocations), and executes at all 225+ edge locations. Expected latency: < 1ms function execution. Validation requirement: Verify P95 latency < baseline + 50ms.</snippet>
+</doc>
+
+<doc>
+  <path>docs/architecture.md</path>
+  <title>NDX CloudFront Origin Routing - Architecture</title>
+  <section>ADR-004: Cache Policy with NDX Cookie Whitelist</section>
+  <snippet>Modern Cache Policy with NDX cookie whitelist ensures only NDX cookie forwarded to function. Optimal caching: users without cookie share cache, users with NDX=true have separate cache. No cache degradation for majority of users. Validation: Verify cache hit rate not significantly degraded.</snippet>
+</doc>
+
+<doc>
+  <path>docs/architecture.md</path>
+  <title>NDX CloudFront Origin Routing - Architecture</title>
+  <section>Post-Deployment Validation</section>
+  <snippet>Without cookie: Browse site, verify existing origin serves content. Set cookie NDX=true: Browse site, verify new origin serves content. Clear cookie: Verify switched back to existing origin. Check CloudFront metrics for errors or anomalies. Wait 10-15 minutes for CloudFront global propagation.</snippet>
+</doc>
+
+<!-- Epic Context: Story-specific technical details -->
+<doc>
+  <path>docs/epics.md</path>
+  <title>NDX CloudFront Origin Routing - Epic Breakdown</title>
+  <section>Story 2.6: Deploy Routing Functionality and Validate</section>
+  <snippet>CloudFormation deployment succeeds with stack status UPDATE_COMPLETE. CloudFront Function deployed globally. Cache Policy created. Default cache behavior updated with function. CloudFront propagation completes (~10-15 minutes). Post-deployment validation without cookie succeeds: curl -I https://d7roov8fndsis.cloudfront.net/ should return 200, content from existing origin. Post-deployment validation with cookie succeeds: document.cookie = "NDX=true; path=/" should route to ndx-static-prod bucket.</snippet>
+</doc>
+
+<!-- Tech Spec: Epic 2 technical specification -->
+<doc>
+  <path>docs/sprint-artifacts/tech-spec-epic-2.md</path>
+  <title>Epic Technical Specification: Cookie-Based Routing Implementation</title>
+  <section>Story 2.6: Deploy Routing Functionality and Validate</section>
+  <snippet>Validation Steps: 1) Verify distribution status "Deployed". 2) Wait for global propagation (5-15 minutes, status shows "InProgress" during propagation). 3) Smoke Test - NDX=true: curl -I -H "Cookie: NDX=true" https://d7roov8fndsis.cloudfront.net/ should route to ndx-static-prod bucket. 4) Smoke Test - No Cookie: curl -I https://d7roov8fndsis.cloudfront.net/ should route to existing S3Origin. 5) Smoke Test - NDX=false: curl -I -H "Cookie: NDX=false" https://d7roov8fndsis.cloudfront.net/ should route to default origin. 6) Verify API routes unchanged: curl https://d7roov8fndsis.cloudfront.net/prod/api/health should return API response (not routed through function).</snippet>
+</doc>
+    </docs>
+
+    <code>
+<!-- CloudFront Function: Cookie routing logic -->
+<file>
+  <path>infra/lib/functions/cookie-router.js</path>
+  <kind>cloudfront-function</kind>
+  <symbol>handler</symbol>
+  <lines>1-44</lines>
+  <reason>CloudFront Function code that inspects NDX cookie and routes to appropriate origin. Already deployed in Stories 2.3-2.5. This validation story tests that this function executes correctly in production with real traffic.</reason>
+</file>
+
+<file>
+  <path>infra/lib/functions/cookie-router.js</path>
+  <kind>cloudfront-function</kind>
+  <symbol>parseCookies</symbol>
+  <lines>21-38</lines>
+  <reason>Cookie parsing helper function that handles missing cookies, malformed headers, and multiple cookies. Validation tests verify this parser works correctly in production.</reason>
+</file>
+
+<!-- CDK Stack: Infrastructure definition -->
+<file>
+  <path>infra/lib/ndx-stack.ts</path>
+  <kind>cdk-stack</kind>
+  <symbol>NdxStaticStack</symbol>
+  <lines>46-57</lines>
+  <reason>CloudFront distribution import (E3THG4UHYDHVWP). Validation verifies this distribution is in "Deployed" status with function attached and routing correctly.</reason>
+</file>
+
+<file>
+  <path>infra/lib/ndx-stack.ts</path>
+  <kind>cdk-stack</kind>
+  <symbol>cachePolicy</symbol>
+  <lines>121-132</lines>
+  <reason>Cache Policy configuration that forwards NDX cookie to function. Deployed in Story 2.3. Validation verifies cookie forwarding works correctly in production.</reason>
+</file>
+
+<file>
+  <path>infra/lib/ndx-stack.ts</path>
+  <kind>cdk-stack</kind>
+  <symbol>cookieRouterFunction</symbol>
+  <lines>144-149</lines>
+  <reason>CloudFront Function resource definition. Deployed in Story 2.4. Function ARN: arn:aws:cloudfront::568672915267:function/ndx-cookie-router. Validation verifies this function executes without errors.</reason>
+</file>
+
+<file>
+  <path>infra/lib/ndx-stack.ts</path>
+  <kind>cdk-stack</kind>
+  <symbol>configureCacheBehavior</symbol>
+  <lines>152-171</lines>
+  <reason>Custom Resource that attaches function to default cache behavior. Deployed in Story 2.5. Validation verifies function attached correctly and executing on viewer-request.</reason>
+</file>
+    </code>
+
+    <dependencies>
+<!-- AWS CLI -->
+<dependency ecosystem="aws-cli" name="aws-cli" version="2.x" purpose="Validate CloudFront distribution status, query function deployment, check CloudWatch metrics">
+aws cloudfront get-distribution --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub
+aws cloudfront get-distribution-config --id E3THG4UHYDHVWP --profile NDX/InnovationSandboxHub
+aws cloudwatch get-metric-statistics --namespace AWS/CloudFront --metric-name Requests --profile NDX/InnovationSandboxHub
+</dependency>
+
+<!-- curl -->
+<dependency ecosystem="system" name="curl" version="any" purpose="Execute HTTP validation tests with cookie headers to verify routing functionality">
+curl -I https://d7roov8fndsis.cloudfront.net/
+curl -I -H "Cookie: NDX=true" https://d7roov8fndsis.cloudfront.net/
+</dependency>
+
+<!-- Node.js -->
+<dependency ecosystem="nodejs" name="node" version="20.17.0" purpose="CDK runtime environment (already installed, no additional action needed)">
+Used by CDK for infrastructure deployment. Infrastructure already deployed in Stories 2.3-2.5.
+</dependency>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+<!-- Development Constraints from Dev Notes and Architecture -->
+**Infrastructure Already Deployed (Stories 2.3-2.5 Complete):**
+- Story 2.3: Cache policy configured with NDX cookie allowlist (deployed)
+- Story 2.4: CloudFront Function deployed to E3THG4UHYDHVWP (ARN: arn:aws:cloudfront::568672915267:function/ndx-cookie-router)
+- Story 2.5: Function attached to default cache behavior as viewer-request handler (deployed)
+- **This story (2.6) is VALIDATION ONLY** - no deployment needed
+
+**Validation Strategy (curl-Based Testing):**
+- All validation uses curl with explicit Cookie headers (easier to control than browser testing)
+- Scriptable and repeatable tests
+- Can easily create malformed requests for error testing
+- Production verification via real HTTPS requests to CloudFront distribution
+
+**Testing Pattern:**
+- Execute tests in stages: immediate (< 5 minutes), propagation check (15 minutes), monitoring (1 hour)
+- Capture baseline metrics BEFORE testing to enable comparison
+- Document all test results for audit trail
+
+**Risk Mitigation (From Risk Matrix Analysis):**
+- R2: Function runtime errors (HIGH/HIGH) - Mitigation: Comprehensive error scenario testing (Tests 3-6), CloudWatch Logs monitoring
+- R8: Insufficient test coverage (HIGH/HIGH) - Mitigation: Extended test scenarios beyond happy path, 1-hour production monitoring
+- R3: Cache policy misconfiguration (LOW/HIGH) - Mitigation: Verify cookie forwarding via CloudWatch Logs
+- R4: Origin Access Control failure (LOW/HIGH) - Mitigation: Fetch actual content, verify differs between origins
+- R7: API Gateway routes affected (VERY LOW/HIGH) - Mitigation: Explicit API endpoint validation (Test 7)
+
+**Architecture References:**
+- ADR-001: CloudFront Functions for sub-millisecond execution - Expected latency: < 1ms, validate P95 latency < baseline + 50ms
+- ADR-004: Cache Policy with NDX cookie allowlist - Validate cache hit rate not significantly degraded
+- FR9-11: Routing logic requirements - Tests 1-3 validate these FRs
+- FR13: API Gateway routes unaffected - Test 7 validates FR13
+- NFR-REL-1: 99.9% availability maintained - Monitor error rates during validation period
+- NFR-PERF-6: CloudFront propagation < 15 minutes - Staged validation at 15-minute mark
+
+**Success Criteria:**
+- Functional: NDX=true routes to ndx-static-prod, no cookie / NDX≠true routes to existing origin, API routes unaffected, error scenarios handled gracefully
+- Performance: Error rate < 0.1%, latency P95 < baseline + 50ms, cache hit rate > baseline - 5%, zero function errors
+- Operational: CloudWatch dashboard functional, team can interpret metrics, rollback procedures documented
+  </constraints>
+
+  <interfaces>
+<!-- CloudFront Distribution E3THG4UHYDHVWP -->
+<interface>
+  <name>CloudFront Distribution E3THG4UHYDHVWP</name>
+  <kind>AWS CloudFront Distribution</kind>
+  <signature>
+Distribution ID: E3THG4UHYDHVWP
+Domain: d7roov8fndsis.cloudfront.net
+Status: Expected "Deployed" (validation verifies this)
+Function Attached: viewer-request (ndx-cookie-router)
+Cache Policy: NdxCookieRoutingPolicy (forwards NDX cookie)
+Origins:
+  - S3Origin (existing default)
+  - API Gateway (InnovationSandbox...)
+  - ndx-static-prod-origin (new, added in Story 1.2)
+  </signature>
+  <path>AWS CloudFront Service</path>
+</interface>
+
+<!-- CloudFront Function ndx-cookie-router -->
+<interface>
+  <name>CloudFront Function ndx-cookie-router</name>
+  <kind>CloudFront Function (viewer-request)</kind>
+  <signature>
+Function Name: ndx-cookie-router
+ARN: arn:aws:cloudfront::568672915267:function/ndx-cookie-router
+Runtime: cloudfront-js-2.0
+Event Type: viewer-request
+Status: Expected LIVE with ASSOCIATED status
+Execution: Sub-millisecond (validates < 1ms)
+Logic: Inspects NDX cookie, routes to ndx-static-prod when NDX=true, else default origin
+  </signature>
+  <path>infra/lib/functions/cookie-router.js</path>
+</interface>
+
+<!-- Cache Policy NdxCookieRoutingPolicy -->
+<interface>
+  <name>Cache Policy NdxCookieRoutingPolicy</name>
+  <kind>CloudFront Cache Policy</kind>
+  <signature>
+Policy Name: NdxCookieRoutingPolicy
+Cookie Behavior: allowList (whitelist)
+Allowed Cookies: ["NDX"]
+Query Strings: all forwarded
+Headers: none forwarded
+Compression: Gzip + Brotli enabled
+TTL: Default 1 day, Min 1s, Max 1 year
+  </signature>
+  <path>infra/lib/ndx-stack.ts (lines 121-132)</path>
+</interface>
+
+<!-- AWS CloudWatch Metrics -->
+<interface>
+  <name>CloudWatch Metrics for CloudFront</name>
+  <kind>Monitoring API</kind>
+  <signature>
+Namespace: AWS/CloudFront
+Distribution: E3THG4UHYDHVWP
+Key Metrics:
+  - Requests (count per origin)
+  - ErrorRate (4xx/5xx percentage)
+  - BytesDownloaded
+  - CacheHitRate
+  - OriginLatency
+Validation queries error rate, latency P95, cache hit rate against baseline
+  </signature>
+  <path>AWS CloudWatch Service</path>
+</interface>
+
+<!-- AWS CloudWatch Logs for CloudFront Function -->
+<interface>
+  <name>CloudWatch Logs for ndx-cookie-router</name>
+  <kind>Logging API</kind>
+  <signature>
+Log Group: /aws/cloudfront/function/ndx-cookie-router
+Expected Entries:
+  - NDX cookie forwarding events
+  - Origin selection decisions
+  - Zero error entries (validates function executes correctly)
+Validation checks logs for errors, confirms cookie present, verifies origin selection
+  </signature>
+  <path>AWS CloudWatch Logs Service</path>
+</interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+**Testing Framework:**
+- Manual validation using curl HTTP client (no automated test framework for this validation story)
+- AWS CLI for CloudFront status verification and CloudWatch metrics queries
+- Browser DevTools for interactive testing (optional, supplements curl tests)
+
+**Validation Approach:**
+- Immediate validation (< 5 minutes): Execute core routing tests (Tests 1-7) to verify basic functionality
+- Propagation validation (15 minutes): Re-run tests to verify consistent behavior across CloudFront edge locations globally
+- Production monitoring (1 hour): Monitor CloudWatch metrics to verify no performance degradation or errors
+
+**Success Criteria:**
+- All 7 curl tests pass with expected responses (200 status, correct origin routing)
+- CloudWatch metrics show error rate < 0.1%, latency P95 < baseline + 50ms, cache hit rate > baseline - 5%
+- CloudWatch Logs show zero function errors
+- API Gateway routes completely unaffected (Test 7)
+
+**Test Data:**
+- CloudFront Distribution: E3THG4UHYDHVWP (d7roov8fndsis.cloudfront.net)
+- Cookie Name: NDX (exact, case-sensitive)
+- Cookie Value for New Origin: true (exact, case-sensitive)
+- Baseline Metrics: Captured before test execution for comparison
+    </standards>
+
+    <locations>
+**Validation Commands (curl):**
+All tests executed from command line using curl against https://d7roov8fndsis.cloudfront.net/
+
+**CloudWatch Metrics Queries:**
+AWS CLI commands to query CloudWatch for baseline and post-deployment metrics comparison
+
+**CloudWatch Logs:**
+AWS CLI commands to tail CloudFront Function logs: /aws/cloudfront/function/ndx-cookie-router
+
+**Test Results Documentation:**
+Story file Dev Notes section updated with actual test results and metrics
+    </locations>
+
+    <ideas>
+<!-- AC: Core Routing Validation -->
+**Test Idea 1 (AC: Test 1 - Baseline routing):**
+Execute curl -I https://d7roov8fndsis.cloudfront.net/ without NDX cookie. Verify 200 status, X-Cache header present, content from existing S3Origin. Validates FR10 (route to existing origin when cookie missing).
+
+**Test Idea 2 (AC: Test 2 - Cookie routing to new origin):**
+Execute curl -I -H "Cookie: NDX=true" https://d7roov8fndsis.cloudfront.net/. Verify 200 status, content from ndx-static-prod origin (different from baseline). Validates FR9 (route to new origin when NDX=true).
+
+**Test Idea 3 (AC: Test 3 - Non-true cookie values):**
+Execute curl with NDX=false, NDX=1, NDX=empty. All should route to existing S3Origin (graceful fallback). Validates FR11 (route to existing origin when NDX exists but value is not "true").
+
+<!-- AC: Error Scenario Validation -->
+**Test Idea 4 (AC: Test 4 - Multiple cookies parsing):**
+Execute curl -I -H "Cookie: session=abc123; NDX=true; other=xyz". Verify routes to ndx-static-prod (NDX parsed correctly from multiple cookies). Validates cookie parser handles complex cookie headers.
+
+**Test Idea 5 (AC: Test 5 - Malformed cookie handling):**
+Execute curl -I -H "Cookie: invalid;;;NDX=true". Verify routes correctly or gracefully falls back to default origin. Validates parser handles malformed input without errors.
+
+**Test Idea 6 (AC: Test 6 - Missing cookie header):**
+Execute curl -I without any cookie headers. Verify routes to existing S3Origin with no errors. Validates function handles missing cookie header gracefully.
+
+<!-- AC: API Gateway Protection -->
+**Test Idea 7 (AC: Test 7 - API routes unaffected):**
+Execute curl to /prod/ route (API Gateway). Verify 200 or appropriate API response, latency < baseline + 50ms. Validates FR13 (routing function does NOT execute for API Gateway routes).
+
+<!-- AC: Staged Validation Timeline -->
+**Test Idea 8 (AC: Staged validation - immediate):**
+Execute Tests 1-7 within 5 minutes of deployment. Captures immediate functionality validation.
+
+**Test Idea 9 (AC: Staged validation - propagation check):**
+Wait 15 minutes, repeat Tests 1-3. Verify consistent behavior across CloudFront edge locations. Validates NFR-PERF-6 (propagation < 15 minutes).
+
+**Test Idea 10 (AC: Staged validation - production monitoring):**
+Monitor CloudWatch metrics for 1 hour post-deployment. Compare error rate, latency P95, cache hit rate to baseline. Validates NFR-REL-1 (99.9% availability maintained).
+
+<!-- AC: Production Impact Verification -->
+**Test Idea 11 (AC: CloudWatch Logs validation):**
+Query CloudWatch Logs for /aws/cloudfront/function/ndx-cookie-router. Verify zero errors, NDX cookie present in logs, correct origin selection logged. Validates function executes correctly in production.
+
+**Test Idea 12 (AC: Operational readiness):**
+Verify CloudWatch dashboard displays metrics for both origins (existing S3Origin and ndx-static-prod). Team can identify which origin served each request. Rollback procedures documented in infra/README.md.
+    </ideas>
+  </tests>
+</story-context>

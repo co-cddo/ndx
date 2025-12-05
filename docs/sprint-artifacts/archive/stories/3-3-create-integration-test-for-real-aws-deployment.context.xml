@@ -1,0 +1,263 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3</storyId>
+    <title>Create Integration Test for Real AWS Deployment</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-21</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/3-3-create-integration-test-for-real-aws-deployment.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>an integration test that validates cookie routing in a real AWS environment</iWant>
+    <soThat>I can catch AWS-specific issues before production deployment</soThat>
+    <tasks>
+      - [ ] Task 1: Create integration test script structure (AC: #1)
+      - [ ] Task 2: Implement environment validation (AC: #5)
+      - [ ] Task 3: Implement CDK deployment step (AC: #2)
+      - [ ] Task 4: Implement CloudFront validation steps (AC: #3)
+      - [ ] Task 5: Add manual validation instructions (AC: #3, #4)
+      - [ ] Task 6: Implement cleanup strategy (AC: #4)
+      - [ ] Task 7: Test script execution (AC: #1, #2, #3, #5)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC-3.3.1: Integration Test Script Creation
+    - Script created at `infra/test/integration.sh`
+    - Script is executable (`chmod +x`)
+    - Script uses bash shebang
+    - Script includes clear comments explaining each validation step
+    - Script returns exit code 0 on success, 1 on failure
+
+    AC-3.3.2: AWS Deployment Validation
+    - Script runs `cdk deploy --profile NDX/InnovationSandboxHub --require-approval never`
+    - CloudFormation stack deploys successfully to AWS
+    - Script validates deployment status = CREATE_COMPLETE or UPDATE_COMPLETE
+    - Script captures CloudFormation events on failure
+    - Script uses `--profile NDX/InnovationSandboxHub` for all AWS operations
+
+    AC-3.3.3: CloudFront Resource Validation
+    - Script validates CloudFront distribution status = 'Deployed'
+    - Script validates distribution has 3 origins
+    - Script validates origin 'ndx-static-prod-origin' exists
+    - Script validates CloudFront Function 'ndx-cookie-router' exists
+
+    AC-3.3.4: Test Cleanup
+    - Option 1: Script leaves stack deployed (developer manually destroys later)
+    - Option 2: Script runs `cdk destroy` after validation (if test environment)
+    - Script documents which cleanup approach is used
+
+    AC-3.3.5: Environment Validation
+    - Script validates AWS credentials are valid
+    - Script validates CDK is bootstrapped
+    - Script provides clear error messages if prerequisites missing
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- Tech Spec: Integration testing strategy -->
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-3.md</path>
+        <title>Epic Technical Specification: Testing, Validation & Operational Readiness</title>
+        <section>Story 3.3: Integration Test</section>
+        <snippet>Integration test validates real AWS deployment (ADR-005). Catches issues unit tests miss (permissions, quotas, region availability). Uses AWS CLI to query actual deployed resources. FR35: Integration test validation requirement. Run after every CDK deployment to verify success. Optional for MVP but recommended before production. Manual cookie testing still required (browser-based validation).</snippet>
+      </doc>
+
+      <!-- Architecture: Testing patterns -->
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>NDX CloudFront Origin Routing - Architecture</title>
+        <section>ADR-005: Complete Testing Pyramid</section>
+        <snippet>Integration tests provide real-world validation beyond CloudFormation templates. Complete testing pyramid includes integration layer. Integration tests complement unit/snapshot tests, not replace them.</snippet>
+      </doc>
+
+      <!-- PRD: Integration test requirement -->
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX CloudFront Origin Routing - Product Requirements Document</title>
+        <section>FR35: Integration Test Validation</section>
+        <snippet>FR35: Integration test must validate cookie routing functionality in real AWS environment before production deployment.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <!-- CDK Stack to deploy -->
+      <artifact>
+        <path>infra/lib/ndx-stack.ts</path>
+        <kind>CDK Stack</kind>
+        <symbol>NdxStaticStack</symbol>
+        <lines>12-209</lines>
+        <reason>Main CDK stack deployed by integration test. Contains CloudFront distribution configuration, CloudFront Function, Cache Policy, S3 bucket with OAC, Custom Resources for origin management.</reason>
+      </artifact>
+
+      <!-- Existing unit tests -->
+      <artifact>
+        <path>infra/test/ndx-stack.test.ts</path>
+        <kind>Test File</kind>
+        <symbol>describe('NdxStaticStack')</symbol>
+        <lines>1-260</lines>
+        <reason>Unit tests that run before integration test. Integration test validates what unit tests promise (deployment success, resource creation). Unit tests must pass before running integration test.</reason>
+      </artifact>
+
+      <!-- CloudFront Function code -->
+      <artifact>
+        <path>infra/lib/functions/cookie-router.js</path>
+        <kind>CloudFront Function</kind>
+        <symbol>handler</symbol>
+        <lines>N/A</lines>
+        <reason>Cookie routing logic deployed as CloudFront Function. Integration test validates this function deployed and associated with distribution.</reason>
+      </artifact>
+
+      <!-- Package.json for CDK commands -->
+      <artifact>
+        <path>infra/package.json</path>
+        <kind>Configuration</kind>
+        <symbol>N/A</symbol>
+        <lines>1-34</lines>
+        <reason>Defines CDK and test scripts. Integration script runs 'cdk deploy' command. Build script must run before deployment.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <system>
+        <package name="aws-cli" type="runtime">AWS CLI v2 for querying CloudFront distribution, functions, and CloudFormation stack status</package>
+        <package name="bash" version="4.0+" type="runtime">Bash shell for integration test script execution</package>
+        <package name="jq" type="optional">JSON parsing (optional, AWS CLI --query can substitute)</package>
+      </system>
+      <node>
+        <package name="aws-cdk" version="2.1032.0" type="development">CDK CLI for deployment (cdk deploy, cdk destroy)</package>
+        <package name="aws-cdk-lib" version="2.215.0" type="production">CDK library for stack synthesis</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    1. Script must be created at infra/test/integration.sh (not a different location)
+    2. Script must use bash shebang (#!/bin/bash or #!/usr/bin/env bash)
+    3. Script must use 'set -e' for fail-fast behavior on errors
+    4. All AWS CLI commands must use --profile NDX/InnovationSandboxHub
+    5. CloudFront distribution ID is E3THG4UHYDHVWP (hardcoded, no test distribution for MVP)
+    6. Script must validate prerequisites before deployment (AWS credentials, CDK bootstrap)
+    7. Script must return exit code 0 on success, 1 on failure
+    8. Script must provide clear, actionable error messages
+    9. For MVP: Leave stack deployed after test (Option 1), document manual cleanup
+    10. Script must run 'yarn build' before 'cdk deploy' to ensure TypeScript compiled
+    11. Integration test validates deployment success, not full CloudFront propagation (30 sec wait sufficient)
+    12. Manual cookie testing instructions required (browser-based end-to-end validation)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AWS CLI CloudFront Commands</name>
+      <kind>AWS CLI</kind>
+      <signature>aws cloudfront get-distribution --id DISTRIBUTION_ID --profile PROFILE --query JMESPATH --output FORMAT</signature>
+      <path>AWS CLI v2</path>
+      <description>Query CloudFront distribution configuration and status. Use --query for JMESPath filtering (e.g., 'Distribution.Status', 'length(Distribution.DistributionConfig.Origins)'). Use --output text for simple values.</description>
+    </interface>
+
+    <interface>
+      <name>AWS CLI CloudFront Functions</name>
+      <kind>AWS CLI</kind>
+      <signature>aws cloudfront list-functions --profile PROFILE --query "FunctionList.Items[?Name==\`function-name\`] | length(@)"</signature>
+      <path>AWS CLI v2</path>
+      <description>List CloudFront Functions and filter by name. Returns count of matching functions. Use JMESPath to filter and count.</description>
+    </interface>
+
+    <interface>
+      <name>CDK Deploy Command</name>
+      <kind>CDK CLI</kind>
+      <signature>cdk deploy --profile PROFILE --require-approval never</signature>
+      <path>infra directory</path>
+      <description>Deploy CDK stack to AWS. --require-approval never prevents interactive prompts. Returns exit code 0 on success, non-zero on failure. Must run from infra directory.</description>
+    </interface>
+
+    <interface>
+      <name>AWS STS Get Caller Identity</name>
+      <kind>AWS CLI</kind>
+      <signature>aws sts get-caller-identity --profile PROFILE</signature>
+      <path>AWS CLI v2</path>
+      <description>Validate AWS credentials and return account ID, user ARN. Returns exit code 0 if credentials valid, 254 if invalid or expired.</description>
+    </interface>
+
+    <interface>
+      <name>CloudFormation Describe Stacks</name>
+      <kind>AWS CLI</kind>
+      <signature>aws cloudformation describe-stacks --stack-name STACK_NAME --profile PROFILE</signature>
+      <path>AWS CLI v2</path>
+      <description>Query CloudFormation stack status. Use to verify CDK bootstrap stack exists. Returns StackStatus (CREATE_COMPLETE, UPDATE_COMPLETE, etc.).</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Integration test script standards: Bash scripting with error handling (set -e), clear progress output (echo statements), exit code conventions (0=success, 1=failure), prerequisite validation before execution, AWS CLI for resource validation, JMESPath queries for filtering, descriptive error messages with actionable next steps. Test execution workflow: 1) Validate environment, 2) Run yarn build, 3) Deploy with cdk deploy, 4) Wait 30 seconds, 5) Validate CloudFront resources, 6) Report pass/fail, 7) Provide manual test instructions, 8) Document cleanup (leave deployed for MVP).
+    </standards>
+
+    <locations>
+      infra/test/integration.sh (new file to create)
+    </locations>
+
+    <ideas>
+      AC-3.3.1 Ideas (Script Creation):
+      - Use #!/bin/bash shebang (portable)
+      - Add 'set -e' to fail fast on any error
+      - Add 'set -o pipefail' to catch errors in pipes
+      - Header comments explaining test purpose, prerequisites, and usage
+      - Make executable: chmod +x infra/test/integration.sh
+      - Structure: Header → Validation → Deployment → Testing → Cleanup → Manual Instructions
+
+      AC-3.3.2 Ideas (Deployment Validation):
+      - Run 'yarn build' before 'cdk deploy' (compile TypeScript first)
+      - Use 'cdk deploy --profile NDX/InnovationSandboxHub --require-approval never'
+      - Capture deployment exit code: if [ $? -ne 0 ]; then handle error
+      - On failure: Run 'aws cloudformation describe-stack-events' to show recent events
+      - Validate stack status with: aws cloudformation describe-stacks --stack-name NdxStaticStack
+      - Check StackStatus is CREATE_COMPLETE or UPDATE_COMPLETE
+
+      AC-3.3.3 Ideas (CloudFront Validation):
+      - Test 1: aws cloudfront get-distribution --id E3THG4UHYDHVWP --query 'Distribution.Status' --output text
+      - Expected: "Deployed"
+      - Test 2: aws cloudfront get-distribution --id E3THG4UHYDHVWP --query 'length(Distribution.DistributionConfig.Origins)'
+      - Expected: >= 3
+      - Test 3: aws cloudfront get-distribution --id E3THG4UHYDHVWP --query 'Distribution.DistributionConfig.Origins[?Id==`ndx-static-prod-origin`] | length(@)'
+      - Expected: 1
+      - Test 4: aws cloudfront list-functions --query "FunctionList.Items[?Name==\`ndx-cookie-router\`] | length(@)"
+      - Expected: 1
+      - Add 30 second sleep before validation (initial propagation)
+
+      AC-3.3.4 Ideas (Cleanup):
+      - For MVP: Document "Leave deployed" approach in script comments
+      - Add echo message: "Stack remains deployed. To cleanup: cdk destroy --profile NDX/InnovationSandboxHub"
+      - Optional: Add --cleanup flag support for future
+      - Document manual cleanup in script output
+
+      AC-3.3.5 Ideas (Environment Validation):
+      - Check 1: aws sts get-caller-identity --profile NDX/InnovationSandboxHub
+      - If fails: echo "❌ AWS credentials not configured. Run: aws configure --profile NDX/InnovationSandboxHub"
+      - Check 2: aws cloudformation describe-stacks --stack-name CDKToolkit --profile NDX/InnovationSandboxHub
+      - If fails: echo "❌ CDK not bootstrapped. Run: cdk bootstrap --profile NDX/InnovationSandboxHub"
+      - Check 3: Verify distribution exists: aws cloudfront get-distribution --id E3THG4UHYDHVWP
+      - If fails: echo "❌ CloudFront distribution E3THG4UHYDHVWP not found"
+      - Exit with code 1 if any prerequisite check fails
+
+      Manual Test Instructions Ideas:
+      - Provide CloudFront domain: https://d7roov8fndsis.cloudfront.net/
+      - Step 1: Browse without cookie (verify existing site)
+      - Step 2: Set cookie in browser console: document.cookie='NDX=true; path=/'
+      - Step 3: Reload page (verify new origin content - should see different content)
+      - Step 4: Clear cookie: document.cookie='NDX=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      - Step 5: Reload and verify revert to existing site
+      - Note: Content difference depends on what's in ndx-static-prod S3 bucket
+
+      Error Handling Ideas:
+      - Trap errors with meaningful messages
+      - Show CloudFormation events on deployment failure
+      - Provide specific fix instructions for each error type
+      - Color output: Green ✅ for success, Red ❌ for failure (if terminal supports)
+      - Progress indicators: "Step 1/5: Validating environment..."
+    </ideas>
+  </tests>
+</story-context>

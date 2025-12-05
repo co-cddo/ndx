@@ -1,0 +1,377 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>1</storyId>
+    <title>mitmproxy Setup Documentation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/4-1-mitmproxy-setup-documentation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>comprehensive documentation for setting up mitmproxy for local Try feature development</iWant>
+    <soThat>I can quickly configure my local development environment and understand the proxy architecture</soThat>
+    <tasks>
+      - [ ] Task 1: Create `/docs/development/local-try-setup.md` file (AC: #1, #2)
+        - [ ] 1.1: Write Prerequisites section with all dependencies listed (AC1)
+        - [ ] 1.2: Create Architecture section with request flow diagram/description (AC2)
+        - [ ] 1.3: Add Overview section explaining purpose (local UI dev with real API backend)
+      - [ ] Task 2: Document platform-specific mitmproxy installation (AC: #3, #4, #5)
+        - [ ] 2.1: Write macOS installation steps (AC3)
+        - [ ] 2.2: Write Windows installation steps (AC4)
+        - [ ] 2.3: Write Linux installation steps (AC5)
+        - [ ] 2.4: Include installation verification command for all platforms
+      - [ ] Task 3: Create Troubleshooting section (AC: #6)
+        - [ ] 3.1: Document port conflict resolution
+        - [ ] 3.2: Document mitmproxy PATH/virtual environment issues
+        - [ ] 3.3: Add placeholders referencing future stories (4.4 proxy config, 4.5 certificate trust)
+        - [ ] 3.4: Document OAuth redirect preservation (addon design detail)
+      - [ ] Task 4: Write Validation section (AC: #7)
+        - [ ] 4.1: Document dependency verification steps
+        - [ ] 4.2: Document port availability checks
+        - [ ] 4.3: Add placeholder for end-to-end validation (once Story 4.3 complete)
+        - [ ] 4.4: Cross-reference Story 4.6 automated validation script
+      - [ ] Task 5: Review and finalize documentation (AC: All)
+        - [ ] 5.1: Read documentation end-to-end for clarity
+        - [ ] 5.2: Verify all acceptance criteria addressed
+        - [ ] 5.3: Test installation steps on at least one platform (macOS recommended)
+        - [ ] 5.4: Get peer review from another developer
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    **AC1: Prerequisites section exists**
+    - Given the documentation file exists at `/docs/development/local-try-setup.md`
+    - When I read the Prerequisites section
+    - Then it lists all required dependencies:
+      - Python 3.8+ (with installation links for macOS/Windows/Linux)
+      - mitmproxy (installation command: `pip install mitmproxy`)
+      - Node.js 20.17.0+ (reference to existing development-guide.md)
+      - Yarn 4.5.0 (reference to existing development-guide.md)
+      - Port 8080 and 8081 availability check instructions
+
+    **AC2: Architecture diagram shows request flow**
+    - Given I read the Architecture section
+    - When I review the diagram or textual flow description
+    - Then it clearly shows:
+      - Browser → mitmproxy (localhost:8081)
+      - mitmproxy conditional routing:
+        - UI routes (`/`, `/catalogue/*`, `/try`, `/assets/*`) → localhost:8080 (local NDX server)
+        - API routes (`/api/*`) → CloudFront (`d7roov8fndsis.cloudfront.net` - real Innovation Sandbox backend)
+      - NDX server (Eleventy) on localhost:8080
+
+    **AC3: Configuration steps for macOS provided**
+    - Given I am a macOS developer
+    - When I follow the macOS configuration section
+    - Then it includes step-by-step instructions for:
+      - Installing mitmproxy via pip: `pip install mitmproxy`
+      - Verifying installation: `mitmproxy --version`
+      - Starting mitmproxy (will be covered in Story 4.3, but referenced)
+      - System proxy configuration (will be covered in Story 4.4, but referenced)
+      - Certificate trust setup (will be covered in Story 4.5, but referenced)
+
+    **AC4: Configuration steps for Windows provided**
+    - Given I am a Windows developer
+    - When I follow the Windows configuration section
+    - Then it includes step-by-step instructions for:
+      - Installing Python 3.8+ (link to python.org)
+      - Installing mitmproxy via pip: `pip install mitmproxy`
+      - Verifying installation: `mitmproxy --version`
+      - System proxy configuration (will be covered in Story 4.4, but referenced)
+      - Certificate trust setup (will be covered in Story 4.5, but referenced)
+
+    **AC5: Configuration steps for Linux provided**
+    - Given I am a Linux developer
+    - When I follow the Linux configuration section
+    - Then it includes step-by-step instructions for:
+      - Installing Python 3.8+ (distribution-specific package manager)
+      - Installing mitmproxy via pip: `pip install mitmproxy`
+      - Verifying installation: `mitmproxy --version`
+      - System proxy configuration (will be covered in Story 4.4, but referenced)
+      - Certificate trust setup (will be covered in Story 4.5, but referenced)
+
+    **AC6: Troubleshooting section addresses common issues**
+    - Given I encounter setup problems
+    - When I read the Troubleshooting section
+    - Then it includes solutions for common issues:
+      - Port already in use: How to check (`lsof -Pi :8080` / `lsof -Pi :8081`) and resolve (kill process or change port)
+      - mitmproxy not found: Python PATH configuration, virtual environments
+      - SSL certificate warnings: Reference to Story 4.5 certificate trust setup
+      - Proxy not intercepting requests: System proxy configuration verification (reference to Story 4.4)
+      - OAuth redirects not working: Explanation that CloudFront domain must be preserved (addon script maintains domain)
+
+    **AC7: Validation steps confirm correct setup**
+    - Given I completed all configuration steps
+    - When I read the Validation section
+    - Then it includes verification steps:
+      - Check mitmproxy installed: `mitmproxy --version` shows version number
+      - Check ports available: `lsof -Pi :8080` and `lsof -Pi :8081` show no conflicts (or provides alternative port check for Windows)
+      - Check NDX server starts: `yarn dev` serves on localhost:8080
+      - Check mitmproxy starts: `yarn dev:proxy` (once Story 4.3 complete)
+      - End-to-end test: Browse to CloudFront domain through proxy, verify UI loads from localhost
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document</title>
+        <section>Feature 2: Try Before You Buy - Local Development Infrastructure</section>
+        <snippet>Phase 1: Local Development Setup (Dev Infrastructure) - mitmproxy Configuration: Proxy `https://d7roov8fndsis.cloudfront.net/` to localhost for development. API Route Exclusion: Exclude `/api/*` routes (proxy only UI, not API calls). Playwright Validation: Prove proxy works for home page and API calls return expected responses.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document</title>
+        <section>Non-Functional Requirements - Testing</section>
+        <snippet>NFR-TRY-TEST-1: End-to-end tests prove proxy and app server integration (Playwright). NFR-TRY-TEST-2: Smoke tests cover main website areas to catch regression issues. NFR-TRY-TEST-3: Test user credentials retrievable via 1Password CLI command (documented).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Overview</section>
+        <snippet>Epic 4 establishes the local development infrastructure required for building and testing the Try Before You Buy feature. This epic implements a mitmproxy-based development workflow that enables developers to iterate on UI changes locally while connecting to the real Innovation Sandbox API backend. The infrastructure solves a critical brownfield challenge: the Innovation Sandbox CloudFront domain serves the production frontend, making local UI development difficult.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Detailed Design - Workflows</section>
+        <snippet>Developer Daily Workflow (After Epic 4 Complete): Terminal 1: Start mitmproxy `yarn dev:proxy` → mitmproxy listens on localhost:8081 with addon loaded. Terminal 2: Start NDX server `yarn dev` → Eleventy server listens on localhost:8080. Browser: Navigate to CloudFront domain → UI served from localhost:8080 (local changes), API calls proxied to CloudFront (real backend).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Non-Functional Requirements - Performance</section>
+        <snippet>Setup Validation: `yarn validate-setup` completes in &lt; 1 second (fast feedback before development). Proxy Startup: `yarn dev:proxy` starts mitmproxy in &lt; 5 seconds (ready state). Request Latency: mitmproxy adds &lt; 10ms overhead to UI requests (localhost routing).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Non-Functional Requirements - Security</section>
+        <snippet>CA Certificate Trust: mitmproxy CA certificate trusted ONLY on developer machines (never production). HTTPS Interception: Documentation warns about certificate trust implications (enables traffic decryption). System Proxy Scope: Proxy intercepts specific CloudFront domain only (not all traffic). OAuth Flow Preservation: OAuth redirects work without modification (CloudFront domain preserved).</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-017: Vanilla TypeScript (No Framework)</section>
+        <snippet>Decision: No client-side framework (React, Vue, Svelte) - use vanilla TypeScript with Web Components pattern. Rationale: Minimal bundle size (government service performance requirement), no framework overhead for small feature set (5 critical user journeys), aligns with progressive enhancement philosophy, easier to maintain in brownfield Eleventy context.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-018: esbuild for TypeScript Compilation</section>
+        <snippet>Decision: Use esbuild for TypeScript → JavaScript compilation and bundling. npm script: `npm run build:try-js` → esbuild compiles `src/try/**/*.ts` to `_site/assets/try.bundle.js`. Integrated into Eleventy build pipeline. Development mode with watch flag for live reloading.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-020: Progressive Enhancement Pattern</section>
+        <snippet>Decision: HTML-first with JavaScript enhancement (not SPA). Static HTML pages generated by Eleventy (product pages, /try page structure). JavaScript enhances static HTML: adds Try buttons, transforms sessions table to responsive cards on mobile, adds modal functionality, handles OAuth callbacks. Critical content available without JS.</snippet>
+      </doc>
+      <doc>
+        <path>docs/development-guide.md</path>
+        <title>Development Guide - National Digital Exchange</title>
+        <section>Prerequisites</section>
+        <snippet>Required Tools: Node.js 20.17.0 (Runtime environment), Yarn ≥ 4.5.0 (Package manager - required, npm blocked), Git (Latest - Version control), nvm (Latest recommended - Node version management). Yarn 4.5.0 is strictly enforced via engines in package.json. Attempting to use npm will fail with error: "please-use-yarn".</snippet>
+      </doc>
+      <doc>
+        <path>docs/development-guide.md</path>
+        <title>Development Guide - National Digital Exchange</title>
+        <section>Development Workflow</section>
+        <snippet>Start Development Server: `yarn start` - Removes _site/ directory, runs `eleventy --serve`, starts server at http://localhost:8080, watches src/ for changes, auto-rebuilds and reloads browser. Dev Server Features: Live reload on file changes, BrowserSync integration, source maps for debugging, fast incremental builds.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 4: Local Development Infrastructure</title>
+        <section>Story 4.1: mitmproxy Setup Documentation</section>
+        <snippet>Architecture Context: ADR-015: Vanilla Eleventy with TypeScript (brownfield constraint) - Local server runs Eleventy build output on port 8080, mitmproxy routes UI requests to local build (hot-reload workflow). Development Workflow: Proxy enables local UI development with real Innovation Sandbox API - UI changes served from localhost:8080 (rapid iteration), API calls proxied to CloudFront (real backend, real data), no need to mock Innovation Sandbox API.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>package.json</path>
+        <kind>configuration</kind>
+        <symbol>scripts</symbol>
+        <lines>8-14</lines>
+        <reason>Current npm scripts showing existing Eleventy dev workflow (`yarn start` runs on port 8080) - mitmproxy setup will add `dev:proxy` script in Story 4.3</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>configuration</kind>
+        <symbol>engines</symbol>
+        <lines>33-37</lines>
+        <reason>Node.js and Yarn version constraints that must be referenced in documentation prerequisites (Node.js 20.17.0, Yarn >= 4.5.0)</reason>
+      </artifact>
+      <artifact>
+        <path>docs/development-guide.md</path>
+        <kind>documentation</kind>
+        <symbol>Prerequisites section</symbol>
+        <lines>7-46</lines>
+        <reason>Existing prerequisite documentation format that new mitmproxy docs should follow for consistency (Node.js, Yarn, Git requirements with version tables)</reason>
+      </artifact>
+      <artifact>
+        <path>docs/development-guide.md</path>
+        <kind>documentation</kind>
+        <symbol>Troubleshooting section</symbol>
+        <lines>504-558</lines>
+        <reason>Existing troubleshooting pattern showing how NDX documents common developer issues (port conflicts, version mismatches, build hangs) - mitmproxy docs should follow similar structure</reason>
+      </artifact>
+      <artifact>
+        <path>.nvmrc</path>
+        <kind>configuration</kind>
+        <symbol>Node version</symbol>
+        <lines>1</lines>
+        <reason>Specifies Node.js 20.17.0 which must be referenced in mitmproxy documentation prerequisites</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@11ty/eleventy" version="^3.1.2">Static site generator - runs dev server on localhost:8080 that mitmproxy will proxy to</package>
+        <package name="@x-govuk/govuk-eleventy-plugin" version="^7.2.1">GOV.UK Design System integration for Eleventy</package>
+        <package name="husky" version="^9.1.7">Git hooks for pre-commit checks</package>
+        <package name="prettier" version="^3.6.2">Code formatting tool</package>
+      </node>
+      <python>
+        <package name="mitmproxy" version="latest stable (10.x+ tested)">Transparent HTTPS proxy for local development (NEW DEPENDENCY for Epic 4)</package>
+      </python>
+      <system>
+        <tool name="lsof" platform="macOS/Linux">Port availability checking for validation (checking if ports 8080/8081 are in use)</tool>
+        <tool name="netstat" platform="Windows">Port availability checking alternative for Windows developers</tool>
+      </system>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    **Development Environment Constraints:**
+    - Port 8080 already used by Eleventy dev server (existing NDX workflow) - mitmproxy must use port 8081 to avoid conflicts
+    - Yarn 4.5.0 strictly enforced (npm blocked) - documentation must reference yarn commands only
+    - Node.js 20.17.0 required (specified in .nvmrc) - documentation must reference this specific version
+    - Existing development-guide.md format should be followed for consistency
+
+    **Documentation Standards:**
+    - Follow GOV.UK plain English guidelines (simple language, short sentences)
+    - Use step-by-step numbered instructions (easy to follow)
+    - Include example commands with expected output
+    - Cross-reference future stories where details are incomplete (Stories 4.3, 4.4, 4.5, 4.6)
+    - Platform-specific sections for macOS/Windows/Linux (government developers use varied platforms)
+
+    **Technical Constraints:**
+    - Python 3.8+ required for mitmproxy (dependency constraint)
+    - mitmproxy addon script approach (not command-line flags) for scalability (Story 4.2)
+    - CloudFront domain must be preserved for OAuth flow (Innovation Sandbox OAuth provider expects specific callback URL)
+    - Certificate trust required for HTTPS interception (mitmproxy CA certificate must be installed)
+
+    **Brownfield NDX System Constraints:**
+    - Cannot modify existing `yarn start` workflow (developers working on non-Try features must not be disrupted)
+    - New mitmproxy workflow must be additive (optional, only needed for Try feature local development)
+    - Existing NDX documentation style and structure must be maintained
+    - Documentation location: `/docs/development/` (follows existing NDX docs organization)
+
+    **Story Scope Constraints:**
+    - Story 4.1 is documentation-only (no code changes, no mitmproxy addon script creation)
+    - Addon script creation deferred to Story 4.2
+    - npm script creation deferred to Story 4.3
+    - System proxy configuration details deferred to Story 4.4
+    - Certificate trust setup details deferred to Story 4.5
+    - Automated validation script deferred to Story 4.6
+    - Documentation must reference future stories appropriately (use placeholders like "See Story 4.4 for system proxy configuration")
+  </constraints>
+
+  <interfaces>
+    **mitmproxy Flow API (for future reference in Story 4.2):**
+    - Interface: `http.HTTPFlow` object in mitmproxy addon scripts
+    - Properties: `flow.request.pretty_host`, `flow.request.path`, `flow.request.scheme`, `flow.request.host`, `flow.request.port`
+    - Purpose: Conditional request forwarding logic (UI routes vs API routes)
+    - Documentation must explain this conceptually for developer understanding
+
+    **Innovation Sandbox CloudFront API (external system):**
+    - Domain: `https://d7roov8fndsis.cloudfront.net`
+    - API Routes: `/api/*` (authentication, leases, configurations)
+    - OAuth Flow: `/api/auth/login` → callback with JWT token
+    - Constraint: CloudFront domain must be preserved for OAuth callback URL validation
+    - Documentation must explain why CloudFront domain preservation is critical
+
+    **NDX Eleventy Dev Server:**
+    - Port: localhost:8080
+    - Protocol: HTTP (localhost only, no HTTPS needed)
+    - Startup: `yarn start` (existing workflow)
+    - Purpose: Serves local NDX UI for development
+    - Documentation must reference existing development-guide.md for Eleventy setup
+
+    **npm Scripts Interface (Story 4.3 will add):**
+    - `yarn dev:proxy` - Start mitmproxy with addon script (future)
+    - `yarn validate-setup` - Validate prerequisites (Story 4.6, future)
+    - Documentation must reference these as future commands with story numbers
+  </interfaces>
+
+  <tests>
+    <standards>
+      **Testing Standards for Story 4.1 (Documentation-Only):**
+      - No automated unit tests required (documentation story)
+      - Manual documentation review for completeness and clarity
+      - Peer review by another developer (verify instructions are followable)
+      - Platform verification testing (test installation steps on at least one platform - macOS recommended due to team prevalence)
+      - Acceptance criteria checklist validation (verify all 7 ACs addressed in documentation)
+
+      **Documentation Quality Standards:**
+      - All commands must be copy-paste ready with correct syntax
+      - Expected output shown for verification commands (e.g., `mitmproxy --version` → version number)
+      - Prerequisites listed before configuration steps
+      - Troubleshooting section addresses common failure scenarios
+      - Cross-references to related documentation (development-guide.md, future stories 4.2-4.6)
+      - GOV.UK plain English compliance (readable by government developers of all skill levels)
+
+      **Future Integration Testing (Post-Story 4.6):**
+      - Automated validation script (`yarn validate-setup`) codifies prerequisite checks
+      - End-to-end test: Fresh developer follows documentation from scratch, successfully starts local development environment
+      - No runtime tests for Story 4.1 itself (documentation-only scope)
+    </standards>
+    <locations>
+      - No test files for Story 4.1 (documentation-only story)
+      - Documentation output: `/docs/development/local-try-setup.md`
+      - Future test location (Story 4.6): `scripts/validate-local-setup.sh`
+    </locations>
+    <ideas>
+      **Manual Testing Ideas for Story 4.1 Acceptance:**
+
+      **AC1 Testing (Prerequisites section):**
+      - Verify prerequisites section lists Python 3.8+, mitmproxy, Node.js 20.17.0, Yarn 4.5.0, port availability
+      - Check that installation links are provided for macOS/Windows/Linux
+      - Confirm reference to existing development-guide.md for Node.js/Yarn setup
+
+      **AC2 Testing (Architecture diagram):**
+      - Verify diagram or textual description shows Browser → mitmproxy → local NDX server (UI) + CloudFront (API)
+      - Check that port numbers are correct (mitmproxy 8081, NDX server 8080)
+      - Confirm CloudFront domain is specified (d7roov8fndsis.cloudfront.net)
+
+      **AC3-5 Testing (Platform-specific configuration):**
+      - Verify separate sections for macOS, Windows, Linux
+      - Check that each platform has Python installation instructions (platform-specific package managers)
+      - Confirm mitmproxy installation command (`pip install mitmproxy`) is present for all platforms
+      - Verify verification command (`mitmproxy --version`) is included
+      - Check that future stories (4.3, 4.4, 4.5) are referenced appropriately
+
+      **AC6 Testing (Troubleshooting section):**
+      - Verify troubleshooting addresses: port conflicts, mitmproxy PATH issues, SSL warnings, proxy interception failures, OAuth redirects
+      - Check that port conflict resolution includes commands (`lsof -Pi :8080`, `lsof -Pi :8081` for macOS/Linux)
+      - Confirm references to future stories (4.4 for proxy config, 4.5 for certificate trust)
+
+      **AC7 Testing (Validation steps):**
+      - Verify validation section includes dependency checks (mitmproxy version, port availability, NDX server startup)
+      - Check that `yarn dev:proxy` is mentioned with reference to Story 4.3
+      - Confirm end-to-end test described (browse CloudFront domain through proxy, verify localhost serves UI)
+
+      **Cross-Platform Verification:**
+      - Test installation steps on macOS (primary developer platform)
+      - Document any platform-specific issues found during testing
+      - Verify commands work correctly (e.g., `lsof` on macOS/Linux, alternative for Windows)
+
+      **Peer Review:**
+      - Another developer reads documentation end-to-end
+      - Checks for unclear language or missing steps
+      - Verifies cross-references to other documentation are correct
+      - Confirms GOV.UK plain English standards are met
+    </ideas>
+  </tests>
+</story-context>

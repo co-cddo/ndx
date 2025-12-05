@@ -1,0 +1,211 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.6</storyId>
+    <title>Setup Validation Script</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-23</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/stories/4-6-setup-validation-script.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>an automated validation script that checks my local development setup</iWant>
+    <soThat>I can quickly identify configuration issues before starting Try feature development</soThat>
+    <tasks>
+      - Task 1: Create validation script with dependency checks (AC: #1, #2)
+      - Task 2: Implement port availability checks (AC: #3)
+      - Task 3: Implement CA certificate check (AC: #4)
+      - Task 4: Implement exit codes and summary output (AC: #5)
+      - Task 5: Add npm script integration (AC: #6)
+      - Task 6: Document validation script usage (AC: #6)
+      - Task 7: Test validation script with various failure scenarios (AC: #1-#5)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC1: Validation script checks mitmproxy installation
+    - Command `mitmproxy --version` executes successfully
+    - Display ✅ "mitmproxy installed" on success
+    - Display ❌ "mitmproxy not installed" with error message: "Run: pip install mitmproxy" on failure
+
+    AC2: Validation script checks addon script exists
+    - File exists: `scripts/mitmproxy-addon.py`
+    - Display ✅ "Addon script found" on success
+    - Display ❌ "Addon script missing" with error message: "Expected: scripts/mitmproxy-addon.py" on failure
+
+    AC3: Validation script checks port availability
+    - Port 8080 available (lsof -Pi :8080 or equivalent)
+    - Port 8081 available (lsof -Pi :8081 or equivalent)
+    - Display ✅ "Ports 8080 and 8081 available" if both available
+    - Display ⚠️ "Port X already in use (service may be running)" if port(s) in use (warning, not error)
+
+    AC4: Validation script checks CA certificate generated
+    - File exists: `~/.mitmproxy/mitmproxy-ca-cert.pem`
+    - Display ✅ "CA certificate generated" on success
+    - Display ⚠️ "CA certificate not found (run 'yarn dev:proxy' to generate)" on failure (warning, not error)
+
+    AC5: Validation script provides exit codes and actionable output
+    - All checks pass: exit code 0, display "✅ Setup validation passed! Ready for development."
+    - One or more critical checks fail: exit code 1, display "❌ N validation check(s) failed. Fix errors above and retry."
+    - Critical checks: mitmproxy installed, addon script exists
+    - Warnings (not failures): port in use, certificate missing
+
+    AC6: npm script integration enables easy execution
+    - package.json includes script entry: "validate-setup": "bash scripts/validate-local-setup.sh"
+    - `yarn validate-setup` executes script with clear output
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>NDX Product Requirements Document - Try Before You Buy</title>
+        <section>Phase 1: mitmproxy Configuration</section>
+        <snippet>NFR-TRY-TEST-1: E2E tests require local infrastructure (validation script ensures foundation ready for future Playwright tests). NFR-TRY-TEST-2: Smoke tests require local server (validation script checks port 8080 available for NDX server). Phase 1: mitmproxy Configuration - Validation script completes Epic 4 by automating setup verification.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy - Architecture Document</title>
+        <section>ADR-015: Architecture Handoff Documentation</section>
+        <snippet>ADR-015: Architecture Handoff Documentation - Provide epic-specific architecture guidance to development team. This validation script provides Epic 4 development infrastructure validation per ADR-015.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Acceptance Criteria (Authoritative)</section>
+        <snippet>AC-EPIC4-6: Automated validation script detects setup issues. Checks: (1) mitmproxy installed, (2) addon script exists, (3) port 8080 available, (4) port 8081 available, (5) CA certificate generated. Exit 0 on success, exit 1 on failure. Clear ✅/❌ status, actionable error messages.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>Setup Validation Workflow</section>
+        <snippet>Validation workflow automates 5 prerequisite checks: mitmproxy installed, addon script exists, ports available (8080, 8081), CA certificate generated. Script execution: `yarn validate-setup` → ✅ Setup validation passed! (exit 0) or ❌ N validation check(s) failed (exit 1).</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: Local Development Infrastructure</title>
+        <section>NFR → Reliability → Failure Modes &amp; Recovery</section>
+        <snippet>Validation script implements detection mechanisms for all failure modes: mitmproxy not installed (error), addon script missing (error), port conflicts (warning), CA certificate missing (warning). Recovery: actionable error messages guide user to fix.</snippet>
+      </doc>
+      <doc>
+        <path>docs/development/local-try-setup.md</path>
+        <title>Local Try Feature Development Setup</title>
+        <section>Validation (Manual Steps, awaiting Story 4.6)</section>
+        <snippet>Current manual validation steps check: (1) mitmproxy --version, (2) port availability (lsof -Pi :8080, :8081), (3) addon script exists, (4) CA certificate at ~/.mitmproxy/mitmproxy-ca-cert.pem. Story 4.6 automates these checks into `yarn validate-setup` script.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>package.json</path>
+        <kind>npm scripts configuration</kind>
+        <symbol>"scripts"</symbol>
+        <lines>8-15</lines>
+        <reason>Current scripts include "dev:proxy" for mitmproxy startup. Story 4.6 adds "validate-setup" script to this section, positioned after dev:proxy.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/mitmproxy-addon.py</path>
+        <kind>Python addon script</kind>
+        <symbol>request()</symbol>
+        <lines>1-120</lines>
+        <reason>Addon script is checked by validation script (AC2). Script must exist at this path for validation to pass. Provides context for what's being validated.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@11ty/eleventy</package>
+        <version>^3.1.2</version>
+        <reason>NDX server runs on port 8080, validated by script</reason>
+      </node>
+      <python>
+        <package>mitmproxy</package>
+        <version>10.x+ (latest stable)</version>
+        <reason>Validated by script via `mitmproxy --version` check</reason>
+      </python>
+      <system>
+        <tool>lsof</tool>
+        <platform>macOS, Linux</platform>
+        <reason>Port availability checking on Unix-like systems</reason>
+      </system>
+      <system>
+        <tool>netstat</tool>
+        <platform>Windows</platform>
+        <reason>Port availability checking fallback on Windows</reason>
+      </system>
+      <system>
+        <tool>bash</tool>
+        <version>3.x+</version>
+        <reason>Script interpreter (cross-platform via Git Bash on Windows)</reason>
+      </system>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **Critical vs Warning Distinction:** Missing mitmproxy or addon script = failure (exit 1). Port in use or certificate missing = warning (exit 0), as developer may have services running or certificate generates on first `yarn dev:proxy`.
+    - **Cross-Platform Compatibility:** Script must handle macOS (`lsof`), Linux (`lsof`), Windows (Git Bash with `netstat` fallback).
+    - **Bash Script Language:** Use bash for scripting (portable across macOS/Linux/Windows Git Bash).
+    - **Exit Code Semantics:** 0 = success (all critical checks pass, warnings OK), 1 = failure (critical checks failed).
+    - **Tilde Expansion:** Handle `~/.mitmproxy/mitmproxy-ca-cert.pem` path expansion correctly (`$HOME/.mitmproxy/...`).
+    - **Clear Visual Output:** Use ✅/❌/⚠️ emojis for visual clarity (matches documentation style).
+    - **Actionable Error Messages:** Tell developer exactly what to do (e.g., "Run: pip install mitmproxy" not just "mitmproxy missing").
+    - **npm Script Integration:** Add to package.json scripts section after `dev:proxy`, before test scripts.
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>mitmproxy --version</name>
+      <kind>CLI command</kind>
+      <signature>mitmproxy --version → stdout: "Mitmproxy 10.x.x" or error</signature>
+      <path>System PATH (mitmproxy executable)</path>
+    </interface>
+    <interface>
+      <name>lsof -Pi :PORT</name>
+      <kind>CLI command (macOS/Linux)</kind>
+      <signature>lsof -Pi :8080 → stdout: process info or empty (port available)</signature>
+      <path>System PATH (lsof utility)</path>
+    </interface>
+    <interface>
+      <name>netstat -ano</name>
+      <kind>CLI command (Windows fallback)</kind>
+      <signature>netstat -ano | grep ":8080.*LISTENING" → match or no match</signature>
+      <path>System PATH (netstat utility)</path>
+    </interface>
+    <interface>
+      <name>File existence check</name>
+      <kind>Bash conditional</kind>
+      <signature>[ -f "scripts/mitmproxy-addon.py" ] → exit 0 (exists) or 1 (missing)</signature>
+      <path>Project root</path>
+    </interface>
+    <interface>
+      <name>CA certificate check</name>
+      <kind>Bash conditional</kind>
+      <signature>[ -f "$HOME/.mitmproxy/mitmproxy-ca-cert.pem" ] → exit 0 or 1</signature>
+      <path>~/.mitmproxy directory</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Manual integration testing during story acceptance. Test validation script with various failure scenarios:
+      - Missing mitmproxy (expect ❌, exit 1)
+      - Missing addon script (expect ❌, exit 1)
+      - Port in use (expect ⚠️, exit 0 if other checks pass)
+      - CA certificate missing (expect ⚠️, exit 0 if other checks pass)
+      - All checks passing (expect ✅, exit 0)
+      No automated unit tests for infrastructure script (manual testing sufficient for MVP).
+    </standards>
+    <locations>
+      scripts/ (validation script location)
+      Manual test execution in terminal
+    </locations>
+    <ideas>
+      <test id="AC1">Test mitmproxy installation check: Run with mitmproxy available → verify ✅ status. Temporarily remove from PATH → verify ❌ status and error message.</test>
+      <test id="AC2">Test addon script existence check: Run with script present → verify ✅. Rename script → verify ❌ and error message. Restore script.</test>
+      <test id="AC3">Test port availability checks: Run with ports free → verify ✅. Start service on 8080 → verify ⚠️ warning (not error). Kill service, verify ✅ restored.</test>
+      <test id="AC4">Test CA certificate check: Run with certificate present → verify ✅. Delete certificate → verify ⚠️ warning (not error). Regenerate via `yarn dev:proxy`, verify ✅.</test>
+      <test id="AC5">Test exit codes: All checks pass → verify exit 0. Missing mitmproxy → verify exit 1. Port in use only → verify exit 0 (warning).</test>
+      <test id="AC6">Test npm script integration: Run `yarn validate-setup` → verify script executes, output displays clearly.</test>
+    </ideas>
+  </tests>
+</story-context>

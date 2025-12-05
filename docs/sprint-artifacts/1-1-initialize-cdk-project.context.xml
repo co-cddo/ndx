@@ -1,0 +1,237 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Initialize CDK Project</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/1-1-initialize-cdk-project.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to initialize an AWS CDK TypeScript project in the `/infra` directory</iWant>
+    <soThat>I have the standard CDK structure and dependencies to define infrastructure as code</soThat>
+    <tasks>
+- Task 1: Create infra directory and initialize CDK project (AC: #1)
+  - Create `/infra` directory in project root
+  - Run `cdk init app --language typescript` in infra directory
+  - Verify directory structure created correctly
+  - Verify all expected files exist (bin/, lib/, test/, cdk.json, package.json, tsconfig.json, .gitignore)
+
+- Task 2: Validate CDK installation and version (AC: #2)
+  - Run `npm ls aws-cdk-lib` to check installed version
+  - Verify version is 2.224.0 or later
+  - Document actual version installed
+
+- Task 3: Verify project builds successfully (AC: #3)
+  - Run `npm run build` in infra directory
+  - Verify TypeScript compiles without errors
+  - Verify example stack is generated correctly
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Given** the project root directory exists
+   **When** I run `mkdir infra &amp;&amp; cd infra &amp;&amp; cdk init app --language typescript`
+   **Then** the CDK project is created with standard structure:
+   - `bin/infra.ts` - CDK app entry point exists
+   - `lib/` - Directory for stack definitions exists
+   - `test/` - Directory for tests exists
+   - `cdk.json` - CDK configuration file exists
+   - `package.json` - Contains `aws-cdk-lib` and `constructs` dependencies
+   - `tsconfig.json` - TypeScript configuration exists
+   - `.gitignore` - CDK-specific ignores present (`cdk.out/`, `node_modules/`)
+
+2. **And** running `npm ls aws-cdk-lib` shows CDK v2.224.0 or later installed
+
+3. **And** the example stack compiles successfully with `npm run build`
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification: Foundation &amp; CDK Setup</title>
+        <section>Project Initialization</section>
+        <snippet>Initialize AWS CDK v2.224.0 TypeScript project in `/infra` directory using standard CDK layout with bin/, lib/, test/ directories. Convert from npm to Yarn 4.5.0 for consistency with main application.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Data Models and Contracts - CDK Project Configuration</section>
+        <snippet>cdk.json configures the CDK app entry point as "npx ts-node --prefer-ts-exts bin/infra.ts" with watch mode exclusions and context flags for Lambda layers and secret usage checking.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Data Models and Contracts - TypeScript Configuration</section>
+        <snippet>TypeScript config targets ES2020 with strict mode enabled, including noImplicitAny, strictNullChecks, and inlineSourceMap generation. Module system is commonjs with Node 20 type roots.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Project Initialization</section>
+        <snippet>First implementation story initializes CDK project with: mkdir infra && cd infra && cdk init app --language typescript. This establishes AWS CDK TypeScript project with standard directory structure, TypeScript config, Jest framework, and git ignore patterns.</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Project Structure</section>
+        <snippet>Infrastructure lives in /infra directory with bin/infra.ts as CDK app entry point, lib/ for stack definitions, test/ for Jest tests, and standard CDK config files (cdk.json, tsconfig.json, package.json, .gitignore).</snippet>
+      </doc>
+      <doc>
+        <path>docs/infrastructure-architecture.md</path>
+        <title>NDX Infrastructure Architecture</title>
+        <section>Technology Stack Details</section>
+        <snippet>AWS CDK v2.224.0 with TypeScript (latest from cdk init, typically 5.x). Strict mode enabled, target ES2020+, module NodeNext. Jest testing framework provided by cdk init for snapshot and assertion tests.</snippet>
+      </doc>
+      <doc>
+        <path>docs/prd.md</path>
+        <title>ndx - Product Requirements Document</title>
+        <section>Infrastructure-Specific Requirements - CDK Project Structure</section>
+        <snippet>CDK code lives in /infra directory within main repository. Technology: TypeScript for CDK (industry standard), AWS CDK v2 (current standard), Package manager: Yarn (consistent with main application).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>ndx - Epic Breakdown</title>
+        <section>Epic 1: Story 1.1 - Initialize CDK Project</section>
+        <snippet>Use official AWS CDK starter template with cdk init app --language typescript. Creates foundational TypeScript + Jest + CDK structure. Example stack will be replaced in Epic 2 but validates setup works. Architecture specifies CDK v2.224.0 (Nov 2025 release).</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>package.json</path>
+        <kind>manifest</kind>
+        <symbol>main application dependencies</symbol>
+        <lines></lines>
+        <reason>Reference for Node.js and Yarn versions that CDK project should align with. Main app uses Node 20.17.0+ and Yarn 4.5.0.</reason>
+      </artifact>
+      <artifact>
+        <path>.gitignore</path>
+        <kind>config</kind>
+        <symbol>existing git ignore patterns</symbol>
+        <lines></lines>
+        <reason>Reference for project-wide ignore patterns. CDK will create its own .gitignore in /infra directory with CDK-specific patterns.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="aws-cdk-lib" version="2.224.0" scope="production">AWS CDK constructs library - core dependency for defining infrastructure</package>
+        <package name="constructs" version="^10.0.0" scope="production">CDK construct base classes required by aws-cdk-lib</package>
+        <package name="aws-cdk" version="2.224.0" scope="development">CDK CLI tool for synth, diff, deploy commands</package>
+        <package name="typescript" version="~5.6.0" scope="development">TypeScript compiler for CDK TypeScript code</package>
+        <package name="ts-node" version="^10.9.1" scope="development">TypeScript execution runtime for Node.js (used by cdk.json app command)</package>
+        <package name="@types/node" version="20.x" scope="development">Node.js type definitions for TypeScript</package>
+        <package name="jest" version="^29.7.0" scope="development">Testing framework for CDK infrastructure tests</package>
+        <package name="ts-jest" version="^29.1.0" scope="development">TypeScript preprocessor for Jest tests</package>
+        <package name="@types/jest" version="^29.5.0" scope="development">Jest type definitions for TypeScript</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- CDK project must be initialized in /infra directory at project root (not nested deeper)
+- Must use TypeScript language (not Python, Java, or other CDK-supported languages)
+- CDK version must be exactly 2.224.0 to match architecture specification
+- Standard CDK directory structure required: bin/, lib/, test/ directories
+- Must use official AWS CDK starter template via `cdk init` (not custom project setup)
+- Example stack from cdk init should compile successfully to validate setup
+- TypeScript strict mode must be enabled (provided by default cdk init config)
+- Target ES2020+ for TypeScript compilation (matches CDK defaults)
+- Do NOT convert to Yarn in this story - that happens in Story 1.2
+- Do NOT configure ESLint in this story - that happens in Story 1.3
+- Do NOT bootstrap AWS account in this story - that happens in Story 1.5
+- This story uses npm as installed by cdk init - Yarn conversion is next story
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>CDK CLI Commands</name>
+      <kind>CLI tool</kind>
+      <signature>cdk init app --language typescript</signature>
+      <path>Global npm package or npx</path>
+    </interface>
+    <interface>
+      <name>Node.js Runtime</name>
+      <kind>Platform requirement</kind>
+      <signature>Node.js 20.17.0+ required (matches main application)</signature>
+      <path>System environment</path>
+    </interface>
+    <interface>
+      <name>CDK App Entry Point</name>
+      <kind>TypeScript file</kind>
+      <signature>bin/infra.ts - Instantiates CDK app and stacks</signature>
+      <path>infra/bin/infra.ts</path>
+    </interface>
+    <interface>
+      <name>Example Stack</name>
+      <kind>TypeScript class</kind>
+      <signature>lib/infra-stack.ts - Example CDK stack from template</signature>
+      <path>infra/lib/infra-stack.ts</path>
+    </interface>
+    <interface>
+      <name>TypeScript Compiler</name>
+      <kind>Build tool</kind>
+      <signature>tsc - Compiles .ts files to .js (configured via tsconfig.json)</signature>
+      <path>infra/node_modules/.bin/tsc</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+AWS CDK infrastructure testing follows industry best practices using Jest framework:
+- Snapshot tests capture complete CloudFormation templates to detect unintended changes
+- Fine-grained assertions validate specific resource properties (bucket names, encryption, tags)
+- Tests are co-located with source files (lib/*.test.ts pattern)
+- CDK provides @aws-cdk/assertions library for template validation
+- All tests must pass (exit code 0) before deployment is allowed
+- Jest configuration provided by cdk init in test/jest.config.js
+
+This story initializes the testing infrastructure - actual tests will be written in Epic 3.
+    </standards>
+    <locations>
+- infra/test/ - Jest configuration directory
+- infra/lib/*.test.ts - Test files co-located with stack definitions (Epic 3)
+- infra/test/jest.config.js - Jest TypeScript configuration
+    </locations>
+    <ideas>
+**Story 1.1 Testing Ideas:**
+
+Since this story only initializes the CDK project structure, testing is manual verification:
+
+1. **Verification Test: Directory Structure Created**
+   - After running cdk init, verify all required directories exist
+   - Check: bin/, lib/, test/ directories present
+   - Validation: ls -la infra/ shows expected structure
+
+2. **Verification Test: Configuration Files Present**
+   - Verify cdk.json exists and contains app entry point configuration
+   - Verify tsconfig.json exists with TypeScript compiler settings
+   - Verify package.json lists aws-cdk-lib and constructs dependencies
+   - Validation: cat infra/cdk.json, cat infra/tsconfig.json
+
+3. **Verification Test: CDK Version Check**
+   - Run npm ls aws-cdk-lib in infra directory
+   - Verify version 2.224.0 or later is installed
+   - Validation: npm ls aws-cdk-lib | grep aws-cdk-lib
+
+4. **Verification Test: TypeScript Compilation**
+   - Run npm run build in infra directory
+   - Verify no TypeScript errors
+   - Verify .js files generated in lib/ directory
+   - Validation: npm run build && ls lib/*.js
+
+5. **Verification Test: Example Stack Syntax**
+   - Review lib/infra-stack.ts to understand CDK patterns
+   - Verify it extends cdk.Stack class
+   - Note: This example will be replaced in Epic 2 with real infrastructure
+
+**Future Test Coverage (Epic 3):**
+- Snapshot tests for CloudFormation template validation (AC-7 from Epic 1)
+- Fine-grained assertions for S3 bucket properties (AC-8 from Epic 1)
+- Integration tests deploying to test AWS environment (optional quality gate)
+    </ideas>
+  </tests>
+</story-context>

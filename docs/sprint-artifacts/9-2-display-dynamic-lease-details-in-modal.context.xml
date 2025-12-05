@@ -1,0 +1,200 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>9</epicId>
+    <storyId>9.2</storyId>
+    <title>Display Dynamic Lease Details in Modal</title>
+    <status>drafted</status>
+    <generatedAt>2025-12-02</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/sprint-artifacts/9-2-display-dynamic-lease-details-in-modal.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user viewing the AUP modal</asA>
+    <iWant>see actual duration and budget values from the lease template API</iWant>
+    <soThat>I understand the exact terms before accepting and requesting a sandbox session</soThat>
+    <tasks>
+      <task n="1" title="Add lease template loading state to AUP modal" ac="1,2">
+        <subtask n="1.1">Add leaseTemplateLoading: boolean to AupModalState interface</subtask>
+        <subtask n="1.2">Add leaseTemplateLoaded: boolean to AupModalState interface</subtask>
+        <subtask n="1.3">Add leaseTemplateData: { leaseDurationInHours, maxSpend } | null to state</subtask>
+        <subtask n="1.4">Add leaseTemplateError: string | null to state</subtask>
+        <subtask n="1.5">Show single combined skeleton for loading state</subtask>
+        <subtask n="1.6">Disable checkbox with tooltip during loading</subtask>
+      </task>
+      <task n="2" title="Integrate fetchLeaseTemplate service call" ac="3,4,5">
+        <subtask n="2.1">Import fetchLeaseTemplate from lease-templates-service</subtask>
+        <subtask n="2.2">Call fetchLeaseTemplate(tryId) in open() method</subtask>
+        <subtask n="2.3">Update state on success with leaseTemplateData</subtask>
+        <subtask n="2.4">Update state on error with leaseTemplateError</subtask>
+        <subtask n="2.5">Make lease template fetch parallel with AUP content fetch</subtask>
+      </task>
+      <task n="3" title="Display dynamic duration and budget values" ac="3,4">
+        <subtask n="3.1">Replace hardcoded 24 hours with ${data.leaseDurationInHours} hours</subtask>
+        <subtask n="3.2">Replace hardcoded $50 with $${data.maxSpend} USD</subtask>
+        <subtask n="3.3">Use textContent for display (never innerHTML)</subtask>
+      </task>
+      <task n="4" title="Display error state for failed loads" ac="5">
+        <subtask n="4.1">Display Unknown when lease template load fails</subtask>
+        <subtask n="4.2">Apply error styling to unknown values</subtask>
+      </task>
+      <task n="5" title="Add ARIA live region announcements" ac="6,7,8">
+        <subtask n="5.1">Announce Loading session terms... on modal open</subtask>
+        <subtask n="5.2">Announce Session terms loaded: {hours} hour session with ${amount} budget on success</subtask>
+        <subtask n="5.3">Announce Unable to load session terms on error</subtask>
+        <subtask n="5.4">Use existing announce() utility from aria-live.ts</subtask>
+      </task>
+      <task n="6" title="Verify focus management" ac="9">
+        <subtask n="6.1">Ensure focus trap maintained during loading state transitions</subtask>
+        <subtask n="6.2">Ensure focus trap maintained after data loads</subtask>
+        <subtask n="6.3">Ensure focus trap maintained on error state</subtask>
+      </task>
+      <task n="7" title="Write unit tests" ac="1-10">
+        <subtask n="7.1">Test loading skeleton visible initially</subtask>
+        <subtask n="7.2">Test checkbox disabled during loading</subtask>
+        <subtask n="7.3">Test dynamic duration display</subtask>
+        <subtask n="7.4">Test dynamic budget display</subtask>
+        <subtask n="7.5">Test error state shows Unknown</subtask>
+        <subtask n="7.6">Test ARIA announcements (loading, success, error)</subtask>
+        <subtask n="7.7">Test focus trap during state changes</subtask>
+        <subtask n="7.8">Test parallel fetch of AUP and lease template</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1" testApproach="DOM: skeleton visible on open">Single combined loading skeleton shown initially</criterion>
+    <criterion id="AC-2" testApproach="DOM: attribute test">Checkbox disabled with tooltip Loading... during loading</criterion>
+    <criterion id="AC-3" testApproach="DOM: content test">Duration displays as Session duration: {hours} hours from API</criterion>
+    <criterion id="AC-4" testApproach="DOM: content test">Budget displays as Maximum spend: ${amount} USD (limits sandbox costs) from API</criterion>
+    <criterion id="AC-5" testApproach="DOM: error display test">Error state shows Unknown for duration/budget values</criterion>
+    <criterion id="AC-6" testApproach="A11y: live region test">ARIA announces Loading session terms on modal open</criterion>
+    <criterion id="AC-7" testApproach="A11y: live region test">ARIA announces loaded values on success</criterion>
+    <criterion id="AC-8" testApproach="A11y: live region test">ARIA announces error state on failure</criterion>
+    <criterion id="AC-9" testApproach="A11y: focus management test">Focus remains trapped in modal during state changes</criterion>
+    <criterion id="AC-10" testApproach="Performance: timing test">Modal interactive within 3s on 3G connection</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/sprint-artifacts/tech-spec-epic-9.md</path>
+        <title>Epic 9 Technical Specification</title>
+        <section>Story 9.2, Extended AupModalState, Workflows and Sequencing</section>
+        <snippet>Defines AC-9.2.1-10, Extended AupModalState interface with leaseTemplateLoading, leaseTemplateLoaded, leaseTemplateData, leaseTemplateError, and isFullyLoaded computed property.</snippet>
+      </doc>
+      <doc>
+        <path>docs/try-before-you-buy-architecture.md</path>
+        <title>Try Before You Buy Architecture</title>
+        <section>ADR-026</section>
+        <snippet>ADR-026: Accessible Modal Pattern - WCAG 2.2 AA compliance with focus trap, ARIA live regions, keyboard navigation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/sprint-artifacts/9-1-create-lease-template-service.md</path>
+        <title>Story 9.1: Create Lease Template Service</title>
+        <section>Dev Agent Record</section>
+        <snippet>Created fetchLeaseTemplate() service returning LeaseTemplateResult with leaseDurationInHours, maxSpend. Uses skipAuthRedirect, deduplicatedRequest(), 5000ms timeout.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/try/ui/components/aup-modal.ts</path>
+        <kind>component</kind>
+        <symbol>AupModal class</symbol>
+        <lines>67-448</lines>
+        <reason>MODIFY: Add lease template state, fetch call, dynamic display. Hardcoded values at lines 286-290.</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/api/lease-templates-service.ts</path>
+        <kind>service</kind>
+        <symbol>fetchLeaseTemplate</symbol>
+        <lines>145-267</lines>
+        <reason>USE: Import and call fetchLeaseTemplate(tryId) in open() method</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/ui/utils/aria-live.ts</path>
+        <kind>utility</kind>
+        <symbol>announce</symbol>
+        <lines>1-50</lines>
+        <reason>USE: Already imported in aup-modal.ts at line 20, use for loading/success/error announcements</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/api/configurations-service.ts</path>
+        <kind>service</kind>
+        <symbol>fetchConfigurations</symbol>
+        <lines>165-258</lines>
+        <reason>PATTERN: Reference for parallel fetch pattern and error handling</reason>
+      </artifact>
+      <artifact>
+        <path>src/try/ui/utils/focus-trap.ts</path>
+        <kind>utility</kind>
+        <symbol>createFocusTrap</symbol>
+        <lines>1-100</lines>
+        <reason>VERIFY: Ensure focus trap maintained during state changes</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="typescript" version="^5.7.2" />
+        <package name="jest" version="^29.7.0" />
+        <package name="jest-environment-jsdom" version="^29.7.0" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture" source="ADR-026">MUST maintain WCAG 2.2 AA compliance during loading states</constraint>
+    <constraint type="architecture" source="ADR-021">MUST use existing lease-templates-service from Story 9.1</constraint>
+    <constraint type="security">MUST use textContent for dynamic values, never innerHTML (XSS prevention)</constraint>
+    <constraint type="performance">Modal MUST be interactive within 3 seconds on 3G connection</constraint>
+    <constraint type="accessibility">MUST announce state changes via ARIA live regions</constraint>
+    <constraint type="accessibility">Focus trap MUST remain active during all state transitions</constraint>
+    <constraint type="testing">Jest test file naming: *.test.ts in same directory as source</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>fetchLeaseTemplate</name>
+      <kind>function</kind>
+      <signature>export async function fetchLeaseTemplate(tryId: string): Promise&lt;LeaseTemplateResult&gt;</signature>
+      <path>src/try/api/lease-templates-service.ts</path>
+    </interface>
+    <interface>
+      <name>LeaseTemplateResult</name>
+      <kind>interface</kind>
+      <signature>{ success: boolean; data?: { leaseDurationInHours: number; maxSpend: number; name?: string }; error?: string; errorCode?: LeaseTemplateErrorCode }</signature>
+      <path>src/try/api/lease-templates-service.ts</path>
+    </interface>
+    <interface>
+      <name>announce</name>
+      <kind>function</kind>
+      <signature>export function announce(message: string, priority?: 'polite' | 'assertive'): void</signature>
+      <path>src/try/ui/utils/aria-live.ts</path>
+    </interface>
+    <interface>
+      <name>Extended AupModalState</name>
+      <kind>interface</kind>
+      <signature>{ isOpen, tryId, aupAccepted, isLoading, error, aupLoaded, leaseTemplateLoading, leaseTemplateLoaded, leaseTemplateData, leaseTemplateError }</signature>
+      <path>src/try/ui/components/aup-modal.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Jest with jsdom environment for DOM and accessibility testing. Mock fetch calls, test ARIA live region announcements with jest spies, test focus trap behavior during state transitions. Follow patterns from existing aup-modal.test.ts.</standards>
+    <locations>
+      <pattern>src/try/ui/components/*.test.ts</pattern>
+    </locations>
+    <ideas>
+      <idea ac="AC-1">Test loading skeleton appears initially when modal opens before data loads</idea>
+      <idea ac="AC-2">Test checkbox is disabled with title=Loading... during loading state</idea>
+      <idea ac="AC-3">Test duration displays actual value from API (e.g., 48 hours instead of hardcoded 24)</idea>
+      <idea ac="AC-4">Test budget displays actual value from API (e.g., $100 USD instead of hardcoded $50)</idea>
+      <idea ac="AC-5">Test Unknown shown for duration/budget when fetchLeaseTemplate returns error</idea>
+      <idea ac="AC-6">Test announce() called with Loading session terms... on modal open</idea>
+      <idea ac="AC-7">Test announce() called with loaded values on successful fetch</idea>
+      <idea ac="AC-8">Test announce() called with Unable to load session terms on fetch error</idea>
+      <idea ac="AC-9">Test focus trap remains active through loading-success-error state transitions</idea>
+      <idea ac="AC-10">Test modal renders and becomes interactive quickly (mock timers)</idea>
+    </ideas>
+  </tests>
+</story-context>

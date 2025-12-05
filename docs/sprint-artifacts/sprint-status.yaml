@@ -1,7 +1,7 @@
 # ==============================================================
 # NDX Sprint Status Tracking
 # ==============================================================
-# Generated: 2025-11-27
+# Generated: 2025-12-05
 # Project: ndx
 # Project Key: ndx
 # Tracking System: file-system
@@ -34,7 +34,7 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-11-27
+generated: 2025-12-05
 project: ndx
 project_key: ndx
 tracking_system: file-system
@@ -307,45 +307,69 @@ development_status:
   9-4-clear-error-states-for-failed-loads: done # Code review complete 2025-12-02: APPROVED - 5/5 ACs, 77 tests
   epic-9-retrospective: done # 2025-12-02 - Retrospective complete, 0 blockers, 77 tests
 
-# ==============================================================
-# SUMMARY
-# ==============================================================
-# Feature 1 (CloudFront Routing): Epics 1-3 COMPLETE
-# Feature 2 (Try Before You Buy): Epics 4-8 COMPLETE, Epic 9 BACKLOG
-# Features 3, 4 & 5 (Notifications + Enrichment):
-#   - Epic N-4 (Foundation): DONE (7/9 stories, 2 deferred - external deps)
-#   - Epic N-5 (User emails): DONE (9/9 stories complete)
-#   - Epic N-6 (Ops alerts): DONE (8/8 stories complete)
-#   - Epic N-7 (DynamoDB Lease Enrichment): DONE (6/6 stories complete) - 964 tests passing
-# Feature 2 Enhancement:
-#   - Epic 9 (AUP Modal Dynamic Lease Details): BACKLOG (4 stories)
-#
-# Implementation Progress:
-# 1. Epic N-4 (Foundation) - 7/9 stories DONE, 2 deferred pending ISB coordination
-# 2. Epic N-5 (User emails) - 9/9 stories DONE
-# 3. Epic N-6 (Ops alerts) - 8/8 stories DONE
-# 4. Epic N-7 (Enrichment) - 6/6 stories DONE - All lease statuses supported
-# 5. Epic 9 (AUP Modal) - BACKLOG - Requires prerequisite verification
-#
-# PRE-MORTEM FINDINGS (2025-11-27):
-# Round 1:
-# - n4-7: Secrets rotation/expiry alerting (prevent silent API key expiry)
-# - n5-8: GOV.UK Notify sandbox E2E test (prevent template breakage)
-# - n6-7: Daily DLQ summary digest (prevent ignored failures)
-# - Enhanced ACs: Zod strict mode, mandatory email verification, 24h TTL
-# Round 2:
-# - n4-8: SQS buffer for rate limiting (prevent GOV.UK Notify 429 on batch events)
-# - n5-9: Template field validation on startup (detect template drift early)
-# - Enhanced ACs: User timezone in expiry emails, 60s lease-level dedup, no webhook in errors
-#
-# STAKEHOLDER MAPPING FINDINGS (2025-11-27):
-# - n4-9: Event schema versioning strategy (ISB team integration)
-# - n5-10: User notification preferences (GROWTH - opt-out, frequency)
-# - n6-8: Runbook links in Slack alerts (Ops team quick-action paths)
-# Key stakeholders: Ops Team, ISB Team, Product Owner (KEY PLAYERS)
-# Engagement: Ops before N-6, ISB before N-4, Security before deploy
-# ==============================================================
+  # ==============================================================
+  # SUMMARY
+  # ==============================================================
+  # Feature 1 (CloudFront Routing): Epics 1-3 COMPLETE
+  # Feature 2 (Try Before You Buy): Epics 4-9 COMPLETE
+  # Features 3, 4 & 5 (Notifications + Enrichment):
+  #   - Epic N-4 (Foundation): DONE (7/9 stories, 2 deferred - external deps)
+  #   - Epic N-5 (User emails): DONE (9/9 stories complete)
+  #   - Epic N-6 (Ops alerts): DONE (8/8 stories complete)
+  #   - Epic N-7 (DynamoDB Lease Enrichment): DONE (6/6 stories complete) - 964 tests passing
+  # Feature 6 (AWS Scenario Catalogue Entries):
+  #   - Epic 10 (Catalogue Entries): DONE (8/8 stories complete)
+  #
+  # Implementation Progress:
+  # 1. Epic N-4 (Foundation) - 7/9 stories DONE, 2 deferred pending ISB coordination
+  # 2. Epic N-5 (User emails) - 9/9 stories DONE
+  # 3. Epic N-6 (Ops alerts) - 8/8 stories DONE
+  # 4. Epic N-7 (Enrichment) - 6/6 stories DONE - All lease statuses supported
+  # 5. Epic 9 (AUP Modal) - DONE (4 stories complete)
+  # 6. Epic 10 (Catalogue Entries) - DONE (8/8 stories complete) - 617 tests passing
+  #
+  # PRE-MORTEM FINDINGS (2025-11-27):
+  # Round 1:
+  # - n4-7: Secrets rotation/expiry alerting (prevent silent API key expiry)
+  # - n5-8: GOV.UK Notify sandbox E2E test (prevent template breakage)
+  # - n6-7: Daily DLQ summary digest (prevent ignored failures)
+  # - Enhanced ACs: Zod strict mode, mandatory email verification, 24h TTL
+  # Round 2:
+  # - n4-8: SQS buffer for rate limiting (prevent GOV.UK Notify 429 on batch events)
+  # - n5-9: Template field validation on startup (detect template drift early)
+  # - Enhanced ACs: User timezone in expiry emails, 60s lease-level dedup, no webhook in errors
+  #
+  # STAKEHOLDER MAPPING FINDINGS (2025-11-27):
+  # - n4-9: Event schema versioning strategy (ISB team integration)
+  # - n5-10: User notification preferences (GROWTH - opt-out, frequency)
+  # - n6-8: Runbook links in Slack alerts (Ops team quick-action paths)
+  # Key stakeholders: Ops Team, ISB Team, Product Owner (KEY PLAYERS)
+  # Engagement: Ops before N-6, ISB before N-4, Security before deploy
+  # ==============================================================
 
+  # ==============================================================
+  # FEATURE 6: AWS SCENARIO CATALOGUE ENTRIES (BACKLOG)
+  # ==============================================================
+  # PRD Reference: docs/prd-aws-scenario-catalogue-entries.md
+  # Epic File: docs/epics/epic-10-aws-scenario-catalogue-entries.md
+
+  # ----------------------------------------------------------
+  # Epic 10: AWS Scenario Catalogue Entries (BACKLOG)
+  # ----------------------------------------------------------
+  # Goal: Add 7 AWS pre-deployed scenario entries to NDX catalogue
+  # FRs Covered: Catalogue entries for tryable AWS scenarios
+  # User Value: Users can explore working AWS applications in sandbox environments
+  # Dependencies: None (uses existing catalogue infrastructure)
+  epic-10-aws-scenario-catalogue-entries: done # All 8 stories complete 2025-12-05 - 617 tests passing
+  10-1-create-council-chatbot-catalogue-entry: done # Code review complete 2025-12-05: APPROVED - all 20 ACs satisfied
+  10-2-create-foi-redaction-catalogue-entry: done # Implemented 2025-12-05: foi-redaction.md with Amazon Comprehend/Textract
+  10-3-create-planning-ai-catalogue-entry: done # Implemented 2025-12-05: planning-ai.md with Textract/Bedrock
+  10-4-create-quicksight-dashboard-catalogue-entry: done # Implemented 2025-12-05: quicksight-dashboard.md with QuickSight/Glue
+  10-5-create-smart-car-park-catalogue-entry: done # Implemented 2025-12-05: smart-car-park.md with IoT Core/Timestream
+  10-6-create-text-to-speech-catalogue-entry: done # Implemented 2025-12-05: text-to-speech.md with Amazon Polly
+  10-7-update-empty-sandbox-entry-with-new-try-id: done # Updated innovation-sandbox-empty.md with new try_id and try-before-you-buy tag
+  10-8-build-validation-and-testing: done # Build passed, 617 tests passing 2025-12-05
+  epic-10-retrospective: optional
 # REGRESSION FIX HISTORY:
 # ==============================================================
 # 2025-11-24: govukEleventyPlugin header template fix

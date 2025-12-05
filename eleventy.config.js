@@ -101,9 +101,6 @@ export default function (eleventyConfig) {
   eleventyConfig.addPlugin(govukEleventyPlugin, {
     titleSuffix: "ALPHA",
     header: {
-      logotype: {
-        text: " ",
-      },
       productName: `National Digital Exchange <strong class="govuk-tag govuk-phase-banner__content__tag">Alpha</strong>`,
       search: {
         indexPath: "/search.json",
@@ -130,10 +127,7 @@ export default function (eleventyConfig) {
         { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
         { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
-        { text: "Sign in", href: "/api/auth/login" },
       ],
-      // Auth navigation placeholder - rendered via slots.end in service navigation
-      // This is populated by JavaScript (Story 5.1)
       slots: {
         end: '<span id="auth-nav" class="app-auth-nav"></span>',
       },

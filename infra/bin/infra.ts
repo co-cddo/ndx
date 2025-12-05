@@ -35,7 +35,7 @@ new GitHubActionsStack(app, "NdxGitHubActions", {
   github: {
     owner: "co-cddo",
     repo: "ndx",
-    branch: "try/aws", // Change to 'main' after testing
+    branch: "main",
   },
   contentBucketName: "ndx-static-prod",
   distributionId: "E3THG4UHYDHVWP",

@@ -1,9 +1,10 @@
 name: CI
 
 on:
+  workflow_dispatch: # Manual trigger
   push:
     branches:
-      - try/aws # Change to 'main' after testing
+      - main
     tags:
       - "v*.*.*"
     paths-ignore:
@@ -11,7 +12,7 @@ on:
       - "docs/**"
   pull_request:
     branches:
-      - try/aws # Change to 'main' after testing
+      - main
     paths-ignore:
       - "infra/**"
 
@@ -115,7 +116,7 @@ jobs:
     needs:
       - build
       - test
-    if: ${{ github.ref == 'refs/heads/try/aws' && github.event_name == 'push' }} # Change to 'main' after testing
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     environment:
       name: production
       url: https://ndx.digital.cabinet-office.gov.uk

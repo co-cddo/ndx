@@ -11,9 +11,11 @@ name: Accessibility Tests
 
 on:
   push:
-    branches: [try/aws] # Change to 'main' after testing
+    branches: [main]
   pull_request:
-    branches: [try/aws] # Change to 'main' after testing
+    branches: [main]
+
+permissions: read-all
 
 jobs:
   accessibility:

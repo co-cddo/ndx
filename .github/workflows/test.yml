@@ -2,15 +2,17 @@ name: Frontend Tests
 
 on:
   push:
-    branches: [try/aws] # Change to 'main' after testing
+    branches: [main]
     paths-ignore:
       - "infra/**" # Infra tests moved to infra.yaml
       - "docs/**"
   pull_request:
-    branches: [try/aws] # Change to 'main' after testing
+    branches: [main]
     paths-ignore:
       - "infra/**"
       - "docs/**"
+
+permissions: read-all
 
 jobs:
   # Frontend tests

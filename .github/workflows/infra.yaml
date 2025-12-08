@@ -160,7 +160,7 @@ jobs:
       # Use readonly diff role (not deploy role) - allows any branch on origin repo
       # Fork protection is enforced at IAM level via repository_owner condition
       - name: Configure AWS credentials via OIDC (Readonly)
-        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
         with:
           role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDiff
           aws-region: ${{ env.AWS_REGION }}
@@ -229,7 +229,7 @@ jobs:
         run: yarn install --immutable
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
         with:
           role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDeploy
           aws-region: ${{ env.AWS_REGION }}

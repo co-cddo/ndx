@@ -525,16 +525,17 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
     sessionStorage.clear()
     sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
-    // Mock window.location.href setter using Object.defineProperty
+    // Mock window.location - delete first then assign (jsdom v27+ compatible)
     redirectUrl = ""
-    Object.defineProperty(window, "location", {
-      value: {
-        href: "",
-        get: () => redirectUrl,
-      },
-      writable: true,
-      configurable: true,
-    })
+    const originalLocation = window.location
+    // @ts-expect-error - Intentionally deleting location for testing
+    delete window.location
+    window.location = {
+      ...originalLocation,
+      href: "",
+      assign: jest.fn(),
+      replace: jest.fn(),
+    } as unknown as Location
     Object.defineProperty(window.location, "href", {
       set: (url: string) => {
         redirectUrl = url

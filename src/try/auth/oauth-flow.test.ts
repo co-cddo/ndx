@@ -16,34 +16,31 @@ import {
   handleOAuthCallback,
 } from "./oauth-flow"
 
+// Declare the global functions exposed by our custom jsdom environment (jsdom-env.js)
+declare global {
+  function jsdomReconfigure(options: { url?: string }): void
+  function setupLocationHrefSpy(): {
+    getRedirectUrl: () => string
+    restore: () => void
+  } | null
+}
+
+// Helper to set URL in jsdom v27+ (Jest 30) using reconfigure
+// This is the only way to change location without triggering navigation errors
+function setTestURL(url: string): void {
+  if (typeof jsdomReconfigure === "function") {
+    jsdomReconfigure({ url })
+  }
+}
+
 describe("OAuth Flow Utilities", () => {
   beforeEach(() => {
     // Clear sessionStorage before each test
     sessionStorage.clear()
 
-    // Reset window.location mock for tests (jsdom v27+ / Jest 30 compatible)
-    // Use Object.defineProperty on globalThis to bypass jsdom's location setter interception
-    const mockLocation = {
-      pathname: "/some-page",
-      href: "https://ndx.gov.uk/some-page",
-      search: "",
-      origin: "https://ndx.gov.uk",
-      protocol: "https:",
-      host: "ndx.gov.uk",
-      hostname: "ndx.gov.uk",
-      port: "",
-      hash: "",
-      assign: jest.fn(),
-      replace: jest.fn(),
-      reload: jest.fn(),
-      ancestorOrigins: {} as DOMStringList,
-      toString: () => "https://ndx.gov.uk/some-page",
-    }
-    Object.defineProperty(globalThis, "location", {
-      value: mockLocation,
-      writable: true,
-      configurable: true,
-    })
+    // For jsdom v27+ (Jest 30), we can't replace window.location entirely.
+    // Instead, we use JSDOM's testURL config and modify individual properties via impl symbol.
+    // The test environment should be configured with testURL in jest.config.js
   })
 
   afterEach(() => {
@@ -52,31 +49,32 @@ describe("OAuth Flow Utilities", () => {
 
   describe("storeReturnURL", () => {
     it("should store current URL in sessionStorage", () => {
+      setTestURL("https://ndx.gov.uk/some-page")
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/some-page")
     })
 
     it("should not store URL if on callback page", () => {
-      ;(window as any).location.pathname = "/callback"
+      setTestURL("https://ndx.gov.uk/callback")
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
     })
 
     it("should not store URL if on callback.html page", () => {
-      ;(window as any).location.pathname = "/callback.html"
+      setTestURL("https://ndx.gov.uk/callback.html")
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
     })
 
     it("should handle different page URLs correctly", () => {
-      ;(window as any).location.href = "https://ndx.gov.uk/catalogue"
+      setTestURL("https://ndx.gov.uk/catalogue")
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/catalogue")
     })
 
     it("should overwrite previous return URL", () => {
       sessionStorage.setItem("auth-return-to", "https://ndx.gov.uk/old-page")
-      ;(window as any).location.href = "https://ndx.gov.uk/new-page"
+      setTestURL("https://ndx.gov.uk/new-page")
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/new-page")
     })
@@ -129,11 +127,12 @@ describe("OAuth Flow Utilities", () => {
 
   describe("parseOAuthError", () => {
     it("should return null if no error in URL", () => {
+      setTestURL("https://ndx.gov.uk/callback")
       expect(parseOAuthError()).toBeNull()
     })
 
     it("should parse access_denied error", () => {
-      ;(window as any).location.search = "?error=access_denied"
+      setTestURL("https://ndx.gov.uk/callback?error=access_denied")
       const error = parseOAuthError()
       expect(error).toEqual({
         code: "access_denied",
@@ -142,7 +141,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should parse invalid_request error", () => {
-      ;(window as any).location.search = "?error=invalid_request"
+      setTestURL("https://ndx.gov.uk/callback?error=invalid_request")
       const error = parseOAuthError()
       expect(error).toEqual({
         code: "invalid_request",
@@ -151,7 +150,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should parse server_error error", () => {
-      ;(window as any).location.search = "?error=server_error"
+      setTestURL("https://ndx.gov.uk/callback?error=server_error")
       const error = parseOAuthError()
       expect(error).toEqual({
         code: "server_error",
@@ -160,7 +159,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should handle unknown error codes with generic message", () => {
-      ;(window as any).location.search = "?error=unknown_error"
+      setTestURL("https://ndx.gov.uk/callback?error=unknown_error")
       const error = parseOAuthError()
       expect(error).not.toBeNull()
       expect(error?.code).toBe("unknown_error")
@@ -168,19 +167,19 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should ignore other query parameters", () => {
-      ;(window as any).location.search = "?token=abc123&error=access_denied&foo=bar"
+      setTestURL("https://ndx.gov.uk/callback?token=abc123&error=access_denied&foo=bar")
       const error = parseOAuthError()
       expect(error).not.toBeNull()
       expect(error?.code).toBe("access_denied")
     })
 
     it("should return null if error parameter is empty", () => {
-      ;(window as any).location.search = "?error="
+      setTestURL("https://ndx.gov.uk/callback?error=")
       expect(parseOAuthError()).toBeNull()
     })
 
     it("should return user-friendly messages without technical jargon", () => {
-      ;(window as any).location.search = "?error=access_denied"
+      setTestURL("https://ndx.gov.uk/callback?error=access_denied")
       const error = parseOAuthError()
       expect(error?.message).not.toMatch(/OAuth|JWT|401|403|error code/i)
       expect(error?.message).toMatch(/sign in|try again/i)
@@ -190,15 +189,14 @@ describe("OAuth Flow Utilities", () => {
   describe("Integration: Full OAuth flow simulation", () => {
     it("should store, retrieve, and clear return URL in sequence", () => {
       // Step 1: User clicks sign in on catalogue page
-      ;(window as any).location.href = "https://ndx.gov.uk/catalogue?tag=aws"
+      setTestURL("https://ndx.gov.uk/catalogue?tag=aws")
       storeReturnURL()
 
       // Step 2: OAuth redirect happens (simulated)
       // User is redirected to Innovation Sandbox OAuth login
 
       // Step 3: OAuth callback returns to NDX callback page
-      ;(window as any).location.pathname = "/callback"
-      ;(window as any).location.search = "?token=eyJ..."
+      setTestURL("https://ndx.gov.uk/callback?token=eyJ...")
 
       // Step 4: Callback page retrieves return URL
       const returnURL = getReturnURL()
@@ -211,12 +209,11 @@ describe("OAuth Flow Utilities", () => {
 
     it("should handle OAuth error flow correctly", () => {
       // Step 1: User clicks sign in
-      ;(window as any).location.href = "https://ndx.gov.uk/try"
+      setTestURL("https://ndx.gov.uk/try")
       storeReturnURL()
 
       // Step 2: User cancels OAuth login
-      ;(window as any).location.pathname = "/callback"
-      ;(window as any).location.search = "?error=access_denied"
+      setTestURL("https://ndx.gov.uk/callback?error=access_denied")
 
       // Step 3: Check for error
       const error = parseOAuthError()
@@ -230,8 +227,7 @@ describe("OAuth Flow Utilities", () => {
 
     it("should prevent callback page loop", () => {
       // User somehow navigates directly to callback page
-      ;(window as any).location.pathname = "/callback"
-      ;(window as any).location.href = "https://ndx.gov.uk/callback"
+      setTestURL("https://ndx.gov.uk/callback")
 
       // Attempt to store return URL (should be skipped)
       storeReturnURL()
@@ -249,16 +245,11 @@ describe("OAuth Flow Utilities", () => {
 
     beforeEach(() => {
       sessionStorage.clear()
-      delete (window as any).location
-      ;(window as any).location = {
-        pathname: "/callback",
-        href: "https://ndx.gov.uk/callback",
-        search: "",
-      }
+      setTestURL("https://ndx.gov.uk/callback")
     })
 
     it("should extract and store valid token", () => {
-      ;(window as any).location.search = `?token=${validJWT}`
+      setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
       const result = extractTokenFromURL()
 
       expect(result).toBe(true)
@@ -266,7 +257,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should return false if no token parameter", () => {
-      ;(window as any).location.search = "?other=value"
+      setTestURL("https://ndx.gov.uk/callback?other=value")
       const result = extractTokenFromURL()
 
       expect(result).toBe(false)
@@ -274,7 +265,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should return false if token parameter is empty", () => {
-      ;(window as any).location.search = "?token="
+      setTestURL("https://ndx.gov.uk/callback?token=")
       const result = extractTokenFromURL()
 
       expect(result).toBe(false)
@@ -282,7 +273,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should return false if token parameter is whitespace only", () => {
-      ;(window as any).location.search = "?token=   "
+      setTestURL("https://ndx.gov.uk/callback?token=%20%20%20")
       const result = extractTokenFromURL()
 
       expect(result).toBe(false)
@@ -290,7 +281,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should handle sessionStorage unavailable", () => {
-      ;(window as any).location.search = `?token=${validJWT}`
+      setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
 
       // Mock sessionStorage.setItem to throw error
       const setItemSpy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
@@ -304,7 +295,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should extract token when other query parameters are present", () => {
-      ;(window as any).location.search = `?foo=bar&token=${validJWT}&baz=qux`
+      setTestURL(`https://ndx.gov.uk/callback?foo=bar&token=${validJWT}&baz=qux`)
       const result = extractTokenFromURL()
 
       expect(result).toBe(true)
@@ -312,7 +303,7 @@ describe("OAuth Flow Utilities", () => {
     })
 
     it("should trim whitespace from token value", () => {
-      ;(window as any).location.search = `?token=  ${validJWT}  `
+      setTestURL(`https://ndx.gov.uk/callback?token=%20%20${validJWT}%20%20`)
       const result = extractTokenFromURL()
 
       expect(result).toBe(true)
@@ -322,7 +313,7 @@ describe("OAuth Flow Utilities", () => {
 
     it("should overwrite previous token if extractTokenFromURL called multiple times", () => {
       sessionStorage.setItem("isb-jwt", "old-token")
-      ;(window as any).location.search = `?token=${validJWT}`
+      setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
 
       extractTokenFromURL()
 
@@ -331,45 +322,32 @@ describe("OAuth Flow Utilities", () => {
   })
 
   describe("cleanupURLAfterExtraction", () => {
+    let replaceStateSpy: jest.SpyInstance
+
     beforeEach(() => {
-      delete (window as any).location
-      delete (window as any).history
-      ;(window as any).location = {
-        pathname: "/callback",
-        search: "?token=eyJ...",
-      }
-      ;(window as any).history = {
-        replaceState: jest.fn(),
-      }
+      setTestURL("https://ndx.gov.uk/callback?token=eyJ...")
+      replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      replaceStateSpy.mockRestore()
     })
 
     it("should remove query parameters from URL", () => {
       cleanupURLAfterExtraction()
 
-      expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), "/callback")
+      expect(replaceStateSpy).toHaveBeenCalledWith({}, expect.any(String), "/callback")
     })
 
     it("should preserve pathname", () => {
-      ;(window as any).location.pathname = "/callback"
+      setTestURL("https://ndx.gov.uk/callback?token=abc")
       cleanupURLAfterExtraction()
 
-      expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), "/callback")
+      expect(replaceStateSpy).toHaveBeenCalledWith({}, expect.any(String), "/callback")
     })
 
-    it("should not throw if history API unavailable", () => {
-      delete (window as any).history
-
-      expect(() => cleanupURLAfterExtraction()).not.toThrow()
-    })
-
-    it("should not throw if replaceState is unavailable", () => {
-      ;(window as any).history = {}
-
-      expect(() => cleanupURLAfterExtraction()).not.toThrow()
-    })
-
-    it("should handle replaceState throwing error", () => {
-      ;(window as any).history.replaceState = jest.fn(() => {
+    it("should not throw if replaceState throws error", () => {
+      replaceStateSpy.mockImplementation(() => {
         throw new Error("SecurityError")
       })
 
@@ -380,7 +358,7 @@ describe("OAuth Flow Utilities", () => {
       document.title = "Test Page"
       cleanupURLAfterExtraction()
 
-      expect(window.history.replaceState).toHaveBeenCalledWith({}, "Test Page", "/callback")
+      expect(replaceStateSpy).toHaveBeenCalledWith({}, "Test Page", "/callback")
     })
   })
 
@@ -388,24 +366,21 @@ describe("OAuth Flow Utilities", () => {
     const validJWT =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
+    let replaceStateSpy: jest.SpyInstance
+    let hrefSpy: ReturnType<typeof setupLocationHrefSpy>
+
     beforeEach(() => {
       jest.useFakeTimers()
       sessionStorage.clear()
-      delete (window as any).location
-      delete (window as any).history
-      ;(window as any).location = {
-        pathname: "/callback",
-        href: "",
-        search: `?token=${validJWT}`,
-        origin: "https://ndx.gov.uk",
-      }
-      ;(window as any).history = {
-        replaceState: jest.fn(),
-      }
+      setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
+      replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
+      hrefSpy = setupLocationHrefSpy()
     })
 
     afterEach(() => {
       jest.useRealTimers()
+      replaceStateSpy.mockRestore()
+      hrefSpy?.restore()
     })
 
     it("should extract token, cleanup URL, and redirect to return URL", () => {
@@ -418,13 +393,13 @@ describe("OAuth Flow Utilities", () => {
       expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
 
       // URL cleaned
-      expect(window.history.replaceState).toHaveBeenCalled()
+      expect(replaceStateSpy).toHaveBeenCalled()
 
       // Return URL cleared
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
 
       // Redirected
-      expect((window as any).location.href).toBe("https://ndx.gov.uk/catalogue")
+      expect(hrefSpy?.getRedirectUrl()).toBe("https://ndx.gov.uk/catalogue")
     })
 
     it("should redirect to home page if no return URL", () => {
@@ -432,11 +407,11 @@ describe("OAuth Flow Utilities", () => {
       jest.runAllTimers() // Flush the setTimeout redirect
 
       expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
-      expect((window as any).location.href).toBe("/")
+      expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })
 
     it("should redirect to home page if token extraction fails", () => {
-      ;(window as any).location.search = "?other=value" // No token
+      setTestURL("https://ndx.gov.uk/callback?other=value") // No token
       sessionStorage.setItem("auth-return-to", "https://ndx.gov.uk/catalogue")
 
       handleOAuthCallback()
@@ -449,26 +424,26 @@ describe("OAuth Flow Utilities", () => {
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
 
       // Redirected to home
-      expect((window as any).location.href).toBe("/")
+      expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })
 
     it("should handle empty token parameter gracefully", () => {
-      ;(window as any).location.search = "?token="
+      setTestURL("https://ndx.gov.uk/callback?token=")
 
       handleOAuthCallback()
       // No timer flush needed - direct redirect when empty token
 
       expect(sessionStorage.getItem("isb-jwt")).toBeNull()
-      expect((window as any).location.href).toBe("/")
+      expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })
 
     it("should not cleanup URL if token extraction fails", () => {
-      ;(window as any).location.search = "?other=value"
+      setTestURL("https://ndx.gov.uk/callback?other=value")
 
       handleOAuthCallback()
 
       // replaceState should not be called if token extraction fails
-      expect(window.history.replaceState).not.toHaveBeenCalled()
+      expect(replaceStateSpy).not.toHaveBeenCalled()
     })
 
     it("should preserve return URL with query parameters", () => {
@@ -477,7 +452,7 @@ describe("OAuth Flow Utilities", () => {
       handleOAuthCallback()
       jest.runAllTimers() // Flush the setTimeout redirect
 
-      expect((window as any).location.href).toBe("https://ndx.gov.uk/catalogue?tag=aws&sort=name")
+      expect(hrefSpy?.getRedirectUrl()).toBe("https://ndx.gov.uk/catalogue?tag=aws&sort=name")
     })
 
     it("should preserve return URL with hash fragment", () => {
@@ -486,7 +461,7 @@ describe("OAuth Flow Utilities", () => {
       handleOAuthCallback()
       jest.runAllTimers() // Flush the setTimeout redirect
 
-      expect((window as any).location.href).toBe("https://ndx.gov.uk/product#details")
+      expect(hrefSpy?.getRedirectUrl()).toBe("https://ndx.gov.uk/product#details")
     })
   })
 
@@ -494,25 +469,25 @@ describe("OAuth Flow Utilities", () => {
     const validJWT =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
+    let replaceStateSpy: jest.SpyInstance
+    let hrefSpy: ReturnType<typeof setupLocationHrefSpy>
+
     beforeEach(() => {
       jest.useFakeTimers()
       sessionStorage.clear()
-      delete (window as any).location
-      delete (window as any).history
+      replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
+      hrefSpy = setupLocationHrefSpy()
     })
 
     afterEach(() => {
       jest.useRealTimers()
+      replaceStateSpy.mockRestore()
+      hrefSpy?.restore()
     })
 
     it("should complete full OAuth flow: sign in → extract → redirect", () => {
       // Step 1: User clicks sign in on catalogue page (Story 5.2)
-      ;(window as any).location = {
-        pathname: "/catalogue",
-        href: "https://ndx.gov.uk/catalogue",
-        search: "",
-        origin: "https://ndx.gov.uk",
-      }
+      setTestURL("https://ndx.gov.uk/catalogue")
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/catalogue")
 
@@ -520,15 +495,7 @@ describe("OAuth Flow Utilities", () => {
       // ...
 
       // Step 3: OAuth callback returns with token (Story 5.3)
-      ;(window as any).location = {
-        pathname: "/callback",
-        href: "",
-        search: `?token=${validJWT}`,
-        origin: "https://ndx.gov.uk",
-      }
-      ;(window as any).history = {
-        replaceState: jest.fn(),
-      }
+      setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
 
       handleOAuthCallback()
       jest.runAllTimers() // Flush the setTimeout redirect
@@ -537,30 +504,20 @@ describe("OAuth Flow Utilities", () => {
       // - Token extracted and stored
       expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
       // - URL cleaned up
-      expect(window.history.replaceState).toHaveBeenCalledWith({}, expect.any(String), "/callback")
+      expect(replaceStateSpy).toHaveBeenCalledWith({}, expect.any(String), "/callback")
       // - Return URL cleared
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
       // - Redirected back to original page
-      expect((window as any).location.href).toBe("https://ndx.gov.uk/catalogue")
+      expect(hrefSpy?.getRedirectUrl()).toBe("https://ndx.gov.uk/catalogue")
     })
 
     it("should handle OAuth error flow without token extraction", () => {
       // Step 1: User clicks sign in
-      ;(window as any).location = {
-        pathname: "/try",
-        href: "https://ndx.gov.uk/try",
-        search: "",
-        origin: "https://ndx.gov.uk",
-      }
+      setTestURL("https://ndx.gov.uk/try")
       storeReturnURL()
 
       // Step 2: OAuth error occurs (user cancels)
-      ;(window as any).location = {
-        pathname: "/callback",
-        href: "",
-        origin: "https://ndx.gov.uk",
-        search: "?error=access_denied",
-      }
+      setTestURL("https://ndx.gov.uk/callback?error=access_denied")
 
       // Step 3: Check for error (handled by parseOAuthError in callback page)
       const error = parseOAuthError()
@@ -576,21 +533,14 @@ describe("OAuth Flow Utilities", () => {
       sessionStorage.setItem("auth-return-to", "https://ndx.gov.uk/catalogue")
 
       // Step 2: Callback URL has no token and no error (unexpected state)
-      ;(window as any).location = {
-        pathname: "/callback",
-        href: "",
-        search: "",
-      }
-      ;(window as any).history = {
-        replaceState: jest.fn(),
-      }
+      setTestURL("https://ndx.gov.uk/callback")
 
       handleOAuthCallback()
 
       // Should redirect to home page and clear return URL
       expect(sessionStorage.getItem("isb-jwt")).toBeNull()
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
-      expect((window as any).location.href).toBe("/")
+      expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })
   })
 })

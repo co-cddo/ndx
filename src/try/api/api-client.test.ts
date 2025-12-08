@@ -6,8 +6,6 @@
  *
  * Tests the centralized API client's authentication header injection behavior
  * and authentication status checking functionality.
- *
- * @jest-environment jsdom
  */
 
 import { callISBAPI, checkAuthStatus, _internal, type UserData, type AuthStatusResult } from "./api-client"
@@ -509,6 +507,14 @@ describe("API Client - checkAuthStatus", () => {
   })
 })
 
+// Declare the global function exposed by our custom jsdom environment (jsdom-env.js)
+declare global {
+  function setupLocationHrefSpy(): {
+    getRedirectUrl: () => string
+    restore: () => void
+  } | null
+}
+
 /**
  * Story 5.8: 401 Unauthorized Response Handling
  */
@@ -516,8 +522,9 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
   const TEST_TOKEN =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.test"
 
-  // Track redirect URL
-  let redirectUrl = ""
+  // Track redirect URL - jsdom v27+ (Jest 30) compatible approach
+  // We use the custom jsdom environment's setupLocationHrefSpy helper
+  let locationSpy: ReturnType<typeof setupLocationHrefSpy>
 
   beforeEach(() => {
     mockFetch.mockReset()
@@ -525,38 +532,12 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
     sessionStorage.clear()
     sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
-    // Mock window.location for jsdom v27+ (Jest 30)
-    // Use Object.defineProperty on globalThis to bypass jsdom's location setter interception
-    redirectUrl = ""
-    const mockLocation = {
-      href: "",
-      assign: jest.fn(),
-      replace: jest.fn(),
-      reload: jest.fn(),
-      origin: "http://localhost",
-      protocol: "http:",
-      host: "localhost",
-      hostname: "localhost",
-      port: "",
-      pathname: "/",
-      search: "",
-      hash: "",
-      ancestorOrigins: {} as DOMStringList,
-      toString: () => redirectUrl || "http://localhost/",
-    }
-    Object.defineProperty(mockLocation, "href", {
-      get: () => redirectUrl,
-      set: (url: string) => { redirectUrl = url },
-      configurable: true,
-    })
-    Object.defineProperty(globalThis, "location", {
-      value: mockLocation,
-      writable: true,
-      configurable: true,
-    })
+    // Set up location href spy using our custom jsdom environment helper
+    locationSpy = setupLocationHrefSpy()
   })
 
   afterEach(() => {
+    locationSpy?.restore()
     jest.restoreAllMocks()
   })
 
@@ -598,7 +579,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       }
 
       // Assert: Should redirect to OAuth
-      expect(redirectUrl).toBe(_internal.OAUTH_LOGIN_URL)
+      expect(locationSpy?.getRedirectUrl()).toBe(_internal.OAUTH_LOGIN_URL)
     })
 
     it("should redirect without user action required", async () => {
@@ -613,7 +594,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       }
 
       // Assert: Redirect happens automatically
-      expect(redirectUrl).toBe("/api/auth/login")
+      expect(locationSpy?.getRedirectUrl()).toBe("/api/auth/login")
     })
   })
 
@@ -638,7 +619,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       // Token is cleared
       expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
       // Redirect happened
-      expect(redirectUrl).toBe("/api/auth/login")
+      expect(locationSpy?.getRedirectUrl()).toBe("/api/auth/login")
       // The implementation clears before redirect (verified by code review)
     })
 
@@ -655,7 +636,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
 
       // Assert: Token cleared before redirect
       expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
-      expect(redirectUrl).toBe("/api/auth/login")
+      expect(locationSpy?.getRedirectUrl()).toBe("/api/auth/login")
     })
   })
 
@@ -683,7 +664,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
 
       // Assert: Returns response without redirect
       expect(response).toBe(errorResponse)
-      expect(redirectUrl).toBe("") // No redirect
+      expect(locationSpy?.getRedirectUrl()).toBe("") // No redirect
     })
 
     it("should work with skipAuthRedirect option", async () => {
@@ -695,7 +676,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
 
       // Assert: Should NOT redirect, should return response
       expect(response.status).toBe(401)
-      expect(redirectUrl).toBe("") // No redirect
+      expect(locationSpy?.getRedirectUrl()).toBe("") // No redirect
       expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN) // Token not cleared
     })
   })
@@ -710,7 +691,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
 
       // Assert: Returns false but NO redirect
       expect(result.authenticated).toBe(false)
-      expect(redirectUrl).toBe("") // No redirect
+      expect(locationSpy?.getRedirectUrl()).toBe("") // No redirect
     })
 
     it("should NOT clear token on checkAuthStatus 401", async () => {

@@ -1,6 +1,6 @@
 export default {
   preset: "ts-jest",
-  testEnvironment: "jsdom",
+  testEnvironment: "<rootDir>/src/__mocks__/jsdom-env.js",
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.ts", "**/*.test.ts"],
   moduleFileExtensions: ["ts", "js"],

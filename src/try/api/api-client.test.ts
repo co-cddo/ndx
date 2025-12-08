@@ -525,22 +525,33 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
     sessionStorage.clear()
     sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
-    // Mock window.location - delete first then assign (jsdom v27+ compatible)
+    // Mock window.location for jsdom v27+ (Jest 30)
+    // Use Object.defineProperty on globalThis to bypass jsdom's location setter interception
     redirectUrl = ""
-    const originalLocation = window.location
-    // @ts-expect-error - Intentionally deleting location for testing
-    delete window.location
-    window.location = {
-      ...originalLocation,
+    const mockLocation = {
       href: "",
       assign: jest.fn(),
       replace: jest.fn(),
-    } as unknown as Location
-    Object.defineProperty(window.location, "href", {
-      set: (url: string) => {
-        redirectUrl = url
-      },
+      reload: jest.fn(),
+      origin: "http://localhost",
+      protocol: "http:",
+      host: "localhost",
+      hostname: "localhost",
+      port: "",
+      pathname: "/",
+      search: "",
+      hash: "",
+      ancestorOrigins: {} as DOMStringList,
+      toString: () => redirectUrl || "http://localhost/",
+    }
+    Object.defineProperty(mockLocation, "href", {
       get: () => redirectUrl,
+      set: (url: string) => { redirectUrl = url },
+      configurable: true,
+    })
+    Object.defineProperty(globalThis, "location", {
+      value: mockLocation,
+      writable: true,
       configurable: true,
     })
   })

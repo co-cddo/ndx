@@ -21,16 +21,29 @@ describe("OAuth Flow Utilities", () => {
     // Clear sessionStorage before each test
     sessionStorage.clear()
 
-    // Reset window.location mock for tests
-    // TypeScript workaround: delete and reassign location
-    // IMPORTANT: Include 'origin' for sanitizeReturnUrl validation
-    delete (window as any).location
-    ;(window as any).location = {
+    // Reset window.location mock for tests (jsdom v27+ / Jest 30 compatible)
+    // Use Object.defineProperty on globalThis to bypass jsdom's location setter interception
+    const mockLocation = {
       pathname: "/some-page",
       href: "https://ndx.gov.uk/some-page",
       search: "",
       origin: "https://ndx.gov.uk",
+      protocol: "https:",
+      host: "ndx.gov.uk",
+      hostname: "ndx.gov.uk",
+      port: "",
+      hash: "",
+      assign: jest.fn(),
+      replace: jest.fn(),
+      reload: jest.fn(),
+      ancestorOrigins: {} as DOMStringList,
+      toString: () => "https://ndx.gov.uk/some-page",
     }
+    Object.defineProperty(globalThis, "location", {
+      value: mockLocation,
+      writable: true,
+      configurable: true,
+    })
   })
 
   afterEach(() => {

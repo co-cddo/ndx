@@ -45,7 +45,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^16.1.5",
     "mermaid-isomorphic": "^3.0.4",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.4",
     "prettier-plugin-sh": "^0.18.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"

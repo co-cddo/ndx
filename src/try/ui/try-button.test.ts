@@ -5,7 +5,7 @@
  * Story 6.6: AUP modal integration
  * Story 6.9: Lease request handling
  *
- * @jest-environment jsdom
+ * Uses jsdomReconfigure to properly mock window.location in jsdom v27+ (Jest 30).
  */
 
 import { initTryButton } from "./try-button"
@@ -45,9 +45,27 @@ const mockCloseAupModal = closeAupModal as jest.MockedFunction<typeof closeAupMo
 const mockCreateLease = createLease as jest.MockedFunction<typeof createLease>
 const mockShowError = aupModal.showError as jest.MockedFunction<typeof aupModal.showError>
 
+// Declare the global functions exposed by our custom jsdom environment (jsdom-env.js)
+declare global {
+  function jsdomReconfigure(options: { url?: string }): void
+  function setupLocationHrefSpy(): {
+    getRedirectUrl: () => string
+    restore: () => void
+  } | null
+}
+
+// Helper to set URL in jsdom v27+ (Jest 30) using reconfigure
+function setTestURL(url: string): void {
+  if (typeof jsdomReconfigure === "function") {
+    jsdomReconfigure({ url })
+  }
+}
+
 describe("Try Button Handler", () => {
   const TEST_TRY_ID = "550e8400-e29b-41d4-a716-446655440000"
-  const originalLocation = window.location
+
+  // Track redirect URL via location spy
+  let locationSpy: ReturnType<typeof setupLocationHrefSpy>
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -63,22 +81,25 @@ describe("Try Button Handler", () => {
       writable: true,
     })
 
-    // Mock window.location
-    delete (window as any).location
-    window.location = {
-      ...originalLocation,
-      href: "https://ndx.gov.uk/catalogue/product/123",
-      assign: jest.fn(),
-    } as any
+    // Set URL using jsdom v27+ compatible method
+    setTestURL("https://ndx.gov.uk/catalogue/product/123")
+
+    // Set up location href spy to capture redirects
+    locationSpy = setupLocationHrefSpy()
 
     // Default to authenticated
     mockAuthState.isAuthenticated.mockReturnValue(true)
   })
 
   afterEach(() => {
-    ;(window as any).location = originalLocation
+    locationSpy?.restore()
     document.body.innerHTML = ""
   })
+
+  // Helper to get redirect URL from spy
+  function getRedirectUrl(): string {
+    return locationSpy?.getRedirectUrl() || ""
+  }
 
   describe("initTryButton", () => {
     it("should find and attach handlers to try buttons", () => {
@@ -145,7 +166,7 @@ describe("Try Button Handler", () => {
       const button = document.querySelector("button") as HTMLButtonElement
       button.click()
 
-      expect(window.location.href).toBe("/api/auth/login")
+      expect(getRedirectUrl()).toBe("/api/auth/login")
     })
 
     it("should not open AUP modal", () => {
@@ -187,7 +208,7 @@ describe("Try Button Handler", () => {
       const button = document.querySelector("button") as HTMLButtonElement
       button.click()
 
-      expect(window.location.href).not.toBe("/api/auth/login")
+      expect(getRedirectUrl()).not.toBe("/api/auth/login")
     })
 
     it("should prevent default event action", () => {
@@ -264,7 +285,7 @@ describe("Try Button Handler", () => {
       it("should redirect to /try on success", async () => {
         await acceptCallback(TEST_TRY_ID)
 
-        expect(window.location.href).toBe("/try")
+        expect(getRedirectUrl()).toBe("/try")
       })
     })
 
@@ -293,7 +314,7 @@ describe("Try Button Handler", () => {
       it("should redirect to /try", async () => {
         await acceptCallback(TEST_TRY_ID)
 
-        expect(window.location.href).toBe("/try")
+        expect(getRedirectUrl()).toBe("/try")
       })
     })
 
@@ -315,7 +336,7 @@ describe("Try Button Handler", () => {
       it("should redirect to login", async () => {
         await acceptCallback(TEST_TRY_ID)
 
-        expect(window.location.href).toBe("/api/auth/login")
+        expect(getRedirectUrl()).toBe("/api/auth/login")
       })
     })
 

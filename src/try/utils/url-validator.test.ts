@@ -1,30 +1,28 @@
 /**
- * @jest-environment jsdom
+ * URL Validator Tests
+ *
+ * Tests the URL validation and sanitization functions used for OAuth return URLs.
+ * Uses jsdomReconfigure to properly mock window.location in jsdom v27+ (Jest 30).
  */
 
 import { isValidReturnUrl, sanitizeReturnUrl } from "./url-validator"
 
+// Declare the global function exposed by our custom jsdom environment (jsdom-env.js)
+declare global {
+  function jsdomReconfigure(options: { url?: string }): void
+}
+
+// Helper to set URL in jsdom v27+ (Jest 30) using reconfigure
+function setTestURL(url: string): void {
+  if (typeof jsdomReconfigure === "function") {
+    jsdomReconfigure({ url })
+  }
+}
+
 describe("url-validator", () => {
-  // Store original window.location
-  const originalLocation = window.location
-
   beforeAll(() => {
-    // Mock window.location for consistent origin testing
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: {
-        origin: "https://ndx.gov.uk",
-        href: "https://ndx.gov.uk/try",
-      },
-    })
-  })
-
-  afterAll(() => {
-    // Restore original location
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: originalLocation,
-    })
+    // Set consistent URL for origin testing using jsdom's reconfigure
+    setTestURL("https://ndx.gov.uk/try")
   })
 
   describe("isValidReturnUrl", () => {

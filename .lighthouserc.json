@@ -66,7 +66,14 @@
         "critical-request-chains": "off",
         "meta-description": "off",
         "server-response-time": "off",
-        "modern-image-formats": "off"
+        "modern-image-formats": "off",
+
+        "cls-culprits-insight": "off",
+        "document-latency-insight": "off",
+        "image-delivery-insight": "off",
+        "network-dependency-tree-insight": "off",
+        "cache-insight": "off",
+        "render-blocking-insight": "off"
       }
     },
     "upload": {

@@ -3,51 +3,68 @@ name: Frontend Tests
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "infra/**" # Infra tests moved to infra.yaml
-      - "docs/**"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "infra/**"
-      - "docs/**"
 
 permissions: read-all
 
 jobs:
-  # Frontend tests
+  # Frontend tests (always runs to produce a check, but skips work if no frontend changes)
   test:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
+      - name: Check for frontend changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - '!infra/**'
+              - '!docs/**'
+              - '.github/workflows/test.yml'
+
+      - name: Skip notification
+        if: steps.changes.outputs.frontend != 'true'
+        run: |
+          echo "::notice::No frontend files changed. Tests skipped but check passed."
+          echo "Frontend tests are only run when files outside infra/** and docs/** are modified."
+
       - name: Enable Corepack
+        if: steps.changes.outputs.frontend == 'true'
         run: corepack enable
 
       - name: Setup Node.js
+        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
           node-version: "20.17.0"
           cache: "yarn"
 
       - name: Install dependencies
+        if: steps.changes.outputs.frontend == 'true'
         run: yarn install --immutable
 
       - name: Install Playwright Browsers
+        if: steps.changes.outputs.frontend == 'true'
         run: npx playwright install --with-deps
 
       - name: Install mitmproxy
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y mitmproxy
 
       - name: Start mitmproxy
+        if: steps.changes.outputs.frontend == 'true'
         run: |
           mitmproxy --listen-port 8081 -s scripts/mitmproxy-addon.py &
           sleep 5
 
       - name: Run unit tests
+        if: steps.changes.outputs.frontend == 'true'
         run: yarn test
 
       # Temporarily disabled - proxy configuration issues in CI

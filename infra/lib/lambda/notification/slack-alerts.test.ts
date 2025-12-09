@@ -799,6 +799,172 @@ describe("Slack Alerts Processor", () => {
   })
 
   // ===========================================================================
+  // User Email Extraction Tests (when leaseId is string UUID format)
+  // ===========================================================================
+
+  describe("User Email Extraction with string leaseId (current ISB format)", () => {
+    // Test fixtures for string leaseId format (current ISB format)
+    function createLeaseApprovedEventWithStringLeaseId(): ValidatedEvent<{
+      leaseId: string
+      userEmail: string
+      accountId: string
+      approvedAt: string
+      budget: number
+      expiresAt: string
+    }> {
+      return {
+        eventType: "LeaseApproved",
+        eventId: "evt-lease-app-string-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123", // String format (current ISB)
+          userEmail: "requester@example.gov.uk", // Top-level userEmail
+          accountId: "123456789012",
+          approvedAt: "2025-12-03T10:00:00Z",
+          budget: 500,
+          expiresAt: "2025-12-04T10:00:00Z",
+        },
+      }
+    }
+
+    function createLeaseRequestedEventWithStringLeaseId(): ValidatedEvent<{
+      leaseId: string
+      userEmail: string
+      accountId: string
+      requestedAt: string
+      budget: number
+      duration: number
+    }> {
+      return {
+        eventType: "LeaseRequested",
+        eventId: "evt-lease-req-string-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123", // String format (current ISB)
+          userEmail: "requester@example.gov.uk", // Top-level userEmail
+          accountId: "123456789012",
+          requestedAt: "2025-12-03T10:00:00Z",
+          budget: 500,
+          duration: 720,
+        },
+      }
+    }
+
+    function createLeaseDeniedEventWithStringLeaseId(): ValidatedEvent<{
+      leaseId: string
+      userEmail: string
+      deniedAt: string
+      reason: string
+    }> {
+      return {
+        eventType: "LeaseDenied",
+        eventId: "evt-lease-den-string-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123", // String format (current ISB)
+          userEmail: "requester@example.gov.uk", // Top-level userEmail
+          deniedAt: "2025-12-03T10:00:00Z",
+          reason: "Budget exceeds limit",
+        },
+      }
+    }
+
+    function createLeaseTerminatedEventWithStringLeaseId(): ValidatedEvent<{
+      leaseId: string
+      userEmail: string
+      accountId: string
+      terminatedAt: string
+      reason: string
+    }> {
+      return {
+        eventType: "LeaseTerminated",
+        eventId: "evt-lease-term-string-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123", // String format (current ISB)
+          userEmail: "requester@example.gov.uk", // Top-level userEmail
+          accountId: "123456789012",
+          terminatedAt: "2025-12-03T10:00:00Z",
+          reason: "User requested",
+        },
+      }
+    }
+
+    it("LeaseApproved should include User from top-level userEmail when leaseId is string", async () => {
+      const event = createLeaseApprovedEventWithStringLeaseId()
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertType: "LeaseApproved",
+          details: expect.objectContaining({
+            User: "requester@example.gov.uk",
+          }),
+        }),
+      )
+    })
+
+    it("LeaseRequested should include User from top-level userEmail when leaseId is string", async () => {
+      const event = createLeaseRequestedEventWithStringLeaseId()
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertType: "LeaseRequested",
+          details: expect.objectContaining({
+            User: "requester@example.gov.uk",
+          }),
+        }),
+      )
+    })
+
+    it("LeaseDenied should include User from top-level userEmail when leaseId is string", async () => {
+      const event = createLeaseDeniedEventWithStringLeaseId()
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertType: "LeaseDenied",
+          details: expect.objectContaining({
+            User: "requester@example.gov.uk",
+          }),
+        }),
+      )
+    })
+
+    it("LeaseTerminated should include User from top-level userEmail when leaseId is string", async () => {
+      const event = createLeaseTerminatedEventWithStringLeaseId()
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertType: "LeaseTerminated",
+          details: expect.objectContaining({
+            User: "requester@example.gov.uk",
+          }),
+        }),
+      )
+    })
+
+    it("LeaseApproved should use leaseId as Lease ID when leaseId is string", async () => {
+      const event = createLeaseApprovedEventWithStringLeaseId()
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          details: expect.objectContaining({
+            "Lease ID": "lease-uuid-123",
+          }),
+        }),
+      )
+    })
+  })
+
+  // ===========================================================================
   // Error Handling Tests
   // ===========================================================================
 

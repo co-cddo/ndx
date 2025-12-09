@@ -91,9 +91,11 @@ interface AccountDriftDetectedDetail {
 /**
  * LeaseRequested event detail
  * NOTE: leaseId can be string or object depending on ISB version
+ * NOTE: ISB sends userEmail at top level when leaseId is a string (UUID)
  */
 interface LeaseRequestedDetail {
   leaseId: string | { userEmail: string; uuid: string }
+  userEmail?: string
   principalEmail?: string
   accountId?: string
   requestedAt?: string
@@ -111,9 +113,11 @@ interface LeaseRequestedDetail {
 /**
  * LeaseApproved event detail
  * NOTE: leaseId can be string or object depending on ISB version
+ * NOTE: ISB sends userEmail at top level when leaseId is a string (UUID)
  */
 interface LeaseApprovedDetail {
   leaseId: string | { userEmail: string; uuid: string }
+  userEmail?: string
   principalEmail?: string
   accountId?: string
   approvedAt?: string
@@ -130,9 +134,11 @@ interface LeaseApprovedDetail {
 /**
  * LeaseDenied event detail
  * NOTE: leaseId can be string or object depending on ISB version
+ * NOTE: ISB sends userEmail at top level when leaseId is a string (UUID)
  */
 interface LeaseDeniedDetail {
   leaseId: string | { userEmail: string; uuid: string }
+  userEmail?: string
   principalEmail?: string
   deniedAt?: string
   reason?: string
@@ -145,9 +151,11 @@ interface LeaseDeniedDetail {
 /**
  * LeaseTerminated event detail
  * NOTE: leaseId can be string or object depending on ISB version
+ * NOTE: ISB sends userEmail at top level when leaseId is a string (UUID)
  */
 interface LeaseTerminatedDetail {
   leaseId: string | { userEmail: string; uuid: string }
+  userEmail?: string
   principalEmail?: string
   accountId?: string
   terminatedAt?: string
@@ -425,7 +433,9 @@ function formatLeaseRequestedAlert(event: ValidatedEvent<LeaseRequestedDetail>):
   const budget = detail.budget || detail.budgetLimit
   const duration = detail.duration || detail.leaseDurationInHours
   const requestedAt = detail.requestedAt || detail.requestTime
-  const userEmail = extractUserEmail(detail.leaseId)
+  // ISB sends userEmail at top level when leaseId is a string (UUID),
+  // or nested in leaseId object for legacy format
+  const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
   const templateName = detail.leaseTemplateName || detail.templateName
   const templateId = detail.leaseTemplateId || detail.templateId
 
@@ -462,7 +472,9 @@ function formatLeaseApprovedAlert(event: ValidatedEvent<LeaseApprovedDetail>): S
   const detail = event.detail
   const budget = detail.budget || detail.maxSpend
   const expires = detail.expiresAt || detail.expirationDate
-  const userEmail = extractUserEmail(detail.leaseId)
+  // ISB sends userEmail at top level when leaseId is a string (UUID),
+  // or nested in leaseId object for legacy format
+  const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
   const templateName = detail.leaseTemplateName || detail.templateName
   const templateId = detail.leaseTemplateId || detail.templateId
 
@@ -497,7 +509,9 @@ function formatLeaseApprovedAlert(event: ValidatedEvent<LeaseApprovedDetail>): S
 function formatLeaseDeniedAlert(event: ValidatedEvent<LeaseDeniedDetail>): SlackSendParams {
   const template = SLACK_TEMPLATES.LeaseDenied
   const detail = event.detail
-  const userEmail = extractUserEmail(detail.leaseId)
+  // ISB sends userEmail at top level when leaseId is a string (UUID),
+  // or nested in leaseId object for legacy format
+  const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
   const templateName = detail.leaseTemplateName || detail.templateName
   const templateId = detail.leaseTemplateId || detail.templateId
 
@@ -531,7 +545,9 @@ function formatLeaseTerminatedAlert(event: ValidatedEvent<LeaseTerminatedDetail>
   const template = SLACK_TEMPLATES.LeaseTerminated
   const detail = event.detail
   const reason = typeof detail.reason === "object" ? detail.reason.type : detail.reason || "User or admin initiated"
-  const userEmail = extractUserEmail(detail.leaseId)
+  // ISB sends userEmail at top level when leaseId is a string (UUID),
+  // or nested in leaseId object for legacy format
+  const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
   const templateName = detail.leaseTemplateName || detail.templateName
   const templateId = detail.leaseTemplateId || detail.templateId
 

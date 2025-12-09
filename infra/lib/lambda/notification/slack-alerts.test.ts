@@ -965,6 +965,128 @@ describe("Slack Alerts Processor", () => {
   })
 
   // ===========================================================================
+  // Template Name Extraction Tests (originalLeaseTemplateName from ISB DynamoDB)
+  // ===========================================================================
+
+  describe("Template Name Extraction with originalLeaseTemplateName (ISB DynamoDB format)", () => {
+    it("LeaseApproved should use originalLeaseTemplateName when leaseTemplateName is not present", async () => {
+      const event: ValidatedEvent<{
+        leaseId: string
+        userEmail: string
+        accountId: string
+        approvedAt: string
+        budget: number
+        expiresAt: string
+        originalLeaseTemplateName: string
+        originalLeaseTemplateUuid: string
+      }> = {
+        eventType: "LeaseApproved",
+        eventId: "evt-lease-app-orig-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123",
+          userEmail: "requester@example.gov.uk",
+          accountId: "123456789012",
+          approvedAt: "2025-12-03T10:00:00Z",
+          budget: 500,
+          expiresAt: "2025-12-04T10:00:00Z",
+          originalLeaseTemplateName: "text-to-speech", // ISB DynamoDB field name
+          originalLeaseTemplateUuid: "template-uuid-456",
+        },
+      }
+
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertType: "LeaseApproved",
+          details: expect.objectContaining({
+            Template: "text-to-speech",
+          }),
+          template: "text-to-speech",
+          templateId: "template-uuid-456",
+        }),
+      )
+    })
+
+    it("LeaseRequested should use originalLeaseTemplateName when leaseTemplateName is not present", async () => {
+      const event: ValidatedEvent<{
+        leaseId: string
+        userEmail: string
+        accountId: string
+        requestedAt: string
+        budget: number
+        duration: number
+        originalLeaseTemplateName: string
+      }> = {
+        eventType: "LeaseRequested",
+        eventId: "evt-lease-req-orig-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123",
+          userEmail: "requester@example.gov.uk",
+          accountId: "123456789012",
+          requestedAt: "2025-12-03T10:00:00Z",
+          budget: 500,
+          duration: 720,
+          originalLeaseTemplateName: "data-analytics-sandbox",
+        },
+      }
+
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertType: "LeaseRequested",
+          details: expect.objectContaining({
+            Template: "data-analytics-sandbox",
+          }),
+        }),
+      )
+    })
+
+    it("should prefer leaseTemplateName over originalLeaseTemplateName when both present", async () => {
+      const event: ValidatedEvent<{
+        leaseId: string
+        userEmail: string
+        accountId: string
+        approvedAt: string
+        budget: number
+        expiresAt: string
+        leaseTemplateName: string
+        originalLeaseTemplateName: string
+      }> = {
+        eventType: "LeaseApproved",
+        eventId: "evt-lease-app-both-123",
+        source: "innovation-sandbox",
+        timestamp: "2025-12-03T10:00:00Z",
+        detail: {
+          leaseId: "lease-uuid-123",
+          userEmail: "requester@example.gov.uk",
+          accountId: "123456789012",
+          approvedAt: "2025-12-03T10:00:00Z",
+          budget: 500,
+          expiresAt: "2025-12-04T10:00:00Z",
+          leaseTemplateName: "preferred-name", // Should take precedence
+          originalLeaseTemplateName: "fallback-name",
+        },
+      }
+
+      await processSlackAlert(event)
+
+      expect(mockSendFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          details: expect.objectContaining({
+            Template: "preferred-name",
+          }),
+        }),
+      )
+    })
+  })
+
+  // ===========================================================================
   // Error Handling Tests
   // ===========================================================================
 

@@ -106,8 +106,10 @@ interface LeaseRequestedDetail {
   leaseDurationInHours?: number
   leaseTemplateName?: string
   templateName?: string
+  originalLeaseTemplateName?: string // ISB DynamoDB field name
   leaseTemplateId?: string
   templateId?: string
+  originalLeaseTemplateUuid?: string // ISB DynamoDB field name
 }
 
 /**
@@ -127,8 +129,10 @@ interface LeaseApprovedDetail {
   expirationDate?: string
   leaseTemplateName?: string
   templateName?: string
+  originalLeaseTemplateName?: string // ISB DynamoDB field name
   leaseTemplateId?: string
   templateId?: string
+  originalLeaseTemplateUuid?: string // ISB DynamoDB field name
 }
 
 /**
@@ -144,8 +148,10 @@ interface LeaseDeniedDetail {
   reason?: string
   leaseTemplateName?: string
   templateName?: string
+  originalLeaseTemplateName?: string // ISB DynamoDB field name
   leaseTemplateId?: string
   templateId?: string
+  originalLeaseTemplateUuid?: string // ISB DynamoDB field name
 }
 
 /**
@@ -162,8 +168,10 @@ interface LeaseTerminatedDetail {
   reason?: string | { type: string }
   leaseTemplateName?: string
   templateName?: string
+  originalLeaseTemplateName?: string // ISB DynamoDB field name
   leaseTemplateId?: string
   templateId?: string
+  originalLeaseTemplateUuid?: string // ISB DynamoDB field name
 }
 
 /**
@@ -436,8 +444,9 @@ function formatLeaseRequestedAlert(event: ValidatedEvent<LeaseRequestedDetail>):
   // ISB sends userEmail at top level when leaseId is a string (UUID),
   // or nested in leaseId object for legacy format
   const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
-  const templateName = detail.leaseTemplateName || detail.templateName
-  const templateId = detail.leaseTemplateId || detail.templateId
+  // ISB uses originalLeaseTemplateName in DynamoDB, but may send as leaseTemplateName or templateName
+  const templateName = detail.leaseTemplateName || detail.templateName || detail.originalLeaseTemplateName
+  const templateId = detail.leaseTemplateId || detail.templateId || detail.originalLeaseTemplateUuid
 
   return {
     alertType: "LeaseRequested",
@@ -475,8 +484,9 @@ function formatLeaseApprovedAlert(event: ValidatedEvent<LeaseApprovedDetail>): S
   // ISB sends userEmail at top level when leaseId is a string (UUID),
   // or nested in leaseId object for legacy format
   const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
-  const templateName = detail.leaseTemplateName || detail.templateName
-  const templateId = detail.leaseTemplateId || detail.templateId
+  // ISB uses originalLeaseTemplateName in DynamoDB, but may send as leaseTemplateName or templateName
+  const templateName = detail.leaseTemplateName || detail.templateName || detail.originalLeaseTemplateName
+  const templateId = detail.leaseTemplateId || detail.templateId || detail.originalLeaseTemplateUuid
 
   return {
     alertType: "LeaseApproved",
@@ -512,8 +522,9 @@ function formatLeaseDeniedAlert(event: ValidatedEvent<LeaseDeniedDetail>): Slack
   // ISB sends userEmail at top level when leaseId is a string (UUID),
   // or nested in leaseId object for legacy format
   const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
-  const templateName = detail.leaseTemplateName || detail.templateName
-  const templateId = detail.leaseTemplateId || detail.templateId
+  // ISB uses originalLeaseTemplateName in DynamoDB, but may send as leaseTemplateName or templateName
+  const templateName = detail.leaseTemplateName || detail.templateName || detail.originalLeaseTemplateName
+  const templateId = detail.leaseTemplateId || detail.templateId || detail.originalLeaseTemplateUuid
 
   return {
     alertType: "LeaseDenied",
@@ -548,8 +559,9 @@ function formatLeaseTerminatedAlert(event: ValidatedEvent<LeaseTerminatedDetail>
   // ISB sends userEmail at top level when leaseId is a string (UUID),
   // or nested in leaseId object for legacy format
   const userEmail = extractUserEmail(detail.leaseId) || detail.userEmail
-  const templateName = detail.leaseTemplateName || detail.templateName
-  const templateId = detail.leaseTemplateId || detail.templateId
+  // ISB uses originalLeaseTemplateName in DynamoDB, but may send as leaseTemplateName or templateName
+  const templateName = detail.leaseTemplateName || detail.templateName || detail.originalLeaseTemplateName
+  const templateId = detail.leaseTemplateId || detail.templateId || detail.originalLeaseTemplateUuid
 
   return {
     alertType: "LeaseTerminated",

@@ -3,6 +3,7 @@
  *
  * Story 7.5: Expiry date formatting (relative and absolute)
  * Story 7.8: Remaining lease duration display
+ * Story XX.X: Lease duration formatting for try buttons
  *
  * @module date-utils
  */
@@ -124,4 +125,41 @@ export function formatExpiry(expiresAt: Date | string): string {
   const relative = formatRelativeTime(expiresAt)
   const absolute = formatAbsoluteDate(expiresAt)
   return `${relative} (${absolute})`
+}
+
+/**
+ * Format lease duration with smart unit selection.
+ *
+ * Selects the most appropriate unit based on the duration:
+ * - Over 72 hours: show in days (e.g., "4 Days")
+ * - 90 minutes to 72 hours: show in hours (e.g., "24 Hours")
+ * - Under 90 minutes: show in minutes (e.g., "45 Minutes")
+ *
+ * @param hours - Duration in hours (can be fractional)
+ * @returns Formatted duration string with capitalized unit
+ *
+ * @example
+ * formatLeaseDuration(96)   // "4 Days"
+ * formatLeaseDuration(24)   // "24 Hours"
+ * formatLeaseDuration(1)    // "60 Minutes"
+ * formatLeaseDuration(0.75) // "45 Minutes"
+ */
+export function formatLeaseDuration(hours: number): string {
+  const totalMinutes = hours * 60
+
+  // Over 72 hours: show in days
+  if (hours > 72) {
+    const days = Math.round(hours / 24)
+    return `${days} ${days === 1 ? "Day" : "Days"}`
+  }
+
+  // 90 minutes to 72 hours: show in hours
+  if (totalMinutes >= 90) {
+    const roundedHours = Math.round(hours)
+    return `${roundedHours} ${roundedHours === 1 ? "Hour" : "Hours"}`
+  }
+
+  // Under 90 minutes: show in minutes
+  const minutes = Math.round(totalMinutes)
+  return `${minutes} ${minutes === 1 ? "Minute" : "Minutes"}`
 }

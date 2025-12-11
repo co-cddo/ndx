@@ -7,7 +7,14 @@
  * @jest-environment jsdom
  */
 
-import { formatRelativeTime, formatAbsoluteDate, formatRemainingDuration, isExpired, formatExpiry } from "./date-utils"
+import {
+  formatRelativeTime,
+  formatAbsoluteDate,
+  formatRemainingDuration,
+  isExpired,
+  formatExpiry,
+  formatLeaseDuration,
+} from "./date-utils"
 
 describe("Date Utilities", () => {
   // Fixed time for consistent testing
@@ -167,6 +174,85 @@ describe("Date Utilities", () => {
 
       expect(result).toMatch(/in 1 hour/i)
       expect(result).toMatch(/\(/)
+    })
+  })
+
+  describe("formatLeaseDuration", () => {
+    // Over 72 hours: show in days
+    it("should format 96 hours as 4 Days", () => {
+      expect(formatLeaseDuration(96)).toBe("4 Days")
+    })
+
+    it("should format 73 hours as 3 Days", () => {
+      expect(formatLeaseDuration(73)).toBe("3 Days")
+    })
+
+    it("should format 168 hours as 7 Days", () => {
+      expect(formatLeaseDuration(168)).toBe("7 Days")
+    })
+
+    it("should round to nearest day for large values", () => {
+      expect(formatLeaseDuration(100)).toBe("4 Days") // 100/24 = 4.17 rounds to 4
+    })
+
+    it("should use singular day for 24-hour result", () => {
+      expect(formatLeaseDuration(84)).toBe("4 Days") // 84/24 = 3.5 rounds to 4
+    })
+
+    // 90 minutes to 72 hours: show in hours
+    it("should format 72 hours as 72 Hours (boundary)", () => {
+      expect(formatLeaseDuration(72)).toBe("72 Hours")
+    })
+
+    it("should format 24 hours as 24 Hours", () => {
+      expect(formatLeaseDuration(24)).toBe("24 Hours")
+    })
+
+    it("should format 2 hours as 2 Hours", () => {
+      expect(formatLeaseDuration(2)).toBe("2 Hours")
+    })
+
+    it("should format 1.5 hours as 2 Hours (rounded)", () => {
+      expect(formatLeaseDuration(1.5)).toBe("2 Hours")
+    })
+
+    it("should show values just under 90 minutes as minutes, not hours", () => {
+      // 1.4 hours = 84 minutes, which is under the 90-minute threshold
+      expect(formatLeaseDuration(1.4)).toBe("84 Minutes")
+    })
+
+    // Under 90 minutes: show in minutes
+    it("should format 1 hour as 60 Minutes", () => {
+      expect(formatLeaseDuration(1)).toBe("60 Minutes")
+    })
+
+    it("should format 0.75 hours as 45 Minutes", () => {
+      expect(formatLeaseDuration(0.75)).toBe("45 Minutes")
+    })
+
+    it("should format 0.5 hours as 30 Minutes", () => {
+      expect(formatLeaseDuration(0.5)).toBe("30 Minutes")
+    })
+
+    it("should format 0.25 hours as 15 Minutes", () => {
+      expect(formatLeaseDuration(0.25)).toBe("15 Minutes")
+    })
+
+    it("should use singular minute when appropriate", () => {
+      expect(formatLeaseDuration(1 / 60)).toBe("1 Minute") // 1 minute
+    })
+
+    // Edge cases
+    it("should handle 0 hours as 0 Minutes", () => {
+      expect(formatLeaseDuration(0)).toBe("0 Minutes")
+    })
+
+    it("should handle boundary at 90 minutes (1.5 hours)", () => {
+      expect(formatLeaseDuration(1.5)).toBe("2 Hours") // 90 mins = 1.5h, rounds to 2 hours
+    })
+
+    it("should handle just under 90 minutes", () => {
+      expect(formatLeaseDuration(1.49)).toBe("89 Minutes") // 89.4 mins rounds to 89
     })
   })
 })

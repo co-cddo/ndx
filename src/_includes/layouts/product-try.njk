@@ -15,9 +15,11 @@
   {# Story 6.4: Add Try button for tryable products #}
   {# Note: We only use data-try-id, not data-module="try-button" because #}
   {# govukButton already sets data-module="govuk-button" and HTML ignores duplicates #}
+  {# Button text is updated dynamically by try-button-text.ts based on auth state #}
+  {# and actual lease template duration from API #}
   <div class="govuk-!-margin-bottom-6">
     {{ govukButton({
-      text: "Try this now for 24 hours",
+      text: "Try this now",
       isStartButton: true,
       attributes: {
         "data-try-id": try_id

@@ -1,7 +1,7 @@
 /**
  * Try Button Handler
  *
- * Handles click events on "Try this now for 24 hours" buttons.
+ * Handles click events on "Try this now" buttons.
  * Implements authentication check before proceeding to AUP modal.
  *
  * Story 6.5: Authentication check before showing AUP modal

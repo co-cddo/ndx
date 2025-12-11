@@ -13,6 +13,7 @@
 import { initAuthNav } from "./ui/auth-nav"
 import { initTryPage } from "./ui/try-page"
 import { initTryButton } from "./ui/try-button"
+import { initTryButtonText } from "./ui/try-button-text"
 import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
 
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
@@ -79,4 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Story 6.5: Initialize try button click handlers (auth check before AUP modal)
   initTryButton()
+
+  // Dynamic try button text based on auth state and lease template duration
+  initTryButtonText()
 })

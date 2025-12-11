@@ -244,12 +244,12 @@ function renderFirstTimeGuidance(): string {
     <div class="govuk-inset-text govuk-!-margin-top-6">
       <h3 class="govuk-heading-s">New to Try Before You Buy?</h3>
       <p class="govuk-body">
-        With Innovation Sandbox, you can evaluate AWS products in a secure sandbox environment
-        for 24 hours with a $50 budget. Here's how to get started:
+        With Innovation Sandbox, you can evaluate AWS products in a secure sandbox environment.
+        Here's how to get started:
       </p>
       <ol class="govuk-list govuk-list--number">
         <li>Browse the catalogue for products marked "Try Before You Buy"</li>
-        <li>Click "Try this now for 24 hours" on a product page</li>
+        <li>Click "Try this now" on a product page</li>
         <li>Accept the Acceptable Use Policy</li>
         <li>Your sandbox session will appear here within minutes</li>
       </ol>

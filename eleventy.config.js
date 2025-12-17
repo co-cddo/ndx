@@ -114,10 +114,6 @@ export default function (eleventyConfig) {
       navigation: [
         { text: "Home", href: "/" },
         { text: "About", href: "/About/" },
-        {
-          text: "Learn",
-          href: "/learn",
-        },
         { text: "Catalogue", href: "/catalogue" },
         { text: "Challenges", href: "/challenges" },
         {

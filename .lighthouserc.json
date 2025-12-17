@@ -71,6 +71,7 @@
         "cls-culprits-insight": "off",
         "document-latency-insight": "off",
         "image-delivery-insight": "off",
+        "lcp-discovery-insight": "off",
         "network-dependency-tree-insight": "off",
         "cache-insight": "off",
         "render-blocking-insight": "off"

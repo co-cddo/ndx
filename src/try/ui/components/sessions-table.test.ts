@@ -31,11 +31,6 @@ jest.mock("../../utils/date-utils", () => ({
   formatRemainingDuration: jest.fn(() => "23h 45m remaining"),
 }))
 
-jest.mock("../../utils/currency-utils", () => ({
-  formatBudget: jest.fn((current: number, max: number) => `$${current.toFixed(4)} / $${max.toFixed(2)}`),
-  calculateBudgetPercentage: jest.fn((current: number, max: number) => Math.round((current / max) * 100)),
-}))
-
 describe("Sessions Table Component", () => {
   const mockActiveLease: Lease = {
     leaseId: "lease-123",
@@ -149,11 +144,11 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("Pending")
     })
 
-    it("should render Expired status with grey badge", () => {
+    it("should render Expired status as Completed with grey badge", () => {
       const html = renderSessionsTable([mockExpiredLease])
 
       expect(html).toContain("govuk-tag--grey")
-      expect(html).toContain("Expired")
+      expect(html).toContain("Completed")
     })
 
     it("should render Terminated status with red badge", () => {
@@ -176,13 +171,10 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("in 23 hours")
     })
 
-    it("should render budget with progress bar", () => {
+    it("should render budget amount", () => {
       const html = renderSessionsTable([mockActiveLease])
 
-      expect(html).toContain("$12.3456 / $50.00")
-      expect(html).toContain("<progress")
-      expect(html).toContain('aria-label="Budget usage')
-      expect(html).toContain("sessions-budget-progress")
+      expect(html).toContain("$50.00 budget")
     })
 
     it("should render remaining duration for active leases", () => {
@@ -310,27 +302,12 @@ describe("Sessions Table Component", () => {
       expect(html).toContain('scope="col"')
     })
 
-    it("should have ARIA labels for progress bars", () => {
-      const html = renderSessionsTable([mockActiveLease])
-
-      expect(html).toContain('aria-label="Budget usage')
-    })
-
     it("should have ARIA labels for expiry dates (Story 7.5)", () => {
       const html = renderSessionsTable([mockActiveLease])
 
       // Story 7.5 AC: Screen reader announces expiry clearly (ARIA labels)
       expect(html).toContain('aria-label="Session expires')
       expect(html).toContain('data-label="Expiry"')
-    })
-
-    it("should have ARIA labels for budget display (Story 7.6)", () => {
-      const html = renderSessionsTable([mockActiveLease])
-
-      // Story 7.6 AC: Screen reader announces budget clearly (ARIA labels)
-      expect(html).toContain('aria-label="Budget:')
-      expect(html).toContain("used of")
-      expect(html).toContain('maximum"')
     })
 
     it("should have visually hidden caption for screen readers", () => {
@@ -406,6 +383,76 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("govuk-error-summary")
       expect(html).toContain("govuk-error-summary__title")
       expect(html).toContain("govuk-error-summary__body")
+    })
+  })
+
+  describe("Comments", () => {
+    const mockLeaseWithComments: Lease = {
+      ...mockActiveLease,
+      comments: "Your lease request has been automatically approved.\nScore: 0\nReference: ISB-2025-9839",
+    }
+
+    const mockExpiredLeaseWithComments: Lease = {
+      ...mockExpiredLease,
+      comments: "Your lease request has been approved.\nReference: ISB-2025-1234",
+    }
+
+    it("should render comments for active leases always visible", () => {
+      const html = renderSessionsTable([mockLeaseWithComments])
+
+      expect(html).toContain("sessions-table__comments-row")
+      expect(html).toContain("sessions-table__comments-cell")
+      expect(html).toContain("Your lease request has been automatically approved.")
+      // Should NOT be in a details element for active leases
+      expect(html).not.toMatch(/<details[^>]*>[\s\S]*?Your lease request has been automatically approved/)
+    })
+
+    it("should render comments for non-active leases in collapsible details", () => {
+      const html = renderSessionsTable([mockExpiredLeaseWithComments])
+
+      expect(html).toContain("sessions-table__comments-row")
+      expect(html).toContain("govuk-details")
+      expect(html).toContain("See details")
+      expect(html).toContain("Your lease request has been approved.")
+    })
+
+    it("should convert newlines to <br> in comments", () => {
+      const html = renderSessionsTable([mockLeaseWithComments])
+
+      expect(html).toContain(
+        "Your lease request has been automatically approved.<br>Score: 0<br>Reference: ISB-2025-9839",
+      )
+    })
+
+    it("should escape HTML in comments to prevent XSS", () => {
+      const xssLease: Lease = {
+        ...mockActiveLease,
+        comments: '<script>alert("XSS")</script>',
+      }
+
+      const html = renderSessionsTable([xssLease])
+
+      // Should NOT contain unescaped script tag
+      expect(html).not.toContain('<script>alert("XSS")</script>')
+      // Should contain escaped version
+      expect(html).toContain("&lt;script&gt;")
+    })
+
+    it("should not render comments row when comments are empty", () => {
+      const leaseNoComments: Lease = {
+        ...mockActiveLease,
+        comments: undefined,
+      }
+
+      const html = renderSessionsTable([leaseNoComments])
+
+      expect(html).not.toContain("sessions-table__comments-row")
+    })
+
+    it("should render colspan=6 on comments cell", () => {
+      const html = renderSessionsTable([mockLeaseWithComments])
+
+      expect(html).toContain('colspan="6"')
     })
   })
 })

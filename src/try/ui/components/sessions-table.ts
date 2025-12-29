@@ -6,13 +6,12 @@
  * Story 7.5: Expiry date formatting
  * Story 7.6: Budget display
  * Story 7.7: "Launch AWS Console" button
- * Story 7.8: Remaining duration display
  *
  * @module sessions-table
  */
 
 import { Lease, LeaseStatus, isLeaseActive, getSsoUrl, getPortalUrl } from "../../api/sessions-service"
-import { formatExpiry, formatRemainingDuration } from "../../utils/date-utils"
+import { formatExpiry } from "../../utils/date-utils"
 
 /**
  * Status badge color mapping per Story 7.4.
@@ -84,7 +83,6 @@ function renderSessionRow(lease: Lease): string {
   const statusClass = STATUS_COLORS[lease.status]
   const expiry = formatExpiry(lease.expiresAt)
   const budgetDisplay = `$${lease.maxSpend.toFixed(2)} budget`
-  const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null
   const actions = renderActions(lease)
   const commentsRow = renderCommentsRow(lease)
 
@@ -92,7 +90,6 @@ function renderSessionRow(lease: Lease): string {
     <tr class="govuk-table__row">
       <td class="govuk-table__cell" data-label="Product">
         <strong>${escapeHtml(lease.leaseTemplateName)}</strong>
-        ${remaining ? `<br><span class="govuk-body-s govuk-!-margin-top-1">${remaining}</span>` : ""}
       </td>
       <td class="govuk-table__cell" data-label="AWS Account ID">
         <code class="govuk-!-font-size-16">${lease.awsAccountId}</code>
@@ -140,14 +137,17 @@ function renderActions(lease: Lease): string {
         Launch AWS Console
         <span class="govuk-visually-hidden">(opens in new tab)</span>
       </a>
-      <button
-        type="button"
+      <a
+        href="${portalUrl}"
+        target="_blank"
+        rel="noopener noreferrer"
         class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+        data-module="govuk-button"
         data-action="get-credentials"
-        data-portal-url="${portalUrl}"
       >
         Get CLI Credentials
-      </button>
+        <span class="govuk-visually-hidden">(opens in new tab)</span>
+      </a>
     </div>
   `
 }

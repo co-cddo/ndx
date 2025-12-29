@@ -24,12 +24,13 @@ jest.mock("../../api/sessions-service", () => ({
     (lease: { awsAccountId: string }) =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=test_role`,
   ),
-  getPortalUrl: jest.fn(() => "https://test.awsapps.com/start"),
+  getPortalUrl: jest.fn(
+    (lease: { awsAccountId: string }) => `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}`,
+  ),
 }))
 
 jest.mock("../../utils/date-utils", () => ({
   formatExpiry: jest.fn((date: string) => `in 23 hours (${date})`),
-  formatRemainingDuration: jest.fn(() => "23h 45m remaining"),
 }))
 
 describe("Sessions Table Component", () => {
@@ -178,18 +179,6 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("$50.00 budget")
     })
 
-    it("should render remaining duration for active leases", () => {
-      const html = renderSessionsTable([mockActiveLease])
-
-      expect(html).toContain("23h 45m remaining")
-    })
-
-    it("should NOT render remaining duration for non-active leases", () => {
-      const html = renderSessionsTable([mockExpiredLease])
-
-      expect(html).not.toContain("remaining")
-    })
-
     it("should render Launch button for Active leases", () => {
       const html = renderSessionsTable([mockActiveLease])
 
@@ -200,15 +189,16 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("https://test.awsapps.com/start")
     })
 
-    it("should render Get CLI Credentials button for Active leases", () => {
+    it("should render Get CLI Credentials link for Active leases", () => {
       const html = renderSessionsTable([mockActiveLease])
 
       expect(html).toContain("Get CLI Credentials")
       expect(html).toContain('data-action="get-credentials"')
-      expect(html).toContain('data-portal-url="https://test.awsapps.com/start"')
+      expect(html).toContain('href="https://test.awsapps.com/start/#/console?account_id=123456789012"')
+      expect(html).toContain('target="_blank"')
     })
 
-    it("should NOT render Get CLI Credentials button for non-active leases", () => {
+    it("should NOT render Get CLI Credentials link for non-active leases", () => {
       const html = renderSessionsTable([mockPendingLease])
 
       expect(html).not.toContain("Get CLI Credentials")

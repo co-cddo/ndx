@@ -599,7 +599,7 @@ describe("Sessions Service", () => {
   })
 
   describe("getPortalUrl", () => {
-    it("should return base portal URL from config when lease has no custom URL", () => {
+    it("should return portal URL with account_id when lease has no custom URL", () => {
       const lease: Lease = {
         leaseId: "1",
         awsAccountId: "123456789012",
@@ -614,7 +614,7 @@ describe("Sessions Service", () => {
 
       const url = getPortalUrl(lease)
 
-      expect(url).toBe("https://test.awsapps.com/start")
+      expect(url).toBe("https://test.awsapps.com/start/#/console?account_id=123456789012")
     })
 
     it("should use custom portal URL when lease has one", () => {

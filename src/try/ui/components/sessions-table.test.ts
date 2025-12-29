@@ -24,6 +24,7 @@ jest.mock("../../api/sessions-service", () => ({
     (lease: { awsAccountId: string }) =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=test_role`,
   ),
+  getPortalUrl: jest.fn(() => "https://test.awsapps.com/start"),
 }))
 
 jest.mock("../../utils/date-utils", () => ({
@@ -197,6 +198,26 @@ describe("Sessions Table Component", () => {
       expect(html).toContain('target="_blank"')
       expect(html).toContain('rel="noopener noreferrer"')
       expect(html).toContain("https://test.awsapps.com/start")
+    })
+
+    it("should render Get CLI Credentials button for Active leases", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      expect(html).toContain("Get CLI Credentials")
+      expect(html).toContain('data-action="get-credentials"')
+      expect(html).toContain('data-portal-url="https://test.awsapps.com/start"')
+    })
+
+    it("should NOT render Get CLI Credentials button for non-active leases", () => {
+      const html = renderSessionsTable([mockPendingLease])
+
+      expect(html).not.toContain("Get CLI Credentials")
+    })
+
+    it("should wrap action buttons in sessions-actions container", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      expect(html).toContain('class="sessions-actions"')
     })
 
     it("should NOT render Launch button for Pending leases", () => {

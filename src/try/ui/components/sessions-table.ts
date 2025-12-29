@@ -11,7 +11,7 @@
  * @module sessions-table
  */
 
-import { Lease, LeaseStatus, isLeaseActive, getSsoUrl } from "../../api/sessions-service"
+import { Lease, LeaseStatus, isLeaseActive, getSsoUrl, getPortalUrl } from "../../api/sessions-service"
 import { formatExpiry, formatRemainingDuration } from "../../utils/date-utils"
 
 /**
@@ -126,18 +126,29 @@ function renderActions(lease: Lease): string {
   }
 
   const ssoUrl = getSsoUrl(lease)
+  const portalUrl = getPortalUrl(lease)
 
   return `
-    <a
-      href="${ssoUrl}"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-      data-module="govuk-button"
-    >
-      Launch AWS Console
-      <span class="govuk-visually-hidden">(opens in new tab)</span>
-    </a>
+    <div class="sessions-actions">
+      <a
+        href="${ssoUrl}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-1"
+        data-module="govuk-button"
+      >
+        Launch AWS Console
+        <span class="govuk-visually-hidden">(opens in new tab)</span>
+      </a>
+      <button
+        type="button"
+        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+        data-action="get-credentials"
+        data-portal-url="${portalUrl}"
+      >
+        Get CLI Credentials
+      </button>
+    </div>
   `
 }
 

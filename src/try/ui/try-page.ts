@@ -106,11 +106,24 @@ export function initTryPage(): (() => void) | undefined {
   }
   document.addEventListener("visibilitychange", visibilityChangeHandler)
 
-  // Set up retry button handler
+  // Set up click handlers for action buttons
   container.addEventListener("click", (event) => {
     const target = event.target as HTMLElement
+
+    // Retry fetch button
     if (target.dataset.action === "retry-fetch") {
       loadAndRenderSessions()
+    }
+
+    // Get CLI Credentials button
+    if (target.dataset.action === "get-credentials") {
+      const portalUrl = target.dataset.portalUrl
+      if (portalUrl) {
+        // Show instruction alert
+        window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")
+        // Open portal in new tab
+        window.open(portalUrl, "_blank", "noopener,noreferrer")
+      }
     }
   })
 

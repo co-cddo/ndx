@@ -1,7 +1,6 @@
 ---
 homepage: true
 layout: product
-includeInBreadcrumbs: true
 description: <br/>Welcome to the next generation of cloud and data sharing.
 image:
   src: /assets/missionbadge.png

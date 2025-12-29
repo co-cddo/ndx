@@ -501,20 +501,25 @@ function handler(event) {
   var cookies = request.cookies || {}
   var uri = request.uri
 
-  // Handle directory-style URLs for S3 compatibility
-  if (uri.endsWith("/")) {
-    request.uri = uri + "index.html"
-  } else if (uri.indexOf(".") === -1) {
-    // No file extension - treat as directory
-    request.uri = uri + "/index.html"
-  }
-
   // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
   var ndxCookie = cookies["NDX"]
 
   if (ndxCookie && ndxCookie.value === "legacy") {
     // Use default cache behavior origin (old S3Origin) - no modification
+    // Legacy ISB is an SPA - all non-file URLs go to /index.html
+    const hasType = request.uri.split(/#|\\?/)[0].split(".").length >= 2
+    if (!hasType) {
+      request.uri = "/index.html"
+    }
     return request
+  }
+
+  // Handle directory-style URLs for S3 compatibility (NDX static site)
+  if (uri.endsWith("/")) {
+    request.uri = uri + "index.html"
+  } else if (uri.indexOf(".") === -1) {
+    // No file extension - treat as directory
+    request.uri = uri + "/index.html"
   }
 
   // Default: route to ndx-static-prod with OAC authentication

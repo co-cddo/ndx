@@ -46,20 +46,25 @@ function createMockHandler() {
     const cookies = request.cookies || {}
     const uri = request.uri
 
-    // Handle directory-style URLs for S3 compatibility
-    if (uri.endsWith("/")) {
-      request.uri = uri + "index.html"
-    } else if (uri.indexOf(".") === -1) {
-      // No file extension - treat as directory
-      request.uri = uri + "/index.html"
-    }
-
     // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
     const ndxCookie = cookies["NDX"]
 
     if (ndxCookie && ndxCookie.value === "legacy") {
       // Use default cache behavior origin (old S3Origin) - no modification
+      // Legacy ISB is an SPA - all non-file URLs go to /index.html
+      const hasType = request.uri.split(/#|\?/)[0].split(".").length >= 2
+      if (!hasType) {
+        request.uri = "/index.html"
+      }
       return request
+    }
+
+    // Handle directory-style URLs for S3 compatibility (NDX static site)
+    if (uri.endsWith("/")) {
+      request.uri = uri + "index.html"
+    } else if (uri.indexOf(".") === -1) {
+      // No file extension - treat as directory
+      request.uri = uri + "/index.html"
     }
 
     // Default: route to ndx-static-prod with OAC authentication
@@ -306,7 +311,7 @@ describe("CloudFront Cookie Router", () => {
       expect(result.uri).toBe("/docs/guides/getting-started/index.html")
     })
 
-    test("applies URI rewriting with legacy cookie", () => {
+    test("legacy SPA routes non-file URLs to /index.html", () => {
       const event: CloudFrontEvent = {
         request: {
           uri: "/About/",
@@ -318,11 +323,12 @@ describe("CloudFront Cookie Router", () => {
 
       const result = handler(event)
 
-      expect(result.uri).toBe("/About/index.html")
+      // Legacy ISB is an SPA - all non-file URLs go to /index.html
+      expect(result.uri).toBe("/index.html")
       expect(updateRequestOriginCalls).toHaveLength(0)
     })
 
-    test("applies /index.html rewriting with legacy cookie", () => {
+    test("legacy SPA routes paths without extension to /index.html", () => {
       const event: CloudFrontEvent = {
         request: {
           uri: "/try",
@@ -334,7 +340,25 @@ describe("CloudFront Cookie Router", () => {
 
       const result = handler(event)
 
-      expect(result.uri).toBe("/try/index.html")
+      // Legacy ISB is an SPA - all non-file URLs go to /index.html
+      expect(result.uri).toBe("/index.html")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA preserves file URLs with extensions", () => {
+      const event: CloudFrontEvent = {
+        request: {
+          uri: "/assets/style.css",
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      // Files with extensions are preserved for legacy
+      expect(result.uri).toBe("/assets/style.css")
       expect(updateRequestOriginCalls).toHaveLength(0)
     })
   })

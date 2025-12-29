@@ -120,7 +120,7 @@ export function initTryPage(): (() => void) | undefined {
       const portalUrl = target.dataset.portalUrl
       if (portalUrl) {
         // Show instruction alert
-        window.alert("On the page that opens, find your account and click 'Access keys' to view your CLI credentials.")
+        window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")
         // Open portal in new tab
         window.open(portalUrl, "_blank", "noopener,noreferrer")
       }

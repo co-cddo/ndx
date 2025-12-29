@@ -115,15 +115,11 @@ export function initTryPage(): (() => void) | undefined {
       loadAndRenderSessions()
     }
 
-    // Get CLI Credentials button
-    if (target.dataset.action === "get-credentials") {
-      const portalUrl = target.dataset.portalUrl
-      if (portalUrl) {
-        // Show instruction alert
-        window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")
-        // Open portal in new tab
-        window.open(portalUrl, "_blank", "noopener,noreferrer")
-      }
+    // Get CLI Credentials link - show alert before navigation
+    const credentialsLink = target.closest('[data-action="get-credentials"]') as HTMLElement | null
+    if (credentialsLink) {
+      // Show instruction alert - link handles navigation after alert is dismissed
+      window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")
     }
   })
 

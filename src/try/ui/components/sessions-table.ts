@@ -140,14 +140,17 @@ function renderActions(lease: Lease): string {
         Launch AWS Console
         <span class="govuk-visually-hidden">(opens in new tab)</span>
       </a>
-      <button
-        type="button"
+      <a
+        href="${portalUrl}"
+        target="_blank"
+        rel="noopener noreferrer"
         class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+        data-module="govuk-button"
         data-action="get-credentials"
-        data-portal-url="${portalUrl}"
       >
         Get CLI Credentials
-      </button>
+        <span class="govuk-visually-hidden">(opens in new tab)</span>
+      </a>
     </div>
   `
 }

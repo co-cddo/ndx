@@ -24,7 +24,9 @@ jest.mock("../../api/sessions-service", () => ({
     (lease: { awsAccountId: string }) =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=test_role`,
   ),
-  getPortalUrl: jest.fn(() => "https://test.awsapps.com/start"),
+  getPortalUrl: jest.fn(
+    (lease: { awsAccountId: string }) => `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}`,
+  ),
 }))
 
 jest.mock("../../utils/date-utils", () => ({
@@ -205,7 +207,7 @@ describe("Sessions Table Component", () => {
 
       expect(html).toContain("Get CLI Credentials")
       expect(html).toContain('data-action="get-credentials"')
-      expect(html).toContain('data-portal-url="https://test.awsapps.com/start"')
+      expect(html).toContain('data-portal-url="https://test.awsapps.com/start/#/console?account_id=123456789012"')
     })
 
     it("should NOT render Get CLI Credentials button for non-active leases", () => {

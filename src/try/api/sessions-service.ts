@@ -298,3 +298,19 @@ export function getSsoUrl(lease: Lease): string {
 
   return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}`
 }
+
+/**
+ * Get the SSO portal base URL for a lease.
+ *
+ * Returns just the portal URL without console redirect parameters.
+ * Used for opening the portal to view CLI credentials.
+ *
+ * @param lease - Lease to get portal URL for
+ * @returns SSO portal base URL
+ */
+export function getPortalUrl(lease: Lease): string {
+  if (lease.awsSsoPortalUrl) {
+    return lease.awsSsoPortalUrl
+  }
+  return config.awsSsoPortalUrl
+}

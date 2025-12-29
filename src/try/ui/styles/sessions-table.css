@@ -232,3 +232,18 @@
     display: none;
   }
 }
+
+/* Actions button group */
+.sessions-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Mobile: full width buttons */
+@media (max-width: 768px) {
+  .sessions-actions .govuk-button {
+    width: 100%;
+    text-align: center;
+  }
+}

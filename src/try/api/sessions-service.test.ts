@@ -13,7 +13,15 @@
  * @jest-environment jsdom
  */
 
-import { fetchUserLeases, isLeaseActive, isLeasePending, getSsoUrl, Lease, LeaseStatus } from "./sessions-service"
+import {
+  fetchUserLeases,
+  isLeaseActive,
+  isLeasePending,
+  getSsoUrl,
+  getPortalUrl,
+  Lease,
+  LeaseStatus,
+} from "./sessions-service"
 import { checkAuthStatus, callISBAPI } from "./api-client"
 import { authState } from "../auth/auth-provider"
 
@@ -585,6 +593,45 @@ describe("Sessions Service", () => {
       }
 
       const url = getSsoUrl(lease)
+
+      expect(url).toBe("https://custom.example.com/sso")
+    })
+  })
+
+  describe("getPortalUrl", () => {
+    it("should return base portal URL from config when lease has no custom URL", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getPortalUrl(lease)
+
+      expect(url).toBe("https://test.awsapps.com/start")
+    })
+
+    it("should use custom portal URL when lease has one", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+        awsSsoPortalUrl: "https://custom.example.com/sso",
+      }
+
+      const url = getPortalUrl(lease)
 
       expect(url).toBe("https://custom.example.com/sso")
     })

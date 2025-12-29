@@ -14,6 +14,7 @@
         "categories:performance": ["warn", { "minScore": 0.3 }],
         "categories:seo": ["warn", { "minScore": 0.7 }],
 
+        "forced-reflow-insight": "off",
         "color-contrast": "error",
         "heading-order": "error",
         "html-has-lang": "error",

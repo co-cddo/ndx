@@ -2,13 +2,10 @@
 homepage: true
 layout: product
 includeInBreadcrumbs: true
-description: Welcome to the next generation of cloud and data sharing.</br></br>Part of the Digital Backbone
+description: <br/>Welcome to the next generation of cloud and data sharing.
 image:
   src: /assets/missionbadge.png
   alt: National Digital Exchange Mission Badge
-startButton:
-  text: Learn more
-  href: /About/Digital-Backbone/
 eleventyComputed:
   title: National Digital Exchange
 styles: |
@@ -26,39 +23,19 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 <div class="govuk-grid-row homepage-grid">
   <section class="govuk-grid-column-one-third-from-desktop">
 
-### [Discover](/discover)
-
-Discover everything going on in cloud in the UK Public Sector
-
-- [Industry News](/discover/news)
-- [Industry Events](/discover/events)
-- [Case Studies](/discover/case-studies)
-- [Show + Tells](/todo)
-  </section><section class="govuk-grid-column-one-third-from-desktop">
-
-### [Learn](/learn)
-
-Build up your personal certifications, consider career moves, or industry placements to get your team cloud ready.
-
-- Get Certified
-- Secondments
-- Apprenticeships
-- Returnerships
-  </section><section class="govuk-grid-column-one-third-from-desktop">
-
-### [Try](/try)
+### [Try](/catalogue/tags/try-before-you-buy/)
 
 Create a secure short lived cloud environment for learning, experiments and proof of concept/value
 
   </section>
-</div><div class="govuk-grid-row homepage-grid">
-  <section class="govuk-grid-column-one-third-from-desktop">
 
 ### [Access](/access)
 
 Create turnkey production ready environments for your team to collaborate on developing and deploying to production
 
-  </section><section class="govuk-grid-column-one-third-from-desktop">
+</section>
+  
+<section class="govuk-grid-column-one-third-from-desktop">
 
 ### [Optimise](/optimise)
 

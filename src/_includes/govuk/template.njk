@@ -2,6 +2,7 @@
 {% from "govuk/components/skip-link/macro.njk" import govukSkipLink -%}
 {% from "govuk/components/header/macro.njk" import govukHeader -%}
 {% from "govuk/components/footer/macro.njk" import govukFooter -%}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner -%}
 
 {%- set _rebrand = govukRebrand() if govukRebrand is callable else govukRebrand -%}
 
@@ -48,6 +49,15 @@
         rebrand: _rebrand
       }) }}
     {% endblock %}
+
+    <div class="govuk-width-container">
+      {{ govukPhaseBanner({
+        tag: {
+          text: "Alpha"
+        },
+        html: 'This is a new service. Help us improve it and <a class="govuk-link" href="mailto:ndx@dsit.gov.uk">give your feedback by email</a>.'
+      }) }}
+    </div>
 
     {% block main %}
       <div class="govuk-width-container {%- if containerClasses %} {{ containerClasses }}{% endif %}">

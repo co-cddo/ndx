@@ -182,3 +182,53 @@
 .first-time-guidance li {
   margin-bottom: 10px;
 }
+
+/* Refresh status - inline with description */
+.sessions-refresh-indicator,
+.sessions-refresh-countdown {
+  color: #505a5f; /* GOV.UK secondary text grey */
+}
+
+.sessions-refresh-indicator {
+  font-style: italic;
+}
+
+/* Comments row styling */
+.sessions-table__comments-row {
+  background-color: #f3f2f1; /* GOV.UK light grey */
+}
+
+.sessions-table__comments-cell {
+  padding-top: 10px !important;
+  padding-bottom: 15px !important;
+  color: #505a5f; /* GOV.UK grey for secondary text */
+}
+
+/* Details component within comments - remove excess margin */
+.sessions-table__comments-cell .govuk-details {
+  margin-bottom: 0;
+}
+
+.sessions-table__comments-cell .govuk-details__summary {
+  margin-bottom: 0;
+}
+
+/* Mobile: comments row styling */
+@media (max-width: 768px) {
+  .sessions-table__comments-row {
+    margin-top: -20px; /* Merge with parent card visually */
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .sessions-table__comments-cell {
+    border-top: 1px solid #b1b4b6;
+    padding-top: 15px !important;
+  }
+
+  /* Hide label on comments cell */
+  .sessions-table__comments-cell::before {
+    content: "";
+    display: none;
+  }
+}

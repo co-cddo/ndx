@@ -73,6 +73,8 @@ export interface Lease {
   currentSpend: number
   /** AWS SSO portal URL for console access */
   awsSsoPortalUrl?: string
+  /** Comments from lease approval process */
+  comments?: string
 }
 
 /**
@@ -248,6 +250,7 @@ function transformLease(raw: RawLease): Lease {
     currentSpend: raw.totalCostAccrued ?? 0,
     // SSO URL will be configured in config
     awsSsoPortalUrl: undefined,
+    comments: raw.comments,
   }
 }
 

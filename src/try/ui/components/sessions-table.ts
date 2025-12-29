@@ -13,7 +13,6 @@
 
 import { Lease, LeaseStatus, isLeaseActive, getSsoUrl } from "../../api/sessions-service"
 import { formatExpiry, formatRemainingDuration } from "../../utils/date-utils"
-import { formatBudget, calculateBudgetPercentage } from "../../utils/currency-utils"
 
 /**
  * Status badge color mapping per Story 7.4.
@@ -29,13 +28,14 @@ const STATUS_COLORS: Record<LeaseStatus, string> = {
 
 /**
  * User-friendly status labels for display.
+ * Per GOV.UK Design System guidance, uses adjectives not verbs.
  */
 const STATUS_LABELS: Record<LeaseStatus, string> = {
   Pending: "Pending",
   Active: "Active",
-  Expired: "Expired",
+  Expired: "Completed",
   Terminated: "Terminated",
-  ManuallyTerminated: "Ended",
+  ManuallyTerminated: "Completed",
   Failed: "Failed",
 }
 
@@ -75,19 +75,18 @@ export function renderSessionsTable(leases: Lease[]): string {
 }
 
 /**
- * Render a single session row.
+ * Render a single session row with optional comments row.
  *
  * @param lease - Lease data
- * @returns HTML string for the row
+ * @returns HTML string for the row(s)
  */
 function renderSessionRow(lease: Lease): string {
   const statusClass = STATUS_COLORS[lease.status]
   const expiry = formatExpiry(lease.expiresAt)
-  const budget = formatBudget(lease.currentSpend, lease.maxSpend)
-  const budgetPercentage = calculateBudgetPercentage(lease.currentSpend, lease.maxSpend)
-  const budgetAriaLabel = `Budget: $${lease.currentSpend.toFixed(4)} used of $${lease.maxSpend.toFixed(2)} maximum`
+  const budgetDisplay = `$${lease.maxSpend.toFixed(2)} budget`
   const remaining = isLeaseActive(lease) ? formatRemainingDuration(lease.expiresAt) : null
   const actions = renderActions(lease)
+  const commentsRow = renderCommentsRow(lease)
 
   return `
     <tr class="govuk-table__row">
@@ -105,22 +104,13 @@ function renderSessionRow(lease: Lease): string {
         ${expiry}
       </td>
       <td class="govuk-table__cell" data-label="Budget">
-        <span aria-label="${budgetAriaLabel}">
-          ${budget}
-        </span>
-        <br>
-        <progress
-          value="${budgetPercentage}"
-          max="100"
-          aria-label="Budget usage ${budgetPercentage}%"
-          class="sessions-budget-progress"
-        ></progress>
-        <span class="govuk-body-s">${budgetPercentage}%</span>
+        ${budgetDisplay}
       </td>
       <td class="govuk-table__cell" data-label="Actions">
         ${actions}
       </td>
     </tr>
+    ${commentsRow}
   `
 }
 
@@ -180,6 +170,59 @@ function escapeHtml(str: string): string {
   const div = document.createElement("div")
   div.textContent = str
   return div.innerHTML
+}
+
+/**
+ * Format comments with XSS escaping and newline handling.
+ *
+ * @param comments - Raw comments string
+ * @returns Safe HTML string with newlines converted to <br>
+ */
+function formatComments(comments: string | undefined): string {
+  if (!comments) return ""
+  // Escape HTML first, then convert newlines to <br>
+  return escapeHtml(comments).replace(/\n/g, "<br>")
+}
+
+/**
+ * Render comments row for a lease.
+ * Active leases show comments always visible.
+ * Non-active leases show comments in collapsible details.
+ *
+ * @param lease - Lease data
+ * @returns HTML string for comments row, or empty string if no comments
+ */
+function renderCommentsRow(lease: Lease): string {
+  if (!lease.comments) return ""
+
+  const formattedComments = formatComments(lease.comments)
+
+  if (isLeaseActive(lease)) {
+    // Always visible for active leases
+    return `
+      <tr class="govuk-table__row sessions-table__comments-row">
+        <td colspan="6" class="govuk-table__cell govuk-body-s sessions-table__comments-cell">
+          ${formattedComments}
+        </td>
+      </tr>
+    `
+  }
+
+  // Collapsible for non-active leases
+  return `
+    <tr class="govuk-table__row sessions-table__comments-row">
+      <td colspan="6" class="govuk-table__cell sessions-table__comments-cell">
+        <details class="govuk-details govuk-!-margin-bottom-0">
+          <summary class="govuk-details__summary">
+            <span class="govuk-details__summary-text">See details</span>
+          </summary>
+          <div class="govuk-details__text govuk-body-s">
+            ${formattedComments}
+          </div>
+        </details>
+      </td>
+    </tr>
+  `
 }
 
 /**

@@ -31,18 +31,22 @@ const CONTAINER_ID = "try-sessions-container"
  */
 interface TryPageState {
   loading: boolean
+  refreshing: boolean
   error: string | null
   leases: Lease[]
 }
 
 let currentState: TryPageState = {
   loading: false,
+  refreshing: false,
   error: null,
   leases: [],
 }
 
 let container: HTMLElement | null = null
 let refreshTimer: number | null = null
+let countdownTimer: number | null = null
+let secondsUntilRefresh = 10
 // CRITICAL-3 FIX: Store unsubscribe function for auth state cleanup
 let authUnsubscribe: (() => void) | null = null
 // MEMORY LEAK FIX: Store visibility change handler for cleanup
@@ -121,7 +125,7 @@ async function loadAndRenderSessions(): Promise<void> {
   if (!container) return
 
   // Show loading state
-  currentState = { loading: true, error: null, leases: [] }
+  currentState = { loading: true, refreshing: false, error: null, leases: [] }
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
     <p class="govuk-body-l">Manage your AWS sandbox environments</p>
@@ -132,10 +136,10 @@ async function loadAndRenderSessions(): Promise<void> {
   const result = await fetchUserLeases()
 
   if (result.success && result.leases) {
-    currentState = { loading: false, error: null, leases: result.leases }
+    currentState = { loading: false, refreshing: false, error: null, leases: result.leases }
     renderAuthenticatedState(container, result.leases)
   } else {
-    currentState = { loading: false, error: result.error || "Unknown error", leases: [] }
+    currentState = { loading: false, refreshing: false, error: result.error || "Unknown error", leases: [] }
     // Render error state with helpful navigation (still allow browsing catalogue)
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
@@ -194,7 +198,7 @@ export function renderEmptyState(container: HTMLElement): void {
  * @param container - DOM element to render into
  * @param leases - User's leases to display
  */
-export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]): void {
+export function renderAuthenticatedState(container: HTMLElement, leases: Lease[], isRefreshing = false): void {
   const hasLeases = leases.length > 0
   const activeCount = leases.filter((l) => l.status === "Active").length
   const pendingCount = leases.filter((l) => l.status === "Pending").length
@@ -209,9 +213,14 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
       parts.length > 0 ? `You have ${parts.join(" and ")} session${activeCount + pendingCount > 1 ? "s" : ""}.` : ""
   }
 
+  // Refresh status - countdown or updating
+  const refreshStatus = isRefreshing
+    ? `<span class="sessions-refresh-indicator" aria-live="polite">Updating...</span>`
+    : `<span class="sessions-refresh-countdown" id="refresh-countdown">Refreshing in ${secondsUntilRefresh}s</span>`
+
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
-    <p class="govuk-body-l">Manage your AWS sandbox environments</p>
+    <p class="govuk-body sessions-description">This page updates automatically. ${refreshStatus}</p>
 
     ${summaryText ? `<p class="govuk-body-l">${summaryText}</p>` : ""}
 
@@ -266,16 +275,34 @@ function renderFirstTimeGuidance(): string {
  * Clears any existing timer before starting a new one to prevent multiple timers.
  */
 function startAutoRefresh(): void {
-  // Clear existing timer if any
+  // Clear existing timers
   stopAutoRefresh()
 
-  // Refresh table display every 60 seconds (AC requirement)
+  // Reset countdown
+  secondsUntilRefresh = 10
+
+  // Update countdown every second
+  countdownTimer = window.setInterval(() => {
+    secondsUntilRefresh--
+    const countdownEl = document.getElementById("refresh-countdown")
+    if (countdownEl && secondsUntilRefresh > 0) {
+      countdownEl.textContent = `Refreshing in ${secondsUntilRefresh}s`
+    }
+  }, 1000)
+
+  // Refresh table display every 10 seconds
   refreshTimer = window.setInterval(() => {
     if (container && currentState.leases.length > 0 && !currentState.loading) {
-      // Re-render table with current leases to update relative times
-      renderAuthenticatedState(container, currentState.leases)
+      // Show refreshing indicator and re-render table with current leases
+      currentState.refreshing = true
+      renderAuthenticatedState(container, currentState.leases, true)
+      // Reset countdown and hide indicator after a brief delay
+      setTimeout(() => {
+        currentState.refreshing = false
+        secondsUntilRefresh = 10
+      }, 1000)
     }
-  }, 60000) // 60 seconds
+  }, 10000) // 10 seconds
 }
 
 /**
@@ -287,6 +314,10 @@ function stopAutoRefresh(): void {
   if (refreshTimer !== null) {
     clearInterval(refreshTimer)
     refreshTimer = null
+  }
+  if (countdownTimer !== null) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
   }
 }
 
@@ -322,5 +353,5 @@ export function cleanupTryPage(): void {
 
   // Clear state references
   container = null
-  currentState = { loading: false, error: null, leases: [] }
+  currentState = { loading: false, refreshing: false, error: null, leases: [] }
 }

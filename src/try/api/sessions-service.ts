@@ -65,8 +65,8 @@ export interface Lease {
   status: LeaseStatus
   /** When lease was created (ISO 8601) */
   createdAt: string
-  /** When lease expires (ISO 8601) */
-  expiresAt: string
+  /** When lease expires (ISO 8601). May be undefined for pending leases. */
+  expiresAt?: string
   /** Maximum spend limit in USD */
   maxSpend: number
   /** Current spend in USD */
@@ -243,9 +243,9 @@ function transformLease(raw: RawLease): Lease {
     leaseTemplateName: raw.originalLeaseTemplateName,
     status,
     createdAt: raw.meta?.createdTime || raw.startDate,
-    expiresAt: raw.expirationDate,
-    maxSpend: raw.maxSpend,
-    currentSpend: raw.totalCostAccrued,
+    expiresAt: raw.expirationDate || raw.endDate,
+    maxSpend: raw.maxSpend ?? 0,
+    currentSpend: raw.totalCostAccrued ?? 0,
     // SSO URL will be configured in config
     awsSsoPortalUrl: undefined,
   }

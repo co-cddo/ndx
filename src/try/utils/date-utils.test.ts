@@ -72,6 +72,18 @@ describe("Date Utilities", () => {
       const result = formatRelativeTime(NOW)
       expect(result).toMatch(/now|0 seconds/i)
     })
+
+    it("should return Unknown for undefined", () => {
+      expect(formatRelativeTime(undefined)).toBe("Unknown")
+    })
+
+    it("should return Unknown for null", () => {
+      expect(formatRelativeTime(null)).toBe("Unknown")
+    })
+
+    it("should return Unknown for invalid date string", () => {
+      expect(formatRelativeTime("not-a-date")).toBe("Unknown")
+    })
   })
 
   describe("formatAbsoluteDate", () => {
@@ -95,6 +107,18 @@ describe("Date Utilities", () => {
       const result = formatAbsoluteDate(date)
       // Should include time (hour:minute)
       expect(result).toMatch(/\d{2}:\d{2}/)
+    })
+
+    it("should return Unknown for undefined", () => {
+      expect(formatAbsoluteDate(undefined)).toBe("Unknown")
+    })
+
+    it("should return Unknown for null", () => {
+      expect(formatAbsoluteDate(null)).toBe("Unknown")
+    })
+
+    it("should return Unknown for invalid date string", () => {
+      expect(formatAbsoluteDate("not-a-date")).toBe("Unknown")
     })
   })
 
@@ -133,6 +157,18 @@ describe("Date Utilities", () => {
       const result = formatRemainingDuration(in24h)
       expect(result).toBe("1d 0h remaining")
     })
+
+    it("should return null for undefined", () => {
+      expect(formatRemainingDuration(undefined)).toBeNull()
+    })
+
+    it("should return null for null", () => {
+      expect(formatRemainingDuration(null)).toBeNull()
+    })
+
+    it("should return null for invalid date string", () => {
+      expect(formatRemainingDuration("not-a-date")).toBeNull()
+    })
   })
 
   describe("isExpired", () => {
@@ -155,6 +191,18 @@ describe("Date Utilities", () => {
       // Exactly now should not be expired (not strictly less than)
       expect(isExpired(NOW)).toBe(false)
     })
+
+    it("should return true for undefined (treat as expired for safety)", () => {
+      expect(isExpired(undefined)).toBe(true)
+    })
+
+    it("should return true for null (treat as expired for safety)", () => {
+      expect(isExpired(null)).toBe(true)
+    })
+
+    it("should return true for invalid date string (treat as expired for safety)", () => {
+      expect(isExpired("not-a-date")).toBe(true)
+    })
   })
 
   describe("formatExpiry", () => {
@@ -174,6 +222,18 @@ describe("Date Utilities", () => {
 
       expect(result).toMatch(/in 1 hour/i)
       expect(result).toMatch(/\(/)
+    })
+
+    it("should return Unknown for undefined", () => {
+      expect(formatExpiry(undefined)).toBe("Unknown")
+    })
+
+    it("should return Unknown for null", () => {
+      expect(formatExpiry(null)).toBe("Unknown")
+    })
+
+    it("should return Unknown for invalid date string", () => {
+      expect(formatExpiry("not-a-date")).toBe("Unknown")
     })
   })
 

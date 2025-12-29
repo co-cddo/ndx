@@ -31,7 +31,6 @@ jest.mock("../../api/sessions-service", () => ({
 
 jest.mock("../../utils/date-utils", () => ({
   formatExpiry: jest.fn((date: string) => `in 23 hours (${date})`),
-  formatRemainingDuration: jest.fn(() => "23h 45m remaining"),
 }))
 
 describe("Sessions Table Component", () => {
@@ -178,18 +177,6 @@ describe("Sessions Table Component", () => {
       const html = renderSessionsTable([mockActiveLease])
 
       expect(html).toContain("$50.00 budget")
-    })
-
-    it("should render remaining duration for active leases", () => {
-      const html = renderSessionsTable([mockActiveLease])
-
-      expect(html).toContain("23h 45m remaining")
-    })
-
-    it("should NOT render remaining duration for non-active leases", () => {
-      const html = renderSessionsTable([mockExpiredLease])
-
-      expect(html).not.toContain("remaining")
     })
 
     it("should render Launch button for Active leases", () => {

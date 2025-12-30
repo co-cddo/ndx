@@ -7,6 +7,12 @@ $_font-family: system-ui, sans-serif;
 // GOV.UK Eleventy Plugin components
 @use "pkg:@x-govuk/govuk-eleventy-plugin";
 
+// Fix phase banner alignment when rendered by plugin (v8.2.0+)
+// The plugin renders phase banner outside govuk-width-container
+.govuk-phase-banner {
+  @extend .govuk-width-container;
+}
+
 .x-govuk-masthead__image img[src$=".svg"] {
   width: 100%;
   margin: -20% -20% -20% 0;

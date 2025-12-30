@@ -195,20 +195,6 @@ export class NdxStaticStack extends cdk.Stack {
     // Also ensure origin is added before configuring cache behavior
     configureCacheBehavior.node.addDependency(addOriginResource)
 
-    // Configure custom error responses to serve 404.html for missing files
-    // S3 returns 403 for missing files (without ListBucket permission), so map both 403 and 404
-    const configureErrorResponses = new cdk.CustomResource(this, "ConfigureCustomErrorResponses", {
-      serviceToken: addOriginProvider.serviceToken,
-      properties: {
-        DistributionId: config.distributionId,
-        CustomErrorResponses: [
-          { ErrorCode: 403, ResponseCode: 404, ResponsePagePath: "/404.html", ErrorCachingMinTTL: 300 },
-          { ErrorCode: 404, ResponseCode: 404, ResponsePagePath: "/404.html", ErrorCachingMinTTL: 300 },
-        ],
-      },
-    })
-    configureErrorResponses.node.addDependency(configureCacheBehavior)
-
     // Alternate domain name configuration (e.g., ndx.digital.cabinet-office.gov.uk)
     // Prerequisites:
     // 1. Create ACM certificate in us-east-1 manually (aws acm request-certificate)

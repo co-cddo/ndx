@@ -221,7 +221,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "475d17464186080b2381287c088b9184ec211705e32df049ae7628ea2c2e50fd.zip",
+          "S3Key": "df1ed630d6864a1cb3fbc78fc1673c6b76e312c4ac7d245f6160d1a104cc2b45.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",
@@ -471,37 +471,6 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           ],
         },
         "FunctionEventType": "viewer-request",
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "AddOriginProviderframeworkonEvent5094AA52",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "AWS::CloudFormation::CustomResource",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "ConfigureCustomErrorResponses": {
-      "DeletionPolicy": "Delete",
-      "DependsOn": [
-        "ConfigureCacheBehavior",
-      ],
-      "Properties": {
-        "CustomErrorResponses": [
-          {
-            "ErrorCachingMinTTL": 300,
-            "ErrorCode": 403,
-            "ResponseCode": 404,
-            "ResponsePagePath": "/404.html",
-          },
-          {
-            "ErrorCachingMinTTL": 300,
-            "ErrorCode": 404,
-            "ResponseCode": 404,
-            "ResponsePagePath": "/404.html",
-          },
-        ],
-        "DistributionId": "E3THG4UHYDHVWP",
         "ServiceToken": {
           "Fn::GetAtt": [
             "AddOriginProviderframeworkonEvent5094AA52",

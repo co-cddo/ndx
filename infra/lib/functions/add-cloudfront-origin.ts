@@ -7,13 +7,6 @@ import {
 } from "@aws-sdk/client-cloudfront"
 import * as https from "https"
 
-interface CustomErrorResponseConfig {
-  ErrorCode: number
-  ResponseCode: number
-  ResponsePagePath: string
-  ErrorCachingMinTTL: number
-}
-
 interface CloudFormationCustomResourceEvent {
   RequestType: "Create" | "Update" | "Delete"
   ResponseURL: string
@@ -34,8 +27,6 @@ interface CloudFormationCustomResourceEvent {
     // Alternate domain name configuration
     AlternateDomainName?: string
     CertificateArn?: string
-    // Custom error responses configuration
-    CustomErrorResponses?: CustomErrorResponseConfig[]
   }
 }
 
@@ -74,7 +65,6 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
     FunctionEventType,
     AlternateDomainName,
     CertificateArn,
-    CustomErrorResponses,
   } = ResourceProperties
 
   // Physical resource ID for this custom resource
@@ -101,12 +91,6 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
       if (AlternateDomainName && CertificateArn) {
         await configureAlternateDomainName(DistributionId, AlternateDomainName, CertificateArn)
         messages.push(`Alternate domain ${AlternateDomainName} configured`)
-      }
-
-      // Configure custom error responses if properties provided
-      if (CustomErrorResponses && CustomErrorResponses.length > 0) {
-        await configureCustomErrorResponses(DistributionId, CustomErrorResponses)
-        messages.push(`Custom error responses configured (${CustomErrorResponses.length} rules)`)
       }
 
       await sendResponse(event, {
@@ -358,53 +342,6 @@ async function configureAlternateDomainName(
   )
 
   console.log("Alternate domain name configured successfully")
-}
-
-/**
- * Configure custom error responses for the distribution
- * Maps S3 403/404 errors to custom error pages
- * Idempotent - replaces existing error responses
- */
-async function configureCustomErrorResponses(
-  distributionId: string,
-  errorResponses: CustomErrorResponseConfig[],
-): Promise<void> {
-  console.log(`Configuring custom error responses for distribution ${distributionId}`)
-
-  // Get current distribution config
-  const configResponse = await cloudfront.send(new GetDistributionConfigCommand({ Id: distributionId }))
-
-  if (!configResponse.DistributionConfig || !configResponse.ETag) {
-    throw new Error("Failed to get distribution config")
-  }
-
-  const config = configResponse.DistributionConfig
-  const etag = configResponse.ETag
-
-  // Configure custom error responses
-  config.CustomErrorResponses = {
-    Quantity: errorResponses.length,
-    Items: errorResponses.map((er) => ({
-      ErrorCode: er.ErrorCode,
-      ResponseCode: String(er.ResponseCode),
-      ResponsePagePath: er.ResponsePagePath,
-      ErrorCachingMinTTL: er.ErrorCachingMinTTL,
-    })),
-  }
-
-  console.log(`Setting ${errorResponses.length} custom error responses`)
-
-  // Update distribution with new config
-  console.log("Updating distribution...")
-  await cloudfront.send(
-    new UpdateDistributionCommand({
-      Id: distributionId,
-      DistributionConfig: config,
-      IfMatch: etag,
-    }),
-  )
-
-  console.log("Custom error responses configured successfully")
 }
 
 /**

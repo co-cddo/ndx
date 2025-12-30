@@ -2364,9 +2364,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@x-govuk/govuk-eleventy-plugin@npm:^8.1.1":
-  version: 8.1.1
-  resolution: "@x-govuk/govuk-eleventy-plugin@npm:8.1.1"
+"@x-govuk/govuk-eleventy-plugin@npm:^8.2.0":
+  version: 8.2.0
+  resolution: "@x-govuk/govuk-eleventy-plugin@npm:8.2.0"
   dependencies:
     "@11ty/eleventy": "npm:^3.0.0"
     "@11ty/eleventy-navigation": "npm:^1.0.0"
@@ -2394,7 +2394,7 @@ __metadata:
     rollup: "npm:^4.1.0"
     sass: "npm:^1.45.1"
     smartypants: "npm:^0.2.0"
-  checksum: 10c0/a3616efbcacb6e3c30b8114b60dc5595d14562bb0fae018a65283182b214a01a3dcd2ee1df4ee126d8ed53316e07a8797768e92f2f178c61c095572e89a2aa34
+  checksum: 10c0/2d21986834d2b97f43ad0e02da956704e2d0f54a32b32d6ae0c0c5d70830fdb956cd39e62bc310f100f74392a8a737c90833ffae9043708b20b384bbf0a5a41e
   languageName: node
   linkType: hard
 
@@ -5929,7 +5929,7 @@ __metadata:
     "@axe-core/playwright": "npm:^4.11.0"
     "@playwright/test": "npm:^1.57.0"
     "@types/jest": "npm:^30.0.0"
-    "@x-govuk/govuk-eleventy-plugin": "npm:^8.1.1"
+    "@x-govuk/govuk-eleventy-plugin": "npm:^8.2.0"
     esbuild: "npm:^0.27.2"
     husky: "npm:^9.1.7"
     jest: "npm:^30.2.0"

@@ -16,7 +16,8 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
-      "@try/*": ["try/*"]
+      "@try/*": ["try/*"],
+      "@shared/*": ["../shared/*"]
     }
   },
   "include": ["src/**/*.ts"],

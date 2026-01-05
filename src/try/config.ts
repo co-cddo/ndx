@@ -6,8 +6,16 @@
  * Environment-based configuration with sensible defaults for development.
  * Production values should be set via environment variables.
  *
+ * Now uses shared configuration from @shared/config/environment.ts
+ * to ensure consistency with infrastructure deployments.
+ *
  * @module config
  */
+
+import { getEnvironmentConfig } from "../../shared/config/environment"
+
+// Get shared environment config (defaults to prod)
+const sharedConfig = getEnvironmentConfig()
 
 /**
  * Configuration for Try Before You Buy feature.
@@ -27,11 +35,11 @@ export interface TryConfig {
 
 /**
  * Default AWS SSO Portal base URL.
- * This is the Innovation Sandbox SSO portal for development/production.
+ * Now sourced from shared configuration.
  *
  * @see {@link https://docs.aws.amazon.com/singlesignon/latest/userguide/using-the-portal.html|AWS SSO User Portal}
  */
-const DEFAULT_AWS_SSO_PORTAL_URL = "https://d-9267e1e371.awsapps.com/start"
+const DEFAULT_AWS_SSO_PORTAL_URL = sharedConfig.aws.ssoPortalUrl
 
 /**
  * Default IAM role name for SSO console access.
@@ -40,8 +48,9 @@ const DEFAULT_SSO_ROLE_NAME = "ndx_IsbUsersPS"
 
 /**
  * Default API base URL for Innovation Sandbox.
+ * Now sourced from shared configuration.
  */
-const DEFAULT_API_BASE_URL = "/api"
+const DEFAULT_API_BASE_URL = sharedConfig.isb.apiBaseUrl
 
 /**
  * Default request timeout (10 seconds).

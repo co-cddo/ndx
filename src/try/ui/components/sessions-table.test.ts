@@ -245,6 +245,21 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("&lt;script&gt;")
     })
 
+    it("should escape HTML in AWS Account ID to prevent XSS", () => {
+      const xssLease: Lease = {
+        ...mockActiveLease,
+        status: "Pending", // Use non-active status to avoid URL rendering from mocks
+        awsAccountId: '<script>alert("XSS")</script>',
+      }
+
+      const html = renderSessionsTable([xssLease])
+
+      // Should NOT contain unescaped script tag in the table cell
+      expect(html).not.toContain('<code class="govuk-!-font-size-16"><script>')
+      // Should contain escaped version in the table cell
+      expect(html).toContain('<code class="govuk-!-font-size-16">&lt;script&gt;')
+    })
+
     it("should include visually hidden text for screen readers on Launch button", () => {
       const html = renderSessionsTable([mockActiveLease])
 

@@ -39,6 +39,29 @@ export function isValidReturnUrl(url: string): boolean {
     return false
   }
 
+  // Layer 1.5: Detect and reject multi-encoded URLs (double/triple encoding bypass)
+  // Recursively decode to detect encoding attacks like %252F or %25%32%46
+  let decodedUrl = url
+  let previousUrl = ""
+  let iterations = 0
+  const maxIterations = 5 // Prevent infinite loops
+
+  while (decodedUrl !== previousUrl && iterations < maxIterations) {
+    previousUrl = decodedUrl
+    try {
+      decodedUrl = decodeURIComponent(decodedUrl)
+    } catch {
+      // Invalid encoding sequence (e.g., standalone %) - reject as suspicious
+      return false
+    }
+    iterations++
+  }
+
+  // If URL required more than one decode pass, it was multi-encoded - reject
+  if (iterations > 1) {
+    return false
+  }
+
   // Layer 2: Reject dangerous protocols (expanded list)
   // Case-insensitive check for all dangerous protocol handlers
   if (/^(javascript|data|vbscript|file|blob|about|mailto|tel|ftp):/i.test(url)) {

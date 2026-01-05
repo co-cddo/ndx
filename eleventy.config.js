@@ -111,7 +111,6 @@ export default function (eleventyConfig) {
           text: "Alpha",
         },
         html: 'This is a new service. Help us improve it and <a class="govuk-link" href="mailto:ndx@dsit.gov.uk">give your feedback by email</a>.',
-        classes: "govuk-width-container",
       },
       search: {
         indexPath: "/search.json",

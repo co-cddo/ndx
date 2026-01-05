@@ -236,8 +236,11 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
   })
 
   test("Edge case: Token parameter with special characters", async ({ page }) => {
-    // JWT tokens contain dots and underscores - ensure proper parsing
-    const tokenWithSpecialChars = "eyJhbGci.OiJIUzI1NiIsInR5cCI6IkpXVCJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    // JWT tokens contain dots (.) and underscores (_) - ensure proper URL parsing
+    // Note: Must be a valid JWT format (header.payload.signature) to pass auth-provider validation
+    // The signature part contains an underscore: ...JV_adQssw5c
+    const tokenWithSpecialChars =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlNwZWNpYWwgQ2hhcnMgVGVzdCIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjo5OTk5OTk5OTk5fQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
     await page.goto(`/?token=${tokenWithSpecialChars}`)
 

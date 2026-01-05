@@ -102,14 +102,19 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     // Navigate to homepage with token (no return URL in sessionStorage)
     await page.goto(`/?token=${TEST_TOKEN}`)
 
-    // Wait for redirect to home page
-    await page.waitForURL("**/", { timeout: 3000 })
+    // Wait for JavaScript to execute and process the token
+    // The token extraction and URL cleanup happens on DOMContentLoaded
+    await page.waitForLoadState("domcontentloaded")
 
-    // Verify we were redirected to home page
+    // Wait for the URL to be cleaned (token removed from query string)
+    // The cleanup uses history.replaceState, so we need to wait for that
+    await page.waitForFunction(() => !window.location.search.includes("token"))
+
+    // Verify we're on home page (path should be /)
     const currentURL = page.url()
     expect(currentURL).toMatch(/\/$/)
 
-    // Verify token was still stored
+    // Verify token was stored in sessionStorage
     const storedToken = await page.evaluate((key) => {
       return sessionStorage.getItem(key)
     }, TOKEN_KEY)

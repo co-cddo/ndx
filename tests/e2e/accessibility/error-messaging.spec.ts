@@ -274,11 +274,11 @@ test.describe("Error Messaging Accessibility - WCAG 3.3", () => {
 
       await page.reload()
 
-      // Check for loading state with aria-live
-      const loadingState = page.locator("[aria-live], .sessions-loading")
+      // Check for loading state with aria-live - use first() to avoid strict mode errors
+      const loadingStateWithAriaLive = page.locator("[aria-live]").first()
 
-      if ((await loadingState.count()) > 0) {
-        const ariaLive = await loadingState.getAttribute("aria-live")
+      if ((await loadingStateWithAriaLive.count()) > 0) {
+        const ariaLive = await loadingStateWithAriaLive.getAttribute("aria-live")
 
         // Should be polite or assertive
         expect(["polite", "assertive"]).toContain(ariaLive || "polite")

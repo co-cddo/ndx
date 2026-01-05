@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test"
 
+// Test product page path - uses baseURL from playwright.config.ts
+const PRODUCT_PAGE = "/catalogue/mindweave-labs/synaplyte/"
+
 test.describe("Remote Images Plugin", () => {
   test("catalogue page badges load from local assets", async ({ page }) => {
     // Navigate to a catalogue page with badges
-    await page.goto("https://ndx.digital.cabinet-office.gov.uk/catalogue/mindweave-labs/synaplyte/")
+    await page.goto(PRODUCT_PAGE)
 
     // Get all images on the page
     const images = page.locator("img")
@@ -34,7 +37,7 @@ test.describe("Remote Images Plugin", () => {
       }
     })
 
-    await page.goto("https://ndx.digital.cabinet-office.gov.uk/catalogue/mindweave-labs/synaplyte/")
+    await page.goto(PRODUCT_PAGE)
 
     // Wait for images to load
     await page.waitForLoadState("networkidle")
@@ -44,7 +47,7 @@ test.describe("Remote Images Plugin", () => {
   })
 
   test("badge images have correct file extensions", async ({ page }) => {
-    await page.goto("https://ndx.digital.cabinet-office.gov.uk/catalogue/mindweave-labs/synaplyte/")
+    await page.goto(PRODUCT_PAGE)
 
     const badgeImages = page.locator('img[src*="/assets/remote-images/"]')
     const count = await badgeImages.count()
@@ -68,7 +71,7 @@ test.describe("Remote Images Plugin", () => {
       }
     })
 
-    await page.goto("https://ndx.digital.cabinet-office.gov.uk/catalogue/mindweave-labs/synaplyte/")
+    await page.goto(PRODUCT_PAGE)
     await page.waitForLoadState("networkidle")
 
     // No CSP violations should occur
@@ -83,7 +86,7 @@ test.describe("Remote Images Plugin", () => {
     ]
 
     for (const pagePath of pagesToTest) {
-      await page.goto(`https://ndx.digital.cabinet-office.gov.uk${pagePath}`)
+      await page.goto(pagePath)
 
       // Check for any images with external shields.io or jsdelivr sources
       const externalBadges = page.locator('img[src*="shields.io"]')

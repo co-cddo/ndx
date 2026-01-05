@@ -118,28 +118,23 @@ jobs:
         if: needs.build.outputs.frontend-changed == 'true'
         run: npx playwright install --with-deps
 
-      - name: Install mitmproxy
-        if: needs.build.outputs.frontend-changed == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mitmproxy
-
-      - name: Start mitmproxy
-        if: needs.build.outputs.frontend-changed == 'true'
-        run: |
-          mitmproxy --listen-port 8081 -s scripts/mitmproxy-addon.py &
-          sleep 5
-
       - name: Run unit tests
         if: needs.build.outputs.frontend-changed == 'true'
         run: yarn test
 
-      # Temporarily disabled - proxy configuration issues in CI
-      # - name: Run E2E tests
-      #   run: yarn test:e2e
+      - name: Run E2E tests
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: yarn test:e2e
+        env:
+          CI: true
+          # E2E tests run against localhost:8080 (webServer in playwright.config.ts)
+          # No proxy needed - tests connect directly to local dev server
 
-      # - name: Run Accessibility tests
-      #   run: yarn test:e2e:accessibility
+      - name: Run Accessibility tests
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: yarn test:e2e:accessibility
+        env:
+          CI: true
 
       - name: Upload Playwright artifacts
         if: failure()

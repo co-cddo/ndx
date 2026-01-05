@@ -163,7 +163,9 @@ $_font-family: system-ui, sans-serif;
     margin-bottom: 20px;
     background: #f3f2f1;
     border-left: 4px solid #d4351c;
-    color: #d4351c;
+    // Use GOV.UK text colour for WCAG AA contrast (4.5:1+)
+    // Red border provides visual error indication
+    color: #0b0c0c;
 
     // Hidden by default, shown via class
     &--hidden {

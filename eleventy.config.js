@@ -1,10 +1,14 @@
 import { govukEleventyPlugin } from "@x-govuk/govuk-eleventy-plugin"
 import { EleventyRenderPlugin } from "@11ty/eleventy"
+import esbuild from "esbuild"
 import fs from "fs"
 import util from "util"
 
 import mermaidTransformPlugin from "./lib/eleventy-mermaid-transform.js"
 import remoteImagesPlugin from "./lib/eleventy-remote-images.js"
+
+// esbuild context for watch mode (persists across rebuilds)
+let esbuildContext = null
 
 function gitRev() {
   // Handle both regular repos and worktrees
@@ -147,6 +151,44 @@ export default function (eleventyConfig) {
   eleventyConfig.addPlugin(remoteImagesPlugin, {
     domains: ["img.shields.io", "cdn.jsdelivr.net"],
   })
+
+  // TypeScript bundling with esbuild
+  eleventyConfig.on("eleventy.before", async ({ runMode }) => {
+    const isDev = runMode === "serve"
+    const config = {
+      entryPoints: ["src/try/main.ts"],
+      bundle: true,
+      outfile: "src/assets/try.bundle.js",
+      sourcemap: isDev,
+      target: "es2020",
+      format: "esm",
+      minify: !isDev,
+    }
+
+    if (isDev) {
+      // Dev: Use context API for efficient watch mode
+      if (!esbuildContext) {
+        esbuildContext = await esbuild.context(config)
+        await esbuildContext.watch()
+        console.log("[esbuild] Watching TypeScript files...")
+      }
+    } else {
+      // Production: One-time build
+      await esbuild.build(config)
+      console.log("[esbuild] Production build complete")
+    }
+  })
+
+  // Cleanup context after production builds
+  eleventyConfig.on("eleventy.after", async ({ runMode }) => {
+    if (runMode === "build" && esbuildContext) {
+      await esbuildContext.dispose()
+      esbuildContext = null
+    }
+  })
+
+  // Tell Eleventy to watch TypeScript files (triggers browser refresh)
+  eleventyConfig.addWatchTarget("./src/try/**/*.ts")
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")

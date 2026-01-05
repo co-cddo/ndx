@@ -242,7 +242,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
         // We can verify by checking if the page URL changed or is changing
         const currentUrl = page.url()
         // URL should have changed from /try or be in process of changing
-        expect(currentUrl).not.toBe("https://ndx.digital.cabinet-office.gov.uk/try")
+        expect(currentUrl).not.toContain("/try")
       }
     })
   })

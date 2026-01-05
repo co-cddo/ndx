@@ -32,8 +32,9 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     // Simulate OAuth callback with token in URL (redirects to homepage)
     await page.goto(`/?token=${TEST_TOKEN}`)
 
-    // Wait briefly for handleOAuthCallback to execute
-    await page.waitForTimeout(100)
+    // Wait for token extraction and URL cleanup to complete
+    await page.waitForLoadState("domcontentloaded")
+    await page.waitForFunction(() => !window.location.search.includes("token"))
 
     // Verify token was extracted and stored in sessionStorage
     const storedToken = await page.evaluate((key) => {
@@ -48,7 +49,8 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     await page.goto(`/?token=${TEST_TOKEN}`)
 
     // Wait for handleOAuthCallback to execute (URL cleanup happens here)
-    await page.waitForTimeout(200)
+    await page.waitForLoadState("domcontentloaded")
+    await page.waitForFunction(() => !window.location.search.includes("token"))
 
     // Verify URL no longer contains token query parameter
     const currentURL = page.url()
@@ -102,14 +104,19 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     // Navigate to homepage with token (no return URL in sessionStorage)
     await page.goto(`/?token=${TEST_TOKEN}`)
 
-    // Wait for redirect to home page
-    await page.waitForURL("**/", { timeout: 3000 })
+    // Wait for JavaScript to execute and process the token
+    // The token extraction and URL cleanup happens on DOMContentLoaded
+    await page.waitForLoadState("domcontentloaded")
 
-    // Verify we were redirected to home page
+    // Wait for the URL to be cleaned (token removed from query string)
+    // The cleanup uses history.replaceState, so we need to wait for that
+    await page.waitForFunction(() => !window.location.search.includes("token"))
+
+    // Verify we're on home page (path should be /)
     const currentURL = page.url()
     expect(currentURL).toMatch(/\/$/)
 
-    // Verify token was still stored
+    // Verify token was stored in sessionStorage
     const storedToken = await page.evaluate((key) => {
       return sessionStorage.getItem(key)
     }, TOKEN_KEY)
@@ -229,11 +236,17 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
   })
 
   test("Edge case: Token parameter with special characters", async ({ page }) => {
-    // JWT tokens contain dots and underscores - ensure proper parsing
-    const tokenWithSpecialChars = "eyJhbGci.OiJIUzI1NiIsInR5cCI6IkpXVCJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    // JWT tokens contain dots (.) and underscores (_) - ensure proper URL parsing
+    // Note: Must be a valid JWT format (header.payload.signature) to pass auth-provider validation
+    // The signature part contains an underscore: ...JV_adQssw5c
+    const tokenWithSpecialChars =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlNwZWNpYWwgQ2hhcnMgVGVzdCIsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjo5OTk5OTk5OTk5fQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
 
     await page.goto(`/?token=${tokenWithSpecialChars}`)
-    await page.waitForTimeout(100)
+
+    // Wait for token extraction to complete (URL cleanup happens after token stored)
+    await page.waitForLoadState("domcontentloaded")
+    await page.waitForFunction(() => !window.location.search.includes("token"))
 
     const storedToken = await page.evaluate((key) => {
       return sessionStorage.getItem(key)
@@ -245,7 +258,10 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
   test("Edge case: Multiple query parameters with token", async ({ page }) => {
     // Ensure token is extracted even with other query parameters present
     await page.goto(`/?foo=bar&token=${TEST_TOKEN}&baz=qux`)
-    await page.waitForTimeout(100)
+
+    // Wait for token extraction and URL cleanup to complete
+    await page.waitForLoadState("domcontentloaded")
+    await page.waitForFunction(() => !window.location.search.includes("token"))
 
     const storedToken = await page.evaluate((key) => {
       return sessionStorage.getItem(key)
@@ -254,7 +270,6 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     expect(storedToken).toBe(TEST_TOKEN)
 
     // Verify ALL query parameters are removed (not just token)
-    await page.waitForTimeout(200)
     const currentURL = page.url()
     expect(currentURL).not.toContain("?")
     expect(currentURL).not.toContain("foo=")

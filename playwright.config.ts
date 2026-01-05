@@ -1,12 +1,28 @@
 import { defineConfig, devices } from "@playwright/test"
-import { readFileSync } from "fs"
-
-// Load proxy configuration from playwright-config.json
-const proxyConfig = JSON.parse(readFileSync("./playwright-config.json", "utf-8"))
+import { readFileSync, existsSync } from "fs"
 
 // Check for debug mode via environment variable or CLI arg
 const isDebug = process.env.PWDEBUG === "1" || process.argv.includes("--debug")
 const isHeaded = process.env.HEADED === "1" || process.argv.includes("--headed")
+
+// Environment-based configuration
+// - E2E_BASE_URL: Override the base URL (default: http://localhost:8080 in CI, production URL locally)
+// - E2E_USE_PROXY: Enable mitmproxy (default: true locally, false in CI for direct localhost testing)
+const isCI = !!process.env.CI
+const baseURL =
+  process.env.E2E_BASE_URL || (isCI ? "http://localhost:8080" : "https://ndx.digital.cabinet-office.gov.uk")
+const useProxy = process.env.E2E_USE_PROXY === "true" || (!isCI && process.env.E2E_USE_PROXY !== "false")
+
+// Load proxy configuration only when needed (local development with proxy)
+let proxyConfig = undefined
+if (useProxy && existsSync("./playwright-config.json")) {
+  try {
+    const config = JSON.parse(readFileSync("./playwright-config.json", "utf-8"))
+    proxyConfig = config.browser?.launchOptions?.proxy
+  } catch {
+    console.warn("Warning: Could not load playwright-config.json, running without proxy")
+  }
+}
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -29,7 +45,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: "https://ndx.digital.cabinet-office.gov.uk",
+    baseURL,
     trace: "on-first-retry",
     video: "retain-on-failure",
 
@@ -39,8 +55,8 @@ export default defineConfig({
     // Navigation timeout (15 seconds)
     navigationTimeout: 15 * 1000,
 
-    // Use proxy from playwright-config.json
-    proxy: proxyConfig.browser.launchOptions.proxy,
+    // Use proxy only when explicitly enabled (local development)
+    ...(proxyConfig ? { proxy: proxyConfig } : {}),
   },
 
   projects: [
@@ -58,12 +74,13 @@ export default defineConfig({
     },
   ],
 
-  // Run dev server in CI (if needed)
-  webServer: process.env.CI
+  // Run dev server in CI
+  webServer: isCI
     ? {
         command: "yarn start",
         url: "http://localhost:8080",
         reuseExistingServer: false,
+        timeout: 60 * 1000, // 60 seconds to start
       }
     : undefined,
 })

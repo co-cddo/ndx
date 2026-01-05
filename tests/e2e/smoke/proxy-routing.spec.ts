@@ -1,6 +1,26 @@
 import { test, expect } from "@playwright/test"
 
+/**
+ * Proxy Routing Validation Tests
+ *
+ * These tests validate that mitmproxy correctly routes requests:
+ * - UI routes → localhost:8080 (local Eleventy dev server)
+ * - API routes → CloudFront (production API)
+ *
+ * IMPORTANT: These tests require mitmproxy to be running and are skipped in CI
+ * where tests run directly against localhost without proxy.
+ *
+ * To run locally:
+ *   1. Start mitmproxy: yarn dev:proxy
+ *   2. Start dev server: yarn start
+ *   3. Run tests: E2E_USE_PROXY=true yarn test:e2e tests/e2e/smoke/proxy-routing.spec.ts
+ */
+
+// Skip these tests in CI - they require mitmproxy which is complex to set up
 test.describe("Proxy Routing Validation", () => {
+  // Skip all proxy tests in CI environment
+  test.skip(!!process.env.CI, "Proxy tests require mitmproxy - skipped in CI")
+
   test("UI routes are forwarded to localhost through proxy", async ({ page }) => {
     console.log("Testing UI route forwarding through mitmproxy...")
 

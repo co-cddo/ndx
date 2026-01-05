@@ -8,7 +8,7 @@
 
 import { test, expect } from "@playwright/test"
 
-const BASE_URL = "https://ndx.digital.cabinet-office.gov.uk"
+// Page paths - uses baseURL from playwright.config.ts
 const PRODUCT_PAGE = "/catalogue/aws/innovation-sandbox-empty"
 const TRY_PAGE = "/try"
 const TOKEN_KEY = "isb-jwt"
@@ -17,12 +17,12 @@ const TEST_TOKEN = "test-jwt-token-for-e2e-testing"
 test.describe("Try Before You Buy - Catalogue Integration", () => {
   test.beforeEach(async ({ page }) => {
     // Set up authenticated state
-    await page.goto(BASE_URL)
+    await page.goto("/")
     await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
   })
 
   test("AC #1: Product page has Try button with correct attributes", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
 
     // Verify Try button exists
     const tryButton = page.locator("[data-try-id]")
@@ -38,7 +38,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 
   test("AC #2: Try button opens AUP modal for authenticated users", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
 
     // Click try button
     const tryButton = page.locator("[data-try-id]")
@@ -53,7 +53,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 
   test("AC #3: AUP modal displays session info", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
     await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
@@ -67,7 +67,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 
   test("AC #4: AUP checkbox enables Continue button", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
     await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
@@ -86,7 +86,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 
   test("AC #5: Cancel button closes modal", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
     await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
@@ -100,7 +100,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 
   test("AC #6: Escape key closes modal", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
     await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
@@ -114,7 +114,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 
   test("AC #7: Focus trap keeps focus within modal", async ({ page }) => {
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
     await page.locator("[data-try-id]").click()
 
     const modal = page.locator('[role="dialog"]')
@@ -138,7 +138,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
 test.describe("Try Before You Buy - Unauthenticated User", () => {
   test("AC #8: Unauthenticated user redirected to login", async ({ page }) => {
     // Start without token
-    await page.goto(`${BASE_URL}${PRODUCT_PAGE}`)
+    await page.goto(PRODUCT_PAGE)
 
     // Verify no token in sessionStorage
     const hasToken = await page.evaluate((key) => sessionStorage.getItem(key) !== null, TOKEN_KEY)
@@ -163,7 +163,7 @@ test.describe("Try Before You Buy - Unauthenticated User", () => {
 
 test.describe("NDX:Try - Catalogue Filter", () => {
   test("AC #9: NDX:Try filter shows tryable products", async ({ page }) => {
-    await page.goto(`${BASE_URL}/catalogue/tags/try-before-you-buy`)
+    await page.goto("/catalogue/tags/try-before-you-buy")
 
     // Verify filter page loads
     await expect(page.locator("h1")).toContainText("NDX:Try")
@@ -174,7 +174,7 @@ test.describe("NDX:Try - Catalogue Filter", () => {
   })
 
   test("AC #10: Try Before You Buy tag visible on product card", async ({ page }) => {
-    await page.goto(`${BASE_URL}/catalogue`)
+    await page.goto("/catalogue")
 
     // Find a product with Try Before You Buy tag
     const tryTag = page.locator('.govuk-tag:has-text("Try Before You Buy")')

@@ -92,7 +92,7 @@ function renderSessionRow(lease: Lease): string {
         <strong>${escapeHtml(lease.leaseTemplateName)}</strong>
       </td>
       <td class="govuk-table__cell" data-label="AWS Account ID">
-        <code class="govuk-!-font-size-16">${lease.awsAccountId}</code>
+        <code class="govuk-!-font-size-16">${escapeHtml(lease.awsAccountId)}</code>
       </td>
       <td class="govuk-table__cell" data-label="Status">
         <strong class="govuk-tag ${statusClass}">${STATUS_LABELS[lease.status] || lease.status}</strong>

@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "start": "rm -r _site ; eleventy --serve",
-    "build": "yarn build:try-js && eleventy",
+    "build": "eleventy",
     "build:try-js": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --format=esm",
     "build:try-js:watch": "esbuild src/try/main.ts --bundle --outfile=src/assets/try.bundle.js --sourcemap --target=es2020 --format=esm --watch",
     "test": "jest",

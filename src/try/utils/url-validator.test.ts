@@ -174,6 +174,43 @@ describe("url-validator", () => {
       })
     })
 
+    describe("double and triple encoding bypass attempts (security)", () => {
+      it("should reject single encoded path traversal", () => {
+        // %2F = /
+        expect(isValidReturnUrl("%2F..%2F")).toBe(false)
+        expect(isValidReturnUrl("%2f..%2f")).toBe(false) // lowercase
+      })
+
+      it("should reject double encoded path traversal", () => {
+        // %252F decodes to %2F which decodes to /
+        expect(isValidReturnUrl("%252F..%252F")).toBe(false)
+        expect(isValidReturnUrl("%252f..%252f")).toBe(false) // lowercase
+      })
+
+      it("should reject triple encoded sequences", () => {
+        // %25%32%46 decodes to %2F which decodes to /
+        expect(isValidReturnUrl("%25%32%46")).toBe(false)
+        expect(isValidReturnUrl("%25%32%66")).toBe(false) // lowercase
+      })
+
+      it("should reject mixed case encoding", () => {
+        expect(isValidReturnUrl("%2F..%252f")).toBe(false)
+        expect(isValidReturnUrl("%25%32%46..%2f")).toBe(false)
+      })
+
+      it("should reject double encoded protocol handlers", () => {
+        // %3A = :, %252F%252F = //
+        expect(isValidReturnUrl("https%3A%252F%252Fevil.com")).toBe(false)
+      })
+
+      it("should reject invalid encoding sequences", () => {
+        // Malformed percent encoding should be rejected
+        expect(isValidReturnUrl("/path%GG")).toBe(false)
+        expect(isValidReturnUrl("/path%")).toBe(false)
+        expect(isValidReturnUrl("/path%2")).toBe(false)
+      })
+    })
+
     describe("backslash bypass attempts (security)", () => {
       it("should reject backslash-based redirects", () => {
         expect(isValidReturnUrl("/\\evil.com")).toBe(false)

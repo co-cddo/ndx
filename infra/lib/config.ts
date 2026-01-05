@@ -1,4 +1,17 @@
 // Configuration for NDX Infrastructure
+//
+// This module now imports shared configuration from shared/config/environment.ts
+// to ensure consistency between frontend and infrastructure deployments.
+
+import {
+  getEnvironmentConfig as getSharedEnvironmentConfig,
+  getISBConfig as getSharedISBConfig,
+  type EnvironmentConfig as SharedEnvironmentConfig,
+} from "../../shared/config/environment.js"
+
+// Re-export shared config for convenience
+export { getSharedEnvironmentConfig, getSharedISBConfig, type SharedEnvironmentConfig }
+
 export interface EnvironmentConfig {
   readonly distributionId: string
   readonly oacId: string
@@ -57,12 +70,15 @@ export interface ISBConfig {
  *
  * Note: ISB account IDs are provided by the ISB team.
  * These must be verified before deployment.
+ *
+ * Core ISB values (namespace, accountId, region) are now sourced from
+ * the shared configuration to ensure consistency.
  */
 export const ISB_CONFIG: Record<string, ISBConfig> = {
   prod: {
-    namespace: "InnovationSandboxCompute",
-    accountId: "568672915267",
-    region: "us-west-2",
+    namespace: getSharedISBConfig("prod").namespace,
+    accountId: getSharedISBConfig("prod").accountId,
+    region: getSharedISBConfig("prod").region,
     dynamoDbTables: {
       leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
       leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
@@ -70,9 +86,9 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
     },
   },
   staging: {
-    namespace: "InnovationSandboxCompute",
-    accountId: "568672915267",
-    region: "us-west-2",
+    namespace: getSharedISBConfig("staging").namespace,
+    accountId: getSharedISBConfig("staging").accountId,
+    region: getSharedISBConfig("staging").region,
     dynamoDbTables: {
       leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
       leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
@@ -198,13 +214,19 @@ export const EVENT_TYPE_TO_TEMPLATE_ID: Record<string, string> = {
   LeaseFrozen: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
 }
 
+/**
+ * Infrastructure environment configurations
+ *
+ * Region and account values are now sourced from the shared configuration
+ * to ensure consistency with frontend deployments.
+ */
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
   prod: {
     distributionId: "E3THG4UHYDHVWP",
     oacId: "E3P8MA1G9Y5BYE",
     bucketName: "ndx-static-prod",
-    region: "us-west-2",
-    account: "568672915267",
+    region: getSharedEnvironmentConfig("prod").aws.region,
+    account: getSharedEnvironmentConfig("prod").aws.accountId,
     alternateDomainName: "ndx.digital.cabinet-office.gov.uk",
     certificateArn: "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
   },
@@ -212,8 +234,8 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     distributionId: "E3TESTDISTID",
     oacId: "E3TESTOAC",
     bucketName: "ndx-static-test",
-    region: "us-west-2",
-    account: "568672915267",
+    region: getSharedEnvironmentConfig("test").aws.region,
+    account: getSharedEnvironmentConfig("test").aws.accountId,
   },
 }
 

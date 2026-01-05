@@ -7,4 +7,8 @@ module.exports = {
     "^.+\\.tsx?$": "ts-jest",
   },
   setupFiles: ["<rootDir>/jest.setup.js"],
+  moduleNameMapper: {
+    // Map .js imports to .ts files for shared config module
+    "^(\\.\\./)+shared/config/environment\\.js$": "<rootDir>/../shared/config/environment.ts",
+  },
 }

@@ -62,27 +62,27 @@ LocalGov Drupal with AI showcases how UK councils can transform their content ma
 
 ### AI Content Features
 
-| Feature | AWS Service |
-|---------|-------------|
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-4/" target="_blank" rel="noopener">**Content editing**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-5/" target="_blank" rel="noopener">**Plain English conversion**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-6/" target="_blank" rel="noopener">**Alt-text generation**</a> | <a href="https://aws.amazon.com/rekognition/" target="_blank" rel="noopener">Amazon Rekognition</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-8/" target="_blank" rel="noopener">**Text-to-speech**</a> | <a href="https://aws.amazon.com/polly/" target="_blank" rel="noopener">Amazon Polly</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-9/" target="_blank" rel="noopener">**Translation (75+ languages)**</a> | <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-7/" target="_blank" rel="noopener">**PDF-to-web conversion**</a> | <a href="https://aws.amazon.com/textract/" target="_blank" rel="noopener">Amazon Textract</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-3/" target="_blank" rel="noopener">**Council branding**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
+| Feature                                                                                                                                                             | AWS Service                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-4/" target="_blank" rel="noopener">**Content editing**</a>             | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>         |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-5/" target="_blank" rel="noopener">**Plain English conversion**</a>    | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>         |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-6/" target="_blank" rel="noopener">**Alt-text generation**</a>         | <a href="https://aws.amazon.com/rekognition/" target="_blank" rel="noopener">Amazon Rekognition</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-8/" target="_blank" rel="noopener">**Text-to-speech**</a>              | <a href="https://aws.amazon.com/polly/" target="_blank" rel="noopener">Amazon Polly</a>             |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-9/" target="_blank" rel="noopener">**Translation (75+ languages)**</a> | <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a>     |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-7/" target="_blank" rel="noopener">**PDF-to-web conversion**</a>       | <a href="https://aws.amazon.com/textract/" target="_blank" rel="noopener">Amazon Textract</a>       |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-3/" target="_blank" rel="noopener">**Council branding**</a>            | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>         |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component | AWS Service |
-|-----------|-------------|
-| **Compute** | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> |
+| Component    | AWS Service                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| **Compute**  | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a>      |
 | **Database** | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Amazon Aurora</a> |
-| **Storage** | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a> |
-| **CMS** | <a href="https://www.drupal.org/" target="_blank" rel="noopener">Drupal 10</a> |
+| **Storage**  | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a>           |
+| **CMS**      | <a href="https://www.drupal.org/" target="_blank" rel="noopener">Drupal 10</a>                |
 
 </div>
 </div>

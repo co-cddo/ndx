@@ -118,7 +118,7 @@ export default function (eleventyConfig) {
       },
     },
     stylesheets: ["/assets/styles.css"],
-    scripts: ["/assets/try.bundle.js"],
+    scripts: ["/assets/application.js", "/assets/try.bundle.js"],
     serviceNavigation: {
       home: "/",
       navigation: [
@@ -156,7 +156,20 @@ export default function (eleventyConfig) {
   // TypeScript bundling with esbuild
   eleventyConfig.on("eleventy.before", async ({ runMode }) => {
     const isDev = runMode === "serve"
-    const config = {
+
+    // Build application.js (GOV.UK Frontend + SearchElement)
+    const applicationConfig = {
+      entryPoints: ["src/assets/application.ts"],
+      bundle: true,
+      outfile: "src/assets/application.js",
+      sourcemap: isDev,
+      target: "es2020",
+      format: "esm",
+      minify: !isDev,
+    }
+
+    // Build try.bundle.js (Try Before You Buy feature)
+    const tryBundleConfig = {
       entryPoints: ["src/try/main.ts"],
       bundle: true,
       outfile: "src/assets/try.bundle.js",
@@ -169,13 +182,18 @@ export default function (eleventyConfig) {
     if (isDev) {
       // Dev: Use context API for efficient watch mode
       if (!esbuildContext) {
-        esbuildContext = await esbuild.context(config)
-        await esbuildContext.watch()
+        // Create contexts for both bundles
+        const applicationContext = await esbuild.context(applicationConfig)
+        const tryBundleContext = await esbuild.context(tryBundleConfig)
+        await applicationContext.watch()
+        await tryBundleContext.watch()
+        // Store both contexts for cleanup
+        esbuildContext = { application: applicationContext, tryBundle: tryBundleContext }
         console.log("[esbuild] Watching TypeScript files...")
       }
     } else {
-      // Production: One-time build
-      await esbuild.build(config)
+      // Production: One-time build for both bundles
+      await Promise.all([esbuild.build(applicationConfig), esbuild.build(tryBundleConfig)])
       console.log("[esbuild] Production build complete")
     }
   })
@@ -183,13 +201,16 @@ export default function (eleventyConfig) {
   // Cleanup context after production builds
   eleventyConfig.on("eleventy.after", async ({ runMode }) => {
     if (runMode === "build" && esbuildContext) {
-      await esbuildContext.dispose()
+      // Dispose both contexts
+      if (esbuildContext.application) await esbuildContext.application.dispose()
+      if (esbuildContext.tryBundle) await esbuildContext.tryBundle.dispose()
       esbuildContext = null
     }
   })
 
   // Tell Eleventy to watch TypeScript files (triggers browser refresh)
   eleventyConfig.addWatchTarget("./src/try/**/*.ts")
+  eleventyConfig.addWatchTarget("./src/assets/**/*.ts")
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")

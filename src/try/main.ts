@@ -7,16 +7,10 @@
  * Story 5.1: Initializes authentication navigation (sign in/out buttons)
  * Future stories will add additional initialization here.
  *
+ * Note: GOV.UK Frontend initialization and SearchElement are in application.js
+ *
  * @module main
  */
-
-// GOV.UK Frontend initialization (replaces plugin's default application.js)
-// @ts-expect-error - govuk-frontend doesn't have TypeScript types
-import { initAll as GOVUKFrontend } from "govuk-frontend"
-import { SearchElement } from "./ui/search-element"
-
-// Register custom elements used by govuk-eleventy-plugin
-customElements.define("app-search", SearchElement)
 
 import { initAuthNav } from "./ui/auth-nav"
 import { initTryPage } from "./ui/try-page"
@@ -77,9 +71,6 @@ function handlePageOAuthCallback(): void {
  * This ensures the DOM is fully loaded before attempting to access elements.
  */
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize GOV.UK Frontend components (accordions, tabs, etc.)
-  GOVUKFrontend()
-
   // Story 5.3: Handle OAuth callback parameters (token or error in URL)
   handlePageOAuthCallback()
 

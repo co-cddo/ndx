@@ -27,6 +27,10 @@ try_id: "d1039c52-406b-4cb0-a2b8-f13a2376269c"
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/ -->
 <!-- Maintained by: NDX Team | Last verified: 2026-01-08 -->
 
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
 ![](https://img.shields.io/badge/provider-aws-green)
 ![](https://img.shields.io/badge/owner-public_sector-blue)
 ![](https://img.shields.io/badge/access-NDX:Try-purple)
@@ -34,181 +38,213 @@ try_id: "d1039c52-406b-4cb0-a2b8-f13a2376269c"
 ![](https://img.shields.io/badge/category-AI-orange)
 ![](https://img.shields.io/badge/category-CMS-blue)
 
-## What is NDX?
-
-NDX (National Digital Exchange) is a government platform that helps public sector organisations discover, evaluate, and adopt digital solutions.
-
 ## Overview
 
-> **Learning Artifact**: This is a pre-deployed demonstration environment for learning and exploration, not a production-ready product. Use it to understand how AWS AI services can enhance content management for local government.
+{{ govukInsetText({
+  html: "<strong>Most comprehensive experience on NDX:Try</strong><br>7 AI features • 8 AWS services • 40-minute guided walkthrough • Built for local government"
+}) }}
 
-This is the **most comprehensive AWS and AI experience** available on NDX:Try. LocalGov Drupal with AI showcases how UK councils can transform their content management with seven AI-powered capabilities, all running on a robust AWS infrastructure.
+> **Learning Artifact**: This is a pre-deployed demonstration environment for learning and exploration, not a production-ready product.
 
-**Important**: After requesting your sandbox, the environment takes approximately **40 minutes to deploy**. This deployment happens automatically - you'll receive access credentials via email once it's ready. The deployment time reflects the comprehensive nature of this scenario, which provisions a full content management system with multiple AI integrations.
+LocalGov Drupal with AI showcases how UK councils can transform their content management with **seven AI-powered capabilities**, all running on robust AWS infrastructure.
+
+{{ govukWarningText({
+  text: "After requesting your session, the environment takes approximately 40 minutes to deploy. Once ready, the walkthrough will guide you through logging in and exploring all features.",
+  iconFallbackText: "Important"
+}) }}
+
+---
 
 ## What You'll Explore
 
-This sandbox demonstrates **seven AI-powered features** that transform how councils create and manage content:
+<div class="govuk-grid-row">
+<div class="govuk-grid-column-one-half">
 
 ### AI Content Features
 
-- **Content editing assistance** - AI-powered writing support using Amazon Bedrock foundation models to help draft and improve content
-- **Readability simplification** - Automatically convert complex government language to plain English that all citizens can understand
-- **Automatic alt-text generation** - Amazon Rekognition analyses images and generates accessibility descriptions for screen readers
-- **Multi-language text-to-speech** - Amazon Polly converts written content to spoken audio, supporting citizens who prefer audio or have reading difficulties
-- **Content translation** - Amazon Translate provides instant translation to 75+ languages, serving diverse multilingual communities
-- **PDF-to-web conversion** - Amazon Textract transforms PDF documents into accessible, searchable web content
-- **Dynamic council identity generation** - Automated branding and identity customisation for faster deployment
+| Feature | AWS Service |
+|---------|-------------|
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-4/" target="_blank" rel="noopener">**Content editing**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-5/" target="_blank" rel="noopener">**Plain English conversion**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-6/" target="_blank" rel="noopener">**Alt-text generation**</a> | <a href="https://aws.amazon.com/rekognition/" target="_blank" rel="noopener">Amazon Rekognition</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-8/" target="_blank" rel="noopener">**Text-to-speech**</a> | <a href="https://aws.amazon.com/polly/" target="_blank" rel="noopener">Amazon Polly</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-9/" target="_blank" rel="noopener">**Translation (75+ languages)**</a> | <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-7/" target="_blank" rel="noopener">**PDF-to-web conversion**</a> | <a href="https://aws.amazon.com/textract/" target="_blank" rel="noopener">Amazon Textract</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-3/" target="_blank" rel="noopener">**Council branding**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
 
-### AWS Services Used
+</div>
+<div class="govuk-grid-column-one-half">
 
-This scenario showcases the breadth of AWS AI and infrastructure services:
+### Infrastructure
 
-**AI and Machine Learning:**
-- **Amazon Bedrock** - Foundation models for content generation and assistance
-- **Amazon Polly** - Neural text-to-speech in multiple languages
-- **Amazon Translate** - Real-time translation for 75+ languages
-- **Amazon Textract** - Intelligent document processing for PDFs
-- **Amazon Rekognition** - Image analysis for automatic alt-text
+| Component | AWS Service |
+|-----------|-------------|
+| **Compute** | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> |
+| **Database** | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Amazon Aurora</a> |
+| **Storage** | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a> |
+| **CMS** | <a href="https://www.drupal.org/" target="_blank" rel="noopener">Drupal 10</a> |
 
-**Infrastructure:**
-- **AWS Fargate** - Serverless container compute
-- **Amazon Aurora** - Managed PostgreSQL database
-- **Amazon EFS** - Elastic file storage for Drupal assets
-- **Drupal 10** - Enterprise content management platform
+</div>
+</div>
 
-## Learn More
+---
 
-Before requesting your sandbox, explore the detailed documentation:
+## Ready to Explore?
 
-<a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/localgov-drupal/" target="_blank" rel="noopener">View LocalGov Drupal scenario details</a>
+Once you click **"Try this now"** above, your session environment will begin deploying automatically.
 
-Once your environment is deployed, follow the comprehensive walkthrough:
+{{ govukInsetText({
+  html: "<strong>What happens next:</strong><br>1. Your environment deploys (~40 minutes)<br>2. Follow the walkthrough to log in and explore<br>3. The walkthrough guides you through everything"
+}) }}
 
-<a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/" target="_blank" rel="noopener">Start the 40-minute guided walkthrough</a>
+{{ govukButton({
+  text: "Preview the scenario",
+  href: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/localgov-drupal/",
+  classes: "govuk-button--secondary"
+}) }}
 
-## Getting Started
+{{ govukButton({
+  text: "Preview the walkthrough",
+  href: "https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/",
+  classes: "govuk-button--secondary"
+}) }}
 
-1. Click **"Try this now"** above
-2. Accept the Acceptable Use Policy
-3. **Wait approximately 40 minutes** for your environment to deploy
-4. Receive AWS SSO credentials and Drupal admin access via email
-5. Access your sandbox environment through AWS Console
-6. Follow the 12-step walkthrough to explore all AI features
+---
 
 ## Why This Matters for Local Government
 
-AI-enhanced content management addresses critical challenges councils face:
+<div class="govuk-grid-row">
+<div class="govuk-grid-column-one-half">
 
 ### Accessibility at Scale
-- **Automatic alt-text** ensures images are accessible to blind and low-vision users without manual effort
-- **Text-to-speech** serves citizens who prefer audio or have reading difficulties
-- **PDF conversion** transforms legacy documents into accessible web content
-- Helps meet WCAG 2.1 Level AA requirements efficiently
+
+- **Auto alt-text** for images using <a href="https://aws.amazon.com/rekognition/" target="_blank" rel="noopener">Amazon Rekognition</a>
+- **Text-to-speech** via <a href="https://aws.amazon.com/polly/" target="_blank" rel="noopener">Amazon Polly</a> for audio access
+- **PDF conversion** with <a href="https://aws.amazon.com/textract/" target="_blank" rel="noopener">Amazon Textract</a>
+- Helps meet WCAG 2.1 Level AA requirements
+
+</div>
+<div class="govuk-grid-column-one-half">
 
 ### Multilingual Communities
-- **75+ language translation** serves diverse populations without manual translation costs
-- Instant translation reduces barriers for non-English speakers
-- Consistent service delivery regardless of language preference
+
+- **75+ languages** via <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a>
+- Instant translation without manual costs
+- Consistent service delivery regardless of language
+
+</div>
+</div>
+
+<div class="govuk-grid-row">
+<div class="govuk-grid-column-one-half">
 
 ### Content Efficiency
-- **AI content assistance** helps editors write effective content faster
-- **Readability simplification** ensures all communications are accessible to different reading levels
-- Reduces time spent on content creation and review
+
+- **AI drafting** powered by <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>
+- **Plain English conversion** for accessible communications
+- Reduced time on content creation and review
+
+</div>
+<div class="govuk-grid-column-one-half">
 
 ### Digital Inclusion
-- Combines multiple AI capabilities to ensure council services are accessible to everyone
-- Demonstrates practical application of responsible AI in citizen services
+
+- Multiple AI capabilities ensure services reach everyone
+- Practical application of responsible AI
+- Demonstrates modern public sector digital services
+
+</div>
+</div>
+
+---
 
 ## About LocalGov Drupal
 
-LocalGov Drupal is an open-source content management system built by UK councils, for councils. This NDX:Try scenario enhances it with AWS AI capabilities to demonstrate what's possible.
+LocalGov Drupal is an **open-source CMS built by UK councils, for councils**. This NDX:Try scenario enhances it with AWS AI capabilities.
 
-### The Platform
+{{ govukInsetText({
+  html: "<strong>56+ councils</strong> • <strong>100+ live sites</strong> • <strong>19 certified suppliers</strong> • <strong>Open Digital Cooperative</strong> governance"
+}) }}
 
-LocalGov Drupal addresses a fundamental challenge: local councils were spending significant resources building similar websites independently. By collaborating, councils now share development costs and benefit from each other's investments.
+<div class="govuk-grid-row">
+<div class="govuk-grid-column-one-third">
 
-**Key facts:**
-- **56+ councils** actively using LocalGov Drupal across the UK and Ireland
-- **100+ live sites** deployed on the platform
-- **19 certified suppliers** providing implementation support
-- Built on **Drupal 10** with modern PHP 8.1 architecture
+### Cost Benefits
 
-### Cost and Time Benefits
+- **Up to 80% cost reduction**
+- Average £120k reduced to £20k-£60k
+- No licensing fees
+- No vendor lock-in (GPL-2.0)
 
-Councils using LocalGov Drupal report significant savings:
+</div>
+<div class="govuk-grid-column-one-third">
 
-- **Up to 80% cost reduction** compared to traditional website builds (average £120k reduced to £20k-£60k)
-- **8-12 week deployment** versus traditional 12-month timelines
-- **No vendor lock-in** through open-source GPL-2.0 licensing
-- **No licensing fees** - open source means no per-seat costs or annual renewals
+### Time Benefits
 
-### Standards and Accessibility
+- **8-12 week deployment**
+- vs. traditional 12-month timelines
+- Pre-built council content types
+- Shared development investment
 
-LocalGov Drupal is built to government standards:
+</div>
+<div class="govuk-grid-column-one-third">
 
-- **WCAG 2.1 Level AA compliant** - meeting UK accessibility requirements
-- **GOV.UK Design System aligned** - familiar patterns for citizens
-- Evidence-based design from pooled user research across 56 councils
+### Standards
 
-### Governance
+- **WCAG 2.1 Level AA** compliant
+- **GOV.UK Design System** aligned
+- Evidence-based design
+- Built on **Drupal 10**
 
-Since January 2023, LocalGov Drupal has been governed by the **Open Digital Cooperative** - a not-for-profit multistakeholder cooperative ensuring long-term sustainability and democratic governance by member councils and suppliers.
+</div>
+</div>
+
+---
 
 ## Real Council Success Stories
 
+<div class="govuk-grid-row">
+<div class="govuk-grid-column-one-half">
+
 ### Waltham Forest Council
 
-One of the first councils to join LocalGov Drupal in the beta phase:
+One of the first councils to join in the beta phase:
 
 - **£90,000 saved** in development costs
 - **3-6 months** of development time saved
 - **25% improvement** in user satisfaction
-- **96/100 accessibility score** on SiteImprove (vs. 87 sector benchmark)
+- **96/100** accessibility score (vs. 87 benchmark)
 - **40% faster** page load performance
 - **10-15% reduction** in calls to resolution centre
 
+</div>
+<div class="govuk-grid-column-one-half">
+
 ### Cumbria County Council
 
-Demonstrated rapid improvements with limited budget:
+Rapid improvements with limited budget:
 
 - **21% reduction** in contact volume
-- **25% faster** resolution times per contact
+- **25% faster** resolution times
 - **£33,000** annual potential savings
-- Achieved in 6 months what they had been trying to achieve for 3 years
+- Achieved in 6 months what they had tried to achieve for 3 years
 
-### What Digital Leaders Say
+</div>
+</div>
 
 > "LGD is what proper local gov digital collaboration looks like. A single platform where everyone gets the benefits of each other's investment for free. Solving problems once, together."
 >
 > — **Neil Williams**, Chief Digital Officer at Croydon Council (former head of GOV.UK)
 
-## Constraints
+---
 
-- **Budget limit**: $50 maximum spend (sufficient for extensive exploration)
-- **Duration**: 24 hours from activation
-- **Deployment time**: Approximately 40 minutes after requesting
-- **Purpose**: Evaluation only (non-production use)
-- **No cost to you** - the budget is provided by NDX:Try
+## Governance
 
-## Important Notes
+Since January 2023, LocalGov Drupal has been governed by the **<a href="https://opendigital.coop/" target="_blank" rel="noopener">Open Digital Cooperative</a>** - a not-for-profit multistakeholder cooperative ensuring long-term sustainability and democratic governance by member councils and suppliers.
 
-> **Resource Lifecycle Warning**: All resources in your sandbox will be automatically deleted when your session time expires OR when the budget limit is reached (whichever comes first). Do not store important data in this environment.
+The platform represents true collaboration: councils share development costs and benefit from each other's investments. When one council builds a feature, all 56+ councils benefit.
 
-### Before Your Session Ends
-
-- Export any configurations or code snippets you want to keep
-- Take screenshots of AI feature outputs
-- Document any insights about the AI capabilities
-- Note which features would be most valuable for your council
-
-### Infrastructure as Code
-
-The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
-
-### Want to Build Your Own?
-
-After exploring this pre-deployed scenario, use the **Empty Sandbox** to build your own solution from scratch. The Empty Sandbox gives you a clean AWS environment where you can experiment freely.
+---
 
 ## Want to Explore More?
 
@@ -218,16 +254,7 @@ After exploring this pre-deployed scenario, use the **Empty Sandbox** to build y
 - **[Planning AI](/catalogue/aws/planning-ai/)** - Intelligent planning application analysis
 - **[Text to Speech](/catalogue/aws/text-to-speech/)** - Accessibility audio generation
 
-## Having Trouble?
-
-- **Try button not working?** Make sure you're signed in to NDX
-- **Didn't receive credentials?** Wait up to 40 minutes for deployment, then check your spam folder
-- **Can't access the scenario?** Ensure you're using the correct AWS region (us-east-1)
-- **Budget exhausted early?** This comprehensive scenario uses more resources - contact support if unexpected
-
-## Support
-
-For technical issues during your sandbox session, contact the NDX team at ndx@dsit.gov.uk.
+---
 
 ## Learn More About LocalGov Drupal
 

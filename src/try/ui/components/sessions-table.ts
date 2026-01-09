@@ -15,14 +15,18 @@ import { formatExpiry } from "../../utils/date-utils"
 
 /**
  * Status badge color mapping per Story 7.4.
+ * Uses GOV.UK Design System tag colors.
  */
 const STATUS_COLORS: Record<LeaseStatus, string> = {
-  Pending: "govuk-tag--blue",
+  PendingApproval: "govuk-tag--blue",
+  ApprovalDenied: "govuk-tag--red",
   Active: "govuk-tag--green",
+  Frozen: "govuk-tag--yellow",
   Expired: "govuk-tag--grey",
-  Terminated: "govuk-tag--red",
-  ManuallyTerminated: "govuk-tag--red",
-  Failed: "govuk-tag--red",
+  BudgetExceeded: "govuk-tag--red",
+  ManuallyTerminated: "govuk-tag--grey",
+  AccountQuarantined: "govuk-tag--red",
+  Ejected: "govuk-tag--red",
 }
 
 /**
@@ -30,12 +34,15 @@ const STATUS_COLORS: Record<LeaseStatus, string> = {
  * Per GOV.UK Design System guidance, uses adjectives not verbs.
  */
 const STATUS_LABELS: Record<LeaseStatus, string> = {
-  Pending: "Pending",
+  PendingApproval: "Pending approval",
+  ApprovalDenied: "Denied",
   Active: "Active",
+  Frozen: "Frozen",
   Expired: "Completed",
-  Terminated: "Terminated",
+  BudgetExceeded: "Budget exceeded",
   ManuallyTerminated: "Completed",
-  Failed: "Failed",
+  AccountQuarantined: "Quarantined",
+  Ejected: "Ejected",
 }
 
 /**

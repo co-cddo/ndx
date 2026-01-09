@@ -17,9 +17,18 @@ import { deduplicatedRequest } from "../utils/request-dedup"
 
 /**
  * Lease status values.
- * API returns various status strings including 'ManuallyTerminated'.
+ * Must match the API's discriminator values for lease status.
  */
-export type LeaseStatus = "Pending" | "Active" | "Expired" | "Terminated" | "ManuallyTerminated" | "Failed"
+export type LeaseStatus =
+  | "PendingApproval"
+  | "ApprovalDenied"
+  | "Active"
+  | "Frozen"
+  | "Expired"
+  | "BudgetExceeded"
+  | "ManuallyTerminated"
+  | "AccountQuarantined"
+  | "Ejected"
 
 /**
  * Raw lease data from API response.
@@ -209,34 +218,31 @@ export async function fetchUserLeases(): Promise<LeasesResult> {
 }
 
 /**
+ * Valid API status values for type checking.
+ */
+const VALID_STATUSES: LeaseStatus[] = [
+  "PendingApproval",
+  "ApprovalDenied",
+  "Active",
+  "Frozen",
+  "Expired",
+  "BudgetExceeded",
+  "ManuallyTerminated",
+  "AccountQuarantined",
+  "Ejected",
+]
+
+/**
  * Transform raw API lease data to normalized Lease format.
  *
  * @param raw - Raw lease from API response
  * @returns Normalized Lease object
  */
 function transformLease(raw: RawLease): Lease {
-  // Normalize status string to our LeaseStatus type
-  let status: LeaseStatus = "Expired"
-  switch (raw.status) {
-    case "Active":
-      status = "Active"
-      break
-    case "Pending":
-      status = "Pending"
-      break
-    case "Expired":
-      status = "Expired"
-      break
-    case "Terminated":
-      status = "Terminated"
-      break
-    case "ManuallyTerminated":
-      status = "ManuallyTerminated"
-      break
-    case "Failed":
-      status = "Failed"
-      break
-  }
+  // Use the API status directly if valid, otherwise default to Expired
+  const status: LeaseStatus = VALID_STATUSES.includes(raw.status as LeaseStatus)
+    ? (raw.status as LeaseStatus)
+    : "Expired"
 
   return {
     leaseId: raw.leaseId,
@@ -265,13 +271,13 @@ export function isLeaseActive(lease: Lease): boolean {
 }
 
 /**
- * Check if a lease is pending.
+ * Check if a lease is pending approval.
  *
  * @param lease - Lease to check
- * @returns true if lease is pending
+ * @returns true if lease is pending approval
  */
 export function isLeasePending(lease: Lease): boolean {
-  return lease.status === "Pending"
+  return lease.status === "PendingApproval"
 }
 
 /**

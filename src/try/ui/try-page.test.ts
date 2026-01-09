@@ -28,7 +28,7 @@ jest.mock("../auth/auth-provider", () => ({
 jest.mock("../api/sessions-service", () => ({
   fetchUserLeases: jest.fn(),
   isLeaseActive: jest.fn((lease: { status: string }) => lease.status === "Active"),
-  isLeasePending: jest.fn((lease: { status: string }) => lease.status === "Pending"),
+  isLeasePending: jest.fn((lease: { status: string }) => lease.status === "PendingApproval"),
 }))
 
 const mockFetchUserLeases = fetchUserLeases as jest.MockedFunction<typeof fetchUserLeases>
@@ -274,7 +274,7 @@ describe("Try Page Component (Story 5.9)", () => {
           awsAccountId: "123456789013",
           leaseTemplateId: "template-2",
           leaseTemplateName: "Test Product 2",
-          status: "Pending",
+          status: "PendingApproval",
           createdAt: new Date().toISOString(),
           expiresAt: new Date().toISOString(),
           maxSpend: 50,

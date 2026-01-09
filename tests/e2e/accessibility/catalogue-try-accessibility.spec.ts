@@ -42,9 +42,9 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
       await page.goto(PRODUCT_PAGE)
       await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
-      // Wait for DOM ready and try bundle to be loaded
+      // Wait for DOM ready
       await page.waitForLoadState("domcontentloaded")
-      // Wait for bundle ready attribute on <html> element (set by main.ts)
+      // Wait for bundle ready attribute on <html> element (set by main.ts at module load time)
       await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), {
         timeout: 10000,
       })
@@ -65,9 +65,9 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
       await page.goto(PRODUCT_PAGE)
       await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
-      // Wait for DOM ready and try bundle to be loaded
+      // Wait for DOM ready
       await page.waitForLoadState("domcontentloaded")
-      // Wait for bundle ready attribute on <html> element (set by main.ts)
+      // Wait for bundle ready attribute on <html> element (set by main.ts at module load time)
       await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), {
         timeout: 10000,
       })
@@ -91,8 +91,9 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
     await page.goto(PRODUCT_PAGE)
     await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
-    // Wait for DOM ready and try bundle to be loaded
+    // Wait for DOM ready
     await page.waitForLoadState("domcontentloaded")
+    // Wait for bundle ready attribute on <html> element (set by main.ts at module load time)
     await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), { timeout: 10000 })
   })
 

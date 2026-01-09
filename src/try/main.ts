@@ -41,6 +41,11 @@ document.addEventListener(
   { capture: true },
 )
 
+// Signal that the try bundle has loaded and the click handler is ready.
+// Set this immediately after registering the delegated handler (not after init())
+// so E2E tests can reliably detect when the button is interactive.
+document.documentElement.setAttribute("data-try-bundle-ready", "true")
+
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
 export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from "./auth/oauth-flow"
 
@@ -117,12 +122,8 @@ function init(): void {
 
 // Handle module scripts that may load after DOMContentLoaded has fired
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    init()
-    document.documentElement.setAttribute("data-try-bundle-ready", "true")
-  })
+  document.addEventListener("DOMContentLoaded", init)
 } else {
   // DOM is already ready (interactive or complete)
   init()
-  document.documentElement.setAttribute("data-try-bundle-ready", "true")
 }

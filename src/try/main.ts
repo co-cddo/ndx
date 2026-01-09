@@ -22,9 +22,24 @@ customElements.define("app-search", SearchElement)
 
 import { initAuthNav } from "./ui/auth-nav"
 import { initTryPage } from "./ui/try-page"
-import { initTryButton } from "./ui/try-button"
+import { initTryButton, handleTryButtonClickDelegated } from "./ui/try-button"
 import { initTryButtonText } from "./ui/try-button-text"
 import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
+
+// CRITICAL: Set up delegated event handler immediately at module parse time.
+// This ensures try button clicks are captured even if init() hasn't run yet.
+// Uses capturing phase to intercept events before they bubble.
+document.addEventListener(
+  "click",
+  (event) => {
+    const target = event.target as Element
+    const tryButton = target.closest("[data-try-id]")
+    if (tryButton) {
+      handleTryButtonClickDelegated(event, tryButton as HTMLElement)
+    }
+  },
+  { capture: true },
+)
 
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
 export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from "./auth/oauth-flow"

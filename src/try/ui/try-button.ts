@@ -38,7 +38,7 @@ export function initTryButton(): void {
 }
 
 /**
- * Handle try button click event.
+ * Handle try button click event (used by direct event handlers).
  *
  * @param {Event} event - Click event from try button
  */
@@ -46,6 +46,27 @@ function handleTryButtonClick(event: Event): void {
   event.preventDefault()
 
   const button = event.currentTarget as HTMLButtonElement
+  processTryButtonClick(button)
+}
+
+/**
+ * Handle try button click via delegated event handler.
+ * Called from main.ts's document-level click handler.
+ *
+ * @param {Event} event - Click event
+ * @param {HTMLElement} button - The try button element
+ */
+export function handleTryButtonClickDelegated(event: Event, button: HTMLElement): void {
+  event.preventDefault()
+  processTryButtonClick(button)
+}
+
+/**
+ * Core try button click processing logic.
+ *
+ * @param {HTMLElement} button - The try button element
+ */
+function processTryButtonClick(button: HTMLElement): void {
   const tryId = button.dataset.tryId
 
   if (!tryId) {

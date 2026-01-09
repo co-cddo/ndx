@@ -10,11 +10,36 @@
  * @module main
  */
 
+// GOV.UK Frontend initialization (replaces plugin's default application.js)
+// @ts-expect-error - govuk-frontend doesn't have TypeScript types
+import { initAll as GOVUKFrontend } from "govuk-frontend"
+// Import from plugin's source directly (not in package exports)
+// @ts-expect-error - direct file import
+import { SearchElement } from "../../node_modules/@x-govuk/govuk-eleventy-plugin/src/components/search/search.js"
+
+// Register custom elements used by govuk-eleventy-plugin
+customElements.define("app-search", SearchElement)
+
 import { initAuthNav } from "./ui/auth-nav"
 import { initTryPage } from "./ui/try-page"
-import { initTryButton } from "./ui/try-button"
+import { initTryButton, handleTryButtonClickDelegated } from "./ui/try-button"
 import { initTryButtonText } from "./ui/try-button-text"
 import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
+
+// CRITICAL: Set up delegated event handler immediately at module parse time.
+// This ensures try button clicks are captured even if init() hasn't run yet.
+// Uses capturing phase to intercept events before they bubble.
+document.addEventListener(
+  "click",
+  (event) => {
+    const target = event.target as Element
+    const tryButton = target.closest("[data-try-id]")
+    if (tryButton) {
+      handleTryButtonClickDelegated(event, tryButton as HTMLElement)
+    }
+  },
+  { capture: true },
+)
 
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
 export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from "./auth/oauth-flow"
@@ -64,11 +89,16 @@ function handlePageOAuthCallback(): void {
 }
 
 /**
- * Initialize all Try feature components on DOMContentLoaded.
+ * Initialize all Try feature components.
  *
- * This ensures the DOM is fully loaded before attempting to access elements.
+ * This function is called when the DOM is ready. It handles both cases:
+ * - Script loaded before DOMContentLoaded (listener fires normally)
+ * - Script loaded after DOMContentLoaded (immediate execution)
  */
-document.addEventListener("DOMContentLoaded", () => {
+function init(): void {
+  // Initialize GOV.UK Frontend components (accordions, tabs, etc.)
+  GOVUKFrontend()
+
   // Story 5.3: Handle OAuth callback parameters (token or error in URL)
   handlePageOAuthCallback()
 
@@ -83,4 +113,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Dynamic try button text based on auth state and lease template duration
   initTryButtonText()
-})
+}
+
+// Handle module scripts that may load after DOMContentLoaded has fired
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    init()
+    document.documentElement.setAttribute("data-try-bundle-ready", "true")
+  })
+} else {
+  // DOM is already ready (interactive or complete)
+  init()
+  document.documentElement.setAttribute("data-try-bundle-ready", "true")
+}

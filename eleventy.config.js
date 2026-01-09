@@ -118,6 +118,7 @@ export default function (eleventyConfig) {
       },
     },
     stylesheets: ["/assets/styles.css"],
+    scripts: ["/assets/try.bundle.js"],
     serviceNavigation: {
       home: "/",
       navigation: [

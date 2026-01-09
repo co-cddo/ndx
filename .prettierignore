@@ -1,2 +1,5 @@
 .bmad
 docs
+
+# Generated bundles
+src/assets/try.bundle.js

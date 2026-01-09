@@ -13,7 +13,9 @@
 // GOV.UK Frontend initialization (replaces plugin's default application.js)
 // @ts-expect-error - govuk-frontend doesn't have TypeScript types
 import { initAll as GOVUKFrontend } from "govuk-frontend"
-import { SearchElement } from "./ui/search-element"
+// Import from plugin's source directly (not in package exports)
+// @ts-expect-error - direct file import
+import { SearchElement } from "../../node_modules/@x-govuk/govuk-eleventy-plugin/src/components/search/search.js"
 
 // Register custom elements used by govuk-eleventy-plugin
 customElements.define("app-search", SearchElement)

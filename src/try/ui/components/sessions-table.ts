@@ -15,14 +15,18 @@ import { formatExpiry } from "../../utils/date-utils"
 
 /**
  * Status badge color mapping per Story 7.4.
+ * Uses GOV.UK Design System tag colors.
  */
 const STATUS_COLORS: Record<LeaseStatus, string> = {
-  Pending: "govuk-tag--blue",
+  PendingApproval: "govuk-tag--blue",
+  ApprovalDenied: "govuk-tag--red",
   Active: "govuk-tag--green",
+  Frozen: "govuk-tag--yellow",
   Expired: "govuk-tag--grey",
-  Terminated: "govuk-tag--red",
-  ManuallyTerminated: "govuk-tag--red",
-  Failed: "govuk-tag--red",
+  BudgetExceeded: "govuk-tag--red",
+  ManuallyTerminated: "govuk-tag--grey",
+  AccountQuarantined: "govuk-tag--red",
+  Ejected: "govuk-tag--red",
 }
 
 /**
@@ -30,12 +34,15 @@ const STATUS_COLORS: Record<LeaseStatus, string> = {
  * Per GOV.UK Design System guidance, uses adjectives not verbs.
  */
 const STATUS_LABELS: Record<LeaseStatus, string> = {
-  Pending: "Pending",
+  PendingApproval: "Pending approval",
+  ApprovalDenied: "Denied",
   Active: "Active",
+  Frozen: "Frozen",
   Expired: "Completed",
-  Terminated: "Terminated",
+  BudgetExceeded: "Budget exceeded",
   ManuallyTerminated: "Completed",
-  Failed: "Failed",
+  AccountQuarantined: "Quarantined",
+  Ejected: "Ejected",
 }
 
 /**
@@ -49,7 +56,7 @@ export function renderSessionsTable(leases: Lease[]): string {
     return renderEmptyTable()
   }
 
-  const rows = leases.map(renderSessionRow).join("")
+  const rows = leases.map((lease, index) => renderSessionRow(lease, index)).join("")
 
   return `
     <table class="govuk-table sessions-table">
@@ -79,12 +86,12 @@ export function renderSessionsTable(leases: Lease[]): string {
  * @param lease - Lease data
  * @returns HTML string for the row(s)
  */
-function renderSessionRow(lease: Lease): string {
+function renderSessionRow(lease: Lease, index: number): string {
   const statusClass = STATUS_COLORS[lease.status]
   const expiry = formatExpiry(lease.expiresAt)
   const budgetDisplay = `$${lease.maxSpend.toFixed(2)} budget`
   const actions = renderActions(lease)
-  const commentsRow = renderCommentsRow(lease)
+  const commentsRow = renderCommentsRow(lease, index)
 
   return `
     <tr class="govuk-table__row">
@@ -203,7 +210,7 @@ function formatComments(comments: string | undefined): string {
  * @param lease - Lease data
  * @returns HTML string for comments row, or empty string if no comments
  */
-function renderCommentsRow(lease: Lease): string {
+function renderCommentsRow(lease: Lease, index: number): string {
   if (!lease.comments) return ""
 
   const formattedComments = formatComments(lease.comments)
@@ -219,11 +226,11 @@ function renderCommentsRow(lease: Lease): string {
     `
   }
 
-  // Collapsible for non-active leases
+  // Collapsible for non-active leases (first row expanded by default)
   return `
     <tr class="govuk-table__row sessions-table__comments-row">
       <td colspan="6" class="govuk-table__cell sessions-table__comments-cell">
-        <details class="govuk-details govuk-!-margin-bottom-0">
+        <details class="govuk-details govuk-!-margin-bottom-0"${index === 0 ? " open" : ""}>
           <summary class="govuk-details__summary">
             <span class="govuk-details__summary-text">See details</span>
           </summary>

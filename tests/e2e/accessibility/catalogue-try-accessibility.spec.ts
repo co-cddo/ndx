@@ -27,7 +27,7 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
   test.describe("AC #1: Try Button Keyboard Accessible", () => {
     test("Try button can be focused with Tab key", async ({ page }) => {
       await page.goto(PRODUCT_PAGE)
-      await page.waitForLoadState("networkidle")
+      await page.waitForLoadState("domcontentloaded")
 
       const tryButton = page.locator("[data-try-id]")
       await expect(tryButton).toBeVisible()
@@ -42,9 +42,15 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
       await page.goto(PRODUCT_PAGE)
       await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
-      await page.waitForLoadState("networkidle")
+      // Wait for DOM ready
+      await page.waitForLoadState("domcontentloaded")
+      // Wait for bundle ready attribute on <html> element (set by main.ts at module load time)
+      await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), {
+        timeout: 10000,
+      })
 
       const tryButton = page.locator("[data-try-id]")
+      await expect(tryButton).toBeVisible()
       await tryButton.focus()
 
       // Press Enter to activate
@@ -56,12 +62,19 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
     })
 
     test("Try button activates with Space key", async ({ page }) => {
+      // Set up authenticated state
       await page.goto(PRODUCT_PAGE)
       await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
-      await page.waitForLoadState("networkidle")
+      // Wait for DOM ready
+      await page.waitForLoadState("domcontentloaded")
+      // Wait for bundle ready attribute on <html> element (set by main.ts at module load time)
+      await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), {
+        timeout: 10000,
+      })
 
       const tryButton = page.locator("[data-try-id]")
+      await expect(tryButton).toBeVisible()
       await tryButton.focus()
 
       // Press Space to activate
@@ -76,10 +89,14 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
 
 test.describe("AUP Modal Accessibility (Story 6.11)", () => {
   test.beforeEach(async ({ page }) => {
+    // Set up authenticated state
     await page.goto(PRODUCT_PAGE)
     await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
-    await page.waitForLoadState("networkidle")
+    // Wait for DOM ready
+    await page.waitForLoadState("domcontentloaded")
+    // Wait for bundle ready attribute on <html> element (set by main.ts at module load time)
+    await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), { timeout: 10000 })
   })
 
   test.describe("AC #2: Modal ARIA Attributes", () => {
@@ -267,7 +284,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
 test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
   test("Product page with Try button has no WCAG AA violations", async ({ page }) => {
     await page.goto(PRODUCT_PAGE)
-    await page.waitForLoadState("networkidle")
+    await page.waitForLoadState("load")
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
@@ -285,7 +302,7 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
 
   test("Try Before You Buy filter page has no WCAG AA violations", async ({ page }) => {
     await page.goto(TRY_FILTER_PAGE)
-    await page.waitForLoadState("networkidle")
+    await page.waitForLoadState("load")
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
@@ -305,7 +322,8 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
     await page.goto(PRODUCT_PAGE)
     await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
-    await page.waitForLoadState("networkidle")
+    await page.waitForLoadState("domcontentloaded")
+    await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), { timeout: 10000 })
 
     // Open modal
     await page.locator("[data-try-id]").click()
@@ -328,7 +346,7 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
 
   test("Catalogue page with Try tags has no WCAG AA violations", async ({ page }) => {
     await page.goto(CATALOGUE_PAGE)
-    await page.waitForLoadState("networkidle")
+    await page.waitForLoadState("load")
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag22aa"])

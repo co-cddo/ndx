@@ -405,11 +405,15 @@ describe("Sessions Service", () => {
 
     describe("Lease status transformation", () => {
       const statusTests: { apiStatus: string; expectedStatus: LeaseStatus }[] = [
+        { apiStatus: "PendingApproval", expectedStatus: "PendingApproval" },
+        { apiStatus: "ApprovalDenied", expectedStatus: "ApprovalDenied" },
         { apiStatus: "Active", expectedStatus: "Active" },
-        { apiStatus: "Pending", expectedStatus: "Pending" },
+        { apiStatus: "Frozen", expectedStatus: "Frozen" },
         { apiStatus: "Expired", expectedStatus: "Expired" },
-        { apiStatus: "Terminated", expectedStatus: "Terminated" },
+        { apiStatus: "BudgetExceeded", expectedStatus: "BudgetExceeded" },
         { apiStatus: "ManuallyTerminated", expectedStatus: "ManuallyTerminated" },
+        { apiStatus: "AccountQuarantined", expectedStatus: "AccountQuarantined" },
+        { apiStatus: "Ejected", expectedStatus: "Ejected" },
         { apiStatus: "Unknown", expectedStatus: "Expired" }, // Default fallback
       ]
 
@@ -501,7 +505,7 @@ describe("Sessions Service", () => {
     })
 
     it("should return false for non-Active statuses", () => {
-      const statuses: LeaseStatus[] = ["Pending", "Expired", "Terminated", "ManuallyTerminated"]
+      const statuses: LeaseStatus[] = ["PendingApproval", "Expired", "ApprovalDenied", "ManuallyTerminated"]
 
       statuses.forEach((status) => {
         const lease: Lease = {
@@ -522,13 +526,13 @@ describe("Sessions Service", () => {
   })
 
   describe("isLeasePending", () => {
-    it("should return true for Pending status", () => {
+    it("should return true for PendingApproval status", () => {
       const lease: Lease = {
         leaseId: "1",
         awsAccountId: "123",
         leaseTemplateId: "template",
         leaseTemplateName: "Test",
-        status: "Pending",
+        status: "PendingApproval",
         createdAt: "2025-01-01",
         expiresAt: "2025-01-02",
         maxSpend: 50,
@@ -538,8 +542,8 @@ describe("Sessions Service", () => {
       expect(isLeasePending(lease)).toBe(true)
     })
 
-    it("should return false for non-Pending statuses", () => {
-      const statuses: LeaseStatus[] = ["Active", "Expired", "Terminated", "ManuallyTerminated"]
+    it("should return false for non-PendingApproval statuses", () => {
+      const statuses: LeaseStatus[] = ["Active", "Expired", "ApprovalDenied", "ManuallyTerminated"]
 
       statuses.forEach((status) => {
         const lease: Lease = {

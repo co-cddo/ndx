@@ -49,7 +49,7 @@ describe("Sessions Table Component", () => {
   const mockPendingLease: Lease = {
     ...mockActiveLease,
     leaseId: "lease-456",
-    status: "Pending",
+    status: "PendingApproval",
   }
 
   const mockExpiredLease: Lease = {
@@ -58,16 +58,16 @@ describe("Sessions Table Component", () => {
     status: "Expired",
   }
 
-  const mockTerminatedLease: Lease = {
+  const mockDeniedLease: Lease = {
     ...mockActiveLease,
     leaseId: "lease-999",
-    status: "Terminated",
+    status: "ApprovalDenied",
   }
 
-  const mockFailedLease: Lease = {
+  const mockBudgetExceededLease: Lease = {
     ...mockActiveLease,
     leaseId: "lease-888",
-    status: "Failed",
+    status: "BudgetExceeded",
   }
 
   describe("renderSessionsTable", () => {
@@ -139,11 +139,11 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("Active")
     })
 
-    it("should render Pending status with blue badge", () => {
+    it("should render PendingApproval status with blue badge", () => {
       const html = renderSessionsTable([mockPendingLease])
 
       expect(html).toContain("govuk-tag--blue")
-      expect(html).toContain("Pending")
+      expect(html).toContain("Pending approval")
     })
 
     it("should render Expired status as Completed with grey badge", () => {
@@ -153,18 +153,18 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("Completed")
     })
 
-    it("should render Terminated status with red badge", () => {
-      const html = renderSessionsTable([mockTerminatedLease])
+    it("should render ApprovalDenied status with red badge", () => {
+      const html = renderSessionsTable([mockDeniedLease])
 
       expect(html).toContain("govuk-tag--red")
-      expect(html).toContain("Terminated")
+      expect(html).toContain("Denied")
     })
 
-    it("should render Failed status with red badge", () => {
-      const html = renderSessionsTable([mockFailedLease])
+    it("should render BudgetExceeded status with red badge", () => {
+      const html = renderSessionsTable([mockBudgetExceededLease])
 
       expect(html).toContain("govuk-tag--red")
-      expect(html).toContain("Failed")
+      expect(html).toContain("Budget exceeded")
     })
 
     it("should render expiry date", () => {
@@ -224,8 +224,8 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("No actions available")
     })
 
-    it("should NOT render Launch button for Failed leases", () => {
-      const html = renderSessionsTable([mockFailedLease])
+    it("should NOT render Launch button for BudgetExceeded leases", () => {
+      const html = renderSessionsTable([mockBudgetExceededLease])
 
       expect(html).not.toContain("Launch AWS Console")
       expect(html).toContain("No actions available")
@@ -248,7 +248,7 @@ describe("Sessions Table Component", () => {
     it("should escape HTML in AWS Account ID to prevent XSS", () => {
       const xssLease: Lease = {
         ...mockActiveLease,
-        status: "Pending", // Use non-active status to avoid URL rendering from mocks
+        status: "PendingApproval", // Use non-active status to avoid URL rendering from mocks
         awsAccountId: '<script>alert("XSS")</script>',
       }
 

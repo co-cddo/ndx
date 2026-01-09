@@ -210,7 +210,7 @@ export function renderEmptyState(container: HTMLElement): void {
 export function renderAuthenticatedState(container: HTMLElement, leases: Lease[], isRefreshing = false): void {
   const hasLeases = leases.length > 0
   const activeCount = leases.filter((l) => l.status === "Active").length
-  const pendingCount = leases.filter((l) => l.status === "Pending").length
+  const pendingCount = leases.filter((l) => l.status === "PendingApproval").length
 
   // Build summary text
   let summaryText = ""

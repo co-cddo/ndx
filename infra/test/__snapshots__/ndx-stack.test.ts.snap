@@ -514,10 +514,7 @@ function handler(event) {
     var queryPos = uri.indexOf("?")
     var hashPos = uri.indexOf("#")
     // Has extension if dot exists after last slash and before any query/fragment
-    var hasType =
-      dotPos > slashPos &&
-      (queryPos === -1 || dotPos < queryPos) &&
-      (hashPos === -1 || dotPos < hashPos)
+    var hasType = dotPos > slashPos && (queryPos === -1 || dotPos < queryPos) && (hashPos === -1 || dotPos < hashPos)
     if (!hasType) {
       request.uri = "/index.html"
     }

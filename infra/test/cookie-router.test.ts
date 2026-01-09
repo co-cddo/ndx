@@ -60,9 +60,7 @@ function createMockHandler() {
       const hashPos = uri.indexOf("#")
       // Has extension if dot exists after last slash and before any query/fragment
       const hasType =
-        dotPos > slashPos &&
-        (queryPos === -1 || dotPos < queryPos) &&
-        (hashPos === -1 || dotPos < hashPos)
+        dotPos > slashPos && (queryPos === -1 || dotPos < queryPos) && (hashPos === -1 || dotPos < hashPos)
       if (!hasType) {
         request.uri = "/index.html"
       }

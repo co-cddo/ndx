@@ -117,11 +117,12 @@ function init(): void {
 
 // Handle module scripts that may load after DOMContentLoaded has fired
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init)
+  document.addEventListener("DOMContentLoaded", () => {
+    init()
+    document.documentElement.setAttribute("data-try-bundle-ready", "true")
+  })
 } else {
+  // DOM is already ready (interactive or complete)
   init()
+  document.documentElement.setAttribute("data-try-bundle-ready", "true")
 }
-
-// Signal that try.bundle.js has fully loaded and initialized
-// This can be used by tests to wait for JS initialization
-document.documentElement.setAttribute("data-try-bundle-ready", "true")

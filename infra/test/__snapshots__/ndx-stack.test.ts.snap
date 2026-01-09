@@ -507,7 +507,17 @@ function handler(event) {
   if (ndxCookie && ndxCookie.value === "legacy") {
     // Use default cache behavior origin (old S3Origin) - no modification
     // Legacy ISB is an SPA - all non-file URLs go to /index.html
-    const hasType = request.uri.split(/#|\\?/)[0].split(".").length >= 2
+    // Use indexOf/lastIndexOf instead of split() for performance - CloudFront Functions
+    // have a strict 1ms execution limit and split() operations timeout on longer URIs
+    var dotPos = uri.lastIndexOf(".")
+    var slashPos = uri.lastIndexOf("/")
+    var queryPos = uri.indexOf("?")
+    var hashPos = uri.indexOf("#")
+    // Has extension if dot exists after last slash and before any query/fragment
+    var hasType =
+      dotPos > slashPos &&
+      (queryPos === -1 || dotPos < queryPos) &&
+      (hashPos === -1 || dotPos < hashPos)
     if (!hasType) {
       request.uri = "/index.html"
     }

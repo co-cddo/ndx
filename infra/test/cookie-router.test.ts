@@ -52,7 +52,17 @@ function createMockHandler() {
     if (ndxCookie && ndxCookie.value === "legacy") {
       // Use default cache behavior origin (old S3Origin) - no modification
       // Legacy ISB is an SPA - all non-file URLs go to /index.html
-      const hasType = request.uri.split(/#|\?/)[0].split(".").length >= 2
+      // Use indexOf/lastIndexOf instead of split() for performance - CloudFront Functions
+      // have a strict 1ms execution limit and split() operations timeout on longer URIs
+      const dotPos = uri.lastIndexOf(".")
+      const slashPos = uri.lastIndexOf("/")
+      const queryPos = uri.indexOf("?")
+      const hashPos = uri.indexOf("#")
+      // Has extension if dot exists after last slash and before any query/fragment
+      const hasType =
+        dotPos > slashPos &&
+        (queryPos === -1 || dotPos < queryPos) &&
+        (hashPos === -1 || dotPos < hashPos)
       if (!hasType) {
         request.uri = "/index.html"
       }
@@ -359,6 +369,109 @@ describe("CloudFront Cookie Router", () => {
 
       // Files with extensions are preserved for legacy
       expect(result.uri).toBe("/assets/style.css")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA handles long base64 URIs (approvals route)", () => {
+      // This URI is 109 chars - previously caused timeout with split() implementation
+      const event: CloudFrontEvent = {
+        request: {
+          uri: "/approvals/eyJ1c2VyRW1haWwiOiJuZHgrdGVzdEBkc2l0Lvdi51ayIsIWQ2ZDBjNS1hNTRkLTRhMmMtOGNy1iNTI4ODlhNTQ0M==",
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      // Long SPA routes should work without timeout
+      expect(result.uri).toBe("/index.html")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA handles very long URIs (200+ chars)", () => {
+      // Very long URI to ensure no performance issues
+      const longPath = "/some/very/long/path/" + "a".repeat(200)
+      const event: CloudFrontEvent = {
+        request: {
+          uri: longPath,
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      expect(result.uri).toBe("/index.html")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA handles URIs with query strings", () => {
+      const event: CloudFrontEvent = {
+        request: {
+          uri: "/approvals/abc123?tab=details",
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      // URI without extension before query string should route to /index.html
+      expect(result.uri).toBe("/index.html")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA handles URIs with hash fragments", () => {
+      const event: CloudFrontEvent = {
+        request: {
+          uri: "/approvals/abc123#section",
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      expect(result.uri).toBe("/index.html")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA preserves files with dot in directory path", () => {
+      const event: CloudFrontEvent = {
+        request: {
+          uri: "/path.with.dots/file",
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      // No extension after the last slash, should route to /index.html
+      expect(result.uri).toBe("/index.html")
+      expect(updateRequestOriginCalls).toHaveLength(0)
+    })
+
+    test("legacy SPA preserves actual file in dotted path", () => {
+      const event: CloudFrontEvent = {
+        request: {
+          uri: "/path.with.dots/file.js",
+          cookies: {
+            NDX: { value: "legacy" },
+          },
+        },
+      }
+
+      const result = handler(event)
+
+      // Has extension after last slash, should preserve URI
+      expect(result.uri).toBe("/path.with.dots/file.js")
       expect(updateRequestOriginCalls).toHaveLength(0)
     })
   })

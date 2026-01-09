@@ -33,9 +33,6 @@
     "url": "https://github.com/co-cddo/ndx/issues"
   },
   "homepage": "https://github.com/co-cddo/ndx#readme",
-  "dependencies": {
-    "govuk-frontend": "^5.11.0"
-  },
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
     "@axe-core/playwright": "^4.11.0",

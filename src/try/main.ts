@@ -74,11 +74,13 @@ function handlePageOAuthCallback(): void {
 }
 
 /**
- * Initialize all Try feature components on DOMContentLoaded.
+ * Initialize all Try feature components.
  *
- * This ensures the DOM is fully loaded before attempting to access elements.
+ * This function is called when the DOM is ready. It handles both cases:
+ * - Script loaded before DOMContentLoaded (listener fires normally)
+ * - Script loaded after DOMContentLoaded (immediate execution)
  */
-document.addEventListener("DOMContentLoaded", () => {
+function init(): void {
   // Initialize GOV.UK Frontend components (accordions, tabs, etc.)
   GOVUKFrontend()
 
@@ -96,4 +98,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Dynamic try button text based on auth state and lease template duration
   initTryButtonText()
-})
+}
+
+// Handle module scripts that may load after DOMContentLoaded has fired
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init)
+} else {
+  init()
+}

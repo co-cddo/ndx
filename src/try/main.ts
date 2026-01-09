@@ -29,17 +29,20 @@ import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
 // CRITICAL: Set up delegated event handler immediately at module parse time.
 // This ensures try button clicks are captured even if init() hasn't run yet.
 // Uses capturing phase to intercept events before they bubble.
+console.log("[TryMain] Registering delegated click handler")
 document.addEventListener(
   "click",
   (event) => {
     const target = event.target as Element
     const tryButton = target.closest("[data-try-id]")
+    console.log("[TryMain] Click event captured", { target: target.tagName, tryButton: !!tryButton })
     if (tryButton) {
       handleTryButtonClickDelegated(event, tryButton as HTMLElement)
     }
   },
   { capture: true },
 )
+console.log("[TryMain] Delegated click handler registered")
 
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
 export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from "./auth/oauth-flow"

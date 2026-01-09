@@ -67,7 +67,6 @@ export function handleTryButtonClickDelegated(event: Event, button: HTMLElement)
  * @param {HTMLElement} button - The try button element
  */
 function processTryButtonClick(button: HTMLElement): void {
-  console.log("[TryButton] processTryButtonClick called", { button })
   const tryId = button.dataset.tryId
 
   if (!tryId) {
@@ -75,24 +74,17 @@ function processTryButtonClick(button: HTMLElement): void {
     return
   }
 
-  console.log("[TryButton] tryId:", tryId)
-
   // Story 6.5: Check authentication
-  const isAuth = authState.isAuthenticated()
-  console.log("[TryButton] isAuthenticated:", isAuth)
-
-  if (!isAuth) {
+  if (!authState.isAuthenticated()) {
     // Store return URL for post-login redirect (uses oauth-flow's storage)
     storeReturnURL()
 
     // Redirect to OAuth login
-    console.log("[TryButton] Redirecting to login")
     window.location.href = "/api/auth/login"
     return
   }
 
   // Story 6.6: User is authenticated, open AUP modal
-  console.log("[TryButton] Opening AUP modal")
   openAupModal(tryId, handleLeaseAccept)
 }
 

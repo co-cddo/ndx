@@ -62,6 +62,7 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
     })
 
     test("Try button activates with Space key", async ({ page }) => {
+      // Set up authenticated state
       await page.goto(PRODUCT_PAGE)
       await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
@@ -88,6 +89,7 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
 
 test.describe("AUP Modal Accessibility (Story 6.11)", () => {
   test.beforeEach(async ({ page }) => {
+    // Set up authenticated state
     await page.goto(PRODUCT_PAGE)
     await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()

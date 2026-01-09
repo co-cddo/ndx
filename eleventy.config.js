@@ -170,6 +170,8 @@ export default function (eleventyConfig) {
       // Dev: Use context API for efficient watch mode
       if (!esbuildContext) {
         esbuildContext = await esbuild.context(config)
+        // Do an initial build before starting watch mode
+        await esbuildContext.rebuild()
         await esbuildContext.watch()
         console.log("[esbuild] Watching TypeScript files...")
       }

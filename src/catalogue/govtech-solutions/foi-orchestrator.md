@@ -1,7 +1,7 @@
 ---
 layout: product
 title: GovTech Solutions FOI Orchestrator™
-description: Revolutionary Multi-Agency FOI Request Orchestrator requiring cross-government interest to justify development. Using AI to centralize, route, and manage Freedom of Information requests across all responsible bodies. <br/><br/><strong>⚠️ CAMPAIGN PRODUCT - REQUIRES MINIMUM 15 AGENCY PLEDGES TO USE IF DEVELOPED</strong>
+description: Revolutionary Multi-Agency FOI Request Orchestrator requiring cross-government interest to justify development. Using AI to centralise, route, and manage Freedom of Information requests across all responsible bodies. <br/><br/><strong>⚠️ CAMPAIGN PRODUCT - REQUIRES MINIMUM 15 AGENCY PLEDGES TO USE IF DEVELOPED</strong>
 image:
   src: /assets/catalogue/govtech-solutions/foi-orchestrator-logo.svg
   alt: GovTech Solutions FOI Orchestrator
@@ -29,13 +29,13 @@ tags:
   </div>
   <div class="govuk-notification-banner__content">
     <h3 class="govuk-notification-banner__heading">
-      This product requires pre-commitment from at least 15 public sector organizations
+      This product requires pre-commitment from at least 15 public sector organisations
     </h3>
     <p class="govuk-body">Development will only proceed with sufficient demonstrated demand. Current interest status shown below.</p>
   </div>
 </div>
 
-## Campaign Progress
+## Campaign progress
 
 <div style="background: #f3f2f1; padding: 20px; margin: 20px 0; border-left: 5px solid #1d70b8;">
   <h3 class="govuk-heading-m">Interest Barometer</h3>
@@ -50,7 +50,7 @@ tags:
       </div>
     </div>
     <div style="margin-top: 15px;">
-      <h4 class="govuk-heading-s">Interested Organizations:</h4>
+      <h4 class="govuk-heading-s">Interested Organisations:</h4>
       <ul class="govuk-list govuk-list--bullet">
         <li>Cabinet Office (interested)</li>
         <li>Ministry of Justice (interested)</li>
@@ -60,7 +60,7 @@ tags:
         <li>Scottish Government (interested)</li>
         <li>Welsh Government (interested)</li>
       </ul>
-      <p class="govuk-body-s"><strong>7 of 15 organizations have pledged to use the product if developed</strong></p>
+      <p class="govuk-body-s"><strong>7 of 15 organisations have pledged to use the product if developed</strong></p>
     </div>
   </div>
 </div>
@@ -80,41 +80,41 @@ tags:
 
 ## Revolutionary FOI Management
 
-The Multi-Agency FOI Request Orchestrator represents a paradigm shift in how the UK public sector handles Freedom of Information requests. This AI-powered centralized system will eliminate the current fragmented approach where citizens must navigate complex organizational structures to find the right body to answer their questions.
+The Multi-Agency FOI Request Orchestrator represents a paradigm shift in how the UK public sector handles Freedom of Information requests. This AI-powered centralised system will eliminate the current fragmented approach where citizens must navigate complex organisational structures to find the right body to answer their questions.
 
-**Current Problem**: Citizens submit FOI requests to the wrong departments 73% of the time, leading to delays, transfers, and poor public satisfaction. The average FOI request touches 3.2 different organizations before reaching the right team.
+**Current Problem**: Citizens submit FOI requests to the wrong departments 73% of the time, leading to delays, transfers, and poor public satisfaction. The average FOI request touches 3.2 different organisations before reaching the right team.
 
 **Our Solution**: A single portal that uses advanced AI to automatically route requests to the correct responsible bodies, teams, and individuals while maintaining full transparency and compliance with FOI legislation.
 
-## Product Mockups
+## Product mockups
 
-### Unified Request Portal
+### Unified request portal
 
 ![FOI Orchestrator Citizen Portal](https://via.placeholder.com/800x500/1d70b8/ffffff?text=FOI+Orchestrator+Citizen+Portal%0AUnified+request+submission+with+AI-powered+routing)
 
 _Citizens submit requests through a single, intuitive interface that guides them through the process_
 
-### AI Routing Dashboard
+### AI routing dashboard
 
 ![AI Routing Dashboard](https://via.placeholder.com/800x500/00703c/ffffff?text=AI+Routing+Dashboard%0AReal-time+request+routing+and+status+tracking)
 
 _Government teams see real-time routing decisions and can override AI recommendations when necessary_
 
-### Cross-Agency Collaboration Interface
+### Cross-agency collaboration interface
 
 ![Multi-Agency Collaboration](https://via.placeholder.com/800x500/5f2c80/ffffff?text=Multi-Agency+Collaboration%0ASeamless+coordination+between+departments)
 
-_When requests span multiple agencies, the system facilitates seamless collaboration and response coordination_
+_When requests span multiple agencies, the system enables seamless collaboration and response coordination_
 
-### Automated Redaction & Compliance
+### Automated redaction and compliance
 
 ![Automated Redaction Interface](https://via.placeholder.com/800x500/d4351c/ffffff?text=Automated+Redaction+%26+Compliance%0AIntelligent+sensitive+information+detection)
 
 _Advanced NLP automatically identifies and suggests redactions for sensitive information while maintaining transparency_
 
-## Technical Architecture
+## Technical architecture
 
-### Core Components
+### Core components
 
 **1. Intelligent Request Router**
 
@@ -144,7 +144,7 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 - Appeals and clarification request handling
 - Satisfaction feedback collection
 
-### Security & Compliance Features
+### Security and compliance features
 
 - End-to-end encryption for all communications
 - GDPR and DPA 2018 compliance by design
@@ -153,9 +153,9 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 - Comprehensive audit logging
 - Data residency in UK government-approved facilities
 
-## Business Case
+## Business case
 
-### Current Challenges
+### Current challenges
 
 - **Inefficient Routing**: 73% of FOI requests initially sent to wrong department
 - **Resource Waste**: Average 42 hours per request spent on administration
@@ -163,7 +163,7 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 - **Compliance Risks**: 23% of requests miss statutory deadlines
 - **Siloed Information**: Duplicate requests across agencies
 
-### Projected Benefits
+### Projected benefits
 
 - **80% reduction** in request routing time
 - **60% improvement** in response accuracy
@@ -171,24 +171,24 @@ _Advanced NLP automatically identifies and suggests redactions for sensitive inf
 - **Enhanced transparency** through consistent handling
 - **Better citizen satisfaction** with streamlined process
 
-### Return on Investment
+### Return on investment
 
-- Initial development will proceed once sufficient organizations pledge to use the product
+- Initial development will proceed once sufficient organisations pledge to use the product
 - Projected benefits include substantial efficiency gains and cost savings for all participants
 - Early adopters will help shape the final product and receive priority support
 
-## Interest Requirements
+## Interest requirements
 
-### Minimum Viable Interest
+### Minimum viable interest
 
-To justify development, we require **15 public sector organizations** to demonstrate interest to:
+To justify development, we require **15 public sector organisations** to demonstrate interest to:
 
 - **12-month minimum usage** intent
 - **Pledge to use the FOI Orchestrator if developed**
 
-### What Your Interest Includes
+### What your interest includes
 
-- Early access to the FOI Orchestrator for your organization
+- Early access to the FOI Orchestrator for your organisation
 - Integration with existing systems and processes
 - Comprehensive staff training and change management
 - 24/7 technical support during implementation
@@ -196,7 +196,7 @@ To justify development, we require **15 public sector organizations** to demonst
 - Compliance and legal guidance
 - Performance analytics and reporting
 
-## Development Timeline
+## Development timeline
 
 ### Phase 1: Foundation (Months 1-6)
 
@@ -210,32 +210,32 @@ To justify development, we require **15 public sector organizations** to demonst
 - Multi-agency coordination features
 - Advanced redaction capabilities
 - API development for system integration
-- Pilot program with early adopters
+- Pilot programme with early adopters
 
 ### Phase 3: Refinement (Months 13-18)
 
 - Machine learning model training with real data
-- User experience optimization
+- User experience optimisation
 - Compliance certification completion
 - Full-scale deployment preparation
 
 ### Phase 4: Launch (Month 19)
 
-- Go-live for all interested organizations
+- Go-live for all interested organisations
 - Staff training and support
-- Performance monitoring and optimization
+- Performance monitoring and optimisation
 
 <div id="commitment-form" style="background: #f8f8f8; padding: 30px; margin: 30px 0; border: 2px solid #1d70b8;">
-  <h2 class="govuk-heading-l">Express Your Organization's Interest</h2>
-  <p class="govuk-body">Complete this form to register your organization's intent to use the FOI Orchestrator if it is developed. This is not a financial or contractual commitment.</p>
+  <h2 class="govuk-heading-l">Express Your Organisation's Interest</h2>
+  <p class="govuk-body">Complete this form to register your organisation's intent to use the FOI Orchestrator if it is developed. This is not a financial or contractual commitment.</p>
   
   <div class="govuk-form-group">
-    <label class="govuk-label govuk-label--m" for="org-name">Organization Name</label>
+    <label class="govuk-label govuk-label--m" for="org-name">Organisation Name</label>
     <input class="govuk-input" id="org-name" type="text" placeholder="e.g., Department for Education">
   </div>
   
   <div class="govuk-form-group">
-    <label class="govuk-label govuk-label--m" for="org-type">Organization Type</label>
+    <label class="govuk-label govuk-label--m" for="org-type">Organisation Type</label>
     <select class="govuk-select" id="org-type">
       <option>Central Government Department</option>
       <option>Local Authority (>500k population)</option>
@@ -276,7 +276,7 @@ To justify development, we require **15 public sector organizations** to demonst
 
 <div id="more-info" style="background: #f0f4f5; padding: 30px; margin: 30px 0;">
   <h2 class="govuk-heading-l">Need More Information?</h2>
-  <p class="govuk-body">Contact our team to discuss your organization's specific needs and how the FOI Orchestrator can benefit your operations.</p>
+  <p class="govuk-body">Contact our team to discuss your organisation's specific needs and how the FOI Orchestrator can benefit your operations.</p>
   
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-one-half">
@@ -305,7 +305,7 @@ To justify development, we require **15 public sector organizations** to demonst
     <li>Your current FOI handling challenges</li>
     <li>Potential cost savings and efficiency gains</li>
     <li>Integration requirements with existing systems</li>
-    <li>Customization options for your organization</li>
+    <li>Customisation options for your organisation</li>
     <li>Implementation timeline and support requirements</li>
   </ul>
   

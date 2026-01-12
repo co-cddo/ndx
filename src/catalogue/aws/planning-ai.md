@@ -30,7 +30,7 @@ try_id: "39060620-dc1b-4e1f-86f6-d928b5d1ac61"
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-AI-orange)
 
-## What is NDX?
+## About NDX
 
 NDX (National Digital Exchange) is a government platform that helps public sector organisations discover, evaluate, and adopt digital solutions.
 
@@ -42,7 +42,7 @@ NDX (National Digital Exchange) is a government platform that helps public secto
 
 This Planning AI scenario demonstrates how local authorities can use AWS AI services to automatically extract information, summarise content, and identify key issues from planning applications and supporting documents.
 
-## What You'll Explore
+## What you'll explore
 
 This sandbox includes a working implementation using:
 
@@ -52,7 +52,7 @@ This sandbox includes a working implementation using:
 - **AWS Lambda** - Serverless compute for orchestrating the analysis workflow
 - **Amazon S3** - Storage for planning documents and analysis results
 
-**In plain English:** You'll explore an AI that reads and summarizes planning applications - extracting key details like property descriptions, proposed changes, and potential issues to help planning officers process applications faster.
+**In plain English:** You'll explore an AI that reads and summarises planning applications - extracting key details like property descriptions, proposed changes, and potential issues to help planning officers process applications faster.
 
 ## Learn More
 
@@ -60,15 +60,15 @@ Before requesting your sandbox, explore the scenario documentation to understand
 
 <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/planning-ai/" target="_blank" rel="noopener">View Planning AI scenario details</a>
 
-## Getting Started
+## Getting started
 
-1. Click **"Try this now for 24 hours"** above
+1. Select **"Try this now for 24 hours"** above
 2. Accept the Acceptable Use Policy
 3. Receive AWS SSO credentials via email
 4. Access your sandbox environment through AWS Console
 5. Follow the scenario guide to upload sample planning documents and see analysis results
 
-## Why This Matters for Local Government
+## Why this matters for local government
 
 AI-assisted planning analysis can:
 
@@ -90,33 +90,33 @@ This scenario lets you evaluate whether AI could assist your planning department
 
 > **Resource Lifecycle Warning**: All resources in your sandbox will be automatically deleted when your session time expires OR when the budget limit is reached (whichever comes first). Do not store important data in this environment.
 
-### Before Your Session Ends
+### Before your session ends
 
 - Export any configurations or code snippets you want to keep
 - Take screenshots of analysis outputs
 - Document any insights about accuracy and limitations
 - Download any generated summaries
 
-### Infrastructure as Code
+### Infrastructure as code
 
 The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
 
-### Want to Build Your Own?
+### Build your own
 
 After exploring this pre-deployed scenario, use the **Empty Sandbox** to build your own solution from scratch. The Empty Sandbox gives you a clean AWS environment where you can experiment freely.
 
-## Want to Explore More?
+## Explore more scenarios
 
 - **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services
 - **[FOI Redaction](/catalogue/aws/foi-redaction/)** - Automated sensitive data removal
 - **[QuickSight Dashboard](/catalogue/aws/quicksight-dashboard/)** - Analytics and reporting
 
-## Having Trouble?
+## Troubleshooting
 
 - **Try button not working?** Make sure you're signed in to NDX
-- **Didn't receive credentials?** Check your spam folder, or wait a few minutes
-- **Can't access the scenario?** Ensure you're using the correct AWS region (us-east-1)
+- **Did not receive credentials?** Check your spam folder, or wait a few minutes
+- **Cannot access the scenario?** Ensure you're using the correct AWS region (us-east-1)
 - **Budget exhausted early?** Some services have higher costs - contact support if unexpected
 
 ## Support

@@ -55,7 +55,7 @@ LocalGov Drupal with AI showcases how UK councils can transform their content ma
 
 ---
 
-## What You'll Explore
+## What you'll explore
 
 <div class="govuk-grid-row">
 <div class="govuk-grid-column-one-half">
@@ -89,9 +89,9 @@ LocalGov Drupal with AI showcases how UK councils can transform their content ma
 
 ---
 
-## Ready to Explore?
+## Getting started
 
-Once you click **"Try this now"** above, your session environment will begin deploying automatically.
+Once you select **"Try this now"** above, your session environment will begin deploying automatically.
 
 {{ govukInsetText({
   html: "<strong>What happens next:</strong><br>1. Your environment deploys (~40 minutes)<br>2. Follow the walkthrough to log in and explore<br>3. The walkthrough guides you through everything"
@@ -126,7 +126,7 @@ Once you click **"Try this now"** above, your session environment will begin dep
 </div>
 <div class="govuk-grid-column-one-half">
 
-### Multilingual Communities
+### Multilingual communities
 
 - **75+ languages** via <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a>
 - Instant translation without manual costs
@@ -138,7 +138,7 @@ Once you click **"Try this now"** above, your session environment will begin dep
 <div class="govuk-grid-row">
 <div class="govuk-grid-column-one-half">
 
-### Content Efficiency
+### Content efficiency
 
 - **AI drafting** powered by <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>
 - **Plain English conversion** for accessible communications
@@ -147,7 +147,7 @@ Once you click **"Try this now"** above, your session environment will begin dep
 </div>
 <div class="govuk-grid-column-one-half">
 
-### Digital Inclusion
+### Digital inclusion
 
 - Multiple AI capabilities ensure services reach everyone
 - Practical application of responsible AI
@@ -169,7 +169,7 @@ LocalGov Drupal is an **open-source CMS built by UK councils, for councils**. Th
 <div class="govuk-grid-row">
 <div class="govuk-grid-column-one-third">
 
-### Cost Benefits
+### Cost benefits
 
 - **Up to 80% cost reduction**
 - Average £120k reduced to £20k-£60k
@@ -179,7 +179,7 @@ LocalGov Drupal is an **open-source CMS built by UK councils, for councils**. Th
 </div>
 <div class="govuk-grid-column-one-third">
 
-### Time Benefits
+### Time benefits
 
 - **8-12 week deployment**
 - vs. traditional 12-month timelines
@@ -201,12 +201,12 @@ LocalGov Drupal is an **open-source CMS built by UK councils, for councils**. Th
 
 ---
 
-## Real Council Success Stories
+## Real council success stories
 
 <div class="govuk-grid-row">
 <div class="govuk-grid-column-one-half">
 
-### Waltham Forest Council
+### Waltham Forest council
 
 One of the first councils to join in the beta phase:
 
@@ -220,7 +220,7 @@ One of the first councils to join in the beta phase:
 </div>
 <div class="govuk-grid-column-one-half">
 
-### Cumbria County Council
+### Cumbria County council
 
 Rapid improvements with limited budget:
 
@@ -246,7 +246,7 @@ The platform represents true collaboration: councils share development costs and
 
 ---
 
-## Want to Explore More?
+## Explore more scenarios
 
 - **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services chatbot

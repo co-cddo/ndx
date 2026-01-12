@@ -113,7 +113,7 @@ Council tax, parking fines, planning applications, licensing fees, and housing p
 
 ### Central government
 
-DVLA, HMRC, Home Office and other departments use GOV.UK Pay for license fees, visa applications, and various government services.
+DVLA, HMRC, Home Office and other departments use GOV.UK Pay for licence fees, visa applications, and various government services.
 
 ### Police forces
 

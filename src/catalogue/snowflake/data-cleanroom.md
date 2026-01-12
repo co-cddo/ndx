@@ -16,12 +16,12 @@ tags:
 
 > ==⚠️ Proof of concept only this will be dynamically pulled from Snowflake Marketplace==
 
-A Snowflake Data Clean Room is an app that makes it easy to build and use a data clean room in Snowflake - at no additional license fee. A Data clean room allows for multiple parties to securely collaborate on sensitive or regulated data, surfacing valuable insights while preserving the privacy of the data.
+A Snowflake Data Clean Room is an app that makes it easy to build and use a data clean room in Snowflake - at no additional licence fee. A Data clean room allows for multiple parties to securely collaborate on sensitive or regulated data, surfacing valuable insights while preserving the privacy of the data.
 
-While key use cases for data clean rooms are found in marketing, media and advertising, customers across industries are realizing value with data clean room including financial services and health care and life sciences.
+While key use cases for data clean rooms are found in marketing, media and advertising, customers across industries are realising value with data clean room including financial services and health care and life sciences.
 Start unlocking value from your most sensitive data with Snowflake Data Clean Rooms today. Follow these steps to get started:
 
-1. Sign up & log in to Snowflake Data Clean Rooms.
+1. Sign up and log in to Snowflake Data Clean Rooms.
 2. Follow steps to accept terms and complete install of the Snowflake Data Clean Rooms Native App
 3. Start building, connecting and using data clean rooms
 
@@ -43,28 +43,28 @@ Snowflake Data Clean Rooms allows you to connect to Snowflake's impartial, open 
 
 Unlock privacy-enhanced collaboration on your most sensitive data through Snowflake Native Data Clean Rooms that bring the clean room solution to your data, removing the need to ever leave the governance, security, and privacy parameters of Snowflake Horizon, trusted by thousands of customers.
 
-## Business Needs
+## Business needs
 
-### Attribution Analysis
+### Attribution analysis
 
 Conduct attribution using advertiser conversion data and ad exposure / engagement data from suppliers / publishers.
 
-### Audience Activation
+### Audience activation
 
 Instantly evaluate match rates with a supplier's / publisher's user base and push your audiences to respective activation channels.
 
-### Customer Acquisition
+### Customer acquisition
 
 Reach more potential customers by training lookalike models with a seed audience against a publisher's user base.
 
-### Demand Forecasting
+### Demand forecasting
 
 Predict ad request volume by channel over the next 30 days.
 
-### Identity Resolution
+### Identity resolution
 
-Resolve identity across various identity providers to maximize match rates and audience activation.
+Resolve identity across various identity providers to maximise match rates and audience activation.
 
-### Fraud Remediation
+### Fraud remediation
 
 Build and train consumer fraud models from multi-party transaction data.

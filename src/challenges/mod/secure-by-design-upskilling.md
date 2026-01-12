@@ -35,7 +35,7 @@ tags:
   </div>
 </div>
 
-## Challenge Summary
+## Challenge summary
 
 **How do we up-skill UK defence in 'Secure by Design' approaches?**
 
@@ -43,25 +43,25 @@ MOD policy assumes that those engaged with 'Secure by Design' activities are sui
 
 Each role is associated with a body of knowledge, and effective and efficient approaches are needed to deliver this knowledge to create a robust Suitably Qualified and Experienced Personnel (SQEP) pipeline.
 
-## Problem Context
+## Problem context
 
 The Ministry of Defence has mandated 'Secure by Design' approaches across all projects delivering capabilities or services, ensuring security is considered from the outset and through life. This represents a fundamental shift in design thinking about security, requiring new skills and competencies across the entire defence ecosystem.
 
-### Current Challenges
+### Current challenges
 
-- **Skills Gap**: Insufficient personnel with 'Secure by Design' expertise across MOD and supply chain
-- **Knowledge Distribution**: Fragmented understanding of what constitutes effective 'Secure by Design' knowledge
-- **Training Delivery**: Lack of scalable, effective mechanisms for delivering specialized knowledge
-- **Competency Assessment**: No standardized framework for measuring 'Secure by Design' capabilities
+- **Skills gap**: Insufficient personnel with 'Secure by Design' expertise across MOD and supply chain
+- **Knowledge distribution**: Fragmented understanding of what constitutes effective 'Secure by Design' knowledge
+- **Training delivery**: Lack of scalable, effective mechanisms for delivering specialised knowledge
+- **Competency assessment**: No standardised framework for measuring 'Secure by Design' capabilities
 
-### Scale of Impact
+### Scale of impact
 
 - **£50M+ annual value** in improved security outcomes and reduced capability vulnerabilities
 - **10,000+ personnel** across MOD and supply chain requiring up-skilling
 - **Critical capability protection** for national security interests
 - **Supply chain strengthening** to support UK defence industrial base
 
-## Challenge Requirements
+## Challenge requirements
 
 We are seeking innovative solutions that address one or more of the following sub-challenges:
 
@@ -112,11 +112,11 @@ We are seeking innovative solutions that address one or more of the following su
 
 **Success Metrics**:
 
-- Standardized competency framework adopted across MOD
+- Standardised competency framework adopted across MOD
 - Assessment tools with validated measurement criteria
 - Professional certification pathway established
 
-## Proposed Solution Characteristics
+## Proposed solution characteristics
 
 Successful solutions should demonstrate:
 
@@ -126,7 +126,7 @@ Successful solutions should demonstrate:
 - **Innovation**: Novel approaches to knowledge delivery and competency development
 - **Sustainability**: Long-term viability and continuous improvement mechanisms
 
-## Response Guidelines
+## Response guidelines
 
 ### Phase 1: Initial Proposal (Due: March 31, 2025)
 
@@ -144,7 +144,7 @@ Successful solutions should demonstrate:
 - **Risk assessment** and mitigation strategies
 - **Campaign readiness** plan for scaling successful pilots
 
-## Support Available
+## Support available
 
 MOD will provide selected solution providers with:
 
@@ -154,7 +154,7 @@ MOD will provide selected solution providers with:
 - **Stakeholder engagement** with key MOD and industry partners
 - **Campaign support** for successful solutions requiring cross-sector investment
 
-## Evaluation Criteria
+## Evaluation criteria
 
 Proposals will be assessed on:
 
@@ -164,7 +164,7 @@ Proposals will be assessed on:
 4. **Scalability** (15%): Ability to scale across defence ecosystem
 5. **Team** (15%): Relevant expertise and track record
 
-## Related Challenges
+## Related challenges
 
 This challenge connects with other MOD 'Secure by Design' initiatives:
 
@@ -172,7 +172,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 - [Early-Stage Security Integration](/challenges/mod/early-stage-security-integration)
 - [Through-Life Security Support](/challenges/mod/through-life-security-support)
 
-## Contact Information
+## Contact information
 
 **Challenge Lead**: Dr. Sarah Williams  
 **Email**: secure.design@mod.gov.uk  
@@ -181,7 +181,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 **Technical Queries**: Prof. James Mitchell  
 **Email**: technical.queries@mod.gov.uk
 
-### Information Sessions
+### Information sessions
 
 Regular information sessions are held:
 

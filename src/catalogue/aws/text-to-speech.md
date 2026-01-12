@@ -28,7 +28,7 @@ try_id: "30e462b3-644b-4c73-bec0-5ea1854b327e"
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-Accessibility-orange)
 
-## What is NDX?
+## About NDX
 
 NDX (National Digital Exchange) is a government platform that helps public sector organisations discover, evaluate, and adopt digital solutions.
 
@@ -40,7 +40,7 @@ NDX (National Digital Exchange) is a government platform that helps public secto
 
 This Text to Speech scenario demonstrates how local authorities can use AWS AI services to automatically generate audio versions of written content, improving accessibility for residents with visual impairments or reading difficulties.
 
-## What You'll Explore
+## What you'll explore
 
 This sandbox includes a working implementation using:
 
@@ -56,15 +56,15 @@ Before requesting your sandbox, explore the scenario documentation to understand
 
 <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/" target="_blank" rel="noopener">View Text to Speech scenario details</a>
 
-## Getting Started
+## Getting started
 
-1. Click **"Try this now for 24 hours"** above
+1. Select **"Try this now for 24 hours"** above
 2. Accept the Acceptable Use Policy
 3. Receive AWS SSO credentials via email
 4. Access your sandbox environment through AWS Console
 5. Follow the scenario guide to convert sample text to audio and try different voices
 
-## Why This Matters for Local Government
+## Why this matters for local government
 
 Text-to-speech for accessibility can:
 
@@ -86,33 +86,33 @@ This scenario lets you evaluate whether automated audio generation could improve
 
 > **Resource Lifecycle Warning**: All resources in your sandbox will be automatically deleted when your session time expires OR when the budget limit is reached (whichever comes first). Do not store important data in this environment.
 
-### Before Your Session Ends
+### Before your session ends
 
 - Export any configurations or code snippets you want to keep
 - Download generated audio files you want to keep
 - Document which voices and settings work best for your content
 - Note any limitations or quality considerations
 
-### Infrastructure as Code
+### Infrastructure as code
 
 The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
 
-### Want to Build Your Own?
+### Build your own
 
 After exploring this pre-deployed scenario, use the **Empty Sandbox** to build your own solution from scratch. The Empty Sandbox gives you a clean AWS environment where you can experiment freely.
 
-## Want to Explore More?
+## Explore more scenarios
 
 - **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services
 - **[FOI Redaction](/catalogue/aws/foi-redaction/)** - Automated sensitive data removal
 - **[Planning AI](/catalogue/aws/planning-ai/)** - Intelligent document analysis
 
-## Having Trouble?
+## Troubleshooting
 
 - **Try button not working?** Make sure you're signed in to NDX
-- **Didn't receive credentials?** Check your spam folder, or wait a few minutes
-- **Can't access the scenario?** Ensure you're using the correct AWS region (us-east-1)
+- **Did not receive credentials?** Check your spam folder, or wait a few minutes
+- **Cannot access the scenario?** Ensure you're using the correct AWS region (us-east-1)
 - **Budget exhausted early?** Some services have higher costs - contact support if unexpected
 
 ## Support

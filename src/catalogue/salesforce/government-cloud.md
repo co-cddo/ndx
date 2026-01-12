@@ -77,7 +77,7 @@ Break down information silos between different government departments and agenci
 
 ### Data-driven decision making
 
-Leverage advanced analytics and reporting capabilities to gain insights from service delivery data. Dashboards provide real-time visibility into key performance indicators, helping leaders make informed decisions, allocate resources effectively, and demonstrate outcomes aligned with departmental objectives and wider government priorities.
+Use advanced analytics and reporting capabilities to gain insights from service delivery data. Dashboards provide real-time visibility into key performance indicators, helping leaders make informed decisions, allocate resources effectively, and demonstrate outcomes aligned with departmental objectives and wider government priorities.
 
 ## How to get started
 

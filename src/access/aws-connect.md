@@ -18,7 +18,7 @@ eleventyNavigation:
   }
 }) %}
 
-> ⚠️ We've pre-filled your details with the information we have on file, please check the accuracy of the information before proceeding.
+> ⚠️ We've pre-filled your details with the information we have on file. Check the accuracy of the information before proceeding.
 
 {{ govukInput({  label: {text: "Name"}, value: "John Doe", disabled: true}  ) }}
 {{ govukInput({  label: {text: "Email address"}, value: "john.doe@example.gov.uk", disabled: true}  ) }}
@@ -32,7 +32,7 @@ eleventyNavigation:
   }
 }) %}
 
-{{ govukInput({  label: {text: "Name"}, value: "Apply for a juggling license"}  ) }}
+{{ govukInput({  label: {text: "Name"}, value: "Apply for a juggling licence"}  ) }}
 {{ govukInput({  label: {text: "Program/Directorate/Portfolio/Organisational Unit"}, value: "Circus Arts"}  ) }}
 {{ govukInput({  label: {text: "Group mailbox"}, value: "juggling-licences@example.gov.uk"}  ) }}
 
@@ -125,9 +125,9 @@ eleventyNavigation:
   isStartButton: true
 }) }}
 
-## What happens next?
+## Next steps
 
-After clicking **PROVISION**, your nominated security, financial and governance representatives will receive an email asking them to complete an attestation form.
+After selecting **PROVISION**, your nominated security, financial and governance representatives will receive an email asking them to complete an attestation form.
 
 You will receive an email with a link to download a zip of a git repository that you must deploy to your version control system. ==TODO: this could probably be made more slick, by providing a repo for them to fork, and collect the name they choose==
 
@@ -135,10 +135,10 @@ Once this attestation has been completed, your Amazon Connect instance will be p
 
 You will receive an email when the provision is complete, and you can can run the deployment from your version control system.
 
-## What happens if I don't complete the attestation?
+## What happens if you do not complete the attestation
 
-If you don't complete the attestation, your Amazon Connect instance will not be provisioned and you will not be able to use the service.
+If you do not complete the attestation, your Amazon Connect instance will not be provisioned and you will not be able to use the service.
 
-## What happens if I change my mind?
+## What happens if you change your mind
 
 If you change your mind, you can delete your Amazon Connect instance by ...

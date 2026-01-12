@@ -35,7 +35,7 @@ tags:
   </div>
 </div>
 
-## Challenge Summary
+## Challenge summary
 
 **How do we incorporate 'Secure by Design' into the very earliest stages of capability acquisition?**
 
@@ -43,19 +43,19 @@ In theory, 'Secure by Design' should be applied at the outset of a programme or 
 
 Military capabilities primarily exist to deliver some effect for UK defence, and cyber security will always be a secondary goal. The challenge is incorporating security considerations without interfering with programme momentum or increasing costs to the point where the capability itself needs to be reconsidered.
 
-## Problem Context
+## Problem context
 
 Traditional approaches to capability acquisition often treat security as a later consideration, leading to costly retrofitting and suboptimal security outcomes. However, integrating security at the earliest stages—when requirements are barely formed—presents unique challenges requiring innovative approaches.
 
-### Current Challenges
+### Current challenges
 
-- **Emerging Requirements**: Functional and security requirements are still being discovered
-- **Multiple Stakeholders**: Security, safety, and domain experts often work in isolation
-- **Programme Momentum**: Early security considerations must not derail programme timelines
-- **Cost Sensitivity**: Security additions at early stages can trigger capability reassessment
-- **Uncertainty Management**: High uncertainty in both functional and security domains
+- **Emerging requirements**: Functional and security requirements are still being discovered
+- **Multiple stakeholders**: Security, safety, and domain experts often work in isolation
+- **Programme momentum**: Early security considerations must not derail programme timelines
+- **Cost sensitivity**: Security additions at early stages can trigger capability reassessment
+- **Uncertainty management**: High uncertainty in both functional and security domains
 
-### Scale of Impact
+### Scale of impact
 
 - **£100M+ annual value** through early security integration across all programmes
 - **200+ major programmes** benefiting from improved early-stage security
@@ -63,7 +63,7 @@ Traditional approaches to capability acquisition often treat security as a later
 - **Enhanced capability protection** from inception through operations
 - **Shortened acquisition timelines** through integrated engineering approaches
 
-## Challenge Requirements
+## Challenge requirements
 
 We are seeking innovative solutions that address one or more of the following sub-challenges:
 
@@ -90,7 +90,7 @@ We are seeking innovative solutions that address one or more of the following su
 
 **Requirements**:
 
-- Cross-DLOD threat modeling capabilities
+- Cross-DLOD threat modelling capabilities
 - Interdisciplinary security analysis tools
 - Threat assessment techniques for non-technical DLODs
 - Security risk aggregation across capability dimensions
@@ -107,7 +107,7 @@ We are seeking innovative solutions that address one or more of the following su
 
 **Requirements**:
 
-- Security-aware operational modeling and simulation
+- Security-aware operational modelling and simulation
 - Risk appetite formulation incorporating security dimensions
 - Feedback mechanisms from 'Secure by Design' to operational analysis
 - Decision support tools incorporating security trade-offs
@@ -118,29 +118,29 @@ We are seeking innovative solutions that address one or more of the following su
 - Improved decision making quality with security-aware analysis
 - 60% better alignment between operational and security requirements
 
-## Proposed Solution Characteristics
+## Proposed solution characteristics
 
 Successful solutions should demonstrate:
 
-- **Early Applicability**: Effective when requirements are still emerging
-- **Lightweight Integration**: Minimal overhead on existing programme processes
+- **Early applicability**: Effective when requirements are still emerging
+- **Lightweight integration**: Minimal overhead on existing programme processes
 - **Scalability**: Applicable across diverse capability types and scales
-- **Evidence Generation**: Produces artifacts required for 'Secure by Design' assurance
-- **Stakeholder Engagement**: Facilitates collaboration across security and domain experts
+- **Evidence generation**: Produces artifacts required for 'Secure by Design' assurance
+- **Stakeholder engagement**: Enables collaboration across security and domain experts
 
-## Technical Approaches of Interest
+## Technical approaches of interest
 
 We are particularly interested in solutions incorporating:
 
-- **Model-Based Systems Engineering (MBSE)**: Integrated security and functional modeling
-- **Digital Engineering**: Virtual environments for early security testing
-- **Machine Learning**: Automated requirements analysis and security pattern recognition
-- **Simulation and Modeling**: Early security risk assessment through virtual scenarios
+- **Model-Based Systems Engineering (MBSE)**: Integrated security and functional modelling
+- **Digital engineering**: Virtual environments for early security testing
+- **Machine learning**: Automated requirements analysis and security pattern recognition
+- **Simulation and modelling**: Early security risk assessment through virtual scenarios
 - **Agile/DevSecOps**: Iterative security integration approaches
-- **Risk Assessment Frameworks**: Quantitative security risk modeling
-- **Design Thinking**: Human-centered approaches to security requirements
+- **Risk assessment frameworks**: Quantitative security risk modelling
+- **Design thinking**: Human-centred approaches to security requirements
 
-## Response Guidelines
+## Response guidelines
 
 ### Phase 1: Methodology Proposal (Due: May 15, 2025)
 
@@ -158,7 +158,7 @@ We are particularly interested in solutions incorporating:
 - **Scalability assessment** and deployment planning
 - **Business case development** for full adoption
 
-## Support Available
+## Support available
 
 MOD will provide selected solution providers with:
 
@@ -169,16 +169,16 @@ MOD will provide selected solution providers with:
 - **Process integration support** with existing acquisition frameworks
 - **Validation environments** for testing approaches with realistic scenarios
 
-## Success Stories
+## Success stories
 
 Examples of early successes in this domain:
 
-- **Integrated Requirements Tools**: Early-stage tools capturing security and functional needs simultaneously
-- **DLOD Security Models**: Comprehensive frameworks addressing security across all defence lines
-- **Security-Aware OA**: Enhanced operational analysis incorporating security considerations
-- **Digital Security Twins**: Virtual environments for early security validation
+- **Integrated requirements tools**: Early-stage tools capturing security and functional needs simultaneously
+- **DLOD security models**: Comprehensive frameworks addressing security across all defence lines
+- **Security-aware OA**: Enhanced operational analysis incorporating security considerations
+- **Digital security twins**: Virtual environments for early security validation
 
-## Evaluation Criteria
+## Evaluation criteria
 
 Proposals will be assessed on:
 
@@ -188,32 +188,32 @@ Proposals will be assessed on:
 4. **Cost Effectiveness** (15%): Minimal impact on programme costs and timelines
 5. **Stakeholder Adoption** (15%): Ease of adoption by diverse stakeholder communities
 
-## Implementation Phases
+## Implementation phases
 
 Successful solutions will be implemented through:
 
-### Phase A: Pilot Programmes (Months 1-6)
+### Phase A: Pilot programmes (months 1 to 6)
 
 - Selection of 3-5 early-stage programmes for piloting
 - Tool deployment and process integration
 - Stakeholder training and adoption support
 - Initial effectiveness assessment
 
-### Phase B: Scaled Deployment (Months 7-18)
+### Phase B: Scaled deployment (months 7 to 18)
 
 - Rollout to 20+ programmes across different capability domains
 - Process refinement based on pilot lessons
 - Integration with MOD acquisition systems
-- Comprehensive evaluation and optimization
+- Comprehensive evaluation and optimisation
 
-### Phase C: Full Adoption (Months 19-36)
+### Phase C: Full adoption (months 19 to 36)
 
 - MOD-wide deployment across all relevant programmes
 - Training programme for all acquisition staff
 - Policy and process updates to mandate approaches
 - Continuous improvement and evolution
 
-## Related Challenges
+## Related challenges
 
 This challenge connects with other MOD 'Secure by Design' initiatives:
 
@@ -221,7 +221,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 - [Secure Information Sharing](/challenges/mod/secure-information-sharing)
 - [Through-Life Security Support](/challenges/mod/through-life-security-support)
 
-## Contact Information
+## Contact information
 
 **Challenge Lead**: Air Commodore James Thompson  
 **Email**: early.stage.security@mod.gov.uk  
@@ -233,7 +233,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 **Operational Analysis Queries**: Prof. David Wilson  
 **Email**: operational.analysis@mod.gov.uk
 
-### Collaboration Opportunities
+### Collaboration opportunities
 
 - **Requirements workshops**: Monthly sessions with capability managers
 - **Technical seminars**: Bi-weekly deep dives on specific approaches

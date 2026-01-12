@@ -13,4 +13,4 @@ activeFilter: try-before-you-buy
 
 These products are available for hands-on evaluation through NDX:Try. You can try each product for 24 hours at no commitment, with a $50 budget cap.
 
-Click on any product to learn more and start your evaluation session.
+Select any product to learn more and start your evaluation session.

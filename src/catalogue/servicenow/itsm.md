@@ -63,30 +63,30 @@ ServiceNow works closely with UK public sector organisations to ensure complianc
 
 ### Gain visibility and insights across services
 
-The platform provides real-time dashboards and comprehensive reporting capabilities that offer visibility into service performance, resource utilization, and compliance status. These insights help UK public sector leaders make data-driven decisions, identify improvement opportunities, and demonstrate value to stakeholders. By understanding service patterns and trends, organisations can proactively address issues before they impact citizens and reallocate resources to where they're needed most.
+The platform provides real-time dashboards and comprehensive reporting capabilities that offer visibility into service performance, resource utilisation, and compliance status. These insights help UK public sector leaders make data-driven decisions, identify improvement opportunities, and demonstrate value to stakeholders. By understanding service patterns and trends, organisations can proactively address issues before they impact citizens and reallocate resources to where they're needed most.
 
-## Business Needs
+## Business needs
 
-### Citizen Service Improvement
+### Citizen service improvement
 
-Transform citizen experiences with intuitive self-service portals, automated request fulfillment, and consistent service delivery across channels. The NHS Blood and Transplant service improved their citizen and employee experience by implementing ServiceNow's self-service portal, bringing consistency to service delivery across the organisation.
+Transform citizen experiences with intuitive self-service portals, automated request fulfilment, and consistent service delivery across channels. The NHS Blood and Transplant service improved their citizen and employee experience by implementing ServiceNow's self-service portal, bringing consistency to service delivery across the organisation.
 
-### Remote Work Enablement
+### Remote work enablement
 
-Support flexible and remote working for public sector employees with cloud-based service management that's accessible from anywhere. The Department for Work and Pensions (DWP) leveraged ServiceNow solutions to manage the redistribution of staff and transition to remote working, using tools like their 'Digi' chatbot and DWP Place IT Support solution to help staff work more effectively.
+Support flexible and remote working for public sector employees with cloud-based service management that's accessible from anywhere. The Department for Work and Pensions (DWP) used ServiceNow solutions to manage the redistribution of staff and transition to remote working, using tools like their 'Digi' chatbot and DWP Place IT Support solution to help staff work more effectively.
 
-### Cost Reduction Through Automation
+### Cost reduction through automation
 
 Reduce operational costs by automating routine service tasks, reducing manual effort, and resolving issues faster through intelligent ticket routing and AI-powered assistance. UK government departments have saved millions of pounds annually through ServiceNow automation.
 
-### Cross-Department Collaboration
+### Cross-department collaboration
 
 Enable seamless collaboration across different government departments through unified workflows, shared knowledge bases, and consistent processes. The Department for Environment, Food and Rural Affairs (Defra) used ServiceNow to connect different departments and processes to handle issues efficiently and proactively after bringing six citizen-facing applications in-house post-Brexit.
 
-### Legacy System Modernisation
+### Legacy system modernisation
 
 Integrate with existing systems and gradually modernise legacy applications without disruption to services. ServiceNow's platform allows public sector organisations to connect their current tools while building a foundation for digital transformation.
 
-### Risk and Compliance Management
+### Risk and compliance management
 
-Maintain comprehensive audit trails, enforce security policies, and demonstrate compliance with UK government regulations through automated controls and unified visibility. Centralizing information in ServiceNow workflows allows for better monitoring and tracking of potential issues and better protection of sensitive information.
+Maintain comprehensive audit trails, enforce security policies, and demonstrate compliance with UK government regulations through automated controls and unified visibility. Centralising information in ServiceNow workflows allows for better monitoring and tracking of potential issues and better protection of sensitive information.

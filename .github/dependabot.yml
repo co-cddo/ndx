@@ -4,10 +4,25 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+
+  # Root package.json (Eleventy site)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
+
+  # CDK infrastructure package.json
+  - package-ecosystem: "npm"
+    directory: "/infra"
+    schedule:
+      interval: "daily"
+
+  # Lambda functions package.json
+  - package-ecosystem: "npm"
+    directory: "/infra/lib/functions"
+    schedule:
+      interval: "daily"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

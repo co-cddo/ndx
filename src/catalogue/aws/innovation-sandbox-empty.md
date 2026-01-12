@@ -36,32 +36,32 @@ This product offers:
 
 This is the option for users who want to **start fresh** with a blank canvas. You'll receive an empty AWS environment where you can build whatever you want.
 
-## Getting Started
+## Getting started
 
-1. Click **"Try this now for 24 hours"** above
+1. Select **"Try this now for 24 hours"** above
 2. Accept the Acceptable Use Policy
 3. Receive AWS SSO credentials via email
 4. Access your sandbox environment through AWS Console
 
-## Use Cases
+## Use cases
 
-### Proof of Concept Development
+### Proof of concept development
 
 Test new AWS services and architectures without impacting production environments.
 
-### Training and Learning
+### Training and learning
 
 Hands-on exploration of AWS services for team upskilling.
 
-### Vendor Evaluation
+### Vendor evaluation
 
 Compare AWS capabilities against other cloud providers.
 
-### Rapid Prototyping
+### Rapid prototyping
 
 Quick prototyping during hackathons or innovation events.
 
-## Looking for a Head Start?
+## Pre-deployed scenarios
 
 If you'd prefer to explore working AWS applications rather than starting from scratch, check out our pre-deployed scenarios:
 
@@ -85,18 +85,18 @@ These scenarios come with working AWS infrastructure already deployed, so you ca
 
 > **Resource Lifecycle Warning**: All resources in your sandbox will be automatically deleted when your session time expires OR when the budget limit is reached (whichever comes first). Do not store important data in this environment.
 
-### Before Your Session Ends
+### Before your session ends
 
 - Export any configurations or code snippets you want to keep
 - Take screenshots of dashboards or outputs
 - Document any insights or findings
 - Download any generated artifacts
 
-### Infrastructure as Code
+### Infrastructure as code
 
 When building in your sandbox, we strongly recommend using Infrastructure as Code (CloudFormation, CDK, or Terraform) rather than manual console configuration. This ensures you can recreate your work in production environments.
 
-## Want to Explore More?
+## Explore more scenarios
 
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services
 - **[FOI Redaction](/catalogue/aws/foi-redaction/)** - Automated sensitive data removal
@@ -105,11 +105,11 @@ When building in your sandbox, we strongly recommend using Infrastructure as Cod
 - **[Smart Car Park](/catalogue/aws/smart-car-park/)** - IoT parking monitoring
 - **[Text to Speech](/catalogue/aws/text-to-speech/)** - Accessibility audio generation
 
-## Having Trouble?
+## Troubleshooting
 
 - **Try button not working?** Make sure you're signed in to NDX
-- **Didn't receive credentials?** Check your spam folder, or wait a few minutes
-- **Can't access the scenario?** Ensure you're using the correct AWS region (us-east-1)
+- **Did not receive credentials?** Check your spam folder, or wait a few minutes
+- **Cannot access the scenario?** Ensure you're using the correct AWS region (us-east-1)
 - **Budget exhausted early?** Some services have higher costs - contact support if unexpected
 
 ## Support

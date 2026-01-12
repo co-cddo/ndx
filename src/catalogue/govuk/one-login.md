@@ -68,7 +68,7 @@ No need to build your own authentication or identity verification systems. Integ
 
 ### Cost-effective identity verification
 
-Centralized identity checking reduces costs compared to each service conducting its own verification processes. Users verify their identity once and reuse across services.
+Centralised identity checking reduces costs compared to each service conducting its own verification processes. Users verify their identity once and reuse across services.
 
 ### Consistent user journeys
 
@@ -134,9 +134,9 @@ Services that require users to create accounts and sign in securely, from simple
 
 Services that need to confirm users' identities for regulatory, legal, or security reasons, such as financial services or high-value transactions.
 
-### Provide personalized content
+### Provide personalised content
 
-Services that deliver personalized information or services based on user identity and preferences.
+Services that deliver personalised information or services based on user identity and preferences.
 
 ### Enable cross-service journeys
 
@@ -154,7 +154,7 @@ Comprehensive REST API that integrates with existing systems and development wor
 
 ### Multiple authentication flows
 
-Support for various authentication flows including authorization code flow and client credentials flow to suit different service architectures.
+Support for various authentication flows including authorisation code flow and client credentials flow to suit different service architectures.
 
 ### Webhook support
 

@@ -13,9 +13,9 @@ styles: |
 
 ## Introducing the National Digital Exchange
 
-**The National Digital Exchange (NDX)** is a pioneering UK government service that transforms how public sector organizations adopt and manage cloud services. With established strategic partnerships and ready access, NDX offers consistently **secure**, **well-architected** cloud environments that are rapidly deployable and easily consumed. It underpins data and capability sharing between departments, enhancing collaboration and efficiency across the government and wider public sector.
+**The National Digital Exchange (NDX)** is a UK government service that transforms how public sector organisations adopt and manage cloud services. With established strategic partnerships and ready access, NDX offers consistently **secure**, **well-architected** cloud environments that are rapidly deployable and easily consumed. It underpins data and capability sharing between departments, enhancing collaboration and efficiency across government and wider public sector.
 
-By providing turn-key access to commercial industry providers, NDX ensures that **all public sector organizations**—regardless of size or technical expertise—have equal opportunities to leverage advanced technologies. **NDX underpins the seamless sharing of data and capabilities within the public sector, eliminating friction and fostering a more connected and efficient government.**
+By providing turn-key access to commercial industry providers, NDX ensures that **all public sector organisations**—regardless of size or technical expertise—have equal opportunities to use advanced technologies. **NDX underpins the seamless sharing of data and capabilities within the public sector, eliminating friction and fostering a more connected and efficient government.**
 
 ---
 
@@ -24,7 +24,7 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 
 ### [Try](/catalogue/tags/try-before-you-buy/)
 
-Create a secure short lived cloud environment for learning, experiments and proof of concept/value
+Create a secure short-lived cloud environment for learning, experiments and proof of concept or value
 
   </section>
 

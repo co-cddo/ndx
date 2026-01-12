@@ -35,7 +35,7 @@ tags:
   </div>
 </div>
 
-## Challenge Summary
+## Challenge summary
 
 **How do we support 'Secure by Design' through the entire operational life of defence capabilities?**
 
@@ -43,20 +43,20 @@ Many defence platforms are long running. Their engineering can take years, with 
 
 'Secure by Design' approaches need to be sustained as long as the capabilities they support—potentially spanning multiple generations of personnel, technology, and threats.
 
-## Problem Context
+## Problem context
 
 Defence capabilities operate in a unique environment where systems designed today may remain in service for 30-50 years. During this extended lifecycle, threat landscapes evolve, coalition partnerships change, technology advances, and operational environments shift dramatically. Maintaining security posture across such timescales requires fundamentally new approaches to through-life support.
 
-### Current Challenges
+### Current challenges
 
-- **Design Rationale Loss**: Security decisions and assumptions forgotten over time
-- **Technology Evolution**: Original security measures become obsolete
-- **Personnel Turnover**: Loss of institutional knowledge across generations
-- **Threat Evolution**: New attack vectors not considered in original design
-- **Coalition Dynamics**: Changing partnership requirements and security frameworks
-- **Operational Tempo**: High-tempo operations requiring rapid security adaptations
+- **Design rationale loss**: Security decisions and assumptions forgotten over time
+- **Technology evolution**: Original security measures become obsolete
+- **Personnel turnover**: Loss of institutional knowledge across generations
+- **Threat evolution**: New attack vectors not considered in original design
+- **Coalition dynamics**: Changing partnership requirements and security frameworks
+- **Operational tempo**: High-tempo operations requiring rapid security adaptations
 
-### Scale of Impact
+### Scale of impact
 
 - **£150M+ annual value** through improved through-life security management
 - **300+ legacy platforms** requiring enhanced security support
@@ -64,7 +64,7 @@ Defence capabilities operate in a unique environment where systems designed toda
 - **International coalition** security and interoperability benefits
 - **Critical infrastructure protection** across operational environments
 
-## Challenge Requirements
+## Challenge requirements
 
 We are seeking innovative solutions that address one or more of the following sub-challenges:
 
@@ -76,7 +76,7 @@ We are seeking innovative solutions that address one or more of the following su
 
 - Real-time capability monitoring and security assessment
 - Automated threat intelligence integration
-- Predictive security risk modeling
+- Predictive security risk modelling
 - Dynamic risk threshold management
 - Integration with operational decision-making processes
 
@@ -125,7 +125,7 @@ We are seeking innovative solutions that address one or more of the following su
 - 5+ breakthrough security technologies deployed annually
 - International research leadership in defence security
 
-## Proposed Solution Characteristics
+## Proposed solution characteristics
 
 Successful solutions should demonstrate:
 
@@ -136,19 +136,19 @@ Successful solutions should demonstrate:
 - **Resilience**: Continued operation under various operational constraints
 - **Interoperability**: Compatible with diverse coalition partner systems
 
-## Technical Approaches of Interest
+## Technical approaches of interest
 
 We are particularly interested in solutions incorporating:
 
 - **AI/ML for Security**: Automated threat detection and response systems
-- **Digital Twins**: Continuous virtual modeling of security posture
+- **Digital twins**: Continuous virtual modelling of security posture
 - **Blockchain/DLT**: Immutable security audit trails and decision records
-- **Quantum Technologies**: Next-generation cryptography and communication security
-- **IoT/Edge Computing**: Distributed security monitoring and response
-- **Advanced Analytics**: Predictive security modeling and risk assessment
-- **Autonomous Systems**: Self-healing and self-adapting security frameworks
+- **Quantum technologies**: Next-generation cryptography and communication security
+- **IoT/edge computing**: Distributed security monitoring and response
+- **Advanced analytics**: Predictive security modelling and risk assessment
+- **Autonomous systems**: Self-healing and self-adapting security frameworks
 
-## Response Guidelines
+## Response guidelines
 
 ### Phase 1: Vision and Roadmap (Due: June 30, 2025)
 
@@ -166,7 +166,7 @@ We are particularly interested in solutions incorporating:
 - **Sustainability business case** with funding and support models
 - **International campaign** development for multi-national adoption
 
-## Support Available
+## Support available
 
 MOD will provide selected solution providers with:
 
@@ -178,48 +178,48 @@ MOD will provide selected solution providers with:
 - **Policy development support** for new through-life security frameworks
 - **Funding pathways** for sustained long-term development
 
-## Success Stories
+## Success stories
 
 Examples of innovative through-life security approaches:
 
-- **Predictive Security Platforms**: AI-driven systems anticipating security needs
-- **Coalition Security Frameworks**: Automated interoperability with allies
-- **Continuous Monitoring Systems**: Real-time security posture assessment
-- **Research Ecosystems**: Sustained academic-industry-government partnerships
+- **Predictive security platforms**: AI-driven systems anticipating security needs
+- **Coalition security frameworks**: Automated interoperability with allies
+- **Continuous monitoring systems**: Real-time security posture assessment
+- **Research ecosystems**: Sustained academic-industry-government partnerships
 
-## Implementation Strategy
+## Implementation strategy
 
 Successful solutions will be implemented through a comprehensive long-term strategy:
 
-### Phase A: Foundation Building (Years 1-2)
+### Phase A: Foundation building (years 1 to 2)
 
 - Core technology development and validation
 - Initial partnership establishment
 - Pilot programme implementation
 - International collaboration framework development
 
-### Phase B: Scaled Deployment (Years 3-5)
+### Phase B: Scaled deployment (years 3 to 5)
 
 - Major capability integration and testing
 - Coalition partner integration and validation
 - Research ecosystem establishment and growth
 - Policy and doctrine development
 
-### Phase C: Full Operational Capability (Years 6-10)
+### Phase C: Full operational capability (years 6 to 10)
 
 - MOD-wide deployment across all major capabilities
 - International standard establishment and adoption
 - Sustained research and development pipeline
 - Next-generation technology development initiation
 
-### Phase D: Sustained Excellence (Years 10+)
+### Phase D: Sustained excellence (years 10+)
 
 - Continuous innovation and adaptation
 - International leadership in through-life security
 - Knowledge transfer to next generation of practitioners
 - Evolution to address emerging long-term challenges
 
-## Evaluation Criteria
+## Evaluation criteria
 
 Proposals will be assessed on:
 
@@ -229,17 +229,17 @@ Proposals will be assessed on:
 4. **Technical Excellence** (15%): Demonstrated technological superiority
 5. **Ecosystem Building** (10%): Ability to create and sustain research communities
 
-## International Collaboration
+## International collaboration
 
 This challenge explicitly encourages international collaboration:
 
-- **Five Eyes Partners**: Enhanced security cooperation frameworks
-- **NATO Allies**: Standardized through-life security approaches
-- **EU Partners**: Joint research and development initiatives
-- **Academic Networks**: Global university collaboration programmes
-- **Industry Partnerships**: Multi-national defence industry cooperation
+- **Five Eyes partners**: Enhanced security cooperation frameworks
+- **NATO allies**: Standardised through-life security approaches
+- **EU partners**: Joint research and development initiatives
+- **Academic networks**: Global university collaboration programmes
+- **Industry partnerships**: Multi-national defence industry cooperation
 
-## Related Challenges
+## Related challenges
 
 This challenge connects with other MOD 'Secure by Design' initiatives:
 
@@ -247,7 +247,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 - [Secure Information Sharing](/challenges/mod/secure-information-sharing)
 - [Early-Stage Security Integration](/challenges/mod/early-stage-security-integration)
 
-## Contact Information
+## Contact information
 
 **Challenge Lead**: Rear Admiral Patricia Hughes  
 **Email**: through.life.security@mod.gov.uk  
@@ -262,7 +262,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 **Coalition Integration**: Group Captain Sarah O'Connor  
 **Email**: coalition.security@mod.gov.uk
 
-### Strategic Engagement
+### Strategic engagement
 
 - **Annual through-life security summit**: Major international conference
 - **Quarterly research reviews**: Academic and industry partnership assessments

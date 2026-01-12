@@ -28,7 +28,7 @@ try_id: "8c2e6162-9d8e-42c9-82c3-d2a64d892ea8"
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-AI-orange)
 
-## What is NDX?
+## About NDX
 
 NDX (National Digital Exchange) is a government platform that helps public sector organisations discover, evaluate, and adopt digital solutions.
 
@@ -40,7 +40,7 @@ NDX (National Digital Exchange) is a government platform that helps public secto
 
 This Council Chatbot scenario demonstrates how local authorities can use AWS AI services to create an intelligent chatbot that answers resident questions about council services, policies, and procedures.
 
-## What You'll Explore
+## What you'll explore
 
 This sandbox includes a working implementation using:
 
@@ -57,15 +57,15 @@ Before requesting your sandbox, explore the scenario documentation to understand
 
 <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/council-chatbot/" target="_blank" rel="noopener">View Council Chatbot scenario details</a>
 
-## Getting Started
+## Getting started
 
-1. Click **"Try this now for 24 hours"** above
+1. Select **"Try this now for 24 hours"** above
 2. Accept the Acceptable Use Policy
 3. Receive AWS SSO credentials via email
 4. Access your sandbox environment through AWS Console
 5. Follow the scenario guide to interact with the deployed chatbot
 
-## Why This Matters for Local Government
+## Why this matters for local government
 
 Council chatbots can:
 
@@ -87,33 +87,33 @@ This scenario lets you evaluate whether AI-powered chatbots could work for your 
 
 > **Resource Lifecycle Warning**: All resources in your sandbox will be automatically deleted when your session time expires OR when the budget limit is reached (whichever comes first). Do not store important data in this environment.
 
-### Before Your Session Ends
+### Before your session ends
 
 - Export any configurations or code snippets you want to keep
 - Take screenshots of dashboards or metrics
 - Document any insights or findings
 - Download any generated artifacts
 
-### Infrastructure as Code
+### Infrastructure as code
 
 The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
 
-### Want to Build Your Own?
+### Build your own
 
 After exploring this pre-deployed scenario, use the **Empty Sandbox** to build your own solution from scratch. The Empty Sandbox gives you a clean AWS environment where you can experiment freely.
 
-## Want to Explore More?
+## Explore more scenarios
 
 - **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
 - **[FOI Redaction](/catalogue/aws/foi-redaction/)** - Automated sensitive data removal
 - **[Planning AI](/catalogue/aws/planning-ai/)** - Intelligent document analysis
 - **[Text to Speech](/catalogue/aws/text-to-speech/)** - Accessibility audio generation
 
-## Having Trouble?
+## Troubleshooting
 
 - **Try button not working?** Make sure you're signed in to NDX
-- **Didn't receive credentials?** Check your spam folder, or wait a few minutes
-- **Can't access the scenario?** Ensure you're using the correct AWS region (us-east-1)
+- **Did not receive credentials?** Check your spam folder, or wait a few minutes
+- **Cannot access the scenario?** Ensure you're using the correct AWS region (us-east-1)
 - **Budget exhausted early?** Some services have higher costs - contact support if unexpected
 
 ## Support

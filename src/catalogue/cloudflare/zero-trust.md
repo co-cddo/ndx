@@ -62,30 +62,30 @@ Cloudflare is Cyber Essentials certified, which means it meets the UK government
 
 ### Enhance performance while strengthening security
 
-Unlike traditional security solutions that add latency and degrade user experience, Cloudflare Zero Trust is built on a global network with data centers in over 300 cities, including multiple locations across the UK. This architecture ensures that security checks happen close to your users, providing both robust protection and exceptional performance for UK public sector services.
+Unlike traditional security solutions that add latency and degrade user experience, Cloudflare Zero Trust is built on a global network with data centres in over 300 cities, including multiple locations across the UK. This architecture ensures that security checks happen close to your users, providing both robust protection and exceptional performance for UK public sector services.
 
-## Business Needs
+## Business needs
 
-### Remote Work Security
+### Remote work security
 
 Enable secure access to internal applications for civil servants and contractors working from anywhere, without the performance issues and security risks of traditional VPNs, supporting the UK Government's Smarter Working initiative.
 
-### Legacy Application Modernisation
+### Legacy application modernisation
 
 Extend Zero Trust security to legacy applications without code changes, allowing UK government agencies to maintain security for critical systems while modernising at their own pace in line with the Government Digital Service (GDS) guidelines.
 
-### Insider Threat Mitigation
+### Insider threat mitigation
 
 Reduce the risk of data breaches from insider threats by applying granular access controls, monitoring user activity, and enforcing least-privilege access to sensitive systems as recommended by the NCSC.
 
-### Third-Party Access Management
+### Third-party access management
 
 Securely connect contractors, partners, and other third parties to specific resources without granting broad network access, reducing your attack surface and supporting supply chain security requirements.
 
-### Cross-Department Collaboration
+### Cross-department collaboration
 
 Maintain consistent security policies when collaborating across different UK government departments and agencies, ensuring secure information sharing while preserving appropriate access controls.
 
-### GDPR Compliance Support
+### GDPR compliance support
 
 Help meet GDPR requirements with comprehensive visibility into data access, tools to implement appropriate security measures, and capabilities to detect and respond to data incidents promptly.

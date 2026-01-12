@@ -42,7 +42,7 @@ To effectively implement a system ensuring that children in the London Borough o
   },
   items: [
     {
-      text: "<strong>Gov.uk Forms:</strong> Utilized for creating and managing online forms to collect dietary requirements and consent from parents.",
+      text: "<strong>Gov.uk Forms:</strong> Used for creating and managing online forms to collect dietary requirements and consent from parents.",
       checked: true
     },
     {
@@ -80,7 +80,7 @@ To effectively implement a system ensuring that children in the London Borough o
   },
   items: [
     {
-      text: "<strong>Data Integration Tools:</strong> Facilitate the merging of datasets from DfE, DWP, and NutriServe Ltd. to create comprehensive profiles for meal planning.",
+      text: "<strong>Data Integration Tools:</strong> Merge of datasets from DfE, DWP, and NutriServe Ltd. to create comprehensive profiles for meal planning.",
       checked: true
     },
     {
@@ -88,7 +88,7 @@ To effectively implement a system ensuring that children in the London Borough o
       checked: true
     },
     {
-      text: "<strong>Reporting and Analytics:</strong> Generates insights on meal uptake, dietary needs, and program effectiveness to inform decision-making.",
+      text: "<strong>Reporting and Analytics:</strong> Generates insights on meal uptake, dietary needs, and programme effectiveness to inform decision-making.",
       checked: true
     }
   ]
@@ -121,7 +121,7 @@ To effectively implement a system ensuring that children in the London Borough o
   },
   items: [
     {
-      text: "<strong>Staff Training Programs:</strong> Educate school staff and administrators on using the new system and understanding data privacy protocols.",
+      text: "<strong>Staff training programmes:</strong> Educate school staff and administrators on using the new system and understanding data privacy protocols.",
       checked: true
     },
     {
@@ -138,9 +138,9 @@ By integrating these components, the initiative aims to create a seamless, effic
   href: "/begin/get-access"
 }) }}
 
-### What happens next?
+### Next steps
 
 You will get immediate access to try all the above services, with 'synthetic' and the environments will expire after 48 hours.
 You can use this to evaluate the products, and develop and understand the operational costs fully.
 
-When you're ready, you can [request access to the live environment](/begin/get-access) which will provision the production services you need and where relevant (usually for data that includes Personally Identifiable Information) walk you through the establishing your legal basis for access, and any other license terms you are required to accept.
+When you're ready, you can [request access to the live environment](/begin/get-access) which will provision the production services you need and where relevant (usually for data that includes Personally Identifiable Information) walk you through the establishing your legal basis for access, and any other licence terms you are required to accept.

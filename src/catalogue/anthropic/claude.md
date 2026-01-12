@@ -70,28 +70,28 @@ Claude is designed with privacy and security at its core, supporting data reside
 
 Claude has been built following Anthropic's Constitutional AI approach, which emphasises safety, reliability, and ethical AI use. This makes it well-suited for sensitive government applications where maintaining public trust is paramount, with built-in safeguards against harmful outputs, bias, and misuse.
 
-## Business Needs
+## Business needs
 
-### Enhance Citizen Services
+### Enhance citizen services
 
 Improve service delivery by developing AI-powered assistants that can answer citizen queries accurately, translate complex policy documents into plain English, and provide 24/7 support across multiple channels.
 
-### Accelerate Document Processing
+### Accelerate document processing
 
 Reduce backlogs and processing times by automating the analysis of complex documents, extracting key information from forms, and generating consistent summaries of lengthy reports and submissions.
 
-### Digital Inclusion Support
+### Digital inclusion support
 
 Create more accessible government services by transforming complex documents into easier-to-understand formats with larger fonts, increased spacing, and supporting images—similar to Swindon Borough Council's 'Simply Readable' tool powered by Claude.
 
-### Policy Analysis and Development
+### Policy analysis and development
 
 Strengthen policy development by analysing large volumes of research, stakeholder feedback, and previous policies to identify trends, gaps, and opportunities for improvement.
 
-### Cross-department Knowledge Management
+### Cross-department knowledge management
 
 Improve knowledge sharing across government departments by making archives and document repositories more easily searchable and extracting insights from previously siloed information.
 
-### Staff Productivity Enhancement
+### Staff productivity enhancement
 
 Support civil servants with drafting correspondence, preparing briefings, code development, and other routine tasks, allowing them to focus on higher-value activities that require human judgment and expertise.

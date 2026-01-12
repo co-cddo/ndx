@@ -42,7 +42,7 @@ Start building custom applications with PowerApps today. Follow these steps to g
 
 1. Sign in to the Microsoft PowerApps portal with your organisation account
 2. Create a new app using a template or start from a blank canvas
-3. Connect to your data sources (SharePoint, Excel, Dataverse, SQL, etc.)
+3. Connect to your data sources (SharePoint, Excel, Dataverse, SQL and others)
 4. Design your app interface using the visual editor
 5. Configure business logic and workflows using formulas or Power Automate
 6. Test and publish your application
@@ -65,28 +65,28 @@ PowerApps integrates seamlessly with Microsoft's comprehensive security framewor
 
 Rather than replacing legacy systems, PowerApps connects to them through over 300 pre-built connectors, extracting additional value from existing IT investments. Public sector organisations can easily integrate with Microsoft 365, Dynamics 365, Azure services, and third-party applications to create unified experiences that break down data silos and improve cross-departmental collaboration.
 
-## Business Needs
+## Business needs
 
-### Process Digitalisation
+### Process digitalisation
 
 Transform paper-based processes into digital workflows that reduce administrative burden, minimise errors, and provide audit trails. Local councils like Bournemouth, Christchurch, and Poole Council have successfully used PowerApps to streamline labour-intensive administrative tasks and improve service delivery to citizens.
 
-### Field Worker Productivity
+### Field worker productivity
 
 Equip field-based staff with mobile applications that work offline, ensuring continuous productivity for social workers, inspectors, and maintenance teams even in areas with limited connectivity. Enable real-time data collection, photo capture, and service delivery updates directly from the field.
 
-### Citizen Self-Service Portals
+### Citizen self-service portals
 
 Create intuitive citizen-facing portals that enable self-service for common interactions such as reporting issues, applying for permits, or accessing information. Reduce call centre volume while improving citizen satisfaction through 24/7 service availability.
 
-### Cross-Department Collaboration
+### Cross-department collaboration
 
-Break down information silos by building applications that facilitate data sharing and collaboration across departments while maintaining appropriate security boundaries, supporting joined-up government initiatives and holistic citizen service delivery.
+Break down information silos by building applications that enable data sharing and collaboration across departments while maintaining appropriate security boundaries, supporting joined-up government initiatives and holistic citizen service delivery.
 
-### Rapid Response Applications
+### Rapid response applications
 
 Quickly develop and deploy applications to address emerging needs or crises, such as grant distribution, emergency response coordination, or public health initiatives, without lengthy procurement or development cycles.
 
-### Intelligence-Driven Service Improvement
+### Intelligence-driven service improvement
 
-Leverage PowerApps' AI capabilities and integration with Power BI to analyse service usage data, identify improvement opportunities, and create data-driven decision-making tools that help prioritise resources where they will have the greatest impact on citizen outcomes.
+Use PowerApps' AI capabilities and integration with Power BI to analyse service usage data, identify improvement opportunities, and create data-driven decision-making tools that help prioritise resources where they will have the greatest impact on citizen outcomes.

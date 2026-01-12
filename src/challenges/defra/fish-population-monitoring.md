@@ -31,23 +31,23 @@ potential_campaigns: []
 <div class="govuk-grid-row">
   <div class="govuk-grid-column-two-thirds">
     
-## Challenge Overview
+## Challenge overview
 
 The Department for Environment, Food and Rural Affairs (DEFRA) faces critical challenges in monitoring fish populations across UK waters to support sustainable fisheries management, enforce fishing quotas, and protect marine ecosystems. Current monitoring methods are costly, time-intensive, and provide limited real-time insights.
 
 We seek innovative AI-powered solutions that can integrate satellite imagery, sonar data, environmental sensors, and fishing vessel tracking to provide comprehensive, real-time fish population assessments at scale.
 
-## Problem Statement
+## Problem statement
 
-### Current Challenges
+### Current challenges
 
-- **Manual Survey Limitations**: Traditional fish stock assessments rely on periodic research vessel surveys covering limited areas
-- **Data Fragmentation**: Multiple data sources (satellite, sonar, environmental, vessel tracking) exist in isolation
-- **Real-time Gaps**: Significant delays between data collection and actionable insights for fisheries management
-- **Scale Constraints**: Inability to monitor vast ocean areas continuously with current methods
-- **Compliance Monitoring**: Difficulty detecting illegal fishing activities and quota violations in real-time
+- **Manual survey limitations**: Traditional fish stock assessments rely on periodic research vessel surveys covering limited areas
+- **Data fragmentation**: Multiple data sources (satellite, sonar, environmental, vessel tracking) exist in isolation
+- **Real-time gaps**: Significant delays between data collection and actionable insights for fisheries management
+- **Scale constraints**: Inability to monitor vast ocean areas continuously with current methods
+- **Compliance monitoring**: Difficulty detecting illegal fishing activities and quota violations in real-time
 
-### Operational Impact
+### Operational impact
 
 - Inaccurate fish stock assessments leading to unsustainable fishing quotas
 - £45M annual losses from fish stock depletion and ecosystem damage
@@ -55,9 +55,9 @@ We seek innovative AI-powered solutions that can integrate satellite imagery, so
 - Delayed response to environmental changes affecting fish populations
 - Increased risk of overfishing and species extinction
 
-## Technical Requirements
+## Technical requirements
 
-### Core Capabilities Needed
+### Core capabilities needed
 
 1. **Satellite Image Analysis**
    - Real-time processing of optical and radar satellite imagery
@@ -79,7 +79,7 @@ We seek innovative AI-powered solutions that can integrate satellite imagery, so
    - Dashboard interfaces for marine biologists and enforcement teams
    - Automated reporting for quota management and conservation decisions
 
-### Performance Standards
+### Performance standards
 
 - **Coverage**: Monitor 200,000+ km² of UK territorial waters
 - **Accuracy**: 85%+ accuracy in fish population estimates
@@ -87,9 +87,9 @@ We seek innovative AI-powered solutions that can integrate satellite imagery, so
 - **Integration**: Connect with existing DEFRA systems and databases
 - **Scalability**: Handle petabytes of satellite and sensor data annually
 
-## Success Metrics
+## Success metrics
 
-### Primary Outcomes
+### Primary outcomes
 
 - **50%+ improvement** in fish stock assessment accuracy
 - **75% reduction** in monitoring costs compared to vessel-based surveys
@@ -97,7 +97,7 @@ We seek innovative AI-powered solutions that can integrate satellite imagery, so
 - **£60M+ annual savings** from improved fisheries management
 - **Enhanced conservation** of marine protected areas and endangered species
 
-### Performance Indicators
+### Performance indicators
 
 - Number of fish populations accurately tracked and monitored
 - Reduction in time between data collection and management decisions
@@ -105,77 +105,77 @@ We seek innovative AI-powered solutions that can integrate satellite imagery, so
 - Increase in successful prosecution of illegal fishing activities
 - Enhancement of marine ecosystem health indicators
 
-## Evaluation Criteria
+## Evaluation criteria
 
-### Technical Assessment (40%)
+### Technical assessment (40%)
 
 - AI model accuracy and reliability in diverse marine conditions
 - Scalability and performance of data processing systems
 - Integration capabilities with existing DEFRA infrastructure
 - Innovation in satellite imagery analysis and computer vision
 
-### Operational Viability (35%)
+### Operational viability (35%)
 
 - Cost-effectiveness compared to current monitoring methods
 - User experience for marine biologists and enforcement officers
 - Deployment timeline and implementation complexity
 - Training requirements and change management considerations
 
-### Impact Potential (25%)
+### Impact potential (25%)
 
 - Demonstrable improvement in fisheries management outcomes
 - Contribution to marine conservation and ecosystem protection
 - Economic benefits for fishing industry and coastal communities
 - Alignment with UK government sustainability goals
 
-## Available Data Sources
+## Available data sources
 
-### DEFRA Datasets
+### DEFRA datasets
 
 - Historical fish stock assessment data (20+ years)
 - Fishing vessel licensing and catch reporting records
 - Marine protected area boundaries and regulations
 - Environmental monitoring data from coastal stations
 
-### External Data Access
+### External data access
 
 - Copernicus Sentinel satellite imagery (ESA)
 - MetOffice marine weather and oceanographic data
 - Crown Estate seabed mapping and habitat information
 - International fish migration and spawning data
 
-### Real-time Feeds
+### Real-time feeds
 
 - Fishing vessel AIS tracking data
 - Environmental sensor networks (temperature, salinity, pH)
 - Weather and ocean current forecasting systems
 - Marine traffic and shipping route information
 
-## Engagement Opportunities
+## Engagement opportunities
 
-### Industry Collaboration
+### Industry collaboration
 
-- **Initial Briefing**: February 2025 technical workshop for potential solution providers
-- **Pilot Phase**: 6-month proof-of-concept with selected partners
-- **Data Access**: Secure API access to DEFRA marine datasets for development
-- **Expert Advisory**: Marine biologists and fisheries experts available for consultation
+- **Initial briefing**: February 2025 technical workshop for potential solution providers
+- **Pilot phase**: 6-month proof-of-concept with selected partners
+- **Data access**: Secure API access to DEFRA marine datasets for development
+- **Expert advisory**: Marine biologists and fisheries experts available for consultation
 
-### Development Support
+### Development support
 
 - Access to DEFRA marine research facilities and test vessels
 - Collaboration with UK Space Agency for satellite data access
-- Partnership opportunities with marine conservation organizations
+- Partnership opportunities with marine conservation organisations
 - Integration support with existing fisheries management systems
 
-## Related Initiatives
+## Related initiatives
 
-This challenge complements ongoing DEFRA programs including:
+This challenge complements ongoing DEFRA programmes including:
 
 - [Marine Protected Area Monitoring Initiative](https://www.gov.uk/government/collections/marine-protected-areas-in-england)
 - [Future Fishing and Marine Management Programme](https://www.gov.uk/government/collections/future-fishing-and-marine-management)
 - [25 Year Environment Plan](https://www.gov.uk/government/publications/25-year-environment-plan) marine objectives
 
-## Next Steps
+## Next steps
 
 **Interested in addressing this challenge?**
 
@@ -189,7 +189,7 @@ This challenge complements ongoing DEFRA programs including:
   </div>
   <div class="govuk-grid-column-one-third">
     
-### Challenge Details
+### Challenge details
 
 <div class="govuk-summary-card">
   <div class="govuk-summary-card__title-wrapper">
@@ -227,24 +227,24 @@ This challenge complements ongoing DEFRA programs including:
   </div>
 </div>
 
-### Key Technologies
+### Key technologies
 
-- **Artificial Intelligence**
+- **Artificial intelligence**
   - Computer vision
   - Machine learning
   - Predictive analytics
 
-- **Satellite Technology**
+- **Satellite technology**
   - Optical imagery analysis
   - Radar data processing
   - Real-time monitoring
 
-- **Data Integration**
+- **Data integration**
   - Multi-source fusion
   - Environmental sensors
   - Vessel tracking systems
 
-### Contact Information
+### Contact information
 
 **Primary Contact:**
 Marine Innovation Team  

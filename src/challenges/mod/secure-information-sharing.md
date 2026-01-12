@@ -35,7 +35,7 @@ tags:
   </div>
 </div>
 
-## Challenge Summary
+## Challenge summary
 
 **How does 'Secure by Design' account for unevenly distributed information and knowledge?**
 
@@ -43,26 +43,26 @@ In theory, 'Secure by Design' assumes the presence of professional engineers in 
 
 Not all asymmetries can be addressed by changes to culture. Therefore, 'Secure by Design' approaches need to account for intentional and unintentional inhibitors to sharing and transparency.
 
-## Problem Context
+## Problem context
 
 The defence ecosystem operates under unique constraints where critical information cannot always be shared openly, yet effective 'Secure by Design' implementation requires collaboration across multiple boundaries. This creates fundamental tensions between security requirements and engineering best practices.
 
-### Current Challenges
+### Current challenges
 
-- **Capability Protection**: Threat models and security requirements cannot always be shared with suppliers
-- **Export Restrictions**: International suppliers face limitations on information sharing
-- **Intellectual Property**: Commercial sensitivity limits transparency in technical solutions
-- **Disciplinary Barriers**: Security expertise not evenly distributed across engineering disciplines
-- **Organisational Boundaries**: Information sharing policies vary across MOD and suppliers
+- **Capability protection**: Threat models and security requirements cannot always be shared with suppliers
+- **Export restrictions**: International suppliers face limitations on information sharing
+- **Intellectual property**: Commercial sensitivity limits transparency in technical solutions
+- **Disciplinary barriers**: Security expertise not evenly distributed across engineering disciplines
+- **Organisational boundaries**: Information sharing policies vary across MOD and suppliers
 
-### Scale of Impact
+### Scale of impact
 
 - **£75M+ annual value** through improved collaboration and reduced security vulnerabilities
 - **500+ programmes** requiring enhanced information sharing approaches
 - **Critical national capabilities** dependent on secure multi-party collaboration
 - **International partnerships** requiring new sharing paradigms
 
-## Challenge Requirements
+## Challenge requirements
 
 We are seeking innovative solutions that address one or more of the following sub-challenges:
 
@@ -75,7 +75,7 @@ We are seeking innovative solutions that address one or more of the following su
 - Techniques for sharing threat models without revealing sources and methods
 - Risk information disclosure mechanisms that maintain operational security
 - Security requirement communication that enables effective design
-- Automated classification and sanitization of technical documentation
+- Automated classification and sanitisation of technical documentation
 
 **Success Metrics**:
 
@@ -96,7 +96,7 @@ We are seeking innovative solutions that address one or more of the following su
 
 **Success Metrics**:
 
-- Standardized assurance frameworks adopted by 100+ suppliers
+- Standardised assurance frameworks adopted by 100+ suppliers
 - 90% reduction in IP-related sharing conflicts
 - Enhanced MOD confidence in supplier security implementations
 
@@ -117,29 +117,29 @@ We are seeking innovative solutions that address one or more of the following su
 - 70% improvement in cross-disciplinary collaboration effectiveness
 - Reduced security-related design iterations by 60%
 
-## Proposed Solution Characteristics
+## Proposed solution characteristics
 
 Successful solutions should demonstrate:
 
 - **Security by Design**: Solutions must themselves embody secure design principles
 - **Scalability**: Applicable across hundreds of programmes and thousands of personnel
-- **Flexibility**: Adaptable to different classification levels and organizational contexts
+- **Flexibility**: Adaptable to different classification levels and organisational contexts
 - **Usability**: Intuitive for users without extensive security expertise
 - **Auditability**: Comprehensive logging and compliance tracking capabilities
 
-## Technical Approaches of Interest
+## Technical approaches of interest
 
-We are particularly interested in solutions leveraging:
+We are particularly interested in solutions using:
 
 - **Zero-Knowledge Proofs**: Demonstrating security properties without revealing implementation details
-- **Secure Multi-Party Computation**: Collaborative analysis without data sharing
-- **Differential Privacy**: Statistical disclosure while protecting sensitive information
-- **Homomorphic Encryption**: Computation on encrypted data
-- **Blockchain/DLT**: Immutable audit trails and decentralized trust
+- **Secure multi-party computation**: Collaborative analysis without data sharing
+- **Differential privacy**: Statistical disclosure while protecting sensitive information
+- **Homomorphic encryption**: Computation on encrypted data
+- **Blockchain/DLT**: Immutable audit trails and decentralised trust
 - **AI/ML**: Automated classification and knowledge extraction
-- **Digital Twins**: Secure modeling and simulation environments
+- **Digital twins**: Secure modelling and simulation environments
 
-## Response Guidelines
+## Response guidelines
 
 ### Phase 1: Concept Proposal (Due: April 30, 2025)
 
@@ -157,18 +157,18 @@ We are particularly interested in solutions leveraging:
 - **Scalability analysis** and deployment planning
 - **Campaign development** for full-scale implementation
 
-## Support Available
+## Support available
 
 MOD will provide selected solution providers with:
 
 - **Classified environments** for testing and validation
 - **Subject matter experts** across security and domain disciplines
-- **Real programme data** (appropriately sanitized) for testing
+- **Real programme data** (appropriately sanitised) for testing
 - **Stakeholder access** to MOD and supplier communities
 - **Security clearance support** for key personnel
 - **Intellectual property protection** assistance
 
-## Evaluation Criteria
+## Evaluation criteria
 
 Proposals will be assessed on:
 
@@ -178,16 +178,16 @@ Proposals will be assessed on:
 4. **Impact Potential** (15%): Transformational effect on defence collaboration
 5. **Team Capability** (10%): Track record in secure systems and collaboration
 
-## Success Stories
+## Success stories
 
 Examples of innovative approaches already emerging:
 
-- **Secure Analytics Platforms**: Enabling joint analysis without data sharing
-- **Privacy-Preserving ML**: Training models on distributed sensitive datasets
-- **Automated Sanitization**: AI-powered classification and redaction tools
-- **Collaborative Design Environments**: Secure multi-party engineering platforms
+- **Secure analytics platforms**: Enabling joint analysis without data sharing
+- **Privacy-preserving ML**: Training models on distributed sensitive datasets
+- **Automated sanitisation**: AI-powered classification and redaction tools
+- **Collaborative design environments**: Secure multi-party engineering platforms
 
-## Related Challenges
+## Related challenges
 
 This challenge connects with other MOD 'Secure by Design' initiatives:
 
@@ -195,7 +195,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 - [Early-Stage Security Integration](/challenges/mod/early-stage-security-integration)
 - [Through-Life Security Support](/challenges/mod/through-life-security-support)
 
-## Contact Information
+## Contact information
 
 **Challenge Lead**: Dr. Emma Richardson  
 **Email**: information.sharing@mod.gov.uk  
@@ -207,7 +207,7 @@ This challenge connects with other MOD 'Secure by Design' initiatives:
 **Technical Queries**: Prof. Linda Chen  
 **Email**: technical.architecture@mod.gov.uk
 
-### Engagement Opportunities
+### Engagement opportunities
 
 - **Monthly technical seminars**: Third Wednesday of each month, 10:00-12:00
 - **Industry roundtables**: Quarterly sessions with key suppliers and researchers

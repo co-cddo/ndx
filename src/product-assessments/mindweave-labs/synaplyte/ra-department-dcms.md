@@ -3,19 +3,19 @@ product: mindweave-labs/synaplyte
 department: "Department for Digital, Culture, Media & Sport (DCMS)"
 documentType: "Risk Assessment"
 date: 2023-10-02
-title: "SynapLyte™: Digital Service Impact & Public Information Risk Analysis"
+title: "SynapLyte™: Digital service impact and public information risk analysis"
 ---
 
 ## 1. Introduction
 
 The Department for Digital, Culture, Media & Sport (DCMS) has undertaken a risk assessment of the SynapLyte™ platform, focusing on potential impacts on digital public services and the risk of AI-generated misinformation affecting public trust.
 
-## 2. Risk Identification & Analysis
+## 2. Risk identification and analysis
 
 ### 2.1. Risk: Digital Divide Amplification (Likelihood: Medium, Impact: High)
 
 **Description:** The deployment of advanced AI assistants like SynapLyte™ could inadvertently widen the digital divide, as citizens without digital skills or access may find government services increasingly AI-mediated and less accessible through traditional channels.
-**Mitigation:** Maintain parallel non-AI service channels for all critical government services. Implement comprehensive digital inclusion training programs. Deploy simplified AI interfaces designed for users with limited digital literacy.
+**Mitigation:** Maintain parallel non-AI service channels for all critical government services. Implement comprehensive digital inclusion training programmes. Deploy simplified AI interfaces designed for users with limited digital literacy.
 
 ### 2.2. Risk: Over-reliance on AI-Generated Content (Likelihood: High, Impact: Medium)
 

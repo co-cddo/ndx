@@ -26,14 +26,14 @@ related:
 
 Government departments are constantly facing complex problems that require innovative solutions. The Challenges section provides a marketplace for departments to publish detailed problem statements, inviting industry, academia, and innovators to propose solutions.
 
-## How It Works
+## How it works
 
 1. **Challenge Publication**: Government departments identify and publish specific problems or capability gaps
 2. **Solution Development**: Industry and academic partners review challenges and develop innovative responses
 3. **Campaign Proposals**: Promising solutions can be developed into [kickstarter-style campaigns](/catalogue) requiring cross-sector commitment
 4. **Collaborative Implementation**: Successful campaigns receive the support needed to deliver solutions at scale
 
-## Current Active Challenges
+## Current active challenges
 
 Each challenge includes detailed problem statements, success criteria, potential impact, and guidance for solution providers. Browse the challenges below to find opportunities that match your expertise and capabilities.
 

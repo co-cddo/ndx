@@ -45,7 +45,7 @@ Used by over 1,500 government organisations, GOV.UK Notify handles millions of m
 
 ### Email notifications
 
-Send professional, branded emails to your users with customizable templates. Track delivery, bounces and click-through rates with detailed reporting.
+Send professional, branded emails to your users with customisable templates. Track delivery, bounces and click-through rates with detailed reporting.
 
 ### Text messages (SMS)
 
@@ -97,7 +97,7 @@ Track message delivery, engagement rates, and costs with detailed analytics and 
 
 ### Improved citizen engagement
 
-Keep citizens informed with timely, relevant updates about services they use. Reduce call center volume by proactively communicating status updates and reminders.
+Keep citizens informed with timely, relevant updates about services they use. Reduce call centre volume by proactively communicating status updates and reminders.
 
 ### Operational efficiency
 
@@ -127,7 +127,7 @@ Healthcare appointments, driving tests, court hearings, and other scheduled serv
 
 ### Application processing
 
-Keep applicants informed about the status of licenses, permits, benefits claims, and other applications throughout the process.
+Keep applicants informed about the status of licences, permits, benefits claims, and other applications throughout the process.
 
 ### Emergency communications
 
@@ -165,7 +165,7 @@ Add team members with different permission levels. Control who can send messages
 
 ### Template management
 
-Create reusable message templates with personalization fields. Maintain consistent branding and messaging across your organization.
+Create reusable message templates with personalisation fields. Maintain consistent branding and messaging across your organisation.
 
 ### Delivery tracking
 

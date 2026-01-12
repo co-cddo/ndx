@@ -64,7 +64,7 @@ Government-grade security built in from the start. All form submissions are encr
 
 Publish forms directly to GOV.UK domains with automatic SSL certificates and hosting. No need for separate infrastructure or technical setup.
 
-### Mobile-optimized
+### Mobile-optimised
 
 All forms work perfectly on mobile devices, tablets, and desktop computers. Responsive design ensures forms are usable on any screen size.
 
@@ -72,7 +72,7 @@ All forms work perfectly on mobile devices, tablets, and desktop computers. Resp
 
 GOV.UK Forms is currently in active development with early access available for select government partners:
 
-### Early access program
+### Early access programme
 
 Government organisations can request early access to help shape the development of the platform. Feedback from early users directly influences feature development.
 
@@ -122,7 +122,7 @@ Collect responses to policy consultations and public engagement exercises with p
 
 ### Service applications
 
-Enable citizens to apply for licenses, permits, benefits, and other government services online.
+Enable citizens to apply for licences, permits, benefits, and other government services online.
 
 ### Data collection
 
@@ -134,7 +134,7 @@ Collect user feedback about government services and measure satisfaction with se
 
 ### Registration processes
 
-Allow registration for events, services, or programs with secure data collection and processing.
+Allow registration for events, services, or programmes with secure data collection and processing.
 
 ### Reporting systems
 
@@ -182,7 +182,7 @@ Subscribe to updates about the development progress and upcoming features of GOV
 
 ### Provide feedback
 
-Share your organisation's form-building needs to help prioritize feature development and ensure the platform meets real government requirements.
+Share your organisation's form-building needs to help prioritise feature development and ensure the platform meets real government requirements.
 
 Built by the Government Digital Service (GDS) as part of the GOV.UK Digital Service Platform, GOV.UK Forms represents the future of government form creation - simple, accessible, and designed specifically for the needs of UK public sector organisations.
 

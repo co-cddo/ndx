@@ -43,7 +43,7 @@ tags:
 
 Great Wave AI is the operating system for GenAI Agents in government. Our no-code platform empowers public sector organisations to build, deploy and manage networks of trusted GenAI agents without the need for specialist AI teams - bringing speed, safety, and control to your GenAI transformation.
 
-### Who It's For
+### Who it's for
 
 Great Wave AI is a good fit if your organisation meets any of the following:
 
@@ -53,31 +53,31 @@ Great Wave AI is a good fit if your organisation meets any of the following:
 - Needs data in existing environments - cloud, private or air-gapped deployment options
 - Wants to empower the business teams to own their GenAI agents
 
-## Business Benefits
+## Business benefits
 
-### Reduce Operational Costs
+### Reduce operational costs
 
 Automate repetitive admin and free up your teams for higher-value work.
 
-### Accelerate Decision-Making
+### Accelerate decision-making
 
 Empower teams with real-time insights, summaries and next-best actions drawn from complex, unstructured data.
 
-### Enhance Citizen and Customer Services
+### Enhance citizen and customer services
 
 Build agents that provide accurate, always-on responses across channels - improving user experience and reducing call volumes.
 
-### Strengthen Compliance and Oversight
+### Strengthen compliance and oversight
 
 Ensure secure, traceable and auditable GenAI workflows that reduce risk and demonstrate control.
 
-## How Our GenAI Agents Help
+## How our GenAI agents help
 
 🔍 **Search Faster** – Instantly retrieve answers from policies, manuals and case files  
 📝 **Convert Instantly** – Auto-fill templates or turn transcripts into reports  
 📄 **Review Effortlessly** – Analyse NDAs, contracts, or applications at speed
 
-## Pain Points Solved by Great Wave AI
+## Pain points solved by Great Wave AI
 
 | **Customer Question**                      | **How the Platform Solves It**                                       |
 | ------------------------------------------ | -------------------------------------------------------------------- |
@@ -87,7 +87,7 @@ Ensure secure, traceable and auditable GenAI workflows that reduce risk and demo
 | “How do we manage scale?”                  | Centralised control panel with monitoring, audit and lifecycle tools |
 | “Is it secure and compliant enough?”       | Deploy on cloud, on-prem or air-gapped - with audit logs by default  |
 
-## Results from the Field
+## Results from the field
 
 ✅ Reduced time to respond to customer service queries by 74% - Central Government Department  
 ✅ Reduced burden on the HR team by 42% - Central Government Department  
@@ -106,7 +106,7 @@ Ensure secure, traceable and auditable GenAI workflows that reduce risk and demo
 - **Private by design** – Your data is never used to train models
 - **Cloud & LLM agnostic** – Avoid vendor lock-in with full portability and interoperability
 
-## Platform Architecture
+## Platform architecture
 
 Great Wave AI enables precise, reliable, and compliant GenAI at scale:
 

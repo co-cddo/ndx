@@ -233,9 +233,9 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
     ${summaryText ? `<p class="govuk-body-l">${summaryText}</p>` : ""}
 
-    ${renderSessionsTable(leases)}
-
     ${activeCount > 0 ? renderActiveSessionGuidance() : ""}
+
+    ${renderSessionsTable(leases)}
 
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
 

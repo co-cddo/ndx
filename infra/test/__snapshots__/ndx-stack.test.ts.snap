@@ -221,7 +221,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "c6c4b8df17e7bbabf5b3da5f99a8a75d883ffe0f4787b43d5a65300ff923a481.zip",
+          "S3Key": "719a8756a65909de89d710ba64bdc1767525b49e45c3707fde9335e602ceae3b.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",

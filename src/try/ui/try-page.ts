@@ -235,6 +235,8 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
     ${renderSessionsTable(leases)}
 
+    ${activeCount > 0 ? renderActiveSessionGuidance() : ""}
+
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
 
     <h2 class="govuk-heading-m">Want to try more products?</h2>
@@ -267,10 +269,44 @@ function renderFirstTimeGuidance(): string {
       </p>
       <ol class="govuk-list govuk-list--number">
         <li>Browse the catalogue for products marked "Try Before You Buy"</li>
-        <li>Click "Try this now" on a product page</li>
+        <li>Select "Try this now" on a product page</li>
         <li>Accept the Acceptable Use Policy</li>
         <li>Your sandbox session will appear here within minutes</li>
       </ol>
+    </div>
+  `
+}
+
+/**
+ * Render guidance for users with active sessions.
+ *
+ * Provides:
+ * - Link to walkthrough documentation
+ * - Information about AWS restrictions
+ * - Contact email for when restrictions block progress
+ * - Thanks for early participation
+ *
+ * @returns HTML string for active session guidance
+ */
+function renderActiveSessionGuidance(): string {
+  return `
+    <div class="govuk-inset-text govuk-!-margin-top-6">
+      <h3 class="govuk-heading-s">Getting the most from your session</h3>
+      <p class="govuk-body">
+        We recommend following the
+        <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/" class="govuk-link" target="_blank" rel="noopener noreferrer">guided walkthrough</a>
+        alongside your sandbox environment. It will help you explore the key features and get hands-on experience.
+      </p>
+      <p class="govuk-body">
+        <strong>Please note:</strong> The AWS environment has security restrictions in place.
+        In some cases, these may be more restrictive than needed for your evaluation.
+        If you find yourself blocked or unable to proceed, please email
+        <a href="mailto:ndx@dsit.gov.uk" class="govuk-link">ndx@dsit.gov.uk</a>
+        and we will review the restrictions.
+      </p>
+      <p class="govuk-body">
+        Thank you for participating in this early stage of NDX. Your feedback helps us improve the service for everyone.
+      </p>
     </div>
   `
 }

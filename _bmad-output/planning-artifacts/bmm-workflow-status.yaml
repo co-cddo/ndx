@@ -1,0 +1,62 @@
+# Workflow Status - BMad Method Brownfield
+# This tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#   - requested: User selected this optional workflow
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "docs/product-brief.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "2026-01-13"
+project: "ndx"
+project_type: "web-application"
+selected_track: "method"
+field_type: "brownfield"
+workflow_path: "_bmad/bmm/workflows/workflow-status/paths/method-brownfield.yaml"
+
+# Feature Context (captured during init)
+feature_summary: |
+  Self-serve signup authentication using AWS IAM Identity Center.
+  - Static signup form with email validation and domain dropdown
+  - Lambda for user creation in account 955063685555
+  - IAM Identity Center in us-west-2 (ssoins-79078bb87a820e72)
+  - Target group: ndx_IsbUsersGroup (a8412370-2051-702a-84d1-6688eeee30fa)
+  - Domain validation from GitHub JSON (local_authority filter)
+  - Cross-account CloudFront routing (568672915267 -> 955063685555)
+  - Interim auth solution with clear user messaging
+  - Security-critical: adversarial security posture required
+
+workflow_status:
+  # Phase 0: Documentation (Brownfield Prerequisite)
+  phase_0_documentation:
+    - document-project: "docs/index.md"  # Completed 2026-01-12
+
+  # Phase 1: Analysis (Optional - User Selected)
+  phase_1_analysis:
+    - brainstorm-project: "_bmad-output/analysis/brainstorming-session-2026-01-12.md"  # Completed 2026-01-12
+    - research: "_bmad-output/analysis/research-authentication-2026-01-12.md"  # Completed 2026-01-12 - Technical + Domain research
+
+  # Phase 2: Planning
+  phase_2_planning:
+    - prd: "_bmad-output/planning-artifacts/prd.md"
+    - create-ux-design: "_bmad-output/planning-artifacts/ux-design-specification.md"  # Completed 2026-01-13
+
+  # Phase 3: Solutioning
+  phase_3_solutioning:
+    - create-architecture: "_bmad-output/planning-artifacts/architecture.md"  # Completed 2026-01-13
+    - generate-project-context: "_bmad-output/planning-artifacts/project-context.md"  # Completed 2026-01-13 - Enhanced via 5 elicitation methods
+    - create-epics-and-stories: "_bmad-output/planning-artifacts/epics.md"  # Completed 2026-01-13 - 4 epics, 16 stories, 29 FRs covered
+    - test-design: "_bmad-output/test-design-system.md"
+    - implementation-readiness: "_bmad-output/planning-artifacts/implementation-readiness-report-2026-01-13.md"  # Completed 2026-01-13 - READY: 0 critical, 0 major issues
+
+  # Phase 4: Implementation
+  phase_4_implementation:
+    - sprint-planning: "required"

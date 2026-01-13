@@ -1,0 +1,71 @@
+# generated: 2026-01-13
+# project: ndx
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-13
+project: ndx
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Account Creation
+  epic-1: backlog
+  1-1-project-scaffold-shared-types: backlog
+  1-2-signup-lambda-infrastructure: backlog
+  1-3-domain-list-api: backlog
+  1-4-signup-api-core: backlog
+  1-5-signup-form-page: backlog
+  1-6-success-page-unlisted-domain-handling: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Seamless Authentication Integration
+  epic-2: backlog
+  2-1-auth-choice-modal: backlog
+  2-2-return-url-preservation: backlog
+  2-3-existing-user-detection-redirect: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Operational Monitoring & Abuse Protection
+  epic-3: backlog
+  3-1-slack-alerting-for-signups: backlog
+  3-2-waf-rate-limiting: backlog
+  3-3-operational-runbook: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Compliance Pages & Final Accessibility Audit
+  epic-4: backlog
+  4-1-privacy-policy-page: backlog
+  4-2-cookies-storage-page: backlog
+  4-3-policy-links-integration: backlog
+  4-4-final-wcag-22-aa-audit: backlog
+  epic-4-retrospective: optional

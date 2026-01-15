@@ -2,7 +2,16 @@
 project_name: "ndx"
 user_name: "Cns"
 date: "2026-01-13"
-sections_completed: ["technology_stack", "language_rules", "framework_rules", "testing_rules", "code_quality", "workflow_rules", "critical_rules"]
+sections_completed:
+  [
+    "technology_stack",
+    "language_rules",
+    "framework_rules",
+    "testing_rules",
+    "code_quality",
+    "workflow_rules",
+    "critical_rules",
+  ]
 existing_patterns_found: 35
 ---
 
@@ -14,19 +23,20 @@ _Critical rules and patterns that AI agents must follow when implementing code. 
 
 ## Technology Stack & Versions
 
-| Technology | Version | Notes |
-|------------|---------|-------|
-| TypeScript | 5.7.2 | Strict mode, ES2020 target |
-| Node.js | 20.x | Lambda runtime |
-| Eleventy | 3.1.2 | Static site generator |
-| esbuild | 0.27.2 | Client bundling |
-| Jest | 30.2.0 | Unit tests (jsdom) |
-| Playwright | 1.57.0 | E2E + accessibility |
-| AWS CDK | 2.215.0 | Infrastructure |
-| GOV.UK Eleventy Plugin | 8.3.0 | Design system |
-| Yarn | 4.5.0+ | Package manager (required) |
+| Technology             | Version | Notes                      |
+| ---------------------- | ------- | -------------------------- |
+| TypeScript             | 5.7.2   | Strict mode, ES2020 target |
+| Node.js                | 20.x    | Lambda runtime             |
+| Eleventy               | 3.1.2   | Static site generator      |
+| esbuild                | 0.27.2  | Client bundling            |
+| Jest                   | 30.2.0  | Unit tests (jsdom)         |
+| Playwright             | 1.57.0  | E2E + accessibility        |
+| AWS CDK                | 2.215.0 | Infrastructure             |
+| GOV.UK Eleventy Plugin | 8.3.0   | Design system              |
+| Yarn                   | 4.5.0+  | Package manager (required) |
 
 **Version Constraints:**
+
 - Use `yarn` not `npm` (enforced via engines field)
 - Node 20.x for Lambda compatibility
 - ES2020 target for all client code
@@ -45,12 +55,15 @@ _Critical rules and patterns that AI agents must follow when implementing code. 
 
 ```typescript
 // ✅ DO
-export async function validateEmail(email: string): Promise<boolean> { }
-interface SignupRequest { firstName: string; lastName: string; }
+export async function validateEmail(email: string): Promise<boolean> {}
+interface SignupRequest {
+  firstName: string
+  lastName: string
+}
 
 // ❌ DON'T
-export async function validateEmail(email) { }  // Missing types
-type SignupRequest = { firstName: string }  // Use interface
+export async function validateEmail(email) {} // Missing types
+type SignupRequest = { firstName: string } // Use interface
 ```
 
 ### Import/Export Patterns
@@ -91,15 +104,17 @@ import { initAll as GOVUKFrontend } from "govuk-frontend"
 
 ```typescript
 // ✅ Structured logging
-console.log(JSON.stringify({
-  level: 'INFO',
-  message: 'User created',
-  domain: domain,
-  correlationId: event.requestContext?.requestId
-}));
+console.log(
+  JSON.stringify({
+    level: "INFO",
+    message: "User created",
+    domain: domain,
+    correlationId: event.requestContext?.requestId,
+  }),
+)
 
 // ❌ Don't
-console.log('Created user: ' + email);  // PII exposure + unstructured
+console.log("Created user: " + email) // PII exposure + unstructured
 ```
 
 ---
@@ -179,12 +194,12 @@ src/signup/
 ### Build Commands
 
 ```bash
-yarn start          # Local dev server
-yarn build          # Eleventy build
-yarn build:try-js   # Bundle client TypeScript
-yarn test           # Jest unit tests
-yarn test:e2e       # Playwright E2E
-yarn lint           # Prettier check
+yarn start        # Local dev server
+yarn build        # Eleventy build
+yarn build:try-js # Bundle client TypeScript
+yarn test         # Jest unit tests
+yarn test:e2e     # Playwright E2E
+yarn lint         # Prettier check
 ```
 
 ### Git Patterns
@@ -199,15 +214,15 @@ yarn lint           # Prettier check
 
 ### Anti-Patterns to Avoid
 
-| Anti-Pattern | Why Wrong | Correct Approach |
-|--------------|-----------|------------------|
-| `any` type | Loses type safety | Use `unknown` and narrow |
-| `console.log(string)` | Not queryable in CloudWatch | Structured JSON |
-| Validate on blur | Not GOV.UK pattern | Validate on submit |
-| Apologetic errors | Not GOV.UK tone | Direct, actionable |
-| DOM in api/ folder | Wrong separation | DOM only in ui/ |
-| State in utils/ | Should be pure | State in ui/ or dedicated |
-| `npm install` | Wrong package manager | Use `yarn` |
+| Anti-Pattern          | Why Wrong                   | Correct Approach          |
+| --------------------- | --------------------------- | ------------------------- |
+| `any` type            | Loses type safety           | Use `unknown` and narrow  |
+| `console.log(string)` | Not queryable in CloudWatch | Structured JSON           |
+| Validate on blur      | Not GOV.UK pattern          | Validate on submit        |
+| Apologetic errors     | Not GOV.UK tone             | Direct, actionable        |
+| DOM in api/ folder    | Wrong separation            | DOM only in ui/           |
+| State in utils/       | Should be pure              | State in ui/ or dedicated |
+| `npm install`         | Wrong package manager       | Use `yarn`                |
 
 ### Security Rules
 
@@ -239,10 +254,10 @@ yarn lint           # Prettier check
 
 ```typescript
 const securityHeaders = {
-  'Content-Security-Policy': "default-src 'none'",
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'Referrer-Policy': 'strict-origin-when-cross-origin'
+  "Content-Security-Policy": "default-src 'none'",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
 }
 ```
 
@@ -290,8 +305,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
   try {
     // 1. Validate CSRF header
-    if (event.headers['x-ndx-request'] !== 'signup-form') {
-      return errorResponse(403, 'FORBIDDEN', 'Invalid request')
+    if (event.headers["x-ndx-request"] !== "signup-form") {
+      return errorResponse(403, "FORBIDDEN", "Invalid request")
     }
 
     // 2. Parse body defensively
@@ -302,10 +317,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // 4. Return success
     return successResponse(result)
-
   } catch (error) {
     logError(correlationId, error)
-    return errorResponse(500, 'SERVER_ERROR', 'Something went wrong. Try again.')
+    return errorResponse(500, "SERVER_ERROR", "Something went wrong. Try again.")
   }
 }
 ```
@@ -314,15 +328,18 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 ```typescript
 function parseBodySafe<T>(body: string | null, schema: Schema<T>): T {
-  if (!body) throw new ValidationError('INVALID_REQUEST', 'Body required')
+  if (!body) throw new ValidationError("INVALID_REQUEST", "Body required")
 
   let parsed: unknown
-  try { parsed = JSON.parse(body) }
-  catch { throw new ValidationError('INVALID_JSON', 'Invalid JSON') }
+  try {
+    parsed = JSON.parse(body)
+  } catch {
+    throw new ValidationError("INVALID_JSON", "Invalid JSON")
+  }
 
-  if (typeof parsed === 'object' && parsed !== null) {
-    if ('__proto__' in parsed || 'constructor' in parsed) {
-      throw new ValidationError('INVALID_JSON', 'Invalid JSON')
+  if (typeof parsed === "object" && parsed !== null) {
+    if ("__proto__" in parsed || "constructor" in parsed) {
+      throw new ValidationError("INVALID_JSON", "Invalid JSON")
     }
   }
 
@@ -348,12 +365,18 @@ function parseBodySafe<T>(body: string | null, schema: Schema<T>): T {
 
 ```typescript
 // ❌ FORBIDDEN
-try { validate(data) } catch { /* silent */ }
+try {
+  validate(data)
+} catch {
+  /* silent */
+}
 
 // ✅ REQUIRED
-try { validate(data) } catch (e) {
+try {
+  validate(data)
+} catch (e) {
   logError(correlationId, e)
-  return errorResponse(400, 'VALIDATION_ERROR', e.message)
+  return errorResponse(400, "VALIDATION_ERROR", e.message)
 }
 ```
 
@@ -404,7 +427,7 @@ const IDENTITY_STORE_ID = process.env.IDENTITY_STORE_ID
 const GROUP_ID = process.env.GROUP_ID
 
 if (!IDENTITY_STORE_ID || !GROUP_ID) {
-  throw new Error('Missing required environment variables')
+  throw new Error("Missing required environment variables")
 }
 ```
 
@@ -415,6 +438,7 @@ if (!IDENTITY_STORE_ID || !GROUP_ID) {
 ### User Journey Context
 
 **Happy Path:**
+
 1. User lands on `/signup` → sees form
 2. User selects domain from dropdown → validates email domain
 3. User submits form → Lambda creates IAM IDC user
@@ -423,6 +447,7 @@ if (!IDENTITY_STORE_ID || !GROUP_ID) {
 6. User returns to NDX → logs in via auth modal
 
 **Error Recovery:**
+
 - Domain not found → Stay on form, show "Contact ndx@dsit.gov.uk"
 - Email exists → Redirect to login with "Welcome back"
 - Server error → Retry message, preserve form data
@@ -431,6 +456,7 @@ if (!IDENTITY_STORE_ID || !GROUP_ID) {
 ### Debugging & Troubleshooting
 
 **Trace failures via:** `correlationId` in CloudWatch Logs
+
 ```bash
 fields @message | filter correlationId = "xxx"
 ```
@@ -438,11 +464,13 @@ fields @message | filter correlationId = "xxx"
 **IAM IDC errors:** Check CloudTrail in ISB account (955063685555)
 
 **Local dev:**
+
 - Client: `yarn start` (Eleventy on :8080)
 - Lambda: `sam local invoke` with test events
 - Cannot test IAM IDC locally - use integration tests
 
 **Deployment verification:**
+
 ```bash
 # Check endpoint responds
 curl -s https://ndx.digital.cabinet-office.gov.uk/signup-api/domains | jq .
@@ -451,6 +479,7 @@ curl -s https://ndx.digital.cabinet-office.gov.uk/signup-api/domains | jq .
 ### UI Interaction Patterns
 
 **Form field order (top to bottom):**
+
 1. First name (required)
 2. Last name (required)
 3. Email address (required)
@@ -474,6 +503,7 @@ curl -s https://ndx.digital.cabinet-office.gov.uk/signup-api/domains | jq .
 | `SERVER_ERROR` | "Something went wrong. Try again." |
 
 **Focus management:**
+
 - On error: Focus moves to error summary
 - Error summary links focus to first invalid field when clicked
 

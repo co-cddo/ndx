@@ -398,7 +398,11 @@ async function addHttpOriginToDistribution(
 
     // Update existing origin
     if (config.Origins?.Items) {
-      config.Origins.Items[existingOriginIndex] = createHttpOriginConfig(originId, originDomainName, originAccessControlId)
+      config.Origins.Items[existingOriginIndex] = createHttpOriginConfig(
+        originId,
+        originDomainName,
+        originAccessControlId,
+      )
       console.log(`Updated existing HTTP origin ${originId}`)
     }
   } else {
@@ -461,9 +465,7 @@ async function addPathCacheBehavior(
   }
 
   // Check if path pattern already exists
-  const existingIndex = config.CacheBehaviors.Items.findIndex(
-    (behavior) => behavior.PathPattern === pathPattern,
-  )
+  const existingIndex = config.CacheBehaviors.Items.findIndex((behavior) => behavior.PathPattern === pathPattern)
 
   const allowedMethods: Method[] = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
   const cachedMethods: Method[] = ["HEAD", "GET"]

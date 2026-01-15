@@ -36,6 +36,7 @@ So that **I know my browsing is not being tracked** (FR26).
 ## Dev Notes
 
 Created `src/cookies.md` with comprehensive cookies and storage policy including:
+
 - Essential cookies table (auth token, NDX cookie)
 - sessionStorage keys (auth-return-to, signup-welcome-back, aup-agreed)
 - localStorage keys (ndx-auth-state)
@@ -68,6 +69,7 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `src/cookies.md`
 
 ---
@@ -100,12 +102,12 @@ N/A - Static content page.
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | Page created with GOV.UK template |
-| AC2 | PASS | All required content sections included |
-| AC3 | NOTE | Site blocks all indexing (Disallow: /) - intentional |
-| AC4 | PENDING | E2E tests in Story 4.4 |
+| AC  | Status  | Evidence                                             |
+| --- | ------- | ---------------------------------------------------- |
+| AC1 | PASS    | Page created with GOV.UK template                    |
+| AC2 | PASS    | All required content sections included               |
+| AC3 | NOTE    | Site blocks all indexing (Disallow: /) - intentional |
+| AC4 | PENDING | E2E tests in Story 4.4                               |
 
 ### Review Outcome
 

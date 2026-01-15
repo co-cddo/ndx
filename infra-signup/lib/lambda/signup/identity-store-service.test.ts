@@ -13,7 +13,7 @@ import {
   CreateGroupMembershipCommand,
   ConflictException,
 } from "@aws-sdk/client-identitystore"
-import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts"
+import { STSClient } from "@aws-sdk/client-sts"
 import { checkUserExists, createUser, validateConfiguration, resetClient } from "./identity-store-service"
 
 // Mock the AWS SDK - but keep ConflictException as real class for instanceof checks

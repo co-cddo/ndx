@@ -11,7 +11,9 @@ The NDX Signup Feature sprint successfully delivered all planned functionality a
 ## Epic Completion Summary
 
 ### Epic 1: Account Creation ✅
+
 **Stories Completed:** 6/6
+
 - 1.1 Project Scaffold & Shared Types
 - 1.2 Signup Lambda Infrastructure
 - 1.3 Domain List API
@@ -20,6 +22,7 @@ The NDX Signup Feature sprint successfully delivered all planned functionality a
 - 1.6 Success Page & Unlisted Domain Handling
 
 **Key Deliverables:**
+
 - Lambda infrastructure in `infra-signup/` with CDK
 - Domain list API with 5-minute caching from GitHub JSON source
 - Signup API with email normalization and CSRF protection
@@ -27,35 +30,44 @@ The NDX Signup Feature sprint successfully delivered all planned functionality a
 - Success page with AWS handoff messaging
 
 ### Epic 2: Seamless Authentication Integration ✅
+
 **Stories Completed:** 3/3
+
 - 2.1 Auth Choice Modal
 - 2.2 Return URL Preservation
 - 2.3 Existing User Detection & Redirect
 
 **Key Deliverables:**
+
 - Auth choice modal with Sign in/Create account options
 - Return URL preservation in sessionStorage
 - Silent redirect for existing users with welcome back banner
 
 ### Epic 3: Operational Monitoring & Abuse Protection ✅
+
 **Stories Completed:** 3/3
+
 - 3.1 Slack Alerting for Signups
 - 3.2 WAF Rate Limiting
 - 3.3 Operational Runbook
 
 **Key Deliverables:**
+
 - EventBridge rule → SNS → Chatbot for Slack alerts
 - WAF WebACL with rate-based rule (5 req/5min per IP)
 - Comprehensive operational runbook in `docs/operations/`
 
 ### Epic 4: Compliance Pages & Final Accessibility Audit ✅
+
 **Stories Completed:** 4/4
+
 - 4.1 Privacy Policy Page
 - 4.2 Cookies & Storage Page
 - 4.3 Policy Links Integration
 - 4.4 Final WCAG 2.2 AA Audit
 
 **Key Deliverables:**
+
 - Privacy policy page at `/privacy/`
 - Cookies policy page at `/cookies/`
 - Footer links to Privacy, Cookies, Accessibility
@@ -118,15 +130,15 @@ The NDX Signup Feature sprint successfully delivered all planned functionality a
 
 ## Metrics
 
-| Metric | Value |
-|--------|-------|
-| Total Stories | 16 |
-| Stories Completed | 16 |
-| Completion Rate | 100% |
-| Unit Tests Added | 813+ |
-| CDK Tests Added | 125+ |
-| E2E Tests Added | 15+ |
-| Files Created/Modified | ~30 |
+| Metric                 | Value |
+| ---------------------- | ----- |
+| Total Stories          | 16    |
+| Stories Completed      | 16    |
+| Completion Rate        | 100%  |
+| Unit Tests Added       | 813+  |
+| CDK Tests Added        | 125+  |
+| E2E Tests Added        | 15+   |
+| Files Created/Modified | ~30   |
 
 ## Recommendations for Future Sprints
 

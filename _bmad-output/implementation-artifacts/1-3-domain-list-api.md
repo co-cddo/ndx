@@ -95,12 +95,14 @@ so that **I know my council is eligible to sign up** (FR2, FR12, FR13, FR15).
 ### GitHub Domain Source
 
 **Source URL (from architecture.md):**
+
 ```typescript
 // The exact URL needs to be confirmed - this is the pattern:
-const GITHUB_DOMAIN_URL = 'https://raw.githubusercontent.com/cabinetoffice/local-authority-domains/main/domains.json'
+const GITHUB_DOMAIN_URL = "https://raw.githubusercontent.com/cabinetoffice/local-authority-domains/main/domains.json"
 ```
 
 **Expected JSON structure:**
+
 ```json
 {
   "domains": [
@@ -113,6 +115,7 @@ const GITHUB_DOMAIN_URL = 'https://raw.githubusercontent.com/cabinetoffice/local
 ### Caching Implementation
 
 **In-memory cache pattern (ADR-044):**
+
 ```typescript
 // Module-level cache
 let domainCache: { data: DomainInfo[]; timestamp: number } | null = null
@@ -121,12 +124,14 @@ const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes (NFR12)
 async function getDomains(correlationId: string): Promise<DomainInfo[]> {
   // Check cache first
   if (domainCache && Date.now() - domainCache.timestamp < CACHE_TTL_MS) {
-    console.log(JSON.stringify({
-      level: 'DEBUG',
-      message: 'Returning cached domains',
-      cacheAge: Date.now() - domainCache.timestamp,
-      correlationId
-    }))
+    console.log(
+      JSON.stringify({
+        level: "DEBUG",
+        message: "Returning cached domains",
+        cacheAge: Date.now() - domainCache.timestamp,
+        correlationId,
+      }),
+    )
     return domainCache.data
   }
 
@@ -137,13 +142,15 @@ async function getDomains(correlationId: string): Promise<DomainInfo[]> {
   } catch (error) {
     // Graceful fallback to stale cache
     if (domainCache) {
-      console.log(JSON.stringify({
-        level: 'WARN',
-        message: 'GitHub unavailable, returning stale cache',
-        error: error instanceof Error ? error.message : 'Unknown',
-        cacheAge: Date.now() - domainCache.timestamp,
-        correlationId
-      }))
+      console.log(
+        JSON.stringify({
+          level: "WARN",
+          message: "GitHub unavailable, returning stale cache",
+          error: error instanceof Error ? error.message : "Unknown",
+          cacheAge: Date.now() - domainCache.timestamp,
+          correlationId,
+        }),
+      )
       return domainCache.data
     }
     // No cache available - must fail
@@ -155,19 +162,21 @@ async function getDomains(correlationId: string): Promise<DomainInfo[]> {
 ### Performance Requirements
 
 **NFR2: Response within 500ms:**
+
 - Cold start: First request may exceed 500ms (acceptable per NFR23)
 - Warm Lambda: Cached response should be < 50ms
 - GitHub fetch: May take 200-400ms (acceptable if < 500ms total)
 
 **Testing approach:**
+
 ```typescript
-it('should return cached domains within 50ms', async () => {
+it("should return cached domains within 50ms", async () => {
   // Prime the cache
-  await getDomains('test-id')
+  await getDomains("test-id")
 
   // Measure cached response time
   const start = Date.now()
-  await getDomains('test-id')
+  await getDomains("test-id")
   const duration = Date.now() - start
 
   expect(duration).toBeLessThan(50)
@@ -177,29 +186,29 @@ it('should return cached domains within 50ms', async () => {
 ### Error Handling
 
 **Error response for service unavailable (AC#5):**
+
 ```typescript
-return errorResponse(
-  503,
-  'SERVICE_UNAVAILABLE',
-  'Service temporarily unavailable',
-  correlationId
-)
+return errorResponse(503, "SERVICE_UNAVAILABLE", "Service temporarily unavailable", correlationId)
 ```
 
 **Structured logging for errors (NFR22):**
+
 ```typescript
-console.log(JSON.stringify({
-  level: 'ERROR',
-  message: 'GitHub domain fetch failed',
-  error: error.message,
-  correlationId,
-  // Never log full URL (may contain tokens in other contexts)
-}))
+console.log(
+  JSON.stringify({
+    level: "ERROR",
+    message: "GitHub domain fetch failed",
+    error: error.message,
+    correlationId,
+    // Never log full URL (may contain tokens in other contexts)
+  }),
+)
 ```
 
 ### Project Structure Notes
 
 **Files to create/modify:**
+
 ```
 infra-signup/lib/lambda/signup/
 ├── handler.ts              # MODIFY: Add domain endpoint implementation
@@ -210,6 +219,7 @@ infra-signup/lib/lambda/signup/
 ```
 
 **Type definitions (from Story 1.1):**
+
 ```typescript
 // src/signup/types.ts - import via @ndx/signup-types
 export interface DomainInfo {
@@ -230,6 +240,7 @@ export interface DomainInfo {
 ### Testing Requirements
 
 **Unit tests (domain-service.test.ts):**
+
 - Successful GitHub fetch returns domain array
 - Cache is populated after fetch
 - Cached data returned without fetch call
@@ -239,6 +250,7 @@ export interface DomainInfo {
 - Response time under 50ms for cached data
 
 **Handler tests (handler.test.ts):**
+
 - GET /signup-api/domains returns 200 with domain array
 - Response includes correct headers (Content-Type, security headers)
 - Error response when service unavailable
@@ -246,6 +258,7 @@ export interface DomainInfo {
 ### Previous Story Learnings
 
 **From Story 1.2 code review:**
+
 - Always include HSTS header in security headers ✅
 - Include X-Request-ID in responses for tracing ✅
 - Log unknown/error scenarios at WARN level ✅
@@ -275,6 +288,7 @@ Claude Opus 4.5
 ### Completion Notes List
 
 **Completed:**
+
 - Task 1: Created domain-service.ts with GitHub fetching ✅
 - Task 2: Implemented in-memory caching with 5-min TTL ✅
 - Task 3: Implemented graceful fallback to stale cache ✅
@@ -282,6 +296,7 @@ Claude Opus 4.5
 - Task 5: Created comprehensive unit tests ✅
 
 **Implementation Notes:**
+
 - DomainInfo interface imported from @ndx/signup-types (shared types from Story 1.1)
 - Cache uses module-level variable for Lambda warm invocation reuse
 - Graceful fallback returns stale cache on GitHub failure (NFR18, NFR21)
@@ -299,36 +314,41 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - infra-signup/lib/lambda/signup/domain-service.ts
 - infra-signup/lib/lambda/signup/domain-service.test.ts
 
 **Modified:**
+
 - infra-signup/lib/lambda/signup/handler.ts
 - infra-signup/lib/lambda/signup/handler.test.ts
 
 ## Code Review Record
 
 ### Review Date
+
 2026-01-13
 
 ### Review Findings Summary
 
 **Issues Found: 8 (5 fixed, 3 accepted as-is)**
 
-| # | Severity | Issue | Resolution |
-|---|----------|-------|------------|
-| 1 | HIGH | Missing fetch timeout - no AbortController for GitHub fetch | FIXED - Added AbortController with 3s timeout |
-| 2 | HIGH | No domain data validation - malformed entries cached | FIXED - Added isValidDomainInfo() validation, filters invalid entries |
-| 3 | HIGH | Handler comment outdated - said "Will implement" but already done | FIXED - Updated comment to "GET /signup-api/domains endpoint" |
-| 4 | MEDIUM | Test hardcoded timing expectation potentially flaky | ACCEPTED - 50ms buffer is reasonable for CI |
-| 5 | MEDIUM | Unused Context import in handler.test.ts | FIXED - Removed unused import |
-| 6 | LOW | Missing JSDoc for GitHubDomainsResponse | FIXED - Added documentation |
-| 7 | LOW | DomainInfo runtime schema validation missing | ADDRESSED - Added isValidDomainInfo() type guard |
-| 8 | LOW | DEBUG log level for cache hits | ACCEPTED - DEBUG appropriate for cache metrics |
+| #   | Severity | Issue                                                             | Resolution                                                            |
+| --- | -------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | HIGH     | Missing fetch timeout - no AbortController for GitHub fetch       | FIXED - Added AbortController with 3s timeout                         |
+| 2   | HIGH     | No domain data validation - malformed entries cached              | FIXED - Added isValidDomainInfo() validation, filters invalid entries |
+| 3   | HIGH     | Handler comment outdated - said "Will implement" but already done | FIXED - Updated comment to "GET /signup-api/domains endpoint"         |
+| 4   | MEDIUM   | Test hardcoded timing expectation potentially flaky               | ACCEPTED - 50ms buffer is reasonable for CI                           |
+| 5   | MEDIUM   | Unused Context import in handler.test.ts                          | FIXED - Removed unused import                                         |
+| 6   | LOW      | Missing JSDoc for GitHubDomainsResponse                           | FIXED - Added documentation                                           |
+| 7   | LOW      | DomainInfo runtime schema validation missing                      | ADDRESSED - Added isValidDomainInfo() type guard                      |
+| 8   | LOW      | DEBUG log level for cache hits                                    | ACCEPTED - DEBUG appropriate for cache metrics                        |
 
 ### Tests After Review
+
 - infra-signup: 62 tests passing (up from 59)
 - Root package: 712 tests passing
 
 ### Review Outcome
+
 **PASS** - All critical issues addressed. Story approved for completion.

@@ -105,7 +105,7 @@ export enum SignupErrorCode {
   INVALID_CONTENT_TYPE = "INVALID_CONTENT_TYPE",
   CSRF_INVALID = "CSRF_INVALID",
   RATE_LIMITED = "RATE_LIMITED",
-  SERVER_ERROR = "SERVER_ERROR"
+  SERVER_ERROR = "SERVER_ERROR",
 }
 
 /** Signup form submission payload */
@@ -126,7 +126,7 @@ export interface SignupResponse {
 export interface ApiError {
   error: SignupErrorCode
   message: string
-  redirectUrl?: string  // For USER_EXISTS redirect
+  redirectUrl?: string // For USER_EXISTS redirect
 }
 
 /** Domain info from allowlist */
@@ -137,12 +137,7 @@ export interface DomainInfo {
 
 /** Type guard for API responses */
 export function isApiError(response: unknown): response is ApiError {
-  return (
-    typeof response === "object" &&
-    response !== null &&
-    "error" in response &&
-    "message" in response
-  )
+  return typeof response === "object" && response !== null && "error" in response && "message" in response
 }
 ```
 
@@ -232,6 +227,7 @@ ndx/
 ```
 
 **Alignment with Architecture:**
+
 - Follows ADR-047: Lambda in `infra-signup/` (NDX repo)
 - Follows ADR-048: Shared types via tsconfig paths
 - Follows ADR-049: Co-located tests pattern
@@ -239,6 +235,7 @@ ndx/
 ### Security Considerations
 
 **From project-context.md:**
+
 - Types define the contract for input validation
 - Error codes are explicit - no generic "error" strings
 - `SignupErrorCode` enum prevents typos and enables exhaustive checks
@@ -247,6 +244,7 @@ ndx/
 
 This story creates placeholders. Actual tests come in subsequent stories.
 For this story, only need to verify:
+
 1. TypeScript compilation succeeds
 2. Path mapping resolves correctly
 3. All directories exist
@@ -302,6 +300,7 @@ claude-opus-4-5-20251101
 ### File List
 
 **New files:**
+
 - src/signup/main.ts
 - src/signup/api.ts
 - src/signup/types.ts
@@ -318,4 +317,5 @@ claude-opus-4-5-20251101
 - tests/e2e/signup/signup.spec.ts
 
 **Modified files:**
-- tsconfig.json (added @signup/* path alias)
+
+- tsconfig.json (added @signup/\* path alias)

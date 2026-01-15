@@ -41,12 +41,12 @@ So that **we comply with Public Sector Bodies Accessibility Regulations** (FR29)
 Using Playwright with @axe-core/playwright for automated accessibility testing:
 
 ```typescript
-import { test, expect } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
+import { test, expect } from "@playwright/test"
+import AxeBuilder from "@axe-core/playwright"
 
-test.describe('Signup Accessibility', () => {
-  test('signup page has no accessibility violations', async ({ page }) => {
-    await page.goto('/signup/')
+test.describe("Signup Accessibility", () => {
+  test("signup page has no accessibility violations", async ({ page }) => {
+    await page.goto("/signup/")
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations).toEqual([])
   })
@@ -63,6 +63,7 @@ test.describe('Signup Accessibility', () => {
 ### GOV.UK Design System Compliance
 
 The site uses GOV.UK Design System components which are WCAG 2.2 AA compliant by default:
+
 - Form inputs with associated labels
 - Error summaries and inline errors with ARIA
 - Focus states (3px yellow outline)
@@ -101,6 +102,7 @@ Claude Opus 4.5
 ### File List
 
 **Modified:**
+
 - `tests/e2e/signup/signup.spec.ts`
 
 ---
@@ -136,14 +138,14 @@ GOV.UK Design System components ensure WCAG 2.2 AA compliance.
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | axe-core tests added for signup, success, privacy, cookies pages |
-| AC2 | PASS | Keyboard navigation tests added |
-| AC3 | PASS | GOV.UK Design System ensures screen reader compatibility |
-| AC4 | PASS | GOV.UK palette meets 4.5:1 contrast ratio |
-| AC5 | PASS | Compliance documented via GOV.UK Design System adherence |
-| AC6 | PASS | E2E tests added to signup.spec.ts |
+| AC  | Status | Evidence                                                         |
+| --- | ------ | ---------------------------------------------------------------- |
+| AC1 | PASS   | axe-core tests added for signup, success, privacy, cookies pages |
+| AC2 | PASS   | Keyboard navigation tests added                                  |
+| AC3 | PASS   | GOV.UK Design System ensures screen reader compatibility         |
+| AC4 | PASS   | GOV.UK palette meets 4.5:1 contrast ratio                        |
+| AC5 | PASS   | Compliance documented via GOV.UK Design System adherence         |
+| AC6 | PASS   | E2E tests added to signup.spec.ts                                |
 
 ### Review Outcome
 
@@ -152,12 +154,14 @@ GOV.UK Design System components ensure WCAG 2.2 AA compliance.
 ### Accessibility Compliance Summary
 
 **Pages Tested:**
+
 - `/signup/` - Signup form
 - `/signup/success` - Success page
 - `/privacy/` - Privacy policy
 - `/cookies/` - Cookies policy
 
 **Tools Used:**
+
 - axe-core via @axe-core/playwright
 - Playwright keyboard navigation testing
 - GOV.UK Design System (WCAG 2.2 AA compliant components)

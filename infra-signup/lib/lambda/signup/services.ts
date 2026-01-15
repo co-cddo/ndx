@@ -54,7 +54,8 @@ export function isEmailDomainAllowed(email: string, allowedDomains: DomainInfo[]
  */
 export function normalizeEmail(email: string): string {
   // Reject non-ASCII characters (Unicode homoglyph defense)
-  if (!/^[\x00-\x7F]*$/.test(email)) {
+  // Only allow printable ASCII characters (0x20-0x7E)
+  if (!/^[\x20-\x7E]*$/.test(email)) {
     throw new Error("Email contains invalid characters")
   }
 

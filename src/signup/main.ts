@@ -15,7 +15,14 @@ import { initAll as GOVUKFrontend } from "govuk-frontend"
 
 import { fetchDomains, submitSignup } from "./api"
 import type { DomainInfo, SignupRequest } from "./types"
-import { isApiError, SignupErrorCode, ERROR_MESSAGES, VALIDATION_CONSTRAINTS, FORBIDDEN_NAME_CHARS, EMAIL_PLUS_ALIAS } from "./types"
+import {
+  isApiError,
+  SignupErrorCode,
+  ERROR_MESSAGES,
+  VALIDATION_CONSTRAINTS,
+  FORBIDDEN_NAME_CHARS,
+  EMAIL_PLUS_ALIAS,
+} from "./types"
 import { getReturnURL } from "../try/auth/oauth-flow"
 import { OAUTH_LOGIN_URL, WELCOME_BACK_KEY } from "../try/constants"
 

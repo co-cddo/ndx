@@ -1,5 +1,17 @@
 ---
-stepsCompleted: ["step-01-init", "step-02-discovery", "step-03-success", "step-04-journeys", "step-05-domain", "step-07-project-type", "step-08-scoping", "step-09-functional", "step-10-nonfunctional", "step-11-polish"]
+stepsCompleted:
+  [
+    "step-01-init",
+    "step-02-discovery",
+    "step-03-success",
+    "step-04-journeys",
+    "step-05-domain",
+    "step-07-project-type",
+    "step-08-scoping",
+    "step-09-functional",
+    "step-10-nonfunctional",
+    "step-11-polish",
+  ]
 inputDocuments:
   - "_bmad-output/analysis/research-authentication-2026-01-12.md"
   - "_bmad-output/analysis/brainstorming-session-2026-01-12.md"
@@ -77,6 +89,7 @@ Self-serve signup for NDX enabling government users to create accounts via AWS I
 **Time-to-Value Target:** < 2 minutes from clicking "Create account" to being back on original page with full access, including email/password setup while flipping between browser and inbox.
 
 **Journey Completion:**
+
 - Create account → receive email → set password → auto-login → return to original page → click Try → sandbox provisioned
 - Existing users seamlessly redirected to login (no confusion or error messages)
 - Clear fallback path for unlisted domains ("Contact us")
@@ -85,12 +98,12 @@ Self-serve signup for NDX enabling government users to create accounts via AWS I
 
 **Coverage Target:** Remove signup friction to expand NDX reach across all English local authorities.
 
-| Milestone | Target | Timeframe |
-|-----------|--------|-----------|
-| Capability | All ~340 LA domains in allowlist | Day 1 |
-| Early signal | 10+ LAs with at least one signup | Month 1 |
-| Traction | 50+ LAs with signups | Quarter 1 |
-| Long-term | Measure adoption and iterate | Ongoing |
+| Milestone    | Target                           | Timeframe |
+| ------------ | -------------------------------- | --------- |
+| Capability   | All ~340 LA domains in allowlist | Day 1     |
+| Early signal | 10+ LAs with at least one signup | Month 1   |
+| Traction     | 50+ LAs with signups             | Quarter 1 |
+| Long-term    | Measure adoption and iterate     | Ongoing   |
 
 ### Technical Success
 
@@ -103,14 +116,14 @@ Self-serve signup for NDX enabling government users to create accounts via AWS I
 
 ### Measurable Outcomes
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Time to first Try | < 2 minutes | Timestamp difference: form submit → Try click |
-| LA coverage capability | 340 domains | Domain allowlist count |
-| LA adoption (M1) | 10+ | Unique LA domains in signups |
-| LA adoption (Q1) | 50+ | Unique LA domains in signups |
-| Error rate | < 1% | Failed signups / total attempts |
-| Security controls | 6/6 | Checklist verification |
+| Metric                 | Target      | Measurement                                   |
+| ---------------------- | ----------- | --------------------------------------------- |
+| Time to first Try      | < 2 minutes | Timestamp difference: form submit → Try click |
+| LA coverage capability | 340 domains | Domain allowlist count                        |
+| LA adoption (M1)       | 10+         | Unique LA domains in signups                  |
+| LA adoption (Q1)       | 50+         | Unique LA domains in signups                  |
+| Error rate             | < 1%        | Failed signups / total attempts               |
+| Security controls      | 6/6         | Checklist verification                        |
 
 ## User Journeys
 
@@ -200,12 +213,12 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 
 ### Journey Requirements Summary
 
-| Journey | Key Capabilities Required |
-|---------|--------------------------|
-| Sarah (Success) | Signup form, email delivery, auto-login, return URL, Try access |
-| Tom (Existing) | Existing user detection, silent redirect, friendly messaging |
-| James (Unlisted) | Domain validation, clear error messaging, contact path |
-| Marcus (Admin) | Slack alerts, WAF logs, IAM IDC console access, account deletion |
+| Journey          | Key Capabilities Required                                        |
+| ---------------- | ---------------------------------------------------------------- |
+| Sarah (Success)  | Signup form, email delivery, auto-login, return URL, Try access  |
+| Tom (Existing)   | Existing user detection, silent redirect, friendly messaging     |
+| James (Unlisted) | Domain validation, clear error messaging, contact path           |
+| Marcus (Admin)   | Slack alerts, WAF logs, IAM IDC console access, account deletion |
 
 **Capability Areas:**
 
@@ -219,6 +232,7 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 ### Compliance & Regulatory
 
 **Applicable Frameworks:**
+
 - WCAG 2.2 AA - Public Sector Bodies Accessibility Regulations
 - UK GDPR - Lawful basis: legitimate interests (LIA documented internally)
 - GDS Service Standard - GOV.UK design patterns, plain English
@@ -229,6 +243,7 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 ### Required Pages
 
 **Privacy Policy (`/privacy`):**
+
 - Controller: GDS
 - Data collected: Email, name, sandbox activity
 - Purpose: Account creation, analytics, continuous improvement, compliance
@@ -237,17 +252,18 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 - Link from: Site footer AND signup form
 
 **Cookies and Browser Storage (`/cookies`):**
+
 - sessionStorage explanation (return URL persistence)
 - No tracking cookies
 - Link from: Site footer
 
 ### Data Handling
 
-| Data Type | Retention | Notes |
-|-----------|-----------|-------|
-| Account data (email, name) | Up to 5 years | Never anonymised |
-| Sandbox activity | Up to 5 years | Analytics, compliance, improvement |
-| Security logs | Up to 5 years | Audit trail |
+| Data Type                  | Retention     | Notes                              |
+| -------------------------- | ------------- | ---------------------------------- |
+| Account data (email, name) | Up to 5 years | Never anonymised                   |
+| Sandbox activity           | Up to 5 years | Analytics, compliance, improvement |
+| Security logs              | Up to 5 years | Audit trail                        |
 
 ## Web App + API Specific Requirements
 
@@ -262,6 +278,7 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 | Edge | Supported |
 
 **SEO Requirements:**
+
 - `/privacy` - Indexable, static content
 - `/cookies` - Indexable, static content
 - `/signup` - No SEO needed (authenticated journey)
@@ -274,19 +291,21 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 
 **Endpoints:**
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/signup-api/domains` | Fetch allowed domain list |
-| POST | `/signup-api/signup` | Create user account |
+| Method | Path                  | Purpose                   |
+| ------ | --------------------- | ------------------------- |
+| GET    | `/signup-api/domains` | Fetch allowed domain list |
+| POST   | `/signup-api/signup`  | Create user account       |
 
 **Data Format:** JSON only
 
 **Error Handling:**
+
 - Standard HTTP status codes (400, 401, 403, 404, 409, 500)
 - JSON error response with friendly `message` field
 - Frontend displays errors via JS alerts
 
 **Example Error Response:**
+
 ```json
 {
   "error": "DOMAIN_NOT_ALLOWED",
@@ -300,11 +319,11 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 
 ### CloudFront Routing
 
-| Behaviour | Path Pattern | Origin |
-|-----------|--------------|--------|
+| Behaviour  | Path Pattern    | Origin                |
+| ---------- | --------------- | --------------------- |
 | Signup API | `/signup-api/*` | Lambda (955063685555) |
-| ISB API | `/api/*` | ISB Lambda (existing) |
-| Static | `/*` | S3 origin |
+| ISB API    | `/api/*`        | ISB Lambda (existing) |
+| Static     | `/*`            | S3 origin             |
 
 **Note:** `/signup-api/*` behaviour must be ordered before `/api/*` in CloudFront.
 
@@ -319,12 +338,14 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 ### MVP Feature Set (Phase 1)
 
 **Core User Journeys Supported:**
+
 - Sarah (New User) - Full signup → sandbox flow
 - Tom (Existing User) - Silent redirect to login
 - James (Unlisted Domain) - Clear fallback messaging
 - Marcus (Admin) - Slack alerting for visibility
 
 **Must-Have Capabilities:**
+
 - `/signup` page with GOV.UK Design System form
 - `/privacy` and `/cookies` pages
 - Auth choice modal ("Sign in" / "Create account")
@@ -342,12 +363,14 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 ### Post-MVP Features
 
 **Phase 2 (Growth):**
+
 - Tiered alerting (daily digest for normal, immediate for anomalies)
 - Domain request workflow (self-service with admin approval)
 - Signup analytics dashboard
 - Anomaly detection on signup patterns
 
 **Phase 3 (Vision):**
+
 - GOV.UK One Login integration for gov.uk users
 - Self-service domain verification
 - Automated domain discovery from authoritative sources
@@ -355,14 +378,17 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 ### Risk Mitigation Strategy
 
 **Technical Risks:**
+
 - Cross-account Lambda invocation complexity → Mitigated by OAC pattern (researched)
 - CSRF without session → Mitigated by custom header + strict CORS (ADR-045)
 
 **Market Risks:**
+
 - Low adoption despite removing friction → M1/Q1 targets provide early signal
 - Wrong LA domains in allowlist → GitHub JSON is maintainable
 
 **Resource Risks:**
+
 - Minimal team dependency (1 developer)
 - If blocked, MVP can ship without tiered alerting (accept noise initially)
 
@@ -454,4 +480,3 @@ Marcus writes a brief incident note and moves on. The security controls worked. 
 - **NFR21:** System remains operational if GitHub is unavailable (cached domains)
 - **NFR22:** Failed API calls logged with correlation ID
 - **NFR23:** Lambda cold start acceptable (no provisioned concurrency needed)
-

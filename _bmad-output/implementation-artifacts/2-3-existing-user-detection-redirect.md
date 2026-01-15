@@ -51,17 +51,20 @@ So that **I can access NDX without confusion** (FR9).
 ### Previous Story Intelligence (Story 2.2)
 
 **Key Learnings:**
+
 - Return URL stored in sessionStorage key `auth-return-to`
 - URL validation via `sanitizeReturnUrl()` prevents open redirects
 - RETURN_URL_BLOCKLIST prevents storing signup pages as return URLs
 - OAuth callback retrieves return URL via `getReturnURL()` and redirects
 
 **Established Patterns:**
+
 - Silent redirect: No error display, immediate `window.location.href =` redirect
 - Return URL encoding: Use `encodeURIComponent()` for query parameters
 - GOV.UK notification banner: `.govuk-notification-banner--success`
 
 **Files From Previous Stories:**
+
 - `src/try/auth/oauth-flow.ts` - storeReturnURL, getReturnURL, handleOAuthCallback
 - `src/try/utils/url-validator.ts` - sanitizeReturnUrl
 - `src/signup/main.ts` - handleFormSubmit with USER_EXISTS handling
@@ -70,11 +73,13 @@ So that **I can access NDX without confusion** (FR9).
 ### Architecture Requirements
 
 **From ADR-040: Silent Redirect Pattern:**
+
 - When user already exists, redirect silently to login
 - No error message displayed (feels seamless)
 - Return URL preserved through the entire flow
 
 **Current Implementation Analysis:**
+
 ```typescript
 // handler.ts lines 335-341 - Already returns USER_EXISTS with redirectUrl
 if (userExists) {
@@ -83,7 +88,7 @@ if (userExists) {
     SignupErrorCode.USER_EXISTS,
     ERROR_MESSAGES[SignupErrorCode.USER_EXISTS],
     correlationId,
-    { redirectUrl: "/login" }  // Need to add returnUrl here
+    { redirectUrl: "/login" }, // Need to add returnUrl here
   )
 }
 
@@ -95,6 +100,7 @@ if (response.error === SignupErrorCode.USER_EXISTS && response.redirectUrl) {
 ```
 
 **Required Changes:**
+
 1. Lambda: Include `?returnUrl=...&welcome=back` in redirectUrl
 2. Frontend: Pass current return URL to Lambda OR append locally
 3. Login page: Show welcome banner when `welcome=back` param present
@@ -102,11 +108,13 @@ if (response.error === SignupErrorCode.USER_EXISTS && response.redirectUrl) {
 ### Implementation Options
 
 **Option A: Frontend appends return URL (Recommended)**
+
 - Keep Lambda simple, frontend handles return URL
 - Frontend reads sessionStorage, appends to redirect URL
 - Pros: No Lambda changes needed, return URL already available client-side
 
 **Option B: Pass return URL to Lambda**
+
 - Add optional `returnUrl` field to SignupRequest
 - Lambda includes it in redirectUrl
 - Cons: More Lambda changes, needs to trust client-provided URL
@@ -116,7 +124,7 @@ if (response.error === SignupErrorCode.USER_EXISTS && response.redirectUrl) {
 ```typescript
 // main.ts - Update USER_EXISTS handling
 if (response.error === SignupErrorCode.USER_EXISTS) {
-  const returnUrl = getReturnURL()  // From oauth-flow.ts
+  const returnUrl = getReturnURL() // From oauth-flow.ts
   const loginUrl = new URL("/api/auth/login", window.location.origin)
   loginUrl.searchParams.set("returnUrl", returnUrl)
   loginUrl.searchParams.set("welcome", "back")
@@ -130,6 +138,7 @@ if (response.error === SignupErrorCode.USER_EXISTS) {
 **Location:** Callback page or login redirect handler
 
 Since NDX uses OAuth with AWS IAM Identity Center, the login flow goes:
+
 1. `/api/auth/login` → AWS login page → `/callback`
 
 The welcome banner should appear on the callback page when `welcome=back` is in the URL, OR we store a flag in sessionStorage before redirect.
@@ -169,10 +178,12 @@ tests/e2e/
 ### Security Considerations
 
 **Return URL Validation:**
+
 - Already validated by `sanitizeReturnUrl()` on retrieval
 - No additional validation needed - use existing flow
 
 **sessionStorage for welcome flag:**
+
 - Safe: only used for UX, not security decision
 - Cleared immediately after display
 
@@ -217,6 +228,7 @@ Claude Opus 4.5
 ### File List
 
 **Modified:**
+
 - `src/try/constants.ts`
 - `src/signup/main.ts`
 - `src/try/main.ts`
@@ -256,13 +268,13 @@ No additional tests needed - existing E2E tests verify banner functionality
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | Lambda returns 409 with USER_EXISTS and redirectUrl (Story 1.4 implementation) |
-| AC2 | PASS | main.ts performs silent redirect to login with return URL, no error displayed |
-| AC3 | PASS | showWelcomeBackBanner displays GOV.UK success banner with "Welcome back" message |
-| AC4 | PASS | Return URL preserved via getReturnURL() and passed in login redirect |
-| AC5 | PASS | handler.ts normalizes email at line 264-274 before checkUserExists call |
+| AC  | Status | Evidence                                                                         |
+| --- | ------ | -------------------------------------------------------------------------------- |
+| AC1 | PASS   | Lambda returns 409 with USER_EXISTS and redirectUrl (Story 1.4 implementation)   |
+| AC2 | PASS   | main.ts performs silent redirect to login with return URL, no error displayed    |
+| AC3 | PASS   | showWelcomeBackBanner displays GOV.UK success banner with "Welcome back" message |
+| AC4 | PASS   | Return URL preserved via getReturnURL() and passed in login redirect             |
+| AC5 | PASS   | handler.ts normalizes email at line 264-274 before checkUserExists call          |
 
 ### Review Outcome
 

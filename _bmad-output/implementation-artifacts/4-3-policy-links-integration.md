@@ -33,6 +33,7 @@ So that **I can find this information when I need it** (FR27, FR28).
 ### Footer Configuration
 
 The GOV.UK Eleventy plugin footer accepts `meta.items` for inline footer links:
+
 ```javascript
 footer: {
   meta: {
@@ -49,10 +50,9 @@ footer: {
 ### Signup Form Link
 
 Add a GOV.UK body-s link above the submit button:
+
 ```html
-<p class="govuk-body-s">
-  By continuing, you agree to our <a href="/privacy/" class="govuk-link">privacy policy</a>.
-</p>
+<p class="govuk-body-s">By continuing, you agree to our <a href="/privacy/" class="govuk-link">privacy policy</a>.</p>
 ```
 
 ### References
@@ -89,6 +89,7 @@ Claude Opus 4.5
 ### File List
 
 **Modified:**
+
 - `eleventy.config.js`
 - `src/signup.md`
 
@@ -122,12 +123,12 @@ Build successful - footer links verified in generated HTML.
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | Footer links present on homepage and all pages |
-| AC2 | PASS | Privacy link added above submit button in signup form |
-| AC3 | PASS | Links appear consistently across site |
-| AC4 | PASS | Navigation smooth, links work correctly |
+| AC  | Status | Evidence                                              |
+| --- | ------ | ----------------------------------------------------- |
+| AC1 | PASS   | Footer links present on homepage and all pages        |
+| AC2 | PASS   | Privacy link added above submit button in signup form |
+| AC3 | PASS   | Links appear consistently across site                 |
+| AC4 | PASS   | Navigation smooth, links work correctly               |
 
 ### Review Outcome
 

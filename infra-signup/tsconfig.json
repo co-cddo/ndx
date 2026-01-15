@@ -31,5 +31,5 @@
     "typeRoots": ["./node_modules/@types"]
   },
   "include": ["bin/**/*.ts", "lib/**/*.ts", "../src/signup/types.ts"],
-  "exclude": ["node_modules", "dist", "cdk.out", "**/*.test.ts", "**/*.d.ts"]
+  "exclude": ["node_modules", "dist", "cdk.out", "**/*.d.ts"]
 }

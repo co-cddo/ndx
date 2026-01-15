@@ -109,6 +109,7 @@ so that **I receive a password setup email and can access NDX** (FR1, FR3, FR4, 
 ### IAM Identity Center Integration
 
 **AWS SDK v3 Imports:**
+
 ```typescript
 import {
   IdentitystoreClient,
@@ -119,43 +120,48 @@ import {
 ```
 
 **Environment Variables Required:**
+
 ```typescript
-const IDENTITY_STORE_ID = process.env.IDENTITY_STORE_ID  // e.g., "d-xxxxxxxxxx"
-const GROUP_ID = process.env.GROUP_ID                     // NDX users group ID
-const REGION = process.env.AWS_REGION || "eu-west-2"     // UK region
+const IDENTITY_STORE_ID = process.env.IDENTITY_STORE_ID // e.g., "d-xxxxxxxxxx"
+const GROUP_ID = process.env.GROUP_ID // NDX users group ID
+const REGION = process.env.AWS_REGION || "eu-west-2" // UK region
 ```
 
 **User Creation Pattern:**
+
 ```typescript
-async function createUserInIdentityStore(
-  request: SignupRequest,
-  correlationId: string
-): Promise<string> {
+async function createUserInIdentityStore(request: SignupRequest, correlationId: string): Promise<string> {
   const client = new IdentitystoreClient({ region: REGION })
 
   // Create user
-  const createUserResponse = await client.send(new CreateUserCommand({
-    IdentityStoreId: IDENTITY_STORE_ID,
-    UserName: request.email, // Use normalized email
-    DisplayName: `${request.firstName} ${request.lastName}`,
-    Name: {
-      GivenName: request.firstName,
-      FamilyName: request.lastName,
-    },
-    Emails: [{
-      Value: request.email,
-      Primary: true,
-    }],
-  }))
+  const createUserResponse = await client.send(
+    new CreateUserCommand({
+      IdentityStoreId: IDENTITY_STORE_ID,
+      UserName: request.email, // Use normalized email
+      DisplayName: `${request.firstName} ${request.lastName}`,
+      Name: {
+        GivenName: request.firstName,
+        FamilyName: request.lastName,
+      },
+      Emails: [
+        {
+          Value: request.email,
+          Primary: true,
+        },
+      ],
+    }),
+  )
 
   const userId = createUserResponse.UserId!
 
   // Add to NDX group
-  await client.send(new CreateGroupMembershipCommand({
-    IdentityStoreId: IDENTITY_STORE_ID,
-    GroupId: GROUP_ID,
-    MemberId: { UserId: userId },
-  }))
+  await client.send(
+    new CreateGroupMembershipCommand({
+      IdentityStoreId: IDENTITY_STORE_ID,
+      GroupId: GROUP_ID,
+      MemberId: { UserId: userId },
+    }),
+  )
 
   return userId
 }
@@ -164,24 +170,27 @@ async function createUserInIdentityStore(
 ### Request Validation
 
 **CSRF Header Check (ADR-045):**
+
 ```typescript
-const csrfHeader = event.headers['x-ndx-request']?.toLowerCase()
-if (csrfHeader !== 'signup-form') {
-  return errorResponse(403, 'CSRF_INVALID', 'Invalid request', correlationId)
+const csrfHeader = event.headers["x-ndx-request"]?.toLowerCase()
+if (csrfHeader !== "signup-form") {
+  return errorResponse(403, "CSRF_INVALID", "Invalid request", correlationId)
 }
 ```
 
 **Content-Type Check (FR19):**
+
 ```typescript
-const contentType = event.headers['content-type']?.toLowerCase()
-if (!contentType?.includes('application/json')) {
-  return errorResponse(400, 'INVALID_CONTENT_TYPE', 'Invalid request format', correlationId)
+const contentType = event.headers["content-type"]?.toLowerCase()
+if (!contentType?.includes("application/json")) {
+  return errorResponse(400, "INVALID_CONTENT_TYPE", "Invalid request format", correlationId)
 }
 ```
 
 ### Email Normalization
 
 **Use existing normalizeEmail() from services.ts:**
+
 ```typescript
 // Already implemented in Story 1.1
 export function normalizeEmail(email: string): string {
@@ -194,15 +203,20 @@ export function normalizeEmail(email: string): string {
 ### Existing User Check
 
 **ListUsers Query:**
+
 ```typescript
 async function checkUserExists(email: string): Promise<boolean> {
-  const response = await client.send(new ListUsersCommand({
-    IdentityStoreId: IDENTITY_STORE_ID,
-    Filters: [{
-      AttributePath: 'UserName',
-      AttributeValue: email,
-    }],
-  }))
+  const response = await client.send(
+    new ListUsersCommand({
+      IdentityStoreId: IDENTITY_STORE_ID,
+      Filters: [
+        {
+          AttributePath: "UserName",
+          AttributeValue: email,
+        },
+      ],
+    }),
+  )
   return (response.Users?.length ?? 0) > 0
 }
 ```
@@ -210,6 +224,7 @@ async function checkUserExists(email: string): Promise<boolean> {
 ### Error Messages (from types.ts)
 
 Use exact messages from `ERROR_MESSAGES` in types.ts:
+
 - DOMAIN_NOT_ALLOWED: "Your organisation isn't registered yet. Contact ndx@dsit.gov.uk to request access."
 - USER_EXISTS: "Welcome back! You already have an account."
 - INVALID_EMAIL: "Enter a valid email address"
@@ -219,34 +234,41 @@ Use exact messages from `ERROR_MESSAGES` in types.ts:
 ### Logging Requirements (NFR22)
 
 **DO log:**
+
 - Request correlation ID
 - Domain (for debugging)
 - Action taken (user created, validation failed, etc.)
 - Error codes
 
 **DO NOT log:**
+
 - Email addresses (PII)
 - First/last names (PII)
 - Full request body
 
 ```typescript
-console.log(JSON.stringify({
-  level: 'INFO',
-  message: 'User created',
-  domain: request.domain,
-  correlationId,
-}))
+console.log(
+  JSON.stringify({
+    level: "INFO",
+    message: "User created",
+    domain: request.domain,
+    correlationId,
+  }),
+)
 
 // ❌ Never:
-console.log(JSON.stringify({
-  message: 'User created',
-  email: request.email,  // PII!
-}))
+console.log(
+  JSON.stringify({
+    message: "User created",
+    email: request.email, // PII!
+  }),
+)
 ```
 
 ### Project Structure Notes
 
 **Files to create/modify:**
+
 ```
 infra-signup/lib/lambda/signup/
 ├── handler.ts                    # MODIFY: Add signup endpoint logic
@@ -270,12 +292,14 @@ infra-signup/lib/lambda/signup/
 ### Testing Requirements
 
 **Unit tests (identity-store-service.test.ts):**
+
 - Successful user creation
 - User already exists returns true
 - User not found returns false
 - AWS SDK error handling
 
 **Handler tests (handler.test.ts):**
+
 - POST /signup-api/signup success flow
 - CSRF header validation failure
 - Content-Type validation failure
@@ -286,6 +310,7 @@ infra-signup/lib/lambda/signup/
 ### Previous Story Learnings
 
 **From Story 1.3 code review:**
+
 - Add timeout to external API calls (AbortController)
 - Validate data structure, not just presence
 - Update comments when implementation changes
@@ -315,6 +340,7 @@ Claude Opus 4.5
 ### Completion Notes List
 
 **Completed:**
+
 - Task 1: Request validation with Content-Type and CSRF header checks ✅
 - Task 2: Email normalization and domain validation ✅
 - Task 3: IAM Identity Center integration with AWS SDK v3 ✅
@@ -322,6 +348,7 @@ Claude Opus 4.5
 - Task 5: Comprehensive unit tests (47 new tests for signup) ✅
 
 **Implementation Notes:**
+
 - Created `identity-store-service.ts` with lazy client initialization for testability
 - Environment variables read at call time (not module load) for test isolation
 - Used real `ConflictException` in mocked SDK for `instanceof` checks
@@ -341,10 +368,12 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - infra-signup/lib/lambda/signup/identity-store-service.ts
 - infra-signup/lib/lambda/signup/identity-store-service.test.ts
 
 **Modified:**
+
 - infra-signup/lib/lambda/signup/handler.ts
 - infra-signup/lib/lambda/signup/handler.test.ts
 
@@ -362,14 +391,14 @@ Claude Opus 4.5
 
 ### Issues Found and Fixed
 
-| # | Severity | File | Issue | Status |
-|---|----------|------|-------|--------|
-| 1 | HIGH | handler.ts | Missing `__proto__` validation in JSON.parse (prototype pollution defense) | ✅ FIXED |
-| 2 | HIGH | handler.ts | Missing timing attack mitigation (50-150ms random delay) | ✅ FIXED |
-| 3 | MEDIUM | handler.ts | Missing request body size limit (10KB max) | ✅ FIXED |
-| 4 | MEDIUM | handler.ts | Name field validation missing (max 100 chars, HTML/script tags, control chars) | ✅ FIXED |
-| 5 | LOW | handler.ts | Email max length validation missing (254 chars per RFC 5321) | ✅ FIXED |
-| 6 | LOW | identity-store-service.ts | Unused `API_TIMEOUT_MS` constant with invalid requestHandler config | ✅ FIXED |
+| #   | Severity | File                      | Issue                                                                          | Status   |
+| --- | -------- | ------------------------- | ------------------------------------------------------------------------------ | -------- |
+| 1   | HIGH     | handler.ts                | Missing `__proto__` validation in JSON.parse (prototype pollution defense)     | ✅ FIXED |
+| 2   | HIGH     | handler.ts                | Missing timing attack mitigation (50-150ms random delay)                       | ✅ FIXED |
+| 3   | MEDIUM   | handler.ts                | Missing request body size limit (10KB max)                                     | ✅ FIXED |
+| 4   | MEDIUM   | handler.ts                | Name field validation missing (max 100 chars, HTML/script tags, control chars) | ✅ FIXED |
+| 5   | LOW      | handler.ts                | Email max length validation missing (254 chars per RFC 5321)                   | ✅ FIXED |
+| 6   | LOW      | identity-store-service.ts | Unused `API_TIMEOUT_MS` constant with invalid requestHandler config            | ✅ FIXED |
 
 ### Code Review Fixes Applied
 
@@ -388,7 +417,7 @@ Claude Opus 4.5
 ### Tests Added
 
 - Request body too large (10KB limit)
-- Prototype pollution defense (__proto__ key)
+- Prototype pollution defense (**proto** key)
 - Name field length validation (100 char max)
 - Name field character validation (HTML tags, control chars)
 - Email length validation (RFC 5321 254 char limit)
@@ -401,17 +430,16 @@ Claude Opus 4.5
 
 ### Acceptance Criteria Verification
 
-| AC# | Status | Evidence |
-|-----|--------|----------|
-| AC1 | ✅ IMPLEMENTED | handler.ts creates user and returns `{ success: true }` |
-| AC2 | ✅ IMPLEMENTED | handler.ts calls `normalizeEmail()` before processing |
-| AC3 | ✅ IMPLEMENTED | handler.ts validates `X-NDX-Request` header |
-| AC4 | ✅ IMPLEMENTED | handler.ts validates `Content-Type` header |
-| AC5 | ✅ IMPLEMENTED | handler.ts validates domain against allowlist |
-| AC6 | ✅ IMPLEMENTED | handler.ts handles USER_EXISTS with redirectUrl |
+| AC# | Status         | Evidence                                                       |
+| --- | -------------- | -------------------------------------------------------------- |
+| AC1 | ✅ IMPLEMENTED | handler.ts creates user and returns `{ success: true }`        |
+| AC2 | ✅ IMPLEMENTED | handler.ts calls `normalizeEmail()` before processing          |
+| AC3 | ✅ IMPLEMENTED | handler.ts validates `X-NDX-Request` header                    |
+| AC4 | ✅ IMPLEMENTED | handler.ts validates `Content-Type` header                     |
+| AC5 | ✅ IMPLEMENTED | handler.ts validates domain against allowlist                  |
+| AC6 | ✅ IMPLEMENTED | handler.ts handles USER_EXISTS with redirectUrl                |
 | AC7 | ✅ IMPLEMENTED | Timing delay added, structured logging present, PII not logged |
 
 ### Review Outcome
 
 **PASSED** - All issues identified and fixed. Story moved to done status.
-

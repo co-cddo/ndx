@@ -65,6 +65,7 @@ So that **I have a clear path whether I'm new or returning** (FR8, FR29).
 ### Previous Story Intelligence (Story 1.6)
 
 **Key Learnings from Epic 1:**
+
 - Use existing patterns from `src/try/ui/components/aup-modal.ts` - comprehensive modal implementation
 - Focus trap utility at `src/try/ui/utils/focus-trap.ts` is production-ready
 - ARIA live announcements via `src/try/ui/utils/aria-live.ts`
@@ -72,6 +73,7 @@ So that **I have a clear path whether I'm new or returning** (FR8, FR29).
 - E2E tests should check all violations, not just critical
 
 **Established Patterns:**
+
 - Modal singleton pattern: `class AuthChoiceModal { ... } export const authChoiceModal = new AuthChoiceModal()`
 - Focus trap: `createFocusTrap(container, { onEscape: () => this.close() })`
 - Return URL storage: `storeReturnURL()` from `src/try/auth/oauth-flow.ts`
@@ -96,6 +98,7 @@ const BODY_MODAL_OPEN_CLASS = "auth-choice-modal-open"
 ```
 
 **Modal HTML Structure (GOV.UK styled):**
+
 ```html
 <div class="auth-choice-modal-overlay">
   <div
@@ -114,9 +117,7 @@ const BODY_MODAL_OPEN_CLASS = "auth-choice-modal-open"
       <p class="govuk-body">You need to sign in or create an account to try this product.</p>
     </div>
     <div class="auth-choice-modal__footer">
-      <button id="auth-choice-sign-in-btn" type="button" class="govuk-button">
-        Sign in
-      </button>
+      <button id="auth-choice-sign-in-btn" type="button" class="govuk-button">Sign in</button>
       <button id="auth-choice-create-btn" type="button" class="govuk-button govuk-button--secondary">
         Create account
       </button>
@@ -128,11 +129,12 @@ const BODY_MODAL_OPEN_CLASS = "auth-choice-modal-open"
 ### Return URL Implementation
 
 **From oauth-flow.ts:**
+
 ```typescript
 import { storeReturnURL } from "../auth/oauth-flow"
 
 // Before redirect:
-storeReturnURL()  // Stores current pathname to sessionStorage
+storeReturnURL() // Stores current pathname to sessionStorage
 
 // Key: "ndx_return_url"
 // Value: window.location.pathname (e.g., "/catalogue/aws/bedrock")
@@ -141,6 +143,7 @@ storeReturnURL()  // Stores current pathname to sessionStorage
 ### Integration Point
 
 **In try-button.ts (existing flow):**
+
 ```typescript
 // Current flow: unauthenticated → AUP modal
 // New flow: unauthenticated → Auth choice modal → Sign in OR → Create account
@@ -156,7 +159,7 @@ if (!authState.isAuthenticated()) {
     onCreateAccount: () => {
       storeReturnURL()
       window.location.href = "/signup"
-    }
+    },
   })
   return
 }
@@ -165,6 +168,7 @@ if (!authState.isAuthenticated()) {
 ### Accessibility Requirements (WCAG 2.2 AA)
 
 **Must have:**
+
 - `role="dialog"` on modal container
 - `aria-modal="true"` prevents screen reader from reading background
 - `aria-labelledby` pointing to modal title
@@ -251,12 +255,14 @@ src/try/
 ### Testing Strategy
 
 **Unit Tests (Jest):**
+
 - Mock `window.location.href` assignment
 - Mock `storeReturnURL` function
 - Test focus trap activation/deactivation
 - Test ARIA attributes are set correctly
 
 **E2E Tests (Playwright):**
+
 - Test modal appears when clicking Try button while unauthenticated
 - Test Sign in button redirects correctly
 - Test Create account button redirects correctly
@@ -312,10 +318,12 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `src/signup/ui/auth-choice-modal.ts`
 - `src/signup/ui/auth-choice-modal.test.ts`
 
 **Modified:**
+
 - `src/assets/styles.scss`
 - `src/try/ui/try-button.ts`
 - `src/try/ui/try-button.test.ts`
@@ -336,17 +344,12 @@ Claude Opus 4.5
 ### Issues Found and Fixed
 
 **HIGH (1):**
+
 1. **AC1 Violation: Buttons NOT equally-weighted** - Create account button used `govuk-button--secondary` class, making it visually subordinate. Fixed by removing secondary class.
 
-**MEDIUM (4):**
-2. **Unused import in try-button.ts** - `storeReturnURL` import no longer needed since auth-choice-modal handles it internally. Removed dead import.
-3. **Test coverage gap** - Unit test for "modal already open" didn't verify DOM wasn't duplicated. Added assertion.
-4. **Unit test asserted wrong class** - Test expected `govuk-button--secondary` on Create account button. Updated to expect equal weighting (no secondary class).
-5. **E2E test missing focus trap verification** - No focus trap E2E test for auth choice modal. Added new test.
+**MEDIUM (4):** 2. **Unused import in try-button.ts** - `storeReturnURL` import no longer needed since auth-choice-modal handles it internally. Removed dead import. 3. **Test coverage gap** - Unit test for "modal already open" didn't verify DOM wasn't duplicated. Added assertion. 4. **Unit test asserted wrong class** - Test expected `govuk-button--secondary` on Create account button. Updated to expect equal weighting (no secondary class). 5. **E2E test missing focus trap verification** - No focus trap E2E test for auth choice modal. Added new test.
 
-**LOW (2):**
-6. **Git tracking** - New files shown as untracked (addressed by noting in review)
-7. **Unused CANCEL_BTN ID** - IDS constant includes Cancel button ID but no Cancel button rendered (noted, not fixed - may be intentional design choice)
+**LOW (2):** 6. **Git tracking** - New files shown as untracked (addressed by noting in review) 7. **Unused CANCEL_BTN ID** - IDS constant includes Cancel button ID but no Cancel button rendered (noted, not fixed - may be intentional design choice)
 
 ### Code Review Fixes Applied
 
@@ -369,14 +372,14 @@ Claude Opus 4.5
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1: Two equally-weighted buttons | ✅ FIXED | Both buttons now use `govuk-button` class only |
-| AC2: Sign in redirects to login | ✅ PASS | Unit + E2E tests verify `/api/auth/login` redirect |
-| AC3: Create account redirects to /signup | ✅ PASS | Unit + E2E tests verify `/signup` redirect |
-| AC4: Escape/outside click closes modal | ✅ PASS | Unit + E2E tests verify close behavior |
-| AC5: Focus trap with visible indicators | ✅ PASS | E2E test added, focus trap verified |
-| AC6: ARIA attributes for screen reader | ✅ PASS | Unit tests verify role, aria-modal, aria-labelledby |
+| AC                                       | Status   | Evidence                                            |
+| ---------------------------------------- | -------- | --------------------------------------------------- |
+| AC1: Two equally-weighted buttons        | ✅ FIXED | Both buttons now use `govuk-button` class only      |
+| AC2: Sign in redirects to login          | ✅ PASS  | Unit + E2E tests verify `/api/auth/login` redirect  |
+| AC3: Create account redirects to /signup | ✅ PASS  | Unit + E2E tests verify `/signup` redirect          |
+| AC4: Escape/outside click closes modal   | ✅ PASS  | Unit + E2E tests verify close behavior              |
+| AC5: Focus trap with visible indicators  | ✅ PASS  | E2E test added, focus trap verified                 |
+| AC6: ARIA attributes for screen reader   | ✅ PASS  | Unit tests verify role, aria-modal, aria-labelledby |
 
 ### Review Outcome
 

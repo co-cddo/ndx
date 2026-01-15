@@ -46,11 +46,13 @@ So that **abuse and automated attacks are prevented** (FR18, NFR8).
 ### Previous Story Intelligence (Story 3.1)
 
 **Key Learnings:**
+
 - CDK patterns established in infra-signup/lib/signup-stack.ts
 - Resource tagging pattern: project=ndx, environment, managedby=cdk, feature=signup
 - EventBridge and SNS added successfully
 
 **Established Patterns:**
+
 - CfnOutput for stack exports
 - Tags.of() for resource tagging
 - Descriptive comments with AC# references
@@ -58,12 +60,14 @@ So that **abuse and automated attacks are prevented** (FR18, NFR8).
 ### Architecture Requirements
 
 **From Architecture Document:**
+
 - WAF WebACL must be in us-east-1 region (CloudFront requirement)
 - CloudFront distribution managed via custom resource in infra/lib/ndx-stack.ts
 - Rate limit: 1 request per minute per IP (NFR8)
 - WAF logs required for security investigation (FR23)
 
 **CloudFront Distribution Details:**
+
 - Distribution ID imported from config.ts
 - Modified via custom resource Lambda (add-cloudfront-origin.ts)
 - Existing cache policies and CloudFront functions
@@ -71,11 +75,13 @@ So that **abuse and automated attacks are prevented** (FR18, NFR8).
 ### Implementation Options
 
 **Option A: Add WAF to ndx-stack.ts (Recommended)**
+
 - WAF must be in same region as CloudFront (us-east-1 for global)
 - Can use custom resource to associate WAF with distribution
 - Keeps CloudFront-related config together
 
 **Option B: Separate WAF stack**
+
 - More modular but adds cross-stack complexity
 - Still needs us-east-1 region
 
@@ -97,15 +103,15 @@ const signupRateLimitAcl = new wafv2.CfnWebACL(this, "SignupRateLimitAcl", {
     {
       name: "signup-rate-limit",
       priority: 1,
-      action: { block: {
-        customResponse: {
-          responseCode: 429,
-          responseHeaders: [
-            { name: "Content-Type", value: "application/json" }
-          ],
-          customResponseBodyKey: "rate-limited",
-        }
-      }},
+      action: {
+        block: {
+          customResponse: {
+            responseCode: 429,
+            responseHeaders: [{ name: "Content-Type", value: "application/json" }],
+            customResponseBodyKey: "rate-limited",
+          },
+        },
+      },
       visibilityConfig: {
         cloudWatchMetricsEnabled: true,
         metricName: "ndx-signup-rate-limit",
@@ -149,15 +155,14 @@ const wafLogGroup = new logs.LogGroup(this, "WafLogGroup", {
 
 new wafv2.CfnLoggingConfiguration(this, "WafLogging", {
   resourceArn: signupRateLimitAcl.attrArn,
-  logDestinationConfigs: [
-    `arn:aws:logs:${this.region}:${this.account}:log-group:aws-waf-logs-ndx-signup`,
-  ],
+  logDestinationConfigs: [`arn:aws:logs:${this.region}:${this.account}:log-group:aws-waf-logs-ndx-signup`],
 })
 ```
 
 ### Manual Steps Required
 
 After CDK deployment:
+
 1. Verify WAF WebACL is associated with CloudFront distribution
 2. Test rate limiting by submitting multiple requests
 3. Check WAF logs for blocked requests
@@ -175,11 +180,13 @@ infra/
 ### Security Considerations
 
 **Rate Limit Trade-offs:**
+
 - Setting too low: May block legitimate users on shared IPs (corporate networks)
 - Setting too high: Ineffective against abuse
 - Current choice (1/min): Acceptable risk per PRD
 
 **Custom Response:**
+
 - Returns JSON error matching API error format
 - 429 status code indicates rate limiting
 - No sensitive information exposed
@@ -223,10 +230,12 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `infra/lib/waf-stack.ts`
 - `infra/lib/waf-stack.test.ts`
 
 **Modified:**
+
 - `infra/bin/infra.ts`
 
 ---
@@ -244,6 +253,7 @@ Claude Opus 4.5
 ### Issues Found and Fixed
 
 No issues found. Implementation follows AWS best practices:
+
 - WAF WebACL correctly scoped to CLOUDFRONT
 - Rate-based rule uses IP aggregation with path scope-down
 - Custom 429 response follows API error format
@@ -257,6 +267,7 @@ None required.
 ### Tests Added
 
 12 CDK tests covering:
+
 - WebACL creation with CLOUDFRONT scope
 - Default allow action
 - CloudWatch metrics enabled
@@ -275,13 +286,13 @@ None required.
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | Rate-based rule allows requests when IP hasn't exceeded limit |
-| AC2 | PASS | Custom 429 response with RATE_LIMITED error configured |
+| AC  | Status  | Evidence                                                            |
+| --- | ------- | ------------------------------------------------------------------- |
+| AC1 | PASS    | Rate-based rule allows requests when IP hasn't exceeded limit       |
+| AC2 | PASS    | Custom 429 response with RATE_LIMITED error configured              |
 | AC3 | PARTIAL | WebACL created; manual CloudFront association required after deploy |
-| AC4 | PASS | CloudWatch Logs configured with WAF logging |
-| AC5 | PASS | Rate limit applies per IP; shared IP behavior documented |
+| AC4 | PASS    | CloudWatch Logs configured with WAF logging                         |
+| AC5 | PASS    | Rate limit applies per IP; shared IP behavior documented            |
 
 **Note on AC3:** CloudFront association requires manual step after WAF stack deployment.
 This will be documented in Story 3.3 (Operational Runbook).

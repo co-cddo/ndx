@@ -1,5 +1,6 @@
 ---
-stepsCompleted: ["step-01-validate-prerequisites", "step-02-design-epics", "step-03-create-stories", "step-04-final-validation"]
+stepsCompleted:
+  ["step-01-validate-prerequisites", "step-02-design-epics", "step-03-create-stories", "step-04-final-validation"]
 status: "complete"
 completedAt: "2026-01-13"
 inputDocuments:
@@ -19,6 +20,7 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 ### Functional Requirements
 
 **Account Registration:**
+
 - FR1: User can enter their government email address to initiate signup
 - FR2: User can see their domain recognised from the allowlist
 - FR3: User can submit signup request for a valid domain
@@ -28,18 +30,21 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 - FR7: User is returned to their original page after completing signup
 
 **Authentication Integration:**
+
 - FR8: User can choose between "Sign in" and "Create account" when authentication is required
 - FR9: Existing user attempting signup is redirected to login with friendly message
 - FR10: User's intended destination is preserved across the authentication flow
 - FR11: Signup page is never stored as a return destination
 
 **Domain Management:**
+
 - FR12: System can fetch allowed domains from authoritative source
 - FR13: System can validate user email against domain allowlist
 - FR14: User with unlisted domain can see clear messaging with contact path
 - FR15: System can cache domain list to reduce external dependencies
 
 **Security & Protection:**
+
 - FR16: System can normalise email addresses (strip `+` suffix) before processing
 - FR17: System can detect and prevent CSRF attacks on signup submission
 - FR18: System can rate limit signup requests per IP address
@@ -47,12 +52,14 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 - FR20: Lambda can only access the specific IAM Identity Center group and store
 
 **Operational Visibility:**
+
 - FR21: Admin can receive Slack notification for every account creation
 - FR22: Admin can view signup events in CloudWatch logs
 - FR23: Admin can access WAF logs for security investigation
 - FR24: Admin can delete accounts via IAM Identity Center console
 
 **Content & Compliance:**
+
 - FR25: User can view privacy policy explaining data handling
 - FR26: User can view cookies/storage policy explaining browser data usage
 - FR27: User can access privacy and cookies pages from site footer
@@ -62,12 +69,14 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 ### NonFunctional Requirements
 
 **Performance:**
+
 - NFR1: Signup form page loads within 2 seconds
 - NFR2: Domain list API responds within 500ms
 - NFR3: Signup submission API responds within 3 seconds
 - NFR4: End-to-end signup flow completes within 2 minutes (including email)
 
 **Security:**
+
 - NFR5: All data encrypted in transit (TLS 1.2+)
 - NFR6: Email addresses normalised before storage (strip `+` suffix)
 - NFR7: CSRF protection via custom header on all POST requests
@@ -78,18 +87,21 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 - NFR12: Domain cache TTL: 5 minutes maximum
 
 **Accessibility:**
+
 - NFR13: All pages meet WCAG 2.2 AA success criteria
 - NFR14: All forms keyboard-navigable
 - NFR15: Error messages associated with form fields via ARIA
 - NFR16: Colour contrast meets 4.5:1 ratio minimum
 
 **Integration:**
+
 - NFR17: IAM Identity Center API calls use SDK with retry logic
 - NFR18: GitHub JSON fetch fails gracefully (use cached data if available)
 - NFR19: EventBridge events delivered within 60 seconds of account creation
 - NFR20: Slack notifications include: email, domain, timestamp
 
 **Reliability:**
+
 - NFR21: System remains operational if GitHub is unavailable (cached domains)
 - NFR22: Failed API calls logged with correlation ID
 - NFR23: Lambda cold start acceptable (no provisioned concurrency needed)
@@ -97,6 +109,7 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 ### Additional Requirements
 
 **From Architecture:**
+
 - Brownfield extension - no starter template needed
 - Lambda deployed in `infra-signup/` directory (ISB account 955063685555)
 - CloudFront `/signup-api/*` behaviour must be ordered before `/api/*`
@@ -109,6 +122,7 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 - Manual step: Add SNS topic ARN to existing Chatbot Slack channel
 
 **From UX Design:**
+
 - Split email input: local part text field + "@" + domain dropdown
 - Auth choice modal extends existing AUPModal component
 - Success page (`/signup/success`) with numbered next steps and AWS handoff messaging
@@ -121,44 +135,46 @@ This document provides the complete epic and story breakdown for ndx, decomposin
 
 ### FR Coverage Map
 
-| FR | Epic | Description |
-|----|------|-------------|
-| FR1 | Epic 1 | User can enter government email to initiate signup |
-| FR2 | Epic 1 | User can see domain recognised from allowlist |
-| FR3 | Epic 1 | User can submit signup request for valid domain |
-| FR4 | Epic 1 | User can receive account creation confirmation email |
-| FR5 | Epic 2 | User can set password via email link |
-| FR6 | Epic 2 | User is automatically logged in after password setup |
-| FR7 | Epic 2 | User is returned to original page after signup |
-| FR8 | Epic 2 | User can choose between "Sign in" and "Create account" |
-| FR9 | Epic 2 | Existing user redirected to login with friendly message |
-| FR10 | Epic 2 | User's intended destination preserved across auth flow |
-| FR11 | Epic 2 | Signup page never stored as return destination |
-| FR12 | Epic 1 | System can fetch allowed domains from authoritative source |
-| FR13 | Epic 1 | System can validate email against domain allowlist |
-| FR14 | Epic 1 | User with unlisted domain sees clear messaging with contact path |
-| FR15 | Epic 1 | System can cache domain list to reduce dependencies |
-| FR16 | Epic 1 | System can normalise email addresses (strip `+` suffix) |
-| FR17 | Epic 1 | System can detect and prevent CSRF attacks |
-| FR18 | Epic 3 | System can rate limit signup requests per IP |
-| FR19 | Epic 1 | System can reject requests without required security headers |
-| FR20 | Epic 1 | Lambda can only access specific IAM IDC group and store |
-| FR21 | Epic 3 | Admin can receive Slack notification for every account creation |
-| FR22 | Epic 3 | Admin can view signup events in CloudWatch logs |
-| FR23 | Epic 3 | Admin can access WAF logs for security investigation |
-| FR24 | Epic 3 | Admin can delete accounts via IAM IDC console |
-| FR25 | Epic 4 | User can view privacy policy explaining data handling |
-| FR26 | Epic 4 | User can view cookies/storage policy |
-| FR27 | Epic 4 | User can access privacy and cookies pages from footer |
-| FR28 | Epic 4 | Signup form links to privacy policy |
-| FR29 | Epic 1-4 | All signup pages meet WCAG 2.2 AA (built-in + final audit) |
+| FR   | Epic     | Description                                                      |
+| ---- | -------- | ---------------------------------------------------------------- |
+| FR1  | Epic 1   | User can enter government email to initiate signup               |
+| FR2  | Epic 1   | User can see domain recognised from allowlist                    |
+| FR3  | Epic 1   | User can submit signup request for valid domain                  |
+| FR4  | Epic 1   | User can receive account creation confirmation email             |
+| FR5  | Epic 2   | User can set password via email link                             |
+| FR6  | Epic 2   | User is automatically logged in after password setup             |
+| FR7  | Epic 2   | User is returned to original page after signup                   |
+| FR8  | Epic 2   | User can choose between "Sign in" and "Create account"           |
+| FR9  | Epic 2   | Existing user redirected to login with friendly message          |
+| FR10 | Epic 2   | User's intended destination preserved across auth flow           |
+| FR11 | Epic 2   | Signup page never stored as return destination                   |
+| FR12 | Epic 1   | System can fetch allowed domains from authoritative source       |
+| FR13 | Epic 1   | System can validate email against domain allowlist               |
+| FR14 | Epic 1   | User with unlisted domain sees clear messaging with contact path |
+| FR15 | Epic 1   | System can cache domain list to reduce dependencies              |
+| FR16 | Epic 1   | System can normalise email addresses (strip `+` suffix)          |
+| FR17 | Epic 1   | System can detect and prevent CSRF attacks                       |
+| FR18 | Epic 3   | System can rate limit signup requests per IP                     |
+| FR19 | Epic 1   | System can reject requests without required security headers     |
+| FR20 | Epic 1   | Lambda can only access specific IAM IDC group and store          |
+| FR21 | Epic 3   | Admin can receive Slack notification for every account creation  |
+| FR22 | Epic 3   | Admin can view signup events in CloudWatch logs                  |
+| FR23 | Epic 3   | Admin can access WAF logs for security investigation             |
+| FR24 | Epic 3   | Admin can delete accounts via IAM IDC console                    |
+| FR25 | Epic 4   | User can view privacy policy explaining data handling            |
+| FR26 | Epic 4   | User can view cookies/storage policy                             |
+| FR27 | Epic 4   | User can access privacy and cookies pages from footer            |
+| FR28 | Epic 4   | Signup form links to privacy policy                              |
+| FR29 | Epic 1-4 | All signup pages meet WCAG 2.2 AA (built-in + final audit)       |
 
 ## Epic List
 
 ### Epic 1: Account Creation
+
 Users can create an NDX account through an accessible signup form and receive their password setup email from AWS.
 
 **Delivers:**
+
 - Lambda infrastructure (`infra-signup/` stack in ISB account)
 - Domain list API with 5-min caching (GitHub JSON source)
 - Signup API with email normalization
@@ -173,9 +189,11 @@ Users can create an NDX account through an accessible signup form and receive th
 ---
 
 ### Epic 2: Seamless Authentication Integration
+
 Users experience seamless, accessible authentication - existing users redirect to login, new users return to their original page after completing signup.
 
 **Delivers:**
+
 - Auth choice modal extension ("Sign in" / "Create account")
 - Existing user detection with silent redirect to login
 - Return URL preservation across full AWS flow
@@ -188,9 +206,11 @@ Users experience seamless, accessible authentication - existing users redirect t
 ---
 
 ### Epic 3: Operational Monitoring & Abuse Protection
+
 Admins can monitor all signups via Slack and investigate suspicious activity.
 
 **Delivers:**
+
 - EventBridge rule → SNS → existing Chatbot Slack alerts
 - CloudWatch logging with correlation IDs
 - WAF rate limiting (1 req/min/IP)
@@ -202,9 +222,11 @@ Admins can monitor all signups via Slack and investigate suspicious activity.
 ---
 
 ### Epic 4: Compliance Pages & Final Accessibility Audit
+
 Users can understand how their data is handled via accessible policy pages; final audit confirms all signup pages meet WCAG 2.2 AA.
 
 **Delivers:**
+
 - Privacy policy page (`/privacy`) - accessible
 - Cookies/storage page (`/cookies`) - accessible
 - Footer links across site
@@ -230,6 +252,7 @@ So that **all subsequent stories have a consistent foundation to build upon**.
 **Given** the NDX repository exists
 **When** the scaffold is complete
 **Then** the following directories exist:
+
 - `src/signup/`
 - `infra-signup/bin/`
 - `infra-signup/lib/lambda/signup/`
@@ -238,6 +261,7 @@ So that **all subsequent stories have a consistent foundation to build upon**.
 **Given** the directories are created
 **When** I check `src/signup/types.ts`
 **Then** it contains TypeScript interfaces for:
+
 - `SignupRequest` (firstName, lastName, email, domain)
 - `SignupResponse` (success, redirectUrl)
 - `DomainInfo` (domain, orgName)
@@ -366,11 +390,12 @@ So that **I can create my NDX account quickly** (FR1, FR2, FR3, FR14, FR29).
 **Given** I navigate to `/signup`
 **When** the page loads
 **Then** I see a GOV.UK styled form with:
+
 - First name text input
 - Last name text input
 - Email local part text input + "@" + domain dropdown
 - Green "Continue" button
-**And** the page loads within 2 seconds (NFR1)
+  **And** the page loads within 2 seconds (NFR1)
 
 **Given** the form is displayed
 **When** I focus on the domain dropdown
@@ -421,10 +446,11 @@ So that **I know to check my email for the AWS password setup link** (FR4, FR14,
 **Given** I am on the success page
 **When** I read the content
 **Then** I see numbered next steps:
+
 1. "Check your email for a message from AWS"
 2. "Click the link to set your password"
 3. "You'll be signed in and returned to NDX"
-**And** the page explicitly mentions AWS sends the email (UX requirement)
+   **And** the page explicitly mentions AWS sends the email (UX requirement)
 
 **Given** I am on the signup form
 **When** my domain is not in the dropdown
@@ -576,6 +602,7 @@ So that **I have visibility into signup activity and can spot anomalies** (FR21,
 **Given** CloudTrail captures a CreateUser event
 **When** EventBridge evaluates the event
 **Then** the EventBridge rule matches events with:
+
 - `source: aws.sso-directory`
 - `eventName: CreateUser`
 
@@ -644,6 +671,7 @@ So that **I can effectively respond to incidents and support requests** (FR22, F
 **Given** an admin needs to investigate signup activity
 **When** they access CloudWatch Logs
 **Then** the runbook documents:
+
 - Log group name and location
 - How to filter by correlation ID
 - How to search by email domain
@@ -652,6 +680,7 @@ So that **I can effectively respond to incidents and support requests** (FR22, F
 **Given** an admin needs to investigate suspicious activity
 **When** they access WAF logs
 **Then** the runbook documents:
+
 - How to access WAF logs in S3/CloudWatch
 - How to identify rate-limited IPs
 - How to add IPs to block list
@@ -660,6 +689,7 @@ So that **I can effectively respond to incidents and support requests** (FR22, F
 **Given** an admin needs to delete a suspicious account
 **When** they access IAM Identity Center console
 **Then** the runbook documents:
+
 - How to find user by email
 - Steps to delete user account
 - What happens to associated data
@@ -691,6 +721,7 @@ So that **I can make an informed decision about signing up** (FR25).
 **Given** I am viewing the privacy page
 **When** I read the content
 **Then** it includes:
+
 - Data controller: GDS (Government Digital Service)
 - Data collected: Email, name, sandbox activity
 - Purpose: Account creation, analytics, continuous improvement, compliance
@@ -723,6 +754,7 @@ So that **I know my browsing is not being tracked** (FR26).
 **Given** I am viewing the cookies page
 **When** I read the content
 **Then** it includes:
+
 - sessionStorage explanation (return URL persistence)
 - Confirmation that no tracking cookies are used
 - Any essential cookies for authentication
@@ -778,6 +810,7 @@ So that **we comply with Public Sector Bodies Accessibility Regulations** (FR29)
 **Given** all signup feature pages are complete
 **When** I run automated accessibility tests (axe-core)
 **Then** the following pages pass with no critical or serious issues:
+
 - `/signup`
 - `/signup/success`
 - `/privacy`
@@ -805,6 +838,7 @@ So that **we comply with Public Sector Bodies Accessibility Regulations** (FR29)
 **Given** all accessibility tests pass
 **When** I review the test results
 **Then** a summary report is created documenting:
+
 - Pages tested
 - Tools used (axe-core, Lighthouse, manual)
 - Any known issues with justification

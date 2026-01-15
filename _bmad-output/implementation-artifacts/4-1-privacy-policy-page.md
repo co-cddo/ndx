@@ -41,6 +41,7 @@ The site uses Eleventy with GOV.UK templates. Content pages are markdown files
 in the src/ directory.
 
 **Example page structure:**
+
 ```markdown
 ---
 layout: page
@@ -56,6 +57,7 @@ Content here...
 ### Content Requirements
 
 From PRD/epics:
+
 - Data controller: GDS (Government Digital Service)
 - Data collected: Email, name, sandbox activity
 - Purpose: Account creation, analytics, continuous improvement, compliance
@@ -65,6 +67,7 @@ From PRD/epics:
 ### File Location
 
 Following existing site structure:
+
 ```
 src/
 ├── privacy/
@@ -103,6 +106,7 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `src/privacy.md`
 
 ---
@@ -135,12 +139,12 @@ N/A - Static content page.
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | Page created with GOV.UK template |
-| AC2 | PASS | All required content sections included |
-| AC3 | NOTE | Site blocks all indexing (Disallow: /) - intentional |
-| AC4 | PENDING | E2E tests in Story 4.4 |
+| AC  | Status  | Evidence                                             |
+| --- | ------- | ---------------------------------------------------- |
+| AC1 | PASS    | Page created with GOV.UK template                    |
+| AC2 | PASS    | All required content sections included               |
+| AC3 | NOTE    | Site blocks all indexing (Disallow: /) - intentional |
+| AC4 | PENDING | E2E tests in Story 4.4                               |
 
 ### Review Outcome
 

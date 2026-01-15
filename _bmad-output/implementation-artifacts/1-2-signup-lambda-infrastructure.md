@@ -92,9 +92,9 @@ so that **the signup API endpoints are accessible and secure**.
 
 ```typescript
 // infra-signup/lib/lambda/signup/services.ts
-const IDENTITY_STORE_ID = process.env.IDENTITY_STORE_ID  // e.g., "d-xxxxxxxxxx"
-const GROUP_ID = process.env.GROUP_ID                     // NDX users group ID
-const SSO_INSTANCE_ARN = process.env.SSO_INSTANCE_ARN    // For future password setup
+const IDENTITY_STORE_ID = process.env.IDENTITY_STORE_ID // e.g., "d-xxxxxxxxxx"
+const GROUP_ID = process.env.GROUP_ID // NDX users group ID
+const SSO_INSTANCE_ARN = process.env.SSO_INSTANCE_ARN // For future password setup
 ```
 
 **IAM Policy Structure (Scoped Permissions - ADR-043):**
@@ -103,16 +103,16 @@ const SSO_INSTANCE_ARN = process.env.SSO_INSTANCE_ARN    // For future password 
 // infra-signup/lib/signup-stack.ts
 const identityStorePolicy = new iam.PolicyStatement({
   actions: [
-    'sso-directory:CreateUser',
-    'identitystore:ListUsers',
-    'identitystore:CreateUser',
-    'identitystore:CreateGroupMembership'
+    "sso-directory:CreateUser",
+    "identitystore:ListUsers",
+    "identitystore:CreateUser",
+    "identitystore:CreateGroupMembership",
   ],
   resources: [
     `arn:aws:identitystore::${ACCOUNT_ID}:identitystore/${IDENTITY_STORE_ID}`,
     `arn:aws:identitystore::${ACCOUNT_ID}:identitystore/${IDENTITY_STORE_ID}/user/*`,
-    `arn:aws:identitystore::${ACCOUNT_ID}:identitystore/${IDENTITY_STORE_ID}/group/${GROUP_ID}/membership/*`
-  ]
+    `arn:aws:identitystore::${ACCOUNT_ID}:identitystore/${IDENTITY_STORE_ID}/group/${GROUP_ID}/membership/*`,
+  ],
 })
 ```
 
@@ -134,17 +134,17 @@ CloudFront evaluates behaviours in order. The signup Lambda behaviour MUST be ad
 ```typescript
 // Create Lambda Function URL
 const signupFunctionUrl = signupFunction.addFunctionUrl({
-  authType: lambda.FunctionUrlAuthType.AWS_IAM
+  authType: lambda.FunctionUrlAuthType.AWS_IAM,
 })
 
 // Create OAC for Lambda
-const oac = new cloudfront.CfnOriginAccessControl(this, 'SignupOAC', {
+const oac = new cloudfront.CfnOriginAccessControl(this, "SignupOAC", {
   originAccessControlConfig: {
-    name: 'ndx-signup-oac',
-    originAccessControlOriginType: 'lambda',
-    signingBehavior: 'always',
-    signingProtocol: 'sigv4'
-  }
+    name: "ndx-signup-oac",
+    originAccessControlOriginType: "lambda",
+    signingBehavior: "always",
+    signingProtocol: "sigv4",
+  },
 })
 ```
 
@@ -158,7 +158,7 @@ const securityHeaders = {
   "Content-Security-Policy": "default-src 'none'",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
-  "Referrer-Policy": "strict-origin-when-cross-origin"
+  "Referrer-Policy": "strict-origin-when-cross-origin",
 }
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -167,13 +167,15 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   const method = event.httpMethod
 
   // Structured logging
-  console.log(JSON.stringify({
-    level: "INFO",
-    message: "Request received",
-    path,
-    method,
-    correlationId
-  }))
+  console.log(
+    JSON.stringify({
+      level: "INFO",
+      message: "Request received",
+      path,
+      method,
+      correlationId,
+    }),
+  )
 
   // Route handling
   if (method === "GET" && path === "/signup-api/health") {
@@ -197,7 +199,7 @@ function successResponse(body: Record<string, unknown>): APIGatewayProxyResult {
   return {
     statusCode: 200,
     headers: { ...securityHeaders, "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   }
 }
 
@@ -205,7 +207,7 @@ function errorResponse(statusCode: number, error: string, message: string): APIG
   return {
     statusCode,
     headers: { ...securityHeaders, "Content-Type": "application/json" },
-    body: JSON.stringify({ error, message })
+    body: JSON.stringify({ error, message }),
   }
 }
 ```
@@ -234,6 +236,7 @@ infra/
 ```
 
 **Alignment with Architecture:**
+
 - Follows ADR-047: Lambda in `infra-signup/` (NDX repo)
 - Follows ADR-043: Lambda scoped to specific group ID and identity store ID
 - CloudFront behaviour ordered correctly per architecture.md
@@ -256,12 +259,14 @@ infra/
 ### Testing Requirements
 
 **Unit Tests (`handler.test.ts`):**
+
 - Health endpoint returns 200 with `{ status: "ok" }`
 - Unknown endpoint returns 404
 - Logging called with correct structure
 - Security headers present in all responses
 
 **Manual Verification:**
+
 ```bash
 # After deployment
 curl -s https://ndx.digital.cabinet-office.gov.uk/signup-api/health | jq .
@@ -271,11 +276,13 @@ curl -s https://ndx.digital.cabinet-office.gov.uk/signup-api/health | jq .
 ### Deployment Notes
 
 **Deployment Sequence:**
+
 1. Deploy `infra-signup/` stack first (creates Lambda)
 2. Update `infra/` stack to add CloudFront behaviour
 3. Verify health endpoint accessible
 
 **Required AWS Permissions:**
+
 - CDK bootstrap in ISB account (955063685555)
 - IAM permissions to create Lambda, IAM roles
 - Permissions to update CloudFront distribution
@@ -304,6 +311,7 @@ Claude Opus 4.5
 ### Completion Notes List
 
 **Completed:**
+
 - Task 1: Lambda handler with health endpoint ✅
 - Task 2: CDK Stack with Lambda function ✅
 - Task 3: Scoped IAM permissions ✅
@@ -311,10 +319,12 @@ Claude Opus 4.5
 - Task 5.4: Unit tests for handler routing ✅
 
 **Deferred to deployment:**
+
 - Task 4: CloudFront OAC integration - Requires cross-account configuration
 - Task 5.2-5.3: Actual deployment verification - Requires AWS credentials
 
 **Implementation Notes:**
+
 - Lambda Function URL created with IAM auth for CloudFront OAC
 - IAM permissions use `identitystore:*` actions (not `sso-directory:*`) per AWS SDK v3
 - LogGroup created with explicit `logGroup` prop to avoid deprecation warning
@@ -334,11 +344,13 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - infra-signup/lib/lambda/signup/handler.test.ts
 - infra-signup/lib/signup-stack.test.ts
 - infra-signup/cdk.json
 
 **Modified:**
+
 - infra-signup/lib/signup-stack.ts
 - infra-signup/lib/lambda/signup/handler.ts
 - infra-signup/bin/signup.ts
@@ -347,25 +359,28 @@ Claude Opus 4.5
 ## Code Review Record
 
 ### Review Date
+
 2026-01-13
 
 ### Review Findings Summary
 
 **Issues Found: 7 (4 fixed, 3 accepted as-is)**
 
-| # | Severity | Issue | Resolution |
-|---|----------|-------|------------|
-| 1 | HIGH | AC#2 not fully satisfied - CloudFront OAC deferred | ACCEPTED - Task 4 explicitly documented as deferred to deployment phase (requires cross-account coordination) |
-| 2 | MEDIUM | Missing HSTS header | FIXED - Added `Strict-Transport-Security: max-age=31536000; includeSubDomains` |
-| 3 | LOW | Missing X-Request-ID response header | FIXED - Added correlationId parameter to response helpers |
-| 4 | LOW | No error logging for unknown endpoints | FIXED - Added WARN log before 404 response |
-| 5 | LOW | No integration test setup | ACCEPTED - Unit tests sufficient for this story |
-| 6 | LOW | Missing type exports | ACCEPTED - Types can be imported from aws-lambda directly |
-| 7 | LOW | bin/signup.ts validation untested | ACCEPTED - Runtime validation documented in README |
+| #   | Severity | Issue                                              | Resolution                                                                                                    |
+| --- | -------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | HIGH     | AC#2 not fully satisfied - CloudFront OAC deferred | ACCEPTED - Task 4 explicitly documented as deferred to deployment phase (requires cross-account coordination) |
+| 2   | MEDIUM   | Missing HSTS header                                | FIXED - Added `Strict-Transport-Security: max-age=31536000; includeSubDomains`                                |
+| 3   | LOW      | Missing X-Request-ID response header               | FIXED - Added correlationId parameter to response helpers                                                     |
+| 4   | LOW      | No error logging for unknown endpoints             | FIXED - Added WARN log before 404 response                                                                    |
+| 5   | LOW      | No integration test setup                          | ACCEPTED - Unit tests sufficient for this story                                                               |
+| 6   | LOW      | Missing type exports                               | ACCEPTED - Types can be imported from aws-lambda directly                                                     |
+| 7   | LOW      | bin/signup.ts validation untested                  | ACCEPTED - Runtime validation documented in README                                                            |
 
 ### Tests After Review
+
 - infra-signup: 33 tests passing (up from 28)
 - Root package: 712 tests passing
 
 ### Review Outcome
+
 **PASS** - All critical issues addressed. Story approved for completion.

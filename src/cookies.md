@@ -18,10 +18,10 @@ NDX uses only essential cookies required for the service to function. We do not 
 
 ### Essential cookies
 
-| Cookie | Purpose | Expiry |
-|--------|---------|--------|
+| Cookie                 | Purpose                                                | Expiry  |
+| ---------------------- | ------------------------------------------------------ | ------- |
 | `__Host-isb_sso_token` | Stores your authentication token to keep you signed in | Session |
-| `NDX` | Identifies which version of the site you're viewing | Session |
+| `NDX`                  | Identifies which version of the site you're viewing    | Session |
 
 ## Browser storage
 
@@ -31,18 +31,18 @@ We also use browser storage (sessionStorage and localStorage) for the following 
 
 sessionStorage is cleared when you close your browser tab.
 
-| Key | Purpose |
-|-----|---------|
-| `auth-return-to` | Remembers where to redirect you after signing in |
+| Key                   | Purpose                                                                  |
+| --------------------- | ------------------------------------------------------------------------ |
+| `auth-return-to`      | Remembers where to redirect you after signing in                         |
 | `signup-welcome-back` | Shows a welcome message if you tried to sign up with an existing account |
-| `aup-agreed` | Records that you've accepted the acceptable use policy |
+| `aup-agreed`          | Records that you've accepted the acceptable use policy                   |
 
 ### localStorage
 
 localStorage persists until you clear your browser data.
 
-| Key | Purpose |
-|-----|---------|
+| Key              | Purpose                                                           |
+| ---------------- | ----------------------------------------------------------------- |
 | `ndx-auth-state` | Stores your authentication state to show sign in/sign out buttons |
 
 ## We do not use tracking cookies

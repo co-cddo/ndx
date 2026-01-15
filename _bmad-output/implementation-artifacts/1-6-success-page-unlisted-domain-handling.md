@@ -16,7 +16,7 @@ So that **I know to check my email for the AWS password setup link** (FR4, FR14,
    1. "Check your email for a message from AWS"
    2. "Click the link to set your password"
    3. "You'll be signed in and returned to NDX"
-   And the page explicitly mentions AWS sends the email (UX requirement)
+      And the page explicitly mentions AWS sends the email (UX requirement)
 
 3. **Given** I am on the signup form, **when** my domain is not in the dropdown, **then** I see an inline message: "Domain not listed? Contact ndx@dsit.gov.uk to request access." (FR14) using `govuk-inset-text` styling
 
@@ -55,17 +55,20 @@ So that **I know to check my email for the AWS password setup link** (FR4, FR14,
 ### Previous Story Intelligence (1.5)
 
 **Key Learnings from Story 1.5 Code Review:**
+
 - Email error message placement matters for screen readers - position error containers BEFORE the input group
 - Remove console.error calls when error is already displayed to user via showErrorSummary
 - Add validation for email local part: max 64 chars (RFC 5321), forbidden characters
 
 **Established Patterns:**
+
 - Signup pages use `layouts/signup-page.njk` which extends `layouts/base.njk`
 - JavaScript bundle loaded via `<script type="module" src="/assets/signup.bundle.js"></script>`
 - Form validation uses GOV.UK error summary pattern
 - API responses follow `{ success: true, redirectUrl }` or `{ error, message }` format
 
 **Files Created in Previous Stories:**
+
 - `src/_includes/layouts/signup-page.njk` - Layout for signup pages
 - `src/signup.md` - Signup form page
 - `src/signup/main.ts` - Form handling, validation, submission
@@ -75,20 +78,21 @@ So that **I know to check my email for the AWS password setup link** (FR4, FR14,
 ### Architecture Requirements
 
 **From Architecture Document (ADR-050):**
+
 - Pages match URL structure: `/signup/success` → `src/signup/success.md`
 - Use markdown pages with frontmatter (same as `src/signup.md`)
 
 **GOV.UK Panel Component:**
+
 ```html
 <div class="govuk-panel govuk-panel--confirmation">
   <h1 class="govuk-panel__title">Account created</h1>
-  <div class="govuk-panel__body">
-    Check your email to set your password
-  </div>
+  <div class="govuk-panel__body">Check your email to set your password</div>
 </div>
 ```
 
 **GOV.UK Inset Text Component:**
+
 ```html
 <div class="govuk-inset-text">
   Domain not listed? <a href="mailto:ndx@dsit.gov.uk" class="govuk-link">Contact ndx@dsit.gov.uk</a> to request access.
@@ -98,14 +102,16 @@ So that **I know to check my email for the AWS password setup link** (FR4, FR14,
 ### Redirect Implementation
 
 **Current API Response Format (from types.ts):**
+
 ```typescript
 interface SignupResponse {
   success: true
-  redirectUrl?: string  // e.g., "/signup/success"
+  redirectUrl?: string // e.g., "/signup/success"
 }
 ```
 
 **Implementation in main.ts:**
+
 ```typescript
 // In handleFormSubmit, after successful API response:
 if (isSignupResponse(result) && result.success) {
@@ -117,6 +123,7 @@ if (isSignupResponse(result) && result.success) {
 ### Content Requirements (UX Design Spec)
 
 **Success Page Content:**
+
 1. Green panel: "Account created"
 2. Panel body: "Check your email to set your password"
 3. Numbered steps:
@@ -126,6 +133,7 @@ if (isSignupResponse(result) && result.success) {
 4. AWS explicitly mentioned - user knows email comes from AWS, not NDX
 
 **Unlisted Domain Message:**
+
 - Use `govuk-inset-text` (not error styling)
 - Always visible below domain dropdown
 - Contact: ndx@dsit.gov.uk
@@ -188,9 +196,11 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `src/signup/success.md`
 
 **Modified:**
+
 - `src/signup/types.test.ts`
 - `src/signup/main.test.ts`
 - `tests/e2e/signup/signup.spec.ts`
@@ -238,12 +248,12 @@ No new tests added - existing tests were enhanced with stronger assertions.
 
 ### Acceptance Criteria Verification
 
-| AC | Description | Status | Evidence |
-|----|-------------|--------|----------|
-| AC1 | Redirect to `/signup/success` with GOV.UK green confirmation panel | ✅ PASS | success.md has `govuk-panel--confirmation` with "Account created" |
-| AC2 | Numbered next steps with AWS mentioned explicitly | ✅ PASS | `ol.govuk-list--number` contains "AWS", "set your password", "returned to NDX" |
-| AC3 | Unlisted domain message with contact email | ✅ PASS | `govuk-inset-text#domain-help` with "ndx@dsit.gov.uk" in signup.md |
-| AC4 | Keyboard navigation and WCAG 2.2 AA | ✅ PASS | E2E tests verify zero axe violations and keyboard navigation to link |
+| AC  | Description                                                        | Status  | Evidence                                                                       |
+| --- | ------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------ |
+| AC1 | Redirect to `/signup/success` with GOV.UK green confirmation panel | ✅ PASS | success.md has `govuk-panel--confirmation` with "Account created"              |
+| AC2 | Numbered next steps with AWS mentioned explicitly                  | ✅ PASS | `ol.govuk-list--number` contains "AWS", "set your password", "returned to NDX" |
+| AC3 | Unlisted domain message with contact email                         | ✅ PASS | `govuk-inset-text#domain-help` with "ndx@dsit.gov.uk" in signup.md             |
+| AC4 | Keyboard navigation and WCAG 2.2 AA                                | ✅ PASS | E2E tests verify zero axe violations and keyboard navigation to link           |
 
 ### Review Outcome
 

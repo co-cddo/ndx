@@ -25,14 +25,14 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 **Functional Requirements:**
 29 requirements across 6 capability areas:
 
-| Category | FRs | Architectural Impact |
-|----------|-----|---------------------|
-| Account Registration | FR1-FR7 | Lambda + IAM IDC integration |
-| Auth Integration | FR8-FR11 | Extend existing auth patterns |
-| Domain Management | FR12-FR15 | External data source + caching |
-| Security & Protection | FR16-FR20 | WAF, CSRF, scoped IAM |
-| Operational Visibility | FR21-FR24 | EventBridge + Slack |
-| Content & Compliance | FR25-FR29 | Static pages + accessibility |
+| Category               | FRs       | Architectural Impact           |
+| ---------------------- | --------- | ------------------------------ |
+| Account Registration   | FR1-FR7   | Lambda + IAM IDC integration   |
+| Auth Integration       | FR8-FR11  | Extend existing auth patterns  |
+| Domain Management      | FR12-FR15 | External data source + caching |
+| Security & Protection  | FR16-FR20 | WAF, CSRF, scoped IAM          |
+| Operational Visibility | FR21-FR24 | EventBridge + Slack            |
+| Content & Compliance   | FR25-FR29 | Static pages + accessibility   |
 
 **Non-Functional Requirements:**
 23 requirements driving architecture:
@@ -52,12 +52,14 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 ### Technical Constraints & Dependencies
 
 **Existing System Constraints:**
+
 - Must extend existing CloudFront distribution (not create new)
 - Must follow GOV.UK Design System (regulatory)
 - Must integrate with ISB account IAM Identity Center (955063685555)
 - Must use existing EventBridge → Slack pattern
 
 **External Dependencies:**
+
 - AWS IAM Identity Center (user creation, password flow)
 - GitHub JSON (LA domain allowlist)
 - GOV.UK Notify (handled by IAM IDC)
@@ -75,14 +77,14 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ### Cross-Cutting Concerns Identified
 
-| Concern | Spans | Implementation Approach |
-|---------|-------|------------------------|
-| Authentication state | Modal, pages, Lambda | Extend existing AuthState pattern |
-| Return URL handling | Auth modal, signup, AWS flow | sessionStorage + blocklist |
-| Error handling | Form, Lambda, API | GOV.UK patterns + JSON responses |
-| Security headers | All requests | CloudFront + Lambda validation |
-| Observability | Lambda, EventBridge | Existing Slack pattern |
-| Accessibility | All pages | GOV.UK Design System |
+| Concern              | Spans                        | Implementation Approach           |
+| -------------------- | ---------------------------- | --------------------------------- |
+| Authentication state | Modal, pages, Lambda         | Extend existing AuthState pattern |
+| Return URL handling  | Auth modal, signup, AWS flow | sessionStorage + blocklist        |
+| Error handling       | Form, Lambda, API            | GOV.UK patterns + JSON responses  |
+| Security headers     | All requests                 | CloudFront + Lambda validation    |
+| Observability        | Lambda, EventBridge          | Existing Slack pattern            |
+| Accessibility        | All pages                    | GOV.UK Design System              |
 
 ## Starter Template Evaluation
 
@@ -93,6 +95,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 ### Starter Options Considered
 
 **Not Applicable** - The existing NDX codebase serves as our "starter":
+
 - Static site framework: Eleventy 3.1.2 (established)
 - TypeScript configuration: Strict mode, ES2020+ (established)
 - Testing infrastructure: Jest + Playwright (established)
@@ -102,6 +105,7 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 ### Selected Approach: Extend Existing Patterns
 
 **Rationale for Selection:**
+
 - Brownfield project with mature, production-proven stack
 - GOV.UK Design System is mandatory (regulatory compliance)
 - Existing patterns (Try feature) provide tested implementation reference
@@ -119,29 +123,35 @@ mkdir -p src/signup
 **Architectural Decisions Already Established:**
 
 **Language & Runtime:**
+
 - TypeScript 5.7.2 (strict mode)
 - Node.js 20.x (Lambda runtime)
 - ES2020+ target
 
 **Styling Solution:**
+
 - GOV.UK Design System CSS (mandatory)
 - No custom CSS framework
 
 **Build Tooling:**
+
 - esbuild for client-side TypeScript bundling
 - Eleventy for static site generation
 - AWS CDK for infrastructure synthesis
 
 **Testing Framework:**
+
 - Jest for unit tests (web + Lambda)
 - Playwright for E2E and accessibility tests
 
 **Code Organization:**
+
 - `src/signup/` for client-side signup logic (mirrors `src/try/`)
 - `infra/lib/lambda/signup/` for Lambda handler (mirrors notification pattern)
 - Static pages in `src/` following Eleventy conventions
 
 **Development Experience:**
+
 - `yarn start` for local development server
 - Hot reloading via Eleventy
 - `yarn test` for unit tests
@@ -154,30 +164,34 @@ mkdir -p src/signup
 ### Decision Priority Analysis
 
 **Critical Decisions (Block Implementation):**
+
 - Lambda deployment location (ISB account, new stack)
-- API endpoint structure (/signup-api/*)
+- API endpoint structure (/signup-api/\*)
 - Security header implementation (CSRF, OAC)
 
 **Important Decisions (Shape Architecture):**
+
 - Module organization (mirror Try structure)
 - Error response format
 - Domain allowlist source
 
 **Deferred Decisions (Post-MVP):**
+
 - Tiered alerting (accept noise initially)
 - Domain request workflow (manual for MVP)
 - Analytics dashboard
 
 ### Data Architecture
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Domain Allowlist Source** | Raw GitHub URL | Simplest, highly available, cache handles rate limits |
-| **Domain Cache** | In-memory, 5-min TTL (ADR-044) | Balance freshness vs. external dependency |
-| **User Data Storage** | AWS IAM Identity Center | Existing infrastructure, no new database |
-| **Email Normalization** | Strip `+` suffix before uniqueness check | Prevent alias abuse (research doc pattern) |
+| Decision                    | Choice                                   | Rationale                                             |
+| --------------------------- | ---------------------------------------- | ----------------------------------------------------- |
+| **Domain Allowlist Source** | Raw GitHub URL                           | Simplest, highly available, cache handles rate limits |
+| **Domain Cache**            | In-memory, 5-min TTL (ADR-044)           | Balance freshness vs. external dependency             |
+| **User Data Storage**       | AWS IAM Identity Center                  | Existing infrastructure, no new database              |
+| **Email Normalization**     | Strip `+` suffix before uniqueness check | Prevent alias abuse (research doc pattern)            |
 
 **Domain Allowlist Flow:**
+
 ```
 Lambda cold start → Fetch GitHub JSON → Cache in memory (5 min)
 Subsequent requests → Return cached data
@@ -186,42 +200,44 @@ Cache expired → Re-fetch, fallback to stale if GitHub unavailable
 
 ### Authentication & Security
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Authentication Provider** | AWS IAM Identity Center | Existing infrastructure (ADR-040) |
-| **CSRF Protection** | Custom header `X-NDX-Request: signup-form` (ADR-045) | Origin verification, combined with strict CORS |
-| **Rate Limiting** | WAF 1 req/min/IP (ADR-046) | Prevent abuse without blocking legitimate users |
-| **Lambda Auth** | OAC with SigV4 | CloudFront signs requests, Lambda validates |
-| **CORS Policy** | Strict origin only (`https://ndx.digital.cabinet-office.gov.uk`) | No wildcards, explicit origin |
-| **Lambda Permissions** | Scoped to group ID + identity store ID (ADR-043) | Least privilege |
+| Decision                    | Choice                                                           | Rationale                                       |
+| --------------------------- | ---------------------------------------------------------------- | ----------------------------------------------- |
+| **Authentication Provider** | AWS IAM Identity Center                                          | Existing infrastructure (ADR-040)               |
+| **CSRF Protection**         | Custom header `X-NDX-Request: signup-form` (ADR-045)             | Origin verification, combined with strict CORS  |
+| **Rate Limiting**           | WAF 1 req/min/IP (ADR-046)                                       | Prevent abuse without blocking legitimate users |
+| **Lambda Auth**             | OAC with SigV4                                                   | CloudFront signs requests, Lambda validates     |
+| **CORS Policy**             | Strict origin only (`https://ndx.digital.cabinet-office.gov.uk`) | No wildcards, explicit origin                   |
+| **Lambda Permissions**      | Scoped to group ID + identity store ID (ADR-043)                 | Least privilege                                 |
 
 **Security Headers (Lambda Validation):**
+
 ```typescript
 // Required headers for all POST requests
 const requiredHeaders = {
-  'x-ndx-request': 'signup-form',      // CSRF protection
-  'content-type': 'application/json',   // Explicit content type
-  'x-amz-content-sha256': '<hash>'     // OAC body hash
-};
+  "x-ndx-request": "signup-form", // CSRF protection
+  "content-type": "application/json", // Explicit content type
+  "x-amz-content-sha256": "<hash>", // OAC body hash
+}
 ```
 
 ### API & Communication Patterns
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **API Style** | REST | Consistent with existing /api/* pattern |
-| **Base Path** | `/signup-api/*` | Separate from ISB API, clear routing |
-| **Error Format** | Simple JSON `{ error, message }` | Matches PRD examples, easy to display |
-| **Success Format** | JSON with redirect URL | Enable client-side navigation |
+| Decision           | Choice                           | Rationale                                |
+| ------------------ | -------------------------------- | ---------------------------------------- |
+| **API Style**      | REST                             | Consistent with existing /api/\* pattern |
+| **Base Path**      | `/signup-api/*`                  | Separate from ISB API, clear routing     |
+| **Error Format**   | Simple JSON `{ error, message }` | Matches PRD examples, easy to display    |
+| **Success Format** | JSON with redirect URL           | Enable client-side navigation            |
 
 **Endpoints:**
 
-| Method | Path | Purpose | Response |
-|--------|------|---------|----------|
-| GET | `/signup-api/domains` | Fetch allowed domains | `{ domains: [{ domain, orgName }] }` |
-| POST | `/signup-api/signup` | Create account | `{ success: true, redirectUrl }` or error |
+| Method | Path                  | Purpose               | Response                                  |
+| ------ | --------------------- | --------------------- | ----------------------------------------- |
+| GET    | `/signup-api/domains` | Fetch allowed domains | `{ domains: [{ domain, orgName }] }`      |
+| POST   | `/signup-api/signup`  | Create account        | `{ success: true, redirectUrl }` or error |
 
 **Error Response Structure:**
+
 ```json
 {
   "error": "DOMAIN_NOT_ALLOWED",
@@ -240,14 +256,15 @@ const requiredHeaders = {
 
 ### Frontend Architecture
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Module Structure** | Mirror Try (`api/`, `ui/`, `utils/`) | Consistency with existing patterns |
-| **State Management** | Extend existing AuthState | Reuse proven observer pattern (ADR-024) |
-| **Form Handling** | Native HTML + JS validation | GOV.UK patterns, no additional libraries |
-| **Bundling** | esbuild (existing) | Consistent with Try feature build |
+| Decision             | Choice                               | Rationale                                |
+| -------------------- | ------------------------------------ | ---------------------------------------- |
+| **Module Structure** | Mirror Try (`api/`, `ui/`, `utils/`) | Consistency with existing patterns       |
+| **State Management** | Extend existing AuthState            | Reuse proven observer pattern (ADR-024)  |
+| **Form Handling**    | Native HTML + JS validation          | GOV.UK patterns, no additional libraries |
+| **Bundling**         | esbuild (existing)                   | Consistent with Try feature build        |
 
 **Directory Structure:**
+
 ```
 src/signup/
 ├── api/
@@ -262,20 +279,22 @@ src/signup/
 ```
 
 **Auth Modal Extension:**
+
 - Add "Create account" button to existing modal
 - Preserve return URL in sessionStorage before redirect
 - Reuse existing focus trap and accessibility patterns
 
 ### Infrastructure & Deployment
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Lambda Stack** | New `NdxSignupStack` in ISB account | Separation of concerns, independent deployment |
-| **Lambda Runtime** | Node.js 20.x | Matches existing notification Lambda |
-| **CloudFront Behaviour** | Add `/signup-api/*` to existing distribution | Extends, not replaces |
-| **Alerting** | CloudTrail → EventBridge → SNS → Existing Chatbot | Reuse existing config, cross-account SNS |
+| Decision                 | Choice                                            | Rationale                                      |
+| ------------------------ | ------------------------------------------------- | ---------------------------------------------- |
+| **Lambda Stack**         | New `NdxSignupStack` in ISB account               | Separation of concerns, independent deployment |
+| **Lambda Runtime**       | Node.js 20.x                                      | Matches existing notification Lambda           |
+| **CloudFront Behaviour** | Add `/signup-api/*` to existing distribution      | Extends, not replaces                          |
+| **Alerting**             | CloudTrail → EventBridge → SNS → Existing Chatbot | Reuse existing config, cross-account SNS       |
 
 **CDK Stack Structure (ISB Account - 955063685555):**
+
 ```
 infra/lib/
 ├── signup-stack.ts           # New stack for signup Lambda + alerting
@@ -287,11 +306,13 @@ infra/lib/
 ```
 
 **CloudFront Behaviour Order:**
+
 1. `/signup-api/*` → Signup Lambda (OAC)
 2. `/api/*` → ISB Lambda (existing)
 3. `/*` → S3 origin (existing)
 
 **Alerting Architecture (Reuse Existing Chatbot):**
+
 ```
 ISB Account (955063685555):
   IAM Identity Center CreateUser
@@ -306,30 +327,33 @@ NDX Account (568672915267):
 ```
 
 **EventBridge Rule (ISB Account CDK):**
+
 ```typescript
-const alertTopic = new sns.Topic(this, 'SignupAlertTopic', {
-  topicName: 'ndx-signup-alerts'
-});
+const alertTopic = new sns.Topic(this, "SignupAlertTopic", {
+  topicName: "ndx-signup-alerts",
+})
 
 // Allow Chatbot cross-account subscription
-alertTopic.addToResourcePolicy(new iam.PolicyStatement({
-  effect: iam.Effect.ALLOW,
-  principals: [new iam.ServicePrincipal('chatbot.amazonaws.com')],
-  actions: ['sns:Subscribe'],
-  resources: [alertTopic.topicArn]
-}));
+alertTopic.addToResourcePolicy(
+  new iam.PolicyStatement({
+    effect: iam.Effect.ALLOW,
+    principals: [new iam.ServicePrincipal("chatbot.amazonaws.com")],
+    actions: ["sns:Subscribe"],
+    resources: [alertTopic.topicArn],
+  }),
+)
 
-new events.Rule(this, 'SignupAlertRule', {
+new events.Rule(this, "SignupAlertRule", {
   eventPattern: {
-    source: ['aws.sso-directory'],
-    detailType: ['AWS API Call via CloudTrail'],
+    source: ["aws.sso-directory"],
+    detailType: ["AWS API Call via CloudTrail"],
     detail: {
-      eventSource: ['sso-directory.amazonaws.com'],
-      eventName: ['CreateUser']
-    }
+      eventSource: ["sso-directory.amazonaws.com"],
+      eventName: ["CreateUser"],
+    },
   },
-  targets: [new targets.SnsTopic(alertTopic)]
-});
+  targets: [new targets.SnsTopic(alertTopic)],
+})
 ```
 
 **Manual Step (One-Time):**
@@ -338,6 +362,7 @@ Add SNS topic ARN `arn:aws:sns:us-west-2:955063685555:ndx-signup-alerts` to exis
 ### Decision Impact Analysis
 
 **Implementation Sequence:**
+
 1. Create `NdxSignupStack` CDK stack with Lambda
 2. Add CloudFront behaviour for `/signup-api/*`
 3. Implement Lambda handlers (domains, signup)
@@ -394,6 +419,7 @@ Add SNS topic ARN `arn:aws:sns:us-west-2:955063685555:ndx-signup-alerts` to exis
 ### Structure Patterns
 
 **Frontend Module Organization:**
+
 ```
 src/signup/
 ├── api/
@@ -408,6 +434,7 @@ src/signup/
 ```
 
 **Lambda Module Organization:**
+
 ```
 infra/lib/lambda/signup/
 ├── handler.ts              # Entry point - routing only
@@ -418,6 +445,7 @@ infra/lib/lambda/signup/
 ```
 
 **Test Organization:**
+
 - Unit tests: Co-located `*.test.ts` files
 - E2E tests: `tests/e2e/signup.spec.ts`
 - Test utilities: `tests/utils/` for shared helpers
@@ -427,6 +455,7 @@ infra/lib/lambda/signup/
 **API Response Formats:**
 
 Success Response:
+
 ```typescript
 // 200 OK
 {
@@ -443,6 +472,7 @@ Success Response:
 ```
 
 Error Response:
+
 ```typescript
 // 4xx/5xx
 {
@@ -452,28 +482,30 @@ Error Response:
 ```
 
 **TypeScript Patterns:**
+
 ```typescript
 // ✅ DO: Explicit return types on exported functions
-export async function fetchDomains(): Promise<DomainInfo[]> { }
+export async function fetchDomains(): Promise<DomainInfo[]> {}
 
 // ✅ DO: Interface for object shapes
 interface SignupRequest {
-  firstName: string;
-  lastName: string;
-  email: string;
-  domain: string;
+  firstName: string
+  lastName: string
+  email: string
+  domain: string
 }
 
 // ✅ DO: Use unknown, not any
-function parseResponse(data: unknown): SignupResponse { }
+function parseResponse(data: unknown): SignupResponse {}
 
 // ❌ DON'T: Implicit any
-function parseResponse(data) { }  // Missing type
+function parseResponse(data) {} // Missing type
 ```
 
 ### Communication Patterns
 
 **Error Message Style (GOV.UK):**
+
 - Direct, no jargon
 - Tell user what happened
 - Tell user what to do next
@@ -491,35 +523,40 @@ function parseResponse(data) { }  // Missing type
 
 ```typescript
 // ✅ DO: Structured logging with context
-console.log(JSON.stringify({
-  level: 'INFO',
-  message: 'User created',
-  email: normalizedEmail,
-  domain: domain,
-  correlationId: event.requestContext?.requestId
-}));
+console.log(
+  JSON.stringify({
+    level: "INFO",
+    message: "User created",
+    email: normalizedEmail,
+    domain: domain,
+    correlationId: event.requestContext?.requestId,
+  }),
+)
 
 // ✅ DO: Redact PII in error logs
-console.error(JSON.stringify({
-  level: 'ERROR',
-  message: 'IAM IDC API error',
-  errorCode: error.code,
-  // email NOT logged on errors
-}));
+console.error(
+  JSON.stringify({
+    level: "ERROR",
+    message: "IAM IDC API error",
+    errorCode: error.code,
+    // email NOT logged on errors
+  }),
+)
 
 // ❌ DON'T: Unstructured logs
-console.log('Created user: ' + email);
+console.log("Created user: " + email)
 ```
 
 **Client-Side Logging:**
+
 ```typescript
 // ✅ DO: Console for dev only
-if (process.env.NODE_ENV === 'development') {
-  console.log('Signup form submitted', { domain });
+if (process.env.NODE_ENV === "development") {
+  console.log("Signup form submitted", { domain })
 }
 
 // ❌ DON'T: Log in production client code
-console.log('User data:', userData);  // Exposes PII
+console.log("User data:", userData) // Exposes PII
 ```
 
 ### Process Patterns
@@ -527,60 +564,70 @@ console.log('User data:', userData);  // Exposes PII
 **Error Handling:**
 
 Lambda:
+
 ```typescript
 // ✅ Catch specific errors, return appropriate status
 try {
-  await createUser(request);
-  return { statusCode: 200, body: JSON.stringify({ success: true }) };
+  await createUser(request)
+  return { statusCode: 200, body: JSON.stringify({ success: true }) }
 } catch (error) {
-  if (error.code === 'ConflictException') {
-    return { statusCode: 409, body: JSON.stringify({
-      error: 'USER_EXISTS',
-      message: 'Welcome back - please sign in.'
-    })};
+  if (error.code === "ConflictException") {
+    return {
+      statusCode: 409,
+      body: JSON.stringify({
+        error: "USER_EXISTS",
+        message: "Welcome back - please sign in.",
+      }),
+    }
   }
   // Log and return generic error
-  console.error(JSON.stringify({ level: 'ERROR', error: error.message }));
-  return { statusCode: 500, body: JSON.stringify({
-    error: 'SERVER_ERROR',
-    message: 'Something went wrong. Try again.'
-  })};
+  console.error(JSON.stringify({ level: "ERROR", error: error.message }))
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: "SERVER_ERROR",
+      message: "Something went wrong. Try again.",
+    }),
+  }
 }
 ```
 
 Client:
+
 ```typescript
 // ✅ Handle known error codes, display in GOV.UK error summary
-if (response.error === 'USER_EXISTS') {
-  window.location.href = response.redirectUrl;
-  return;
+if (response.error === "USER_EXISTS") {
+  window.location.href = response.redirectUrl
+  return
 }
-showErrorSummary([{ field: 'email', message: response.message }]);
+showErrorSummary([{ field: "email", message: response.message }])
 ```
 
 **Loading States:**
+
 ```typescript
 // ✅ Button text change pattern (matches existing Try feature)
-submitButton.textContent = 'Creating account...';
-submitButton.disabled = true;
+submitButton.textContent = "Creating account..."
+submitButton.disabled = true
 
 // On complete (success or error)
-submitButton.textContent = 'Continue';
-submitButton.disabled = false;
+submitButton.textContent = "Continue"
+submitButton.disabled = false
 ```
 
 **Form Validation:**
+
 ```typescript
 // ✅ GOV.UK pattern: Validate on submit, not on blur
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const errors = validateForm(form);
+form.addEventListener("submit", (e) => {
+  e.preventDefault()
+  const errors = validateForm(form)
   if (errors.length > 0) {
-    showErrorSummary(errors);
-    return;
+    showErrorSummary(errors)
+    return
   }
-  submitForm(form);
-});
+  submitForm(form)
+})
 ```
 
 ### Enforcement Guidelines
@@ -596,6 +643,7 @@ form.addEventListener('submit', (e) => {
 7. Return consistent error response format `{ error, message }`
 
 **Pattern Verification:**
+
 - ESLint enforces naming conventions
 - TypeScript strict mode catches type issues
 - PR review checks GOV.UK compliance
@@ -603,14 +651,14 @@ form.addEventListener('submit', (e) => {
 
 ### Anti-Patterns to Avoid
 
-| Anti-Pattern | Why It's Wrong | Correct Approach |
-|--------------|----------------|------------------|
-| `any` type | Loses type safety | Use `unknown` and narrow |
-| Console.log strings | Not queryable in CloudWatch | Structured JSON |
-| Validate on blur | Not GOV.UK pattern | Validate on submit |
-| Apologetic errors | Not GOV.UK tone | Direct, actionable |
-| DOM in api/ folder | Wrong separation | DOM only in ui/ |
-| State in utils/ | Should be pure | State in ui/ or dedicated module |
+| Anti-Pattern        | Why It's Wrong              | Correct Approach                 |
+| ------------------- | --------------------------- | -------------------------------- |
+| `any` type          | Loses type safety           | Use `unknown` and narrow         |
+| Console.log strings | Not queryable in CloudWatch | Structured JSON                  |
+| Validate on blur    | Not GOV.UK pattern          | Validate on submit               |
+| Apologetic errors   | Not GOV.UK tone             | Direct, actionable               |
+| DOM in api/ folder  | Wrong separation            | DOM only in ui/                  |
+| State in utils/     | Should be pure              | State in ui/ or dedicated module |
 
 ## Project Structure & Boundaries
 
@@ -646,6 +694,7 @@ ndx/
 ```
 
 **Rationale (First Principles Analysis):**
+
 - Client: 3 files (main.ts, api.ts, types.ts) - combined from original 6+ files
 - Lambda: 2 files (handler.ts, services.ts) - orchestration + domain logic
 - Shared types: Lambda imports from `src/signup/types.ts` via tsconfig paths
@@ -653,27 +702,30 @@ ndx/
 
 ### Architecture Decision Records (New)
 
-| ADR | Decision | Rationale |
-|-----|----------|-----------|
-| ADR-047 | Lambda in `infra-signup/` (NDX repo) | Single repo, single PR, clearer ownership, no cross-repo coordination |
-| ADR-048 | Shared types via tsconfig paths | Lambda imports `@ndx/signup-types` from `src/signup/types.ts`, no duplication |
-| ADR-049 | Co-located tests (`*.test.ts`) | Follows existing codebase pattern, easier maintenance |
-| ADR-050 | Pages match URL structure | `/signup` → `src/signup.njk`, `/signup/success` → `src/signup/success.njk` |
-| ADR-051 | Error handling inline in main.ts | Single file owns form + validation + error display, no premature abstraction |
-| ADR-052 | Cache bypass with secret + logging | Header `X-NDX-Cache-Bypass: <secret>` + CloudWatch log on use |
+| ADR     | Decision                             | Rationale                                                                     |
+| ------- | ------------------------------------ | ----------------------------------------------------------------------------- |
+| ADR-047 | Lambda in `infra-signup/` (NDX repo) | Single repo, single PR, clearer ownership, no cross-repo coordination         |
+| ADR-048 | Shared types via tsconfig paths      | Lambda imports `@ndx/signup-types` from `src/signup/types.ts`, no duplication |
+| ADR-049 | Co-located tests (`*.test.ts`)       | Follows existing codebase pattern, easier maintenance                         |
+| ADR-050 | Pages match URL structure            | `/signup` → `src/signup.njk`, `/signup/success` → `src/signup/success.njk`    |
+| ADR-051 | Error handling inline in main.ts     | Single file owns form + validation + error display, no premature abstraction  |
+| ADR-052 | Cache bypass with secret + logging   | Header `X-NDX-Cache-Bypass: <secret>` + CloudWatch log on use                 |
 
 ### Component Boundaries
 
 **Client (`src/signup/`):**
+
 - `main.ts`: Entry point, form handling, validation, error display, GOV.UK components
 - `api.ts`: Fetch wrapper for `/signup-api/*`, handles errors, returns typed responses
 - `types.ts`: Shared interfaces - `SignupRequest`, `SignupResponse`, `DomainInfo`, error codes
 
 **Lambda (`infra-signup/lib/lambda/signup/`):**
+
 - `handler.ts`: HTTP routing, request parsing, response formatting, CSRF validation
 - `services.ts`: Domain validation, email normalization, IAM IDC API calls
 
 **Shared Types (tsconfig paths):**
+
 ```json
 // infra-signup/tsconfig.json
 {
@@ -687,18 +739,19 @@ ndx/
 
 ### Pre-mortem Mitigations (Risk Analysis)
 
-| Failure Scenario | Mitigation |
-|------------------|------------|
-| Client/Lambda type drift | Shared types via tsconfig paths (ADR-048) |
-| CloudFront cache serves stale responses | Cache bypass header with secret + logging (ADR-052) |
-| Deployment coordination failure | Deployment script orchestrates: 1) Lambda → 2) CloudFront → 3) Static |
-| ISB account permissions missing | Document required IAM permissions in README |
-| EventBridge rule missing CloudTrail events | Pre-flight check in deployment script |
-| Rate limit blocks legitimate users | WAF rule configured per-IP, not global |
+| Failure Scenario                           | Mitigation                                                            |
+| ------------------------------------------ | --------------------------------------------------------------------- |
+| Client/Lambda type drift                   | Shared types via tsconfig paths (ADR-048)                             |
+| CloudFront cache serves stale responses    | Cache bypass header with secret + logging (ADR-052)                   |
+| Deployment coordination failure            | Deployment script orchestrates: 1) Lambda → 2) CloudFront → 3) Static |
+| ISB account permissions missing            | Document required IAM permissions in README                           |
+| EventBridge rule missing CloudTrail events | Pre-flight check in deployment script                                 |
+| Rate limit blocks legitimate users         | WAF rule configured per-IP, not global                                |
 
 ### Deployment Orchestration
 
 **Deployment Script (`scripts/deploy-signup.sh`):**
+
 ```bash
 #!/bin/bash
 set -e
@@ -718,27 +771,30 @@ curl -sf https://ndx.digital.cabinet-office.gov.uk/signup-api/domains | jq .
 
 ### Integration Points
 
-| Integration | Source | Target | Method |
-|-------------|--------|--------|--------|
-| Form → API | `src/signup/api.ts` | `/signup-api/*` | Fetch with CSRF header |
-| Lambda → IDC | `services.ts` | IAM Identity Center | AWS SDK v3 |
-| Lambda → GitHub | `services.ts` | Raw JSON URL | Fetch with 5-min cache |
-| Alert → Slack | EventBridge | AWS Chatbot | SNS subscription |
+| Integration     | Source              | Target              | Method                 |
+| --------------- | ------------------- | ------------------- | ---------------------- |
+| Form → API      | `src/signup/api.ts` | `/signup-api/*`     | Fetch with CSRF header |
+| Lambda → IDC    | `services.ts`       | IAM Identity Center | AWS SDK v3             |
+| Lambda → GitHub | `services.ts`       | Raw JSON URL        | Fetch with 5-min cache |
+| Alert → Slack   | EventBridge         | AWS Chatbot         | SNS subscription       |
 
 ### Security Boundaries
 
 **CSRF Protection:**
+
 - Client sends: `X-NDX-Request: signup-form`
 - Lambda validates header presence and value
 - Combined with strict CORS (origin only)
 
 **Cache Bypass:**
+
 - Header: `X-NDX-Cache-Bypass: <secret-value>`
 - Secret stored in environment variable
 - Every use logged to CloudWatch
 - For debugging only, not production use
 
 **Lambda IAM Scope:**
+
 - `sso-directory:CreateUser` - scoped to identity store ID
 - `sso-directory:CreateGroupMembership` - scoped to group ID
 - No wildcard permissions
@@ -749,6 +805,7 @@ curl -sf https://ndx.digital.cabinet-office.gov.uk/signup-api/domains | jq .
 
 **Decision Compatibility:**
 All technology choices are compatible:
+
 - TypeScript 5.7.2 + Node.js 20.x Lambda runtime ✓
 - AWS CDK 2.215.0 + Lambda Function URL with OAC ✓
 - Eleventy 3.1.2 + esbuild for client bundling ✓
@@ -757,11 +814,13 @@ All technology choices are compatible:
 No version conflicts detected.
 
 **Pattern Consistency:**
+
 - Naming conventions (kebab-case files, camelCase JSON) align across client and Lambda
 - GOV.UK error patterns defined for both API responses and UI display
 - Logging patterns (structured JSON) consistent with existing notification Lambda
 
 **Structure Alignment:**
+
 - `infra-signup/` mirrors existing `infra/` structure
 - `src/signup/` mirrors existing `src/try/` pattern
 - Shared types via tsconfig paths is proven pattern in NDX codebase
@@ -770,41 +829,44 @@ No version conflicts detected.
 
 **Functional Requirements Coverage:**
 
-| Category | FRs | Architectural Support |
-|----------|-----|----------------------|
-| Account Registration (FR1-FR7) | ✅ | Lambda + IAM IDC, form validation, success page |
-| Auth Integration (FR8-FR11) | ✅ | Auth modal extension, return URL handling |
-| Domain Management (FR12-FR15) | ✅ | GitHub JSON source, 5-min cache, domain select |
-| Security (FR16-FR20) | ✅ | CSRF header, WAF rate limit, scoped IAM, OAC |
-| Operational (FR21-FR24) | ✅ | EventBridge → SNS → Chatbot alerting |
-| Content (FR25-FR29) | ✅ | Static pages, GOV.UK Design System |
+| Category                       | FRs | Architectural Support                           |
+| ------------------------------ | --- | ----------------------------------------------- |
+| Account Registration (FR1-FR7) | ✅  | Lambda + IAM IDC, form validation, success page |
+| Auth Integration (FR8-FR11)    | ✅  | Auth modal extension, return URL handling       |
+| Domain Management (FR12-FR15)  | ✅  | GitHub JSON source, 5-min cache, domain select  |
+| Security (FR16-FR20)           | ✅  | CSRF header, WAF rate limit, scoped IAM, OAC    |
+| Operational (FR21-FR24)        | ✅  | EventBridge → SNS → Chatbot alerting            |
+| Content (FR25-FR29)            | ✅  | Static pages, GOV.UK Design System              |
 
 **Non-Functional Requirements Coverage:**
 
-| NFR Category | Requirement | Architectural Support |
-|--------------|-------------|----------------------|
-| Performance | < 2s page load | Static pages + esbuild bundling |
-| Performance | < 500ms domain API | In-memory cache + minimal Lambda cold start |
-| Performance | < 3s signup API | Direct IAM IDC call, no DB |
-| Security | TLS 1.2+ | CloudFront default |
-| Security | CSRF | Custom header X-NDX-Request (ADR-045) |
-| Security | WAF rate limit | 1 req/min/IP (ADR-046) |
-| Security | OAC + SigV4 | CloudFront behaviour config |
-| Accessibility | WCAG 2.2 AA | GOV.UK Design System + Playwright tests |
+| NFR Category  | Requirement        | Architectural Support                       |
+| ------------- | ------------------ | ------------------------------------------- |
+| Performance   | < 2s page load     | Static pages + esbuild bundling             |
+| Performance   | < 500ms domain API | In-memory cache + minimal Lambda cold start |
+| Performance   | < 3s signup API    | Direct IAM IDC call, no DB                  |
+| Security      | TLS 1.2+           | CloudFront default                          |
+| Security      | CSRF               | Custom header X-NDX-Request (ADR-045)       |
+| Security      | WAF rate limit     | 1 req/min/IP (ADR-046)                      |
+| Security      | OAC + SigV4        | CloudFront behaviour config                 |
+| Accessibility | WCAG 2.2 AA        | GOV.UK Design System + Playwright tests     |
 
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
+
 - ✅ All 12 ADRs documented (040-052)
 - ✅ Technology versions verified (TypeScript 5.7.2, CDK 2.215.0, Node.js 20.x)
 - ✅ Concrete examples provided for API responses, error handling, logging
 
 **Structure Completeness:**
+
 - ✅ All 16 files defined with purposes
 - ✅ Directory structure with clear boundaries
 - ✅ Integration points mapped (4 defined)
 
 **Pattern Completeness:**
+
 - ✅ All 12 conflict points addressed
 - ✅ Naming conventions comprehensive (files, code, API, database)
 - ✅ Process patterns defined (error handling, loading states, validation)
@@ -814,34 +876,40 @@ No version conflicts detected.
 **Critical Gaps:** None identified
 
 **Important Gaps (Non-blocking):**
+
 1. E2E test scenarios not detailed - defer to stories
 2. CloudWatch dashboard/alarms not specified - defer to operational story
 
 **Nice-to-Have:**
+
 1. Local development Lambda testing approach
 2. Domain allowlist update workflow
 
 ### Architecture Completeness Checklist
 
 **✅ Requirements Analysis**
+
 - [x] Project context thoroughly analyzed (29 FRs, 23 NFRs)
 - [x] Scale and complexity assessed (medium)
 - [x] Technical constraints identified (brownfield, GOV.UK, IAM IDC)
 - [x] Cross-cutting concerns mapped (6 identified)
 
 **✅ Architectural Decisions**
+
 - [x] 12 ADRs documented (040-052)
 - [x] Technology stack fully specified with versions
 - [x] Integration patterns defined (4 integration points)
 - [x] Performance considerations addressed
 
 **✅ Implementation Patterns**
+
 - [x] Naming conventions established (5 categories)
 - [x] Structure patterns defined (frontend + Lambda)
 - [x] Communication patterns specified (API + events)
 - [x] Process patterns documented (errors, loading, validation)
 
 **✅ Project Structure**
+
 - [x] Complete directory structure defined (16 files)
 - [x] Component boundaries established (client/Lambda/shared)
 - [x] Integration points mapped
@@ -854,6 +922,7 @@ No version conflicts detected.
 **Confidence Level:** HIGH
 
 **Key Strengths:**
+
 - Brownfield extension with proven patterns
 - Simplified structure (First Principles Analysis)
 - Shared types prevent client/Lambda drift
@@ -861,6 +930,7 @@ No version conflicts detected.
 - Cross-account alerting reuses existing Chatbot
 
 **Areas for Future Enhancement:**
+
 - CloudWatch dashboard for signup metrics
 - Tiered alerting (reduce noise)
 - Domain request workflow automation
@@ -868,6 +938,7 @@ No version conflicts detected.
 ### Implementation Handoff
 
 **AI Agent Guidelines:**
+
 1. Follow all architectural decisions exactly as documented
 2. Use implementation patterns consistently across all components
 3. Respect project structure and boundaries (`src/signup/`, `infra-signup/`)
@@ -875,6 +946,7 @@ No version conflicts detected.
 5. Refer to this document for all architectural questions
 
 **First Implementation Priority:**
+
 ```bash
 # Scaffold the new directories
 mkdir -p src/signup
@@ -894,6 +966,7 @@ mkdir -p tests/e2e
 ### Final Architecture Deliverables
 
 **Complete Architecture Document**
+
 - All architectural decisions documented with specific versions
 - Implementation patterns ensuring AI agent consistency
 - Complete project structure with all files and directories
@@ -901,12 +974,14 @@ mkdir -p tests/e2e
 - Validation confirming coherence and completeness
 
 **Implementation Ready Foundation**
+
 - 12 architectural decisions made (ADR-040 through ADR-052)
 - 12 implementation patterns defined
 - 16 files specified across 3 component areas
 - 29 FRs + 23 NFRs fully supported
 
 **AI Agent Implementation Guide**
+
 - Technology stack with verified versions (TypeScript 5.7.2, CDK 2.215.0, Node.js 20.x)
 - Consistency rules that prevent implementation conflicts
 - Project structure with clear boundaries (`src/signup/`, `infra-signup/`)
@@ -926,18 +1001,21 @@ mkdir -p tests/e2e
 ### Quality Assurance Checklist
 
 **✅ Architecture Coherence**
+
 - [x] All decisions work together without conflicts
 - [x] Technology choices are compatible
 - [x] Patterns support the architectural decisions
 - [x] Structure aligns with all choices
 
 **✅ Requirements Coverage**
+
 - [x] All 29 functional requirements supported
 - [x] All 23 non-functional requirements addressed
 - [x] 6 cross-cutting concerns handled
 - [x] 4 integration points defined
 
 **✅ Implementation Readiness**
+
 - [x] Decisions are specific and actionable
 - [x] Patterns prevent agent conflicts
 - [x] Structure is complete (16 files)
@@ -950,4 +1028,3 @@ mkdir -p tests/e2e
 **Next Phase:** Create Epics & Stories using this architecture as the technical foundation.
 
 **Document Maintenance:** Update this architecture when major technical decisions are made during implementation.
-

@@ -17,7 +17,7 @@ So that **I can create my NDX account quickly** (FR1, FR2, FR3, FR14, FR29).
    - Last name text input
    - Email local part text input + "@" + domain dropdown
    - Green "Continue" button
-   **And** the page loads within 2 seconds (NFR1)
+     **And** the page loads within 2 seconds (NFR1)
 
 2. **Given** the form is displayed
    **When** I focus on the domain dropdown
@@ -162,7 +162,7 @@ So that **I can create my NDX account quickly** (FR1, FR2, FR3, FR14, FR29).
 <!-- Text Input Pattern -->
 <div class="govuk-form-group">
   <label class="govuk-label" for="first-name">First name</label>
-  <input class="govuk-input" id="first-name" name="firstName" type="text">
+  <input class="govuk-input" id="first-name" name="firstName" type="text" />
 </div>
 
 <!-- Error State Pattern -->
@@ -171,8 +171,14 @@ So that **I can create my NDX account quickly** (FR1, FR2, FR3, FR14, FR29).
   <p id="first-name-error" class="govuk-error-message">
     <span class="govuk-visually-hidden">Error:</span> Enter your first name
   </p>
-  <input class="govuk-input govuk-input--error" id="first-name" name="firstName"
-         type="text" aria-describedby="first-name-error" aria-invalid="true">
+  <input
+    class="govuk-input govuk-input--error"
+    id="first-name"
+    name="firstName"
+    type="text"
+    aria-describedby="first-name-error"
+    aria-invalid="true"
+  />
 </div>
 
 <!-- Error Summary Pattern -->
@@ -189,9 +195,7 @@ So that **I can create my NDX account quickly** (FR1, FR2, FR3, FR14, FR29).
 <button class="govuk-button" data-module="govuk-button">Continue</button>
 
 <!-- Loading State -->
-<button class="govuk-button" data-module="govuk-button" disabled aria-disabled="true">
-  Creating account...
-</button>
+<button class="govuk-button" data-module="govuk-button" disabled aria-disabled="true">Creating account...</button>
 ```
 
 ### Split Email Input Implementation
@@ -202,8 +206,13 @@ So that **I can create my NDX account quickly** (FR1, FR2, FR3, FR14, FR29).
 <div class="govuk-form-group">
   <label class="govuk-label" for="email-local">Email address</label>
   <div class="ndx-email-input">
-    <input class="govuk-input ndx-email-input__local" id="email-local"
-           name="emailLocal" type="text" autocomplete="email">
+    <input
+      class="govuk-input ndx-email-input__local"
+      id="email-local"
+      name="emailLocal"
+      type="text"
+      autocomplete="email"
+    />
     <span class="ndx-email-input__at" aria-hidden="true">@</span>
     <select class="govuk-select ndx-email-input__domain" id="email-domain" name="domain">
       <option value="">Select your organisation</option>
@@ -273,11 +282,11 @@ function initDomainAutocomplete(domains: DomainInfo[]): void {
     showAllValues: true,
     defaultValue: "",
     source: (query: string, populateResults: (results: string[]) => void) => {
-      const filtered = domains.filter(d =>
-        d.domain.toLowerCase().includes(query.toLowerCase()) ||
-        d.orgName.toLowerCase().includes(query.toLowerCase())
+      const filtered = domains.filter(
+        (d) =>
+          d.domain.toLowerCase().includes(query.toLowerCase()) || d.orgName.toLowerCase().includes(query.toLowerCase()),
       )
-      populateResults(filtered.map(d => `${d.domain} - ${d.orgName}`))
+      populateResults(filtered.map((d) => `${d.domain} - ${d.orgName}`))
     },
   })
 }
@@ -286,6 +295,7 @@ function initDomainAutocomplete(domains: DomainInfo[]): void {
 **Option 2: Native Select with Filter (Simpler, WCAG compliant)**
 
 If accessible-autocomplete adds complexity, a native `<select>` with ~340 options is still usable:
+
 - Pre-sort alphabetically by organisation name
 - Browser native filtering works (type first letters)
 - Fully keyboard accessible out of the box
@@ -356,7 +366,7 @@ async function handleFormSubmit(event: Event): Promise<void> {
   const errors = validateForm(form)
   if (errors.length > 0) {
     showErrorSummary(errors)
-    errors.forEach(e => showInlineError(e.fieldId, e.message))
+    errors.forEach((e) => showInlineError(e.fieldId, e.message))
     return
   }
 
@@ -465,22 +475,23 @@ src/assets/stylesheets/
 
 Use exact error messages:
 
-| Scenario | Message |
-|----------|---------|
-| First name empty | "Enter your first name" |
-| Last name empty | "Enter your last name" |
-| Email empty | "Enter your email address" |
-| Domain not selected | "Select your organisation" |
-| Name too long | "[Field] must be 100 characters or less" |
-| Invalid characters | "[Field] must not contain special characters" |
-| DOMAIN_NOT_ALLOWED | "Your organisation isn't registered yet. Contact ndx@dsit.gov.uk to request access." |
-| USER_EXISTS | "Welcome back! You already have an account." |
-| SERVER_ERROR | "Something went wrong. Try again." |
-| RATE_LIMITED | "Too many attempts. Try again in 1 minute." |
+| Scenario            | Message                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| First name empty    | "Enter your first name"                                                              |
+| Last name empty     | "Enter your last name"                                                               |
+| Email empty         | "Enter your email address"                                                           |
+| Domain not selected | "Select your organisation"                                                           |
+| Name too long       | "[Field] must be 100 characters or less"                                             |
+| Invalid characters  | "[Field] must not contain special characters"                                        |
+| DOMAIN_NOT_ALLOWED  | "Your organisation isn't registered yet. Contact ndx@dsit.gov.uk to request access." |
+| USER_EXISTS         | "Welcome back! You already have an account."                                         |
+| SERVER_ERROR        | "Something went wrong. Try again."                                                   |
+| RATE_LIMITED        | "Too many attempts. Try again in 1 minute."                                          |
 
 ### Testing Requirements
 
 **Unit tests (main.test.ts):**
+
 - Form validation with valid data
 - Form validation with empty fields
 - Form validation with invalid characters
@@ -493,6 +504,7 @@ Use exact error messages:
 - USER_EXISTS redirect handling
 
 **E2E tests (signup.spec.ts):**
+
 - Page loads within 2 seconds
 - Form renders with all fields
 - Domain dropdown is searchable
@@ -505,6 +517,7 @@ Use exact error messages:
 ### Previous Story Learnings
 
 **From Story 1.4 code review:**
+
 - Add prototype pollution defense to any JSON parsing
 - Add timing attack mitigation (random delays) on server - not needed client-side
 - Validate input lengths before processing
@@ -512,6 +525,7 @@ Use exact error messages:
 - Never log PII (email, names)
 
 **From Story 1.3 implementation:**
+
 - Add AbortController timeout to fetch calls
 - Validate data structure, not just presence
 - Cache failures should not throw - return stale data
@@ -552,7 +566,7 @@ Claude Opus 4.5
 
 - TypeScript compilation: PASS
 - Signup unit tests: 84 passed (types.test.ts, api.test.ts, main.test.ts)
-- Eleventy build: SUCCESS (signup page built at /_site/signup/index.html)
+- Eleventy build: SUCCESS (signup page built at /\_site/signup/index.html)
 - Bundle size: 54KB (signup.bundle.js)
 
 ### Completion Notes List
@@ -578,12 +592,14 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `src/_includes/layouts/signup-page.njk`
 - `src/signup.md`
 - `src/signup/api.test.ts`
 - `src/signup/main.test.ts`
 
 **Modified:**
+
 - `eleventy.config.js`
 - `src/assets/styles.scss`
 - `src/signup/api.ts`
@@ -603,15 +619,15 @@ Claude Opus 4.5
 
 ### Issues Found and Fixed
 
-| # | Severity | Issue | Location | Fix |
-|---|----------|-------|----------|-----|
-| 1 | HIGH | Domain dropdown not searchable (AC2 partial) | `main.ts:74-90` | **DEFERRED** - Native select used intentionally per Dev Notes Option 2; browser type-to-jump sufficient for MVP |
-| 2 | MEDIUM | Console.error logged on domain load failure | `main.ts:61` | ✅ FIXED - Removed console.error, error already shown via showErrorSummary |
-| 3 | MEDIUM | Missing email local part max length validation | `main.ts:128-130` | ✅ FIXED - Added 64 char limit per RFC 5321 |
-| 4 | MEDIUM | Missing email local part character validation | `main.ts:128-130` | ✅ FIXED - Added FORBIDDEN_NAME_CHARS validation |
-| 5 | LOW | Missing integration tests for form submission | `main.test.ts` | **DEFERRED** - handleFormSubmit is private; E2E tests will cover this |
-| 6 | LOW | Hardcoded color value in CSS | `styles.scss:528` | ✅ FIXED - Added comment documenting GOV.UK colour |
-| 7 | LOW | Email domain error message placed after element | `signup.md:62-65` | ✅ FIXED - Moved error container before input per GOV.UK pattern |
+| #   | Severity | Issue                                           | Location          | Fix                                                                                                             |
+| --- | -------- | ----------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | HIGH     | Domain dropdown not searchable (AC2 partial)    | `main.ts:74-90`   | **DEFERRED** - Native select used intentionally per Dev Notes Option 2; browser type-to-jump sufficient for MVP |
+| 2   | MEDIUM   | Console.error logged on domain load failure     | `main.ts:61`      | ✅ FIXED - Removed console.error, error already shown via showErrorSummary                                      |
+| 3   | MEDIUM   | Missing email local part max length validation  | `main.ts:128-130` | ✅ FIXED - Added 64 char limit per RFC 5321                                                                     |
+| 4   | MEDIUM   | Missing email local part character validation   | `main.ts:128-130` | ✅ FIXED - Added FORBIDDEN_NAME_CHARS validation                                                                |
+| 5   | LOW      | Missing integration tests for form submission   | `main.test.ts`    | **DEFERRED** - handleFormSubmit is private; E2E tests will cover this                                           |
+| 6   | LOW      | Hardcoded color value in CSS                    | `styles.scss:528` | ✅ FIXED - Added comment documenting GOV.UK colour                                                              |
+| 7   | LOW      | Email domain error message placed after element | `signup.md:62-65` | ✅ FIXED - Moved error container before input per GOV.UK pattern                                                |
 
 ### Code Review Fixes Applied
 
@@ -644,26 +660,28 @@ Build:       SUCCESS
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Notes |
-|----|--------|-------|
-| AC1: GOV.UK form with fields + Continue button | ✅ PASS | All fields present, correct styling |
+| AC                                                | Status     | Notes                                                    |
+| ------------------------------------------------- | ---------- | -------------------------------------------------------- |
+| AC1: GOV.UK form with fields + Continue button    | ✅ PASS    | All fields present, correct styling                      |
 | AC2: Domain dropdown searchable with ~340 domains | ⚠️ PARTIAL | Native select used (type-to-jump only); deferred for MVP |
-| AC3: Display "domain - Org Name" format | ✅ PASS | `main.ts:87` |
-| AC4: Error summary + inline errors | ✅ PASS | Full GOV.UK error pattern implemented |
-| AC5: Keyboard navigation + WCAG 2.2 AA | ✅ PASS | Native controls accessible; E2E tests deferred |
-| AC6: Loading state "Creating account..." | ✅ PASS | `setLoadingState` function |
-| AC7: API error handling | ✅ PASS | Error displayed in GOV.UK summary |
+| AC3: Display "domain - Org Name" format           | ✅ PASS    | `main.ts:87`                                             |
+| AC4: Error summary + inline errors                | ✅ PASS    | Full GOV.UK error pattern implemented                    |
+| AC5: Keyboard navigation + WCAG 2.2 AA            | ✅ PASS    | Native controls accessible; E2E tests deferred           |
+| AC6: Loading state "Creating account..."          | ✅ PASS    | `setLoadingState` function                               |
+| AC7: API error handling                           | ✅ PASS    | Error displayed in GOV.UK summary                        |
 
 ### Review Outcome
 
 **APPROVED WITH NOTES**
 
 Story 1.5 passes code review. 5 issues were fixed directly:
+
 - Security: Added email local part validation (length + forbidden chars)
 - UX: Corrected error message placement for screen readers
 - Code quality: Removed unnecessary console.error
 
 2 items deferred:
+
 - Domain search/filter feature - Native select acceptable for MVP per Dev Notes
 - handleFormSubmit integration tests - E2E tests will cover this flow
 

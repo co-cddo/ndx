@@ -63,16 +63,19 @@ So that **I can immediately try the product I was interested in** (FR7, FR10, FR
 ### Previous Story Intelligence (Story 2.1)
 
 **Key Learnings:**
+
 - Auth choice modal calls `storeReturnURL()` before redirect (implemented in Story 2.1)
 - Return URL security already handled by `sanitizeReturnUrl()` in url-validator.ts
 - Focus trap and ARIA patterns work correctly in auth-choice-modal.ts
 
 **Established Patterns:**
+
 - Return URL stored in sessionStorage key `auth-return-to` (see constants.ts)
 - URL validation via `sanitizeReturnUrl()` in url-validator.ts
 - OAuth callback handled by `handleOAuthCallback()` in oauth-flow.ts
 
 **Files From Previous Stories:**
+
 - `src/try/constants.ts` - JWT_TOKEN_KEY, RETURN_URL_KEY, CALLBACK_PATH
 - `src/try/auth/oauth-flow.ts` - storeReturnURL, getReturnURL, clearReturnURL
 - `src/try/utils/url-validator.ts` - isValidReturnUrl, sanitizeReturnUrl
@@ -81,22 +84,23 @@ So that **I can immediately try the product I was interested in** (FR7, FR10, FR
 ### Architecture Requirements
 
 **From Architecture Document (ADR-042):**
+
 - Signup pages `/signup` and `/signup/success` must never be stored as return URLs
 - This prevents redirect loops and ensures users go back to meaningful pages
 
 **URL Blocklist Pattern:**
+
 ```typescript
 // In src/try/constants.ts
 export const RETURN_URL_BLOCKLIST = [
-  CALLBACK_PATH,           // /callback (existing)
-  "/signup",              // Signup form page
-  "/signup/success",      // Signup success page
+  CALLBACK_PATH, // /callback (existing)
+  "/signup", // Signup form page
+  "/signup/success", // Signup success page
 ]
 
 // In oauth-flow.ts storeReturnURL()
 const isBlocklisted = RETURN_URL_BLOCKLIST.some(
-  (blocked) => window.location.pathname === blocked ||
-               window.location.pathname === `${blocked}.html`
+  (blocked) => window.location.pathname === blocked || window.location.pathname === `${blocked}.html`,
 )
 if (isBlocklisted) return
 ```
@@ -104,6 +108,7 @@ if (isBlocklisted) return
 ### AWS Password Setup Flow
 
 **How AWS IAM Identity Center works:**
+
 1. User creates account via `/signup` → Lambda calls IAM IDC CreateUser API
 2. AWS sends email to user with password setup link
 3. User clicks link → AWS hosted password setup page
@@ -115,6 +120,7 @@ if (isBlocklisted) return
 ### Security Considerations
 
 **Existing Security Measures (url-validator.ts):**
+
 - 7-layer defense against redirect attacks
 - Rejects external domains, protocol-relative URLs, dangerous protocols
 - Validates same-origin for absolute URLs
@@ -140,11 +146,13 @@ tests/e2e/
 ### Testing Strategy
 
 **Unit Tests (Jest):**
+
 - Test storeReturnURL skips all blocklisted paths
 - Test getReturnURL with various stored values
 - Mock window.location.pathname for different scenarios
 
 **E2E Tests (Playwright):**
+
 - Navigate to product page → click Try → click Create account → verify sessionStorage
 - Navigate directly to /signup → complete flow → verify lands on homepage
 - Attempt to store /signup as return URL → verify it's not stored
@@ -190,6 +198,7 @@ Claude Opus 4.5
 ### File List
 
 **Modified:**
+
 - `src/try/constants.ts`
 - `src/try/auth/oauth-flow.ts`
 - `src/try/auth/oauth-flow.test.ts`
@@ -230,14 +239,14 @@ Claude Opus 4.5
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | E2E test verifies return URL stored when clicking Create account from product page |
-| AC2 | PASS | getReturnURL() returns `/` when no URL stored (existing implementation + tests) |
-| AC3 | PASS | 8 unit tests verify /signup, /signup/, /signup.html, /signup/success not stored |
+| AC  | Status     | Evidence                                                                                      |
+| --- | ---------- | --------------------------------------------------------------------------------------------- |
+| AC1 | PASS       | E2E test verifies return URL stored when clicking Create account from product page            |
+| AC2 | PASS       | getReturnURL() returns `/` when no URL stored (existing implementation + tests)               |
+| AC3 | PASS       | 8 unit tests verify /signup, /signup/, /signup.html, /signup/success not stored               |
 | AC4 | DOCUMENTED | AWS redirect depends on IAM IDC configuration - handleOAuthCallback() redirects to stored URL |
-| AC5 | PASS | Existing url-validator.ts 7-layer defense rejects external domains |
-| AC6 | PASS | RETURN_URL_BLOCKLIST includes /signup, /signup/success per ADR-042 |
+| AC5 | PASS       | Existing url-validator.ts 7-layer defense rejects external domains                            |
+| AC6 | PASS       | RETURN_URL_BLOCKLIST includes /signup, /signup/success per ADR-042                            |
 
 ### Review Outcome
 

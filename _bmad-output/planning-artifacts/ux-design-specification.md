@@ -21,12 +21,12 @@ Self-serve signup for NDX enabling government users to create accounts via AWS I
 
 ### Target Users
 
-| User Type | Representative | Context | Primary Goal |
-|-----------|---------------|---------|--------------|
-| **New User** | Sarah Chen, Digital Transformation Lead | Has 30 minutes, wants to evaluate cloud AI | Quick signup → sandbox access |
-| **Returning User** | Tom Okonkwo, IT Manager | Forgot he has account, tries to re-signup | Seamless redirect to login |
-| **Unlisted Domain** | James Webb, Digital Officer | New authority, domain not yet registered | Clear path to request access |
-| **Admin** | Marcus Thompson, Ops Lead | Monitors platform health | Visibility into all signups |
+| User Type           | Representative                          | Context                                    | Primary Goal                  |
+| ------------------- | --------------------------------------- | ------------------------------------------ | ----------------------------- |
+| **New User**        | Sarah Chen, Digital Transformation Lead | Has 30 minutes, wants to evaluate cloud AI | Quick signup → sandbox access |
+| **Returning User**  | Tom Okonkwo, IT Manager                 | Forgot he has account, tries to re-signup  | Seamless redirect to login    |
+| **Unlisted Domain** | James Webb, Digital Officer             | New authority, domain not yet registered   | Clear path to request access  |
+| **Admin**           | Marcus Thompson, Ops Lead               | Monitors platform health                   | Visibility into all signups   |
 
 ### Key Design Challenges
 
@@ -49,13 +49,13 @@ Three-field signup: email, domain (dropdown), and name. User submits, Lambda cre
 
 ### Platform Strategy
 
-| Aspect | Decision |
-|--------|----------|
-| Platform | Web only (GOV.UK Eleventy static site) |
-| Input method | Keyboard-primary (form input) |
-| Browser support | Chrome (primary), Edge (supported) |
-| Offline | Not required |
-| Device | Desktop-first, mobile-responsive |
+| Aspect          | Decision                               |
+| --------------- | -------------------------------------- |
+| Platform        | Web only (GOV.UK Eleventy static site) |
+| Input method    | Keyboard-primary (form input)          |
+| Browser support | Chrome (primary), Edge (supported)     |
+| Offline         | Not required                           |
+| Device          | Desktop-first, mobile-responsive       |
 
 ### Effortless Interactions
 
@@ -66,12 +66,12 @@ Three-field signup: email, domain (dropdown), and name. User submits, Lambda cre
 
 ### Critical Success Moments
 
-| Moment | Success | Failure |
-|--------|---------|---------|
-| Form submit | Clear confirmation, "check your email" | Unclear what happens next |
-| Domain selection | Easy to find their council | Scrolling through 340 options |
-| AWS handoff | User understands the email is from AWS | Confused by AWS branding |
-| Return to NDX | Back on original page, Try button works | Lost, starts over |
+| Moment           | Success                                 | Failure                       |
+| ---------------- | --------------------------------------- | ----------------------------- |
+| Form submit      | Clear confirmation, "check your email"  | Unclear what happens next     |
+| Domain selection | Easy to find their council              | Scrolling through 340 options |
+| AWS handoff      | User understands the email is from AWS  | Confused by AWS branding      |
+| Return to NDX    | Back on original page, Try button works | Lost, starts over             |
 
 ### Experience Principles
 
@@ -88,23 +88,23 @@ Three-field signup: email, domain (dropdown), and name. User submits, Lambda cre
 
 ### Emotional Journey Mapping
 
-| Stage | Desired Feeling | Design Implication |
-|-------|-----------------|-------------------|
-| Auth modal appears | Clarity | Two clear options: Sign in / Create account |
-| Signup form | Confidence | GOV.UK styling = official and safe |
-| Domain dropdown | Recognition | "They know my council exists" |
-| Form submit | Certainty | Clear "done" state, explicit next step |
-| AWS email arrives | Trust | Messaging prepared them for AWS branding |
-| Return to NDX | Accomplishment | Back where started, Try button works |
+| Stage              | Desired Feeling | Design Implication                          |
+| ------------------ | --------------- | ------------------------------------------- |
+| Auth modal appears | Clarity         | Two clear options: Sign in / Create account |
+| Signup form        | Confidence      | GOV.UK styling = official and safe          |
+| Domain dropdown    | Recognition     | "They know my council exists"               |
+| Form submit        | Certainty       | Clear "done" state, explicit next step      |
+| AWS email arrives  | Trust           | Messaging prepared them for AWS branding    |
+| Return to NDX      | Accomplishment  | Back where started, Try button works        |
 
 ### Micro-Emotions
 
-| Target | Avoid |
-|--------|-------|
-| Confidence - "I know what to do" | Confusion - "Who sent this email?" |
-| Trust - "This is official GOV.UK" | Skepticism - "Is this legit?" |
-| Accomplishment - "I did it" | Frustration - "Where did my page go?" |
-| Recognition - "They know my org" | Anonymity - "Generic government form" |
+| Target                            | Avoid                                 |
+| --------------------------------- | ------------------------------------- |
+| Confidence - "I know what to do"  | Confusion - "Who sent this email?"    |
+| Trust - "This is official GOV.UK" | Skepticism - "Is this legit?"         |
+| Accomplishment - "I did it"       | Frustration - "Where did my page go?" |
+| Recognition - "They know my org"  | Anonymity - "Generic government form" |
 
 ### Emotional Design Principles
 
@@ -117,11 +117,11 @@ Three-field signup: email, domain (dropdown), and name. User submits, Lambda cre
 
 ### Inspiring Products Analysis
 
-| Product | Strength | Key Pattern |
-|---------|----------|-------------|
-| GOV.UK Services | Progressive disclosure, one thing per page | Green "Continue", clear errors, summary pages |
-| Existing NDX Try | Auth modal, focus trap, return URL | Modal for auth choice, consistent styling |
-| Slack Signup | Email-first, domain recognition | Show organisation name on detection |
+| Product          | Strength                                   | Key Pattern                                   |
+| ---------------- | ------------------------------------------ | --------------------------------------------- |
+| GOV.UK Services  | Progressive disclosure, one thing per page | Green "Continue", clear errors, summary pages |
+| Existing NDX Try | Auth modal, focus trap, return URL         | Modal for auth choice, consistent styling     |
+| Slack Signup     | Email-first, domain recognition            | Show organisation name on detection           |
 
 ### Transferable UX Patterns
 
@@ -167,12 +167,12 @@ Mandatory for UK government services. Already implemented across NDX.
 
 ### Customization Strategy
 
-| Element | Approach |
-|---------|----------|
+| Element         | Approach                                                                            |
+| --------------- | ----------------------------------------------------------------------------------- |
 | Domain dropdown | `govuk-select` with autocomplete enhancement if 340 options causes usability issues |
-| Auth modal | Extend existing AUPModal pattern |
-| Success page | GOV.UK panel component |
-| Error states | Standard error summary pattern |
+| Auth modal      | Extend existing AUPModal pattern                                                    |
+| Success page    | GOV.UK panel component                                                              |
+| Error states    | Standard error summary pattern                                                      |
 
 ## Defining Experience
 
@@ -189,16 +189,17 @@ We deliver: 30-second form, instant email, AWS handles password, back to origina
 
 ### Success Criteria
 
-| Criteria | Target |
-|----------|--------|
-| Form completion | < 30 seconds |
-| Email arrival | < 60 seconds |
-| Total flow | < 2 minutes |
-| User feeling | "That was it?" |
+| Criteria        | Target         |
+| --------------- | -------------- |
+| Form completion | < 30 seconds   |
+| Email arrival   | < 60 seconds   |
+| Total flow      | < 2 minutes    |
+| User feeling    | "That was it?" |
 
 ### Pattern Analysis
 
 All established GOV.UK patterns. No novel UX required.
+
 - Standard text inputs for name fields
 - Split email: text input + domain dropdown
 - GOV.UK panel for success
@@ -207,6 +208,7 @@ All established GOV.UK patterns. No novel UX required.
 ### Experience Mechanics
 
 **Form Fields:**
+
 1. First name (text input)
 2. Last name (text input)
 3. Email local part (text input) @ Domain (dropdown with ~340 LA domains)
@@ -225,17 +227,18 @@ All established GOV.UK patterns. No novel UX required.
 
 GOV.UK colour palette (mandated). No custom colours.
 
-| Purpose | Token | Hex |
-|---------|-------|-----|
-| Links | `govuk-colour("blue")` | #1d70b8 |
-| Success/Buttons | `govuk-colour("green")` | #00703c |
-| Errors | `govuk-colour("red")` | #d4351c |
-| Focus | `govuk-colour("yellow")` | #ffdd00 |
-| Text | `govuk-colour("black")` | #0b0c0c |
+| Purpose         | Token                    | Hex     |
+| --------------- | ------------------------ | ------- |
+| Links           | `govuk-colour("blue")`   | #1d70b8 |
+| Success/Buttons | `govuk-colour("green")`  | #00703c |
+| Errors          | `govuk-colour("red")`    | #d4351c |
+| Focus           | `govuk-colour("yellow")` | #ffdd00 |
+| Text            | `govuk-colour("black")`  | #0b0c0c |
 
 ### Typography System
 
 GDS Transport font throughout. Standard GOV.UK type scale.
+
 - Page titles: 48px bold
 - H1: 36px bold
 - Body: 19px regular
@@ -260,12 +263,12 @@ Single direction: GOV.UK Design System patterns. No visual exploration needed - 
 
 ### Screen Inventory
 
-| Screen | Route | Purpose |
-|--------|-------|---------|
-| Auth modal | (overlay) | Sign in / Create account choice |
-| Signup form | `/signup` | Account creation form |
+| Screen       | Route             | Purpose                              |
+| ------------ | ----------------- | ------------------------------------ |
+| Auth modal   | (overlay)         | Sign in / Create account choice      |
+| Signup form  | `/signup`         | Account creation form                |
 | Success page | `/signup/success` | Confirmation + AWS handoff messaging |
-| Error states | (inline) | Validation errors with summary |
+| Error states | (inline)          | Validation errors with summary       |
 
 ### Key Layout Decisions
 
@@ -277,14 +280,14 @@ Single direction: GOV.UK Design System patterns. No visual exploration needed - 
 
 ### Component Choices
 
-| Component | GOV.UK Pattern |
-|-----------|----------------|
-| Text inputs | `govuk-input` |
+| Component       | GOV.UK Pattern                                          |
+| --------------- | ------------------------------------------------------- |
+| Text inputs     | `govuk-input`                                           |
 | Domain dropdown | `govuk-select` (with accessible autocomplete if needed) |
-| Submit button | `govuk-button` (green) |
-| Success panel | `govuk-panel--confirmation` |
-| Error summary | `govuk-error-summary` |
-| Inline errors | `govuk-error-message` |
+| Submit button   | `govuk-button` (green)                                  |
+| Success panel   | `govuk-panel--confirmation`                             |
+| Error summary   | `govuk-error-summary`                                   |
+| Inline errors   | `govuk-error-message`                                   |
 
 ## User Journey Flows
 
@@ -293,6 +296,7 @@ Single direction: GOV.UK Design System patterns. No visual exploration needed - 
 **Entry:** Product page → Try button → Auth modal → Create account
 
 **Flow:**
+
 1. Enter first name, last name
 2. Enter email local part, select domain
 3. Submit → Lambda creates IAM IDC account
@@ -322,6 +326,7 @@ flowchart TD
 **Entry:** Product page → Try button → Auth modal → Create account
 
 **Flow:**
+
 1. Enter details, submit
 2. Lambda detects existing email
 3. Silent redirect to /login with "Welcome back" message
@@ -344,6 +349,7 @@ flowchart TD
 **Entry:** /signup page
 
 **Flow:**
+
 1. Enter name, email local part
 2. Domain not in dropdown
 3. See inline message: "Domain not listed? Contact ndx@dsit.gov.uk"
@@ -356,6 +362,7 @@ flowchart TD
 **Entry:** Account creation event
 
 **Flow:**
+
 1. EventBridge → Lambda → Slack notification
 2. Admin reviews alerts in #ndx-signups
 3. Investigate anomalies via IAM Identity Center console
@@ -364,18 +371,19 @@ flowchart TD
 
 ### Flow Patterns
 
-| Pattern | Usage |
-|---------|-------|
-| Silent redirect | Existing user detection - no error, just redirect |
-| Inline fallback | Unlisted domain - contact link visible, not buried |
-| Numbered next steps | Success page - clear what happens next |
-| Error summary + inline | Validation failures |
+| Pattern                | Usage                                              |
+| ---------------------- | -------------------------------------------------- |
+| Silent redirect        | Existing user detection - no error, just redirect  |
+| Inline fallback        | Unlisted domain - contact link visible, not buried |
+| Numbered next steps    | Success page - clear what happens next             |
+| Error summary + inline | Validation failures                                |
 
 ## Component Strategy
 
 ### Design System Components
 
 All core components from GOV.UK Design System:
+
 - `govuk-input` - First name, last name, email local part
 - `govuk-select` - Domain dropdown (340 options)
 - `govuk-button` - Continue button (green)
@@ -387,12 +395,14 @@ All core components from GOV.UK Design System:
 ### Custom Components
 
 **1. Split Email Input**
+
 - Fieldset containing text input + "@" + domain dropdown
 - Logical grouping for accessibility
 - Single error message for combined validation
 - GOV.UK width classes for inline layout
 
 **2. Auth Choice Modal (extend existing)**
+
 - Extend AUPModal pattern from Try feature
 - Two CTA buttons: "Sign in" / "Create account"
 - Same focus trap and accessibility patterns
@@ -406,22 +416,22 @@ All core components from GOV.UK Design System:
 
 ### Accessibility Requirements
 
-| Component | ARIA | Keyboard |
-|-----------|------|----------|
-| Split email | `aria-describedby` for group error | Tab between inputs |
-| Domain dropdown | Native select | Arrow keys, type-ahead |
-| Auth modal | `role="dialog"`, `aria-modal` | Focus trap, Esc to close |
-| Error summary | `role="alert"` | Focus on page load |
+| Component       | ARIA                               | Keyboard                 |
+| --------------- | ---------------------------------- | ------------------------ |
+| Split email     | `aria-describedby` for group error | Tab between inputs       |
+| Domain dropdown | Native select                      | Arrow keys, type-ahead   |
+| Auth modal      | `role="dialog"`, `aria-modal`      | Focus trap, Esc to close |
+| Error summary   | `role="alert"`                     | Focus on page load       |
 
 ## UX Consistency Patterns
 
 ### Button Patterns
 
-| Type | Style | Usage |
-|------|-------|-------|
-| Primary | Green `govuk-button` | Main action (Continue, Sign in) |
-| Secondary | Grey `govuk-button--secondary` | Alternative actions |
-| Link | Text link | Inline navigation |
+| Type      | Style                          | Usage                           |
+| --------- | ------------------------------ | ------------------------------- |
+| Primary   | Green `govuk-button`           | Main action (Continue, Sign in) |
+| Secondary | Grey `govuk-button--secondary` | Alternative actions             |
+| Link      | Text link                      | Inline navigation               |
 
 Rules: One primary per page. Never disable - show errors instead.
 
@@ -437,12 +447,12 @@ Server-side: Domain allowlist, existing user check
 
 ### Feedback Patterns
 
-| State | Component | Usage |
-|-------|-----------|-------|
-| Success | `govuk-panel--confirmation` | Account created |
-| Error | `govuk-error-summary` | Validation failures |
-| Info | `govuk-inset-text` | Fallback paths |
-| Loading | Button text change | Form submission |
+| State   | Component                   | Usage               |
+| ------- | --------------------------- | ------------------- |
+| Success | `govuk-panel--confirmation` | Account created     |
+| Error   | `govuk-error-summary`       | Validation failures |
+| Info    | `govuk-inset-text`          | Fallback paths      |
+| Loading | Button text change          | Form submission     |
 
 ### Modal Patterns
 
@@ -463,10 +473,10 @@ On error: Button returns to original text.
 
 Desktop-first, mobile-responsive. GOV.UK Design System handles breakpoints.
 
-| Device | Layout |
-|--------|--------|
-| Desktop | Two-thirds width form |
-| Mobile | Full-width, stacked inputs |
+| Device  | Layout                     |
+| ------- | -------------------------- |
+| Desktop | Two-thirds width form      |
+| Mobile  | Full-width, stacked inputs |
 
 Split email stacks vertically on mobile: local part → @ → domain dropdown.
 
@@ -479,13 +489,13 @@ No custom breakpoints required.
 
 **Compliance:** WCAG 2.2 AA (mandatory - Public Sector Bodies Accessibility Regulations)
 
-| Requirement | Implementation |
-|-------------|----------------|
-| Colour contrast | GOV.UK palette (compliant) |
-| Focus indicators | 3px yellow outline |
-| Keyboard | Tab navigation, Enter submit |
-| Screen readers | Labels, fieldsets, `role="alert"` |
-| Touch targets | 44x44px minimum |
+| Requirement      | Implementation                    |
+| ---------------- | --------------------------------- |
+| Colour contrast  | GOV.UK palette (compliant)        |
+| Focus indicators | 3px yellow outline                |
+| Keyboard         | Tab navigation, Enter submit      |
+| Screen readers   | Labels, fieldsets, `role="alert"` |
+| Touch targets    | 44x44px minimum                   |
 
 ### Testing Strategy
 

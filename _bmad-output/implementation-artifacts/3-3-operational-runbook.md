@@ -45,11 +45,13 @@ So that **I can effectively respond to incidents and support requests** (FR22, F
 ### Previous Story Intelligence (Story 3.2)
 
 **Key Learnings:**
+
 - WAF WebACL deployed to us-east-1 (NdxWaf stack)
 - WAF logs in CloudWatch: `aws-waf-logs-ndx-signup`
 - Manual step required to associate WAF with CloudFront
 
 **CDK Stack Outputs:**
+
 - `SignupAlertsTopicArn` - SNS topic for Slack alerts
 - `CreateUserRuleArn` - EventBridge rule ARN
 - `WebAclArn` - WAF WebACL ARN for CloudFront association
@@ -57,11 +59,13 @@ So that **I can effectively respond to incidents and support requests** (FR22, F
 ### Log Group Locations
 
 **Signup Lambda Logs:**
+
 - Log Group: `/aws/lambda/ndx-signup`
 - Region: ISB account (955063685555), eu-west-2
 - Retention: 90 days
 
 **WAF Logs:**
+
 - Log Group: `aws-waf-logs-ndx-signup`
 - Region: us-east-1 (CloudFront region)
 - Retention: 90 days
@@ -69,6 +73,7 @@ So that **I can effectively respond to incidents and support requests** (FR22, F
 ### CloudWatch Insights Queries
 
 **Filter by Correlation ID:**
+
 ```
 fields @timestamp, @message
 | filter @message like /CORRELATION_ID_HERE/
@@ -77,6 +82,7 @@ fields @timestamp, @message
 ```
 
 **Filter by Email Domain:**
+
 ```
 fields @timestamp, @message
 | filter @message like /\.gov\.uk/
@@ -85,6 +91,7 @@ fields @timestamp, @message
 ```
 
 **WAF Rate Limited IPs:**
+
 ```
 fields @timestamp, httpRequest.clientIp, action
 | filter action = "BLOCK"
@@ -129,6 +136,7 @@ Claude Opus 4.5
 ### File List
 
 **Created:**
+
 - `docs/operations/signup-runbook.md`
 
 ---
@@ -161,12 +169,12 @@ N/A - Documentation story.
 
 ### Acceptance Criteria Verification
 
-| AC | Status | Evidence |
-|----|--------|----------|
-| AC1 | PASS | Lambda log group, CloudWatch Insights queries documented |
-| AC2 | PASS | WAF logs, rate-limited IP queries, CloudFront association documented |
-| AC3 | PASS | IAM Identity Center lookup, deletion steps, escalation guidance documented |
-| AC4 | PASS | File at `docs/operations/signup-runbook.md` with console links |
+| AC  | Status | Evidence                                                                   |
+| --- | ------ | -------------------------------------------------------------------------- |
+| AC1 | PASS   | Lambda log group, CloudWatch Insights queries documented                   |
+| AC2 | PASS   | WAF logs, rate-limited IP queries, CloudFront association documented       |
+| AC3 | PASS   | IAM Identity Center lookup, deletion steps, escalation guidance documented |
+| AC4 | PASS   | File at `docs/operations/signup-runbook.md` with console links             |
 
 ### Review Outcome
 

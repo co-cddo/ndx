@@ -31,6 +31,7 @@ This research addresses the critical unknowns identified in the brainstorming se
 AWS released OAC for Lambda Function URLs in April 2024. This is the recommended method for securing Lambda origins behind CloudFront.
 
 **How OAC Works:**
+
 - CloudFront signs all origin requests using AWS Signature Version 4 (SigV4)
 - Lambda validates the signature, ensuring requests only come from your specific CloudFront distribution
 - No direct public access to the Lambda Function URL
@@ -38,11 +39,13 @@ AWS released OAC for Lambda Function URLs in April 2024. This is the recommended
 **Implementation Requirements:**
 
 1. **Lambda Function URL Configuration:**
+
    ```
    AuthType: AWS_IAM  (required for OAC)
    ```
 
 2. **Lambda Resource-Based Policy:**
+
    ```bash
    aws lambda add-permission \
      --statement-id "AllowCloudFrontServicePrincipal" \
@@ -64,9 +67,11 @@ AWS released OAC for Lambda Function URLs in April 2024. This is the recommended
    ```
 
 **Critical Note for POST Requests:**
+
 > For PUT or POST methods, users must compute SHA256 of the body and include the payload hash in the `x-amz-content-sha256` header. Lambda doesn't support unsigned payloads.
 
 This means the static form JavaScript must:
+
 1. Compute SHA256 hash of the request body
 2. Include it in the `x-amz-content-sha256` header
 3. Use proper SigV4 signing if making requests directly
@@ -74,6 +79,7 @@ This means the static form JavaScript must:
 **Alternative Consideration:** If client-side SigV4 signing is too complex, consider using API Gateway as an intermediary, which handles signing automatically.
 
 **Sources:**
+
 - https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html
 - https://aws.amazon.com/blogs/networking-and-content-delivery/secure-your-lambda-function-urls-using-amazon-cloudfront-origin-access-control/
 
@@ -88,36 +94,38 @@ This means the static form JavaScript must:
 Since there's no server-side session, use a combination of:
 
 ##### Layer 1: Custom Header Requirement
+
 Require a custom header that browsers cannot set cross-origin:
 
 ```javascript
 // Lambda validation
 export const handler = async (event) => {
-  const customHeader = event.headers['x-ndx-request'];
+  const customHeader = event.headers["x-ndx-request"]
 
-  if (!customHeader || customHeader !== 'signup-form') {
+  if (!customHeader || customHeader !== "signup-form") {
     return {
       statusCode: 403,
-      body: JSON.stringify({ error: 'Invalid request origin' })
-    };
+      body: JSON.stringify({ error: "Invalid request origin" }),
+    }
   }
   // Continue processing
-};
+}
 ```
 
 ```javascript
 // Client-side form submission
 fetch(lambdaUrl, {
-  method: 'POST',
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'X-NDX-Request': 'signup-form'  // Custom header
+    "Content-Type": "application/json",
+    "X-NDX-Request": "signup-form", // Custom header
   },
-  body: JSON.stringify({ email: userEmail })
-});
+  body: JSON.stringify({ email: userEmail }),
+})
 ```
 
 ##### Layer 2: Strict CORS Configuration
+
 Configure Lambda Function URL CORS to only allow your exact origin:
 
 ```javascript
@@ -131,29 +139,35 @@ Configure Lambda Function URL CORS to only allow your exact origin:
 ```
 
 ##### Layer 3: Request Timestamp Validation (Optional Enhancement)
+
 Include a timestamp in requests and reject if too old:
 
 ```javascript
 // Client includes timestamp
-const timestamp = Date.now();
-const body = { email, timestamp };
+const timestamp = Date.now()
+const body = { email, timestamp }
 
 // Lambda validates
-if (Date.now() - body.timestamp > 300000) { // 5 minutes
-  return { statusCode: 400, body: 'Request expired' };
+if (Date.now() - body.timestamp > 300000) {
+  // 5 minutes
+  return { statusCode: 400, body: "Request expired" }
 }
 ```
 
 ##### Layer 4: AWS WAF (Recommended)
+
 Deploy AWS WAF in front of CloudFront with rules for:
+
 - Rate limiting per IP
 - Known malicious patterns
 - Geographic restrictions (if appropriate)
 
 **AWS Control Tower Reference:**
+
 > [CT.LAMBDA.PR.6] Require an AWS Lambda function URL CORS policy to restrict access to specific origins
 
 **Sources:**
+
 - https://www.ranthebuilder.cloud/post/14-aws-lambda-security-best-practices-for-building-secure-serverless-applications
 - https://docs.aws.amazon.com/controltower/latest/controlreference/lambda-rules.html
 
@@ -180,19 +194,21 @@ For self-service Lambda-based user creation, use the **Identity Store API** (`id
 ```javascript
 // Required fields for IAM Identity Center
 const params = {
-  IdentityStoreId: 'd-xxxxxxxxxx',  // Your Identity Store ID
-  UserName: email,                   // Must be unique
+  IdentityStoreId: "d-xxxxxxxxxx", // Your Identity Store ID
+  UserName: email, // Must be unique
   DisplayName: `${givenName} ${familyName}`,
   Name: {
     GivenName: givenName,
-    FamilyName: familyName
+    FamilyName: familyName,
   },
-  Emails: [{
-    Value: email,
-    Primary: true,
-    Type: 'work'
-  }]
-};
+  Emails: [
+    {
+      Value: email,
+      Primary: true,
+      Type: "work",
+    },
+  ],
+}
 
 // Only 1 email allowed per user (IAM IDC constraint)
 ```
@@ -202,6 +218,7 @@ const params = {
 After `CreateUser` succeeds, the user exists but has no password. Two options:
 
 **Option A: Email-Based Password Reset (Recommended)**
+
 ```javascript
 // After creating user, programmatically trigger password reset
 // This sends an email from AWS with reset instructions
@@ -209,6 +226,7 @@ After `CreateUser` succeeds, the user exists but has no password. Two options:
 ```
 
 The admin (or Lambda with appropriate permissions) can:
+
 1. Send email with password reset link (automated by AWS)
 2. Generate one-time password and share manually
 
@@ -216,6 +234,7 @@ The admin (or Lambda with appropriate permissions) can:
 Not recommended for self-service as it requires secure delivery channel.
 
 **Recommended Flow for Self-Service:**
+
 1. Lambda creates user via `identitystore:CreateUser`
 2. Lambda triggers password reset via `sso-admin:ResetUserPassword` (if available) or admin notification
 3. User receives email from AWS with password setup link
@@ -229,11 +248,7 @@ Not recommended for self-service as it requires secure delivery channel.
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "identitystore:CreateUser",
-        "identitystore:CreateGroupMembership",
-        "identitystore:DescribeUser"
-      ],
+      "Action": ["identitystore:CreateUser", "identitystore:CreateGroupMembership", "identitystore:DescribeUser"],
       "Resource": "*",
       "Condition": {
         "StringEquals": {
@@ -243,9 +258,7 @@ Not recommended for self-service as it requires secure delivery channel.
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "sso-directory:CreateUser"
-      ],
+      "Action": ["sso-directory:CreateUser"],
       "Resource": "*"
     }
   ]
@@ -253,12 +266,15 @@ Not recommended for self-service as it requires secure delivery channel.
 ```
 
 **Critical Security Note:**
+
 > Lambda's permissions should be tightly scoped. It should ONLY be able to:
+>
 > - Create users in the specific Identity Store
 > - Add users to the specific `ndx_IsbUsersGroup`
 > - NOT modify permission sets or create admin users
 
 **Sources:**
+
 - https://docs.aws.amazon.com/singlesignon/latest/IdentityStoreAPIReference/API_CreateUser.html
 - https://docs.aws.amazon.com/singlesignon/latest/userguide/reset-password-for-user.html
 
@@ -271,6 +287,7 @@ Not recommended for self-service as it requires secure delivery channel.
 #### The Problem
 
 Gmail and many providers support:
+
 - **Plus addressing:** `john+tag@gmail.com` → delivered to `john@gmail.com`
 - **Dot ignoring (Gmail only):** `j.o.h.n@gmail.com` → delivered to `john@gmail.com`
 
@@ -280,18 +297,16 @@ One person could create unlimited accounts with different aliases.
 
 ```javascript
 function normalizeEmail(email) {
-  const [localPart, domain] = email.toLowerCase().split('@');
+  const [localPart, domain] = email.toLowerCase().split("@")
 
   // Strip plus addressing for all domains
-  const normalizedLocal = localPart.split('+')[0];
+  const normalizedLocal = localPart.split("+")[0]
 
   // For Gmail/Googlemail, also strip dots
-  const googleDomains = ['gmail.com', 'googlemail.com'];
-  const finalLocal = googleDomains.includes(domain)
-    ? normalizedLocal.replace(/\./g, '')
-    : normalizedLocal;
+  const googleDomains = ["gmail.com", "googlemail.com"]
+  const finalLocal = googleDomains.includes(domain) ? normalizedLocal.replace(/\./g, "") : normalizedLocal
 
-  return `${finalLocal}@${domain}`;
+  return `${finalLocal}@${domain}`
 }
 
 // Examples:
@@ -306,12 +321,13 @@ function normalizeEmail(email) {
    - `email_normalized`: For uniqueness checking
 
 2. **Check uniqueness on normalized form:**
+
    ```javascript
    // Before creating user
-   const normalized = normalizeEmail(email);
-   const exists = await checkExistingUser(normalized);
+   const normalized = normalizeEmail(email)
+   const exists = await checkExistingUser(normalized)
    if (exists) {
-     return { error: 'An account with this email already exists' };
+     return { error: "An account with this email already exists" }
    }
    ```
 
@@ -321,11 +337,13 @@ function normalizeEmail(email) {
 #### RFC 5321 Considerations
 
 Per RFC 5321:
+
 - Local-part is technically case-sensitive (but most servers ignore case)
 - Domain is case-insensitive
 - Best practice: Lowercase everything for comparison
 
 **Sources:**
+
 - RFC 5321 Section 2.3.11
 - https://en.wikipedia.org/wiki/Email_address
 
@@ -358,6 +376,7 @@ IAM Identity Center → CloudTrail → EventBridge → SNS/Chatbot → Slack
 ```
 
 **EventBridge Rule (CloudFormation):**
+
 ```yaml
 UserCreationAlertRule:
   Type: AWS::Events::Rule
@@ -382,6 +401,7 @@ UserCreationAlertRule:
 Configure AWS Chatbot to forward SNS notifications to your Slack channel for real-time alerting.
 
 **Sources:**
+
 - https://docs.aws.amazon.com/eventbridge/latest/ref/events-ref-sso-directory.html
 - https://docs.aws.amazon.com/singlesignon/latest/userguide/eventbridge-integration.html
 
@@ -394,11 +414,13 @@ Configure AWS Chatbot to forward SNS notifications to your Slack channel for rea
 #### Digital Identity and Attributes Trust Framework (DIATF)
 
 The UK government's framework for digital identity services sets minimum standards for:
+
 - Data security
 - User consent
 - Identity verification processes
 
 **Key Requirements:**
+
 - Organizations must be independently certified
 - Federated model (no centralized database)
 - User control over data sharing
@@ -407,13 +429,14 @@ The UK government's framework for digital identity services sets minimum standar
 
 The government's single sign-on solution is being rolled out:
 
-| Date | Milestone |
-|------|-----------|
-| October 2025 | Mandatory for Companies House WebFiling |
+| Date          | Milestone                                          |
+| ------------- | -------------------------------------------------- |
+| October 2025  | Mandatory for Companies House WebFiling            |
 | November 2025 | Mandatory identity verification for directors/PSCs |
-| End of 2027 | Full rollout across all government services |
+| End of 2027   | Full rollout across all government services        |
 
 **Technical Requirements:**
+
 - OAuth Authorization Code Flow
 - Identity request: `vtr=Cl.Cm.P2`
 - JWT signing: ES256 or RS256
@@ -421,11 +444,13 @@ The government's single sign-on solution is being rolled out:
 
 **Relevance to NDX:**
 Consider future integration with GOV.UK One Login for:
+
 - Government user authentication
 - Reduced friction for gov.uk domain users
 - Compliance alignment
 
 **Sources:**
+
 - https://www.gov.uk/government/collections/uk-digital-identity-and-attributes-trust-framework
 - https://docs.sign-in.service.gov.uk/integrate-with-integration-environment/authenticate-your-user/
 
@@ -455,11 +480,13 @@ The National Cyber Security Centre updated MFA guidance with key recommendations
 
 **Relevance to NDX:**
 IAM Identity Center supports MFA. Consider:
+
 - Enforcing MFA for all users in `ndx_IsbUsersGroup`
 - Using app-based TOTP as minimum standard
 - Future: FIDO2 support when available
 
 **Sources:**
+
 - https://www.ncsc.gov.uk/blog-post/not-all-types-mfa-created-equal
 - https://www.ncsc.gov.uk/collection/mfa-for-your-corporate-online-services
 
@@ -469,14 +496,14 @@ IAM Identity Center supports MFA. Consider:
 
 #### Lambda Security Checklist
 
-| Practice | Implementation |
-|----------|----------------|
-| **Least Privilege** | Lambda only gets `identitystore:CreateUser`, `CreateGroupMembership` |
-| **Resource-Based Policy** | Restrict invocation to specific CloudFront distribution |
-| **Input Validation** | Validate email format, domain against allowlist |
-| **Secrets Management** | Use Secrets Manager for any API keys |
-| **Logging** | CloudTrail for all IAM IDC operations |
-| **Rate Limiting** | WAF or application-level throttling |
+| Practice                  | Implementation                                                       |
+| ------------------------- | -------------------------------------------------------------------- |
+| **Least Privilege**       | Lambda only gets `identitystore:CreateUser`, `CreateGroupMembership` |
+| **Resource-Based Policy** | Restrict invocation to specific CloudFront distribution              |
+| **Input Validation**      | Validate email format, domain against allowlist                      |
+| **Secrets Management**    | Use Secrets Manager for any API keys                                 |
+| **Logging**               | CloudTrail for all IAM IDC operations                                |
+| **Rate Limiting**         | WAF or application-level throttling                                  |
 
 #### Cross-Account Security
 
@@ -485,23 +512,26 @@ For CloudFront (568672915267) → Lambda (955063685555):
 ```json
 {
   "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": {
-      "Service": "cloudfront.amazonaws.com"
-    },
-    "Action": "lambda:InvokeFunctionUrl",
-    "Resource": "arn:aws:lambda:us-west-2:955063685555:function:signup-lambda",
-    "Condition": {
-      "ArnLike": {
-        "AWS:SourceArn": "arn:aws:cloudfront::568672915267:distribution/EXXXXXXXXX"
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "cloudfront.amazonaws.com"
+      },
+      "Action": "lambda:InvokeFunctionUrl",
+      "Resource": "arn:aws:lambda:us-west-2:955063685555:function:signup-lambda",
+      "Condition": {
+        "ArnLike": {
+          "AWS:SourceArn": "arn:aws:cloudfront::568672915267:distribution/EXXXXXXXXX"
+        }
       }
     }
-  }]
+  ]
 }
 ```
 
 **Sources:**
+
 - https://docs.aws.amazon.com/lambda/latest/dg/permissions-function-cross-account.html
 - https://aws.amazon.com/blogs/security/four-ways-to-grant-cross-account-access-in-aws/
 
@@ -513,31 +543,31 @@ For CloudFront (568672915267) → Lambda (955063685555):
 
 #### 🔴 MUST DO (Before Launch)
 
-| # | Action | Technical Detail | Source |
-|---|--------|------------------|--------|
-| 1 | **Normalize emails** | Strip `+` suffix before uniqueness check | Section 1.4 |
-| 2 | **CSRF protection** | Custom header `X-NDX-Request` + strict CORS | Section 1.2 |
-| 3 | **EventBridge alerting** | Rule on `sso-directory:CreateUser` → Slack | Section 1.5 |
-| 4 | **OAC for Lambda** | Configure CloudFront OAC with SigV4 signing | Section 1.1 |
-| 5 | **AWS WAF** | Rate limiting, known attack patterns | Section 1.2 |
-| 6 | **Lambda permissions audit** | Verify least privilege for identitystore | Section 1.3 |
+| #   | Action                       | Technical Detail                            | Source      |
+| --- | ---------------------------- | ------------------------------------------- | ----------- |
+| 1   | **Normalize emails**         | Strip `+` suffix before uniqueness check    | Section 1.4 |
+| 2   | **CSRF protection**          | Custom header `X-NDX-Request` + strict CORS | Section 1.2 |
+| 3   | **EventBridge alerting**     | Rule on `sso-directory:CreateUser` → Slack  | Section 1.5 |
+| 4   | **OAC for Lambda**           | Configure CloudFront OAC with SigV4 signing | Section 1.1 |
+| 5   | **AWS WAF**                  | Rate limiting, known attack patterns        | Section 1.2 |
+| 6   | **Lambda permissions audit** | Verify least privilege for identitystore    | Section 1.3 |
 
 #### 🟢 COULD DO (Future Enhancement)
 
-| # | Action | Technical Detail | Source |
-|---|--------|------------------|--------|
-| 7 | **GOV.UK One Login integration** | OAuth OIDC for gov.uk users | Section 2.1 |
-| 8 | **Anomaly detection** | CloudWatch Insights for signup patterns | Section 1.5 |
-| 9 | **Self-expiring unverified accounts** | TTL-based cleanup | Brainstorming |
+| #   | Action                                | Technical Detail                        | Source        |
+| --- | ------------------------------------- | --------------------------------------- | ------------- |
+| 7   | **GOV.UK One Login integration**      | OAuth OIDC for gov.uk users             | Section 2.1   |
+| 8   | **Anomaly detection**                 | CloudWatch Insights for signup patterns | Section 1.5   |
+| 9   | **Self-expiring unverified accounts** | TTL-based cleanup                       | Brainstorming |
 
 #### ✅ RESOLVED (No Action Needed)
 
-| Item | Status |
-|------|--------|
-| **MFA enforcement** | Handled elsewhere |
-| **Kill switch** | Existing kill switches sufficient |
-| **Permission sets audit** | Confirmed working |
-| **Credential delivery** | CreateUser API email setting enabled |
+| Item                      | Status                               |
+| ------------------------- | ------------------------------------ |
+| **MFA enforcement**       | Handled elsewhere                    |
+| **Kill switch**           | Existing kill switches sufficient    |
+| **Permission sets audit** | Confirmed working                    |
+| **Credential delivery**   | CreateUser API email setting enabled |
 
 ---
 
@@ -568,33 +598,33 @@ For CloudFront (568672915267) → Lambda (955063685555):
  * Strips plus addressing and (for Gmail) dots
  */
 function normalizeEmail(email) {
-  if (!email || typeof email !== 'string') {
-    throw new Error('Invalid email');
+  if (!email || typeof email !== "string") {
+    throw new Error("Invalid email")
   }
 
-  const trimmed = email.trim().toLowerCase();
-  const atIndex = trimmed.lastIndexOf('@');
+  const trimmed = email.trim().toLowerCase()
+  const atIndex = trimmed.lastIndexOf("@")
 
   if (atIndex === -1) {
-    throw new Error('Invalid email format');
+    throw new Error("Invalid email format")
   }
 
-  let localPart = trimmed.substring(0, atIndex);
-  const domain = trimmed.substring(atIndex + 1);
+  let localPart = trimmed.substring(0, atIndex)
+  const domain = trimmed.substring(atIndex + 1)
 
   // Strip plus addressing (universal)
-  const plusIndex = localPart.indexOf('+');
+  const plusIndex = localPart.indexOf("+")
   if (plusIndex !== -1) {
-    localPart = localPart.substring(0, plusIndex);
+    localPart = localPart.substring(0, plusIndex)
   }
 
   // Strip dots for Gmail/Googlemail
-  const googleDomains = ['gmail.com', 'googlemail.com'];
+  const googleDomains = ["gmail.com", "googlemail.com"]
   if (googleDomains.includes(domain)) {
-    localPart = localPart.replace(/\./g, '');
+    localPart = localPart.replace(/\./g, "")
   }
 
-  return `${localPart}@${domain}`;
+  return `${localPart}@${domain}`
 }
 ```
 
@@ -603,19 +633,19 @@ function normalizeEmail(email) {
 ```javascript
 function validateRequest(event) {
   // Check custom header
-  const customHeader = event.headers['x-ndx-request'];
-  if (customHeader !== 'signup-form') {
-    return { valid: false, error: 'Invalid request header' };
+  const customHeader = event.headers["x-ndx-request"]
+  if (customHeader !== "signup-form") {
+    return { valid: false, error: "Invalid request header" }
   }
 
   // Check origin
-  const origin = event.headers['origin'];
-  const allowedOrigins = ['https://ndx.gov.uk', 'https://www.ndx.gov.uk'];
+  const origin = event.headers["origin"]
+  const allowedOrigins = ["https://ndx.gov.uk", "https://www.ndx.gov.uk"]
   if (!allowedOrigins.includes(origin)) {
-    return { valid: false, error: 'Invalid origin' };
+    return { valid: false, error: "Invalid origin" }
   }
 
-  return { valid: true };
+  return { valid: true }
 }
 ```
 
@@ -627,26 +657,26 @@ function validateRequest(event) {
  * Required when POSTing through CloudFront to Lambda with OAC enabled
  */
 async function submitSignup(email) {
-  const body = JSON.stringify({ email });
+  const body = JSON.stringify({ email })
 
   // Compute SHA256 hash of the body
-  const encoder = new TextEncoder();
-  const data = encoder.encode(body);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const encoder = new TextEncoder()
+  const data = encoder.encode(body)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")
 
-  const response = await fetch('https://ndx.gov.uk/api/signup', {
-    method: 'POST',
+  const response = await fetch("https://ndx.gov.uk/api/signup", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'X-NDX-Request': 'signup-form',           // CSRF protection
-      'x-amz-content-sha256': hashHex           // Required for OAC
+      "Content-Type": "application/json",
+      "X-NDX-Request": "signup-form", // CSRF protection
+      "x-amz-content-sha256": hashHex, // Required for OAC
     },
-    body
-  });
+    body,
+  })
 
-  return response.json();
+  return response.json()
 }
 ```
 

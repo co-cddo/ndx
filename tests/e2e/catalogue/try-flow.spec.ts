@@ -7,6 +7,7 @@
  */
 
 import { test, expect } from "@playwright/test"
+import AxeBuilder from "@axe-core/playwright"
 
 // Page paths - uses baseURL from playwright.config.ts
 const PRODUCT_PAGE = "/catalogue/aws/innovation-sandbox-empty"
@@ -268,8 +269,6 @@ test.describe("Try Before You Buy - Unauthenticated User (Story 2.1)", () => {
   })
 
   test("Auth choice modal has no accessibility violations (AC5, AC6)", async ({ page }) => {
-    // Note: importing AxeBuilder at top of file would be needed
-    const AxeBuilder = require("@axe-core/playwright").default
 
     await page.goto(PRODUCT_PAGE)
 

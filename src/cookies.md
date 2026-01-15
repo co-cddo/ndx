@@ -1,5 +1,5 @@
 ---
-layout: layouts/page.njk
+layout: page
 title: Cookies policy
 description: How NDX uses cookies and browser storage
 ---

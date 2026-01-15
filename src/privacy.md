@@ -1,5 +1,5 @@
 ---
-layout: layouts/page.njk
+layout: page
 title: Privacy policy
 description: How NDX collects and uses your data
 ---

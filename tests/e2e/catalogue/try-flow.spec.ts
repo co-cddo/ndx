@@ -269,7 +269,6 @@ test.describe("Try Before You Buy - Unauthenticated User (Story 2.1)", () => {
   })
 
   test("Auth choice modal has no accessibility violations (AC5, AC6)", async ({ page }) => {
-
     await page.goto(PRODUCT_PAGE)
 
     // Click try button as unauthenticated user

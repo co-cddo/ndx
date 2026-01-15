@@ -170,6 +170,23 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
       "Description": "Origin ID added to CloudFront distribution",
       "Value": "ndx-static-prod-origin",
     },
+    "SignupApiPath": {
+      "Description": "Path pattern routed to signup Lambda",
+      "Value": "/signup-api/*",
+    },
+    "SignupLambdaOacId": {
+      "Description": "OAC ID for signup Lambda",
+      "Value": {
+        "Fn::GetAtt": [
+          "SignupLambdaOac",
+          "Id",
+        ],
+      },
+    },
+    "SignupLambdaOriginId": {
+      "Description": "Origin ID for signup Lambda Function URL",
+      "Value": "ndx-signup-lambda-origin",
+    },
   },
   "Parameters": {
     "BootstrapVersion": {
@@ -221,7 +238,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "719a8756a65909de89d710ba64bdc1767525b49e45c3707fde9335e602ceae3b.zip",
+          "S3Key": "3b6e12fc4608df6e9da414f2fa26e969b19d6166a0e2c9b290c0f1b30e62ecdb.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",
@@ -433,6 +450,54 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
       },
       "Type": "AWS::IAM::Policy",
     },
+    "AddSignupCacheBehavior": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AddSignupLambdaOrigin",
+      ],
+      "Properties": {
+        "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+        "DistributionId": "E3THG4UHYDHVWP",
+        "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+        "PathPattern": "/signup-api/*",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+        "TargetOriginId": "ndx-signup-lambda-origin",
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AddSignupLambdaOrigin": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AddCloudFrontOrigin",
+        "SignupLambdaOac",
+      ],
+      "Properties": {
+        "DistributionId": "E3THG4UHYDHVWP",
+        "OriginAccessControlId": {
+          "Fn::GetAtt": [
+            "SignupLambdaOac",
+            "Id",
+          ],
+        },
+        "OriginDomainName": "tytqcupxb7p2ijlcj7rvlhnzwu0nyfaj.lambda-url.us-west-2.on.aws",
+        "OriginId": "ndx-signup-lambda-origin",
+        "OriginType": "HTTP",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AddOriginProviderframeworkonEvent5094AA52",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
     "ConfigureAlternateDomainName": {
       "DeletionPolicy": "Delete",
       "DependsOn": [
@@ -500,6 +565,20 @@ function handler(event) {
   var request = event.request
   var cookies = request.cookies || {}
   var uri = request.uri
+
+  // API paths have their own cache behaviors and origins
+  // Use selectRequestOriginById() to ensure correct origin routing
+  // This is a safety net in case this function runs for API paths unexpectedly
+  if (uri.indexOf("/signup-api/") === 0) {
+    // Route to signup Lambda origin
+    cf.selectRequestOriginById("ndx-signup-lambda-origin")
+    return request
+  }
+  if (uri.indexOf("/api/") === 0) {
+    // Route to ISB API Gateway origin
+    cf.selectRequestOriginById("InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A")
+    return request
+  }
 
   // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
   var ndxCookie = cookies["NDX"]
@@ -572,6 +651,18 @@ function handler(event) {
         },
       },
       "Type": "AWS::CloudFront::CachePolicy",
+    },
+    "SignupLambdaOac": {
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Description": "OAC for signing requests to signup Lambda Function URL",
+          "Name": "ndx-signup-lambda-oac",
+          "OriginAccessControlOriginType": "lambda",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4",
+        },
+      },
+      "Type": "AWS::CloudFront::OriginAccessControl",
     },
     "StaticSiteBucket8958EE3F": {
       "DeletionPolicy": "Retain",

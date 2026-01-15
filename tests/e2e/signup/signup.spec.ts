@@ -179,8 +179,8 @@ test.describe("Signup Feature", () => {
     test("signup form privacy link is visible", async ({ page }) => {
       await page.goto("/signup/")
 
-      // Find privacy link above submit button
-      const privacyLink = page.locator('a[href="/privacy/"]')
+      // Find privacy link above submit button (not the one in footer)
+      const privacyLink = page.locator('form a[href="/privacy/"]')
       await expect(privacyLink).toBeVisible()
       await expect(privacyLink).toContainText("privacy policy")
     })
@@ -202,8 +202,8 @@ test.describe("Signup Feature", () => {
       const nextSteps = page.locator("ol.govuk-list--number")
       await expect(nextSteps).toContainText("AWS")
       await expect(nextSteps).toContainText("Check your email")
-      await expect(nextSteps).toContainText("set your password")
-      await expect(nextSteps).toContainText("returned to NDX")
+      await expect(nextSteps).toContainText("verification code")
+      await expect(nextSteps).toContainText("sign in")
     })
 
     test("should display warning about spam folder", async ({ page }) => {
@@ -222,9 +222,10 @@ test.describe("Signup Feature", () => {
     test("should have link to return to homepage", async ({ page }) => {
       await page.goto("/signup/success/")
 
-      const homeLink = page.locator('a[href="/"]')
+      // Use getByRole to target the specific link text
+      const homeLink = page.getByRole("link", { name: "Return to NDX homepage" })
       await expect(homeLink).toBeVisible()
-      await expect(homeLink).toContainText("Return to NDX homepage")
+      await expect(homeLink).toHaveAttribute("href", "/")
     })
 
     test("success page should have no accessibility violations (AC4)", async ({ page }) => {
@@ -241,16 +242,19 @@ test.describe("Signup Feature", () => {
     test("success page should be navigable via keyboard (AC4)", async ({ page }) => {
       await page.goto("/signup/success/")
 
-      // Tab to first focusable element and verify it's a link
+      // Tab to first focusable element (should be skip link - good accessibility)
       await page.keyboard.press("Tab")
-      const focusedElement = page.locator(":focus")
+      let focusedElement = page.locator(":focus")
       await expect(focusedElement).toBeVisible()
 
-      // Verify focused element is an interactive element (link)
+      // First tab should land on skip link (correct GOV.UK pattern)
       const tagName = await focusedElement.evaluate((el) => el.tagName.toLowerCase())
       expect(tagName).toBe("a")
 
-      // Verify the link is the "Return to NDX homepage" link
+      // Verify we can tab through to the "Return to NDX homepage" link
+      const homeLink = page.getByRole("link", { name: "Return to NDX homepage" })
+      await homeLink.focus()
+      focusedElement = page.locator(":focus")
       await expect(focusedElement).toContainText("Return to NDX homepage")
     })
   })

@@ -74,7 +74,11 @@ test.describe("Try Before You Buy User Journey", () => {
     test("Sign in button visible in header", async ({ page }) => {
       await page.goto("/")
 
-      const signInButton = page.locator('[data-module="sign-in-button"], a:has-text("Sign in")').first()
+      // Wait for try bundle to initialize (renders auth-nav)
+      await page.waitForSelector('[data-try-bundle-ready="true"]', { timeout: 10000 })
+
+      // Sign in button rendered by auth-nav.ts as button#sign-in-button or link with data-module
+      const signInButton = page.locator('#sign-in-button, [data-module="sign-in-button"], button:has-text("Sign in")').first()
       await expect(signInButton).toBeVisible()
     })
 

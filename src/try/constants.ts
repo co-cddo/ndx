@@ -29,3 +29,27 @@ export const CALLBACK_PATH = "/callback"
  * OAuth login endpoint for authentication redirects.
  */
 export const OAUTH_LOGIN_URL = "/api/auth/login"
+
+/**
+ * Paths that should never be stored as return URLs.
+ *
+ * This blocklist prevents redirect loops and ensures users return to meaningful pages.
+ * Per ADR-042: Signup pages must never be stored as return destinations.
+ *
+ * Story 2.2: Return URL Preservation
+ */
+export const RETURN_URL_BLOCKLIST = [
+  CALLBACK_PATH, // /callback (OAuth callback)
+  "/signup", // Signup form page
+  "/signup/success", // Signup success page
+]
+
+/**
+ * sessionStorage key for welcome back flag.
+ *
+ * Set when an existing user is redirected from signup to login.
+ * Triggers "Welcome back" banner display after successful login.
+ *
+ * Story 2.3: Existing User Detection & Redirect
+ */
+export const WELCOME_BACK_KEY = "signup-welcome-back"

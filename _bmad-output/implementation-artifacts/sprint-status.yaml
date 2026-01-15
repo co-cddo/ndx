@@ -39,33 +39,33 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1: Account Creation
-  epic-1: backlog
-  1-1-project-scaffold-shared-types: backlog
-  1-2-signup-lambda-infrastructure: backlog
-  1-3-domain-list-api: backlog
-  1-4-signup-api-core: backlog
-  1-5-signup-form-page: backlog
-  1-6-success-page-unlisted-domain-handling: backlog
+  epic-1: done
+  1-1-project-scaffold-shared-types: done
+  1-2-signup-lambda-infrastructure: done
+  1-3-domain-list-api: done
+  1-4-signup-api-core: done
+  1-5-signup-form-page: done
+  1-6-success-page-unlisted-domain-handling: done
   epic-1-retrospective: optional
 
   # Epic 2: Seamless Authentication Integration
-  epic-2: backlog
-  2-1-auth-choice-modal: backlog
-  2-2-return-url-preservation: backlog
-  2-3-existing-user-detection-redirect: backlog
+  epic-2: done
+  2-1-auth-choice-modal: done
+  2-2-return-url-preservation: done
+  2-3-existing-user-detection-redirect: done
   epic-2-retrospective: optional
 
   # Epic 3: Operational Monitoring & Abuse Protection
-  epic-3: backlog
-  3-1-slack-alerting-for-signups: backlog
-  3-2-waf-rate-limiting: backlog
-  3-3-operational-runbook: backlog
+  epic-3: done
+  3-1-slack-alerting-for-signups: done
+  3-2-waf-rate-limiting: done
+  3-3-operational-runbook: done
   epic-3-retrospective: optional
 
   # Epic 4: Compliance Pages & Final Accessibility Audit
-  epic-4: backlog
-  4-1-privacy-policy-page: backlog
-  4-2-cookies-storage-page: backlog
-  4-3-policy-links-integration: backlog
-  4-4-final-wcag-22-aa-audit: backlog
+  epic-4: done
+  4-1-privacy-policy-page: done
+  4-2-cookies-storage-page: done
+  4-3-policy-links-integration: done
+  4-4-final-wcag-22-aa-audit: done
   epic-4-retrospective: optional

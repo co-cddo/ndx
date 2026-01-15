@@ -140,20 +140,23 @@ describe("Try Page Component (Story 5.9)", () => {
         renderEmptyState(container)
 
         // Assert
-        const button = container.querySelector("a.govuk-button")
+        const button = container.querySelector("button.govuk-button")
         expect(button).not.toBeNull()
         expect(button?.textContent?.trim()).toContain("Sign in")
       })
     })
 
     describe("AC #2: Sign In Button Functionality", () => {
-      it("should have correct href for OAuth login", () => {
+      it("should have click handler for auth choice modal (Story 2.1)", () => {
         // Act
         renderEmptyState(container)
 
-        // Assert
-        const button = container.querySelector("a.govuk-button") as HTMLAnchorElement
-        expect(button.href).toContain("/api/auth/login")
+        // Assert - button has ID for click handler and is a button (not a link)
+        const button = container.querySelector("button.govuk-button")
+        expect(button).not.toBeNull()
+        expect(button?.id).toBe("try-page-sign-in")
+        // Button opens auth choice modal instead of direct link
+        expect(button?.tagName).toBe("BUTTON")
       })
     })
 
@@ -181,7 +184,7 @@ describe("Try Page Component (Story 5.9)", () => {
         renderEmptyState(container)
 
         // Assert
-        const button = container.querySelector("a.govuk-button")
+        const button = container.querySelector("button.govuk-button")
         expect(button?.classList.contains("govuk-button--start")).toBe(true)
       })
 
@@ -195,22 +198,23 @@ describe("Try Page Component (Story 5.9)", () => {
         expect(svg?.getAttribute("aria-hidden")).toBe("true")
       })
 
-      it('should have role="button" attribute', () => {
+      it("should be a native button element (no role attribute needed)", () => {
         // Act
         renderEmptyState(container)
 
-        // Assert
-        const button = container.querySelector("a.govuk-button")
-        expect(button?.getAttribute("role")).toBe("button")
+        // Assert - native button element doesn't need role="button"
+        const button = container.querySelector("button.govuk-button")
+        expect(button?.tagName).toBe("BUTTON")
+        expect(button?.getAttribute("type")).toBe("button")
       })
 
-      it('should have draggable="false" attribute', () => {
+      it("should open auth choice modal on click", () => {
         // Act
         renderEmptyState(container)
 
         // Assert
-        const button = container.querySelector("a.govuk-button")
-        expect(button?.getAttribute("draggable")).toBe("false")
+        const button = container.querySelector("button.govuk-button")
+        expect(button?.id).toBe("try-page-sign-in")
       })
 
       it('should have data-module="govuk-button" attribute', () => {
@@ -218,7 +222,7 @@ describe("Try Page Component (Story 5.9)", () => {
         renderEmptyState(container)
 
         // Assert
-        const button = container.querySelector("a.govuk-button")
+        const button = container.querySelector("button.govuk-button")
         expect(button?.getAttribute("data-module")).toBe("govuk-button")
       })
     })

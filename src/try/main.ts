@@ -25,6 +25,7 @@ import { initTryPage } from "./ui/try-page"
 import { initTryButton, handleTryButtonClickDelegated } from "./ui/try-button"
 import { initTryButtonText } from "./ui/try-button-text"
 import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
+import { WELCOME_BACK_KEY } from "./constants"
 
 // CRITICAL: Set up delegated event handler immediately at module parse time.
 // This ensures try button clicks are captured even if init() hasn't run yet.
@@ -48,6 +49,48 @@ document.documentElement.setAttribute("data-try-bundle-ready", "true")
 
 // Export OAuth callback functions for use by callback page (Story 5.2, 5.3)
 export { handleOAuthCallback, parseOAuthError, extractTokenFromURL, cleanupURLAfterExtraction } from "./auth/oauth-flow"
+
+/**
+ * Display welcome back banner for returning users.
+ *
+ * Story 2.3: Existing User Detection & Redirect
+ *
+ * Shows a subtle notification when a user is redirected from signup
+ * because they already have an account.
+ */
+function showWelcomeBackBanner(): void {
+  try {
+    const hasWelcomeBack = sessionStorage.getItem(WELCOME_BACK_KEY)
+    if (!hasWelcomeBack) {
+      return
+    }
+
+    // Clear the flag immediately to prevent showing again on refresh
+    sessionStorage.removeItem(WELCOME_BACK_KEY)
+
+    // Insert welcome banner at the top of main content
+    const contentDiv = document.getElementById("main-content")
+    if (contentDiv) {
+      const bannerHTML = `
+        <div class="govuk-notification-banner govuk-notification-banner--success" role="alert" aria-labelledby="welcome-back-banner-title" data-welcome-back-banner>
+          <div class="govuk-notification-banner__header">
+            <h2 class="govuk-notification-banner__title" id="welcome-back-banner-title">
+              Success
+            </h2>
+          </div>
+          <div class="govuk-notification-banner__content">
+            <p class="govuk-notification-banner__heading">
+              Welcome back – you're now signed in.
+            </p>
+          </div>
+        </div>
+      `
+      contentDiv.insertAdjacentHTML("afterbegin", bannerHTML)
+    }
+  } catch {
+    // Ignore sessionStorage errors in private browsing
+  }
+}
 
 /**
  * Handle OAuth callback parameters on any page.
@@ -106,6 +149,9 @@ function init(): void {
 
   // Story 5.3: Handle OAuth callback parameters (token or error in URL)
   handlePageOAuthCallback()
+
+  // Story 2.3: Show welcome back banner for returning users from signup
+  showWelcomeBackBanner()
 
   // Story 5.1: Initialize authentication navigation
   initAuthNav()

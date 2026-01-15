@@ -23,6 +23,12 @@ updates:
     schedule:
       interval: "daily"
 
+  # Signup infrastructure package.json
+  - package-ecosystem: "npm"
+    directory: "/infra-signup"
+    schedule:
+      interval: "daily"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

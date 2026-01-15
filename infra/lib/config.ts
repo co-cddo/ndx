@@ -11,6 +11,9 @@ export interface EnvironmentConfig {
   // Step 3: Add alternateDomainName and deploy
   readonly alternateDomainName?: string
   readonly certificateArn?: string // ACM certificate ARN in us-east-1
+  // Signup Lambda Function URL configuration (Story 1.2)
+  // The Lambda is deployed via infra-signup/, this config enables CloudFront routing
+  readonly signupLambdaFunctionUrl?: string
 }
 
 /**
@@ -207,6 +210,8 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     account: "568672915267",
     alternateDomainName: "ndx.digital.cabinet-office.gov.uk",
     certificateArn: "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
+    // Signup Lambda Function URL (deployed via infra-signup/)
+    signupLambdaFunctionUrl: "tytqcupxb7p2ijlcj7rvlhnzwu0nyfaj.lambda-url.us-west-2.on.aws",
   },
   test: {
     distributionId: "E3TESTDISTID",

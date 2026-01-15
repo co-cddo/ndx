@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: GitHub Actions OIDC role for ISB account infrastructure deployment
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Default: 'co-cddo'
+    Description: GitHub organization name
+
+  GitHubRepo:
+    Type: String
+    Default: 'ndx'
+    Description: GitHub repository name
+
+  OIDCProviderArn:
+    Type: String
+    Default: ''
+    Description: Existing OIDC provider ARN (leave empty to create new)
+
+Conditions:
+  CreateOIDCProvider: !Equals [!Ref OIDCProviderArn, '']
+
+Resources:
+  # GitHub OIDC Provider (only created if not provided)
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        # GitHub Actions OIDC thumbprints (updated Jan 2024)
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+      Tags:
+        - Key: project
+          Value: ndx
+        - Key: purpose
+          Value: github-actions-oidc
+        - Key: managedby
+          Value: cloudformation
+
+  # Role for ISB infrastructure deployment
+  ISBInfraDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GitHubActions-ISB-InfraDeploy
+      Description: GitHub Actions role for ISB CloudFormation deployment (cross-account role)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOIDCProvider
+                - !GetAtt GitHubOIDCProvider.Arn
+                - !Ref OIDCProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - !Sub 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main'
+                  - !Sub 'repo:${GitHubOrg}/${GitHubRepo}:environment:isb-infrastructure'
+      Policies:
+        - PolicyName: CloudFormationDeployAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # CloudFormation permissions for deploying stacks
+              - Sid: CloudFormationAccess
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:GetTemplate
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DeleteChangeSet
+                Resource:
+                  - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/ndx-signup-*'
+              # IAM permissions for managing the cross-account role
+              - Sid: IAMRoleManagement
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:UpdateRole
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                Resource:
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/ndx-signup-*'
+              # Read permissions for validation
+              - Sid: CloudFormationListRead
+                Effect: Allow
+                Action:
+                  - cloudformation:ListStacks
+                Resource: '*'
+      Tags:
+        - Key: project
+          Value: ndx
+        - Key: feature
+          Value: signup
+        - Key: purpose
+          Value: github-actions-oidc
+        - Key: managedby
+          Value: cloudformation
+
+Outputs:
+  OIDCProviderArn:
+    Description: GitHub OIDC Provider ARN
+    Value: !If
+      - CreateOIDCProvider
+      - !GetAtt GitHubOIDCProvider.Arn
+      - !Ref OIDCProviderArn
+
+  ISBInfraDeployRoleArn:
+    Description: IAM Role ARN for ISB infrastructure deployment
+    Value: !GetAtt ISBInfraDeployRole.Arn
+    Export:
+      Name: GitHubActions-ISB-InfraDeployRoleArn

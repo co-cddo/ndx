@@ -16,7 +16,8 @@
     "rootDir": "./src",
     "baseUrl": "./src",
     "paths": {
-      "@try/*": ["try/*"]
+      "@try/*": ["try/*"],
+      "@signup/*": ["signup/*"]
     }
   },
   "include": ["src/**/*.ts"],

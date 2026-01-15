@@ -1,7 +1,7 @@
 # National Digital Exchange (NDX) - Project Documentation Index
 
-**Generated:** 2025-11-18
-**Scan Type:** Exhaustive
+> **Generated:** 2026-01-12 | **Scan Level:** Exhaustive | **Version:** 1.2.0
+
 **Project Root:** `/Users/cns/httpdocs/cddo/ndx`
 **Repository:** https://github.com/co-cddo/ndx
 
@@ -9,233 +9,155 @@
 
 ## Quick Reference
 
-| Property             | Value                                                          |
-| -------------------- | -------------------------------------------------------------- |
-| **Project Name**     | National Digital Exchange (NDX)                                |
-| **Purpose**          | UK Government cloud service catalogue and procurement platform |
-| **Project Type**     | Web Application (Static Site)                                  |
-| **Repository Type**  | Monolith                                                       |
-| **Architecture**     | JAMstack (JavaScript, APIs, Markup)                            |
-| **Primary Language** | JavaScript (Node.js 20.17.0)                                   |
-| **Framework**        | Eleventy 3.1.2 (Static Site Generator)                         |
-| **Design System**    | GOV.UK Frontend via @x-govuk/govuk-eleventy-plugin 7.2.1       |
-| **Package Manager**  | Yarn 4.5.0 (npm blocked)                                       |
-| **Deployment**       | GitHub Pages (https://co-cddo.github.io/ndx/)                  |
-| **CI/CD**            | GitHub Actions                                                 |
-| **Phase**            | Alpha (Prototype)                                              |
-| **Impact**           | £2B taxpayer savings (projected)                               |
+| Property | Value |
+|----------|-------|
+| **Project Name** | National Digital Exchange (NDX) |
+| **Purpose** | UK Government cloud service catalogue and Try Before You Buy platform |
+| **Project Type** | Multi-part (web + infra) |
+| **Repository Type** | Multi-part |
+| **Architecture** | JAMstack + Serverless Event-Driven |
+| **Primary Language** | TypeScript |
+| **Web Framework** | Eleventy 3.1.2 |
+| **IaC Framework** | AWS CDK 2.215.0 |
+| **Design System** | GOV.UK Frontend via @x-govuk/govuk-eleventy-plugin 8.3.0 |
+| **Package Manager** | Yarn 4.5.0 (npm blocked) |
+| **Primary Domain** | ndx.digital.cabinet-office.gov.uk |
+| **AWS Account** | 568672915267 |
+| **AWS Region** | us-west-2 |
+| **CI/CD** | GitHub Actions (OIDC) |
 
 ---
 
-## 📋 Project Overview
+## Project Overview
 
-The **National Digital Exchange (NDX)** is a pioneering UK government service transforming public sector cloud adoption. It serves as a one-stop shop for government departments to discover, evaluate, try, and access pre-approved cloud services from commercial vendors.
-
-**Strategic Goals:**
-
-- Simplify government tech procurement
-- Enable secure, well-architected cloud environments
-- Facilitate data and capability sharing between departments
-- Provide equal access to advanced technologies for all public sector organizations
+The **National Digital Exchange (NDX)** is a UK government service transforming public sector cloud adoption. It serves as a one-stop shop for government departments to discover, evaluate, try, and access pre-approved cloud services.
 
 **Key Features:**
-
-- **Catalogue:** 33+ cloud service vendors with multiple products each
+- **Catalogue:** 47 cloud service products from multiple vendors
+- **Try Before You Buy:** 24-hour sandbox provisioning via ISB integration
 - **Discover:** Industry news, events, and case studies
-- **Challenges:** Government procurement challenges (DEFRA, MOD)
+- **Challenges:** Government procurement challenges
 - **Reviews:** User reviews with star ratings
-- **Try:** 24-hour trial environment access
-- **Access:** Production environment deployment
+- **Notifications:** Multi-channel alerts (email, Slack)
 
 ---
 
-## 📚 Generated Documentation
+## Repository Parts
 
-### Core Documentation
+| Part | Location | Purpose | Tech Stack |
+|------|----------|---------|------------|
+| **web** | Root (`/`) | Static site + Try feature | Eleventy, TypeScript, esbuild |
+| **infra** | `/infra` | AWS infrastructure | CDK, Lambda, EventBridge |
 
-#### [Architecture Documentation](./architecture.md)
+---
 
-**Comprehensive technical architecture covering:**
+## Core Documentation
 
-- JAMstack architecture pattern
-- System architecture diagrams
-- Technology stack details
-- Component architecture
-- Content model and data flow
-- Build and deployment pipelines
+### [Architecture Documentation](./architecture.md)
+
+Comprehensive technical architecture covering both parts:
+- JAMstack + Serverless event-driven patterns
+- Web part: Eleventy, Try feature, API client architecture
+- Infra part: CDK stacks, Lambda handlers, EventBridge
+- Integration architecture (web ↔ infra ↔ ISB)
 - Security architecture
-- Performance characteristics
-- Scalability considerations
-- Technical decision rationale
-- Future evolution roadmap
+- CI/CD pipelines
 
-**Essential for:** Understanding overall system design, technical decisions, and architectural patterns
+**Essential for:** System design understanding, technical decisions, architectural patterns
 
 ---
 
-#### [Component Inventory](./component-inventory.md)
+### [Component Inventory](./component-inventory.md)
 
-**Complete UI component catalog including:**
+Complete component catalog:
+- **web:** Try feature components (AuthNav, TryButton, AUPModal, SessionsTable)
+- **web:** API services (ApiClient, LeasesService, SessionsService)
+- **web:** Nunjucks templates and Eleventy collections
+- **infra:** CDK stacks (NdxStaticStack, NdxNotificationStack, GitHubActionsStack)
+- **infra:** Lambda modules (NotifySender, SlackSender, Enrichment)
+- **infra:** CloudWatch alarms (12) and Notify templates (10)
 
-- Custom Nunjucks components (header, reviews, product assessments)
-- GOV.UK Frontend integration
-- Eleventy collections (catalogue, reviews, challenges, news, events)
-- SASS architecture and custom styling
-- Design system compliance
-- Reusable patterns and macros
-- Content model schemas
-
-**Essential for:** Frontend development, component reuse, understanding template structure
+**Essential for:** Understanding available components, implementation patterns
 
 ---
 
-#### [Source Tree Analysis](./source-tree-analysis.md)
+### [Source Tree Analysis](./source-tree-analysis.md)
 
-**Annotated directory structure with:**
-
-- Complete directory tree (85+ directories)
-- Purpose annotations for each folder
+Annotated directory structure:
+- web part: src/, lib/, tests/
+- infra part: bin/, lib/, test/
 - Entry points and critical files
-- Integration points and data flow
-- Asset organization
-- File counts and statistics
-- Monorepo vs monolith analysis
+- File statistics by category
 
 **Essential for:** Navigating the codebase, understanding project organization
 
 ---
 
-#### [Development Guide](./development-guide.md)
+### [Development Guide](./development-guide.md)
 
-**Complete development workflow covering:**
-
-- Prerequisites and setup (Node 20.17.0, Yarn 4.5.0)
-- Local development server
-- Build process
-- Code quality tools (Prettier, Husky, lint-staged)
-- Git hooks and pre-commit checks
-- Adding content (catalogue entries, news, challenges)
-- Testing approach
-- Common development tasks
+Complete development workflow:
+- Prerequisites (Node 20.17.0, Yarn 4.5.0, AWS CLI)
+- Web development: Eleventy, Try feature, Jest, Playwright
+- Infra development: CDK, Lambda, testing
+- CI/CD pipelines
 - Troubleshooting
 
-**Essential for:** Onboarding developers, daily development workflow
+**Essential for:** Onboarding developers, daily workflow
 
 ---
 
-### Research Reports
+## Supporting Documentation
 
-#### [JavaScript Enhancement Research](./research/)
+### [Project Scan Report](./project-scan-report.json)
 
-**Latest:** November 18, 2024
-
-Comprehensive research on adding client-side JavaScript to the NDX project:
-
-- **Final Report:** [JavaScript Enhancements for NDX](./research/research_final_20251118_javascript_enhancements_ndx.md)
-- **Recommendation:** Three-tier approach with Alpine.js for progressive enhancement
-- **Supporting Reports:** Eleventy patterns, GOV.UK Frontend compliance, lightweight strategies
-- **Total Research:** 70+ sources, 4 comprehensive reports, 138KB documentation
-
-Essential for: Planning interactive features, choosing JavaScript libraries, GOV.UK compliance
-
----
-
-### Supporting Documentation
-
-#### [Project Status](./bmm-workflow-status.yaml)
-
-**BMM workflow tracking:**
-
-- Current phase: Prerequisite (document-project required)
-- Workflow path: Method track, brownfield
-- Project type: Website
-
----
-
-#### [Scan State](./project-scan-report.json)
-
-**Exhaustive scan metadata:**
-
+Exhaustive scan metadata:
 - Workflow version: 1.2.0
 - Scan level: Exhaustive
+- Project classification: Multi-part
 - Completed steps tracking
-- Project classification data
-- Output inventory
 
 ---
 
-## 📖 Existing Project Documentation
+### [BMM Workflow Status](../_bmad-output/planning-artifacts/bmm-workflow-status.yaml)
 
-### Project-Level Documentation
-
-#### [README.md](../README.md)
-
-- Project overview
-- Technology stack summary
-- Local development quick start
-- Project structure
-- Key features
-- Contributing guidelines
-- Deployment information
-- License (MIT)
+BMAD workflow tracking for self-serve signup feature:
+- Current phase tracking
+- Feature context
+- Workflow path
 
 ---
 
-#### [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)
+## Existing Project Documentation
 
-- Contributor Covenant Code of Conduct
-- Civil Service Code compliance
-- Community standards
-- Reporting guidelines
+### Project-Level
 
----
+| File | Purpose |
+|------|---------|
+| [README.md](../README.md) | Project overview and quick start |
+| [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | Contributor guidelines |
+| [LICENSE](../LICENSE) | MIT License |
 
-### Content Documentation
+### Configuration
 
-#### About Section (`src/About/`)
+| File | Purpose |
+|------|---------|
+| [eleventy.config.js](../eleventy.config.js) | Eleventy configuration |
+| [package.json](../package.json) | Web dependencies and scripts |
+| [infra/package.json](../infra/package.json) | Infra dependencies and scripts |
+| [infra/cdk.json](../infra/cdk.json) | CDK configuration |
 
-- [index.md](../src/About/index.md) - About NDX overview
-- [benefits.md](../src/About/benefits.md) - Benefits of NDX
-- [NDX-incubator.md](../src/About/NDX-incubator.md) - Incubator program
+### CI/CD
 
----
-
-### Configuration Files
-
-#### [eleventy.config.js](../eleventy.config.js)
-
-**Eleventy configuration including:**
-
-- Collections definitions (catalogue, reviews, challenges, news, events, case studies)
-- Plugins (GOV.UK Eleventy, Mermaid diagrams)
-- Custom filters (date formatting)
-- Custom shortcodes (remoteInclude)
-- Passthrough copy configuration
-- Template engine settings
+| File | Purpose |
+|------|---------|
+| [.github/workflows/ci.yaml](../.github/workflows/ci.yaml) | Web build and deploy |
+| [.github/workflows/infra.yaml](../.github/workflows/infra.yaml) | CDK diff and deploy |
+| [.github/workflows/accessibility.yml](../.github/workflows/accessibility.yml) | WCAG compliance |
+| [.github/workflows/scorecard.yml](../.github/workflows/scorecard.yml) | OpenSSF security |
 
 ---
 
-#### [package.json](../package.json)
-
-**Project manifest:**
-
-- Dependencies (Eleventy, GOV.UK plugin, Mermaid)
-- Dev dependencies (Prettier, Husky, lint-staged)
-- Scripts (start, build, lint)
-- Engines (Node 20.17.0+, Yarn 4.5.0+)
-- Prettier configuration
-
----
-
-#### CI/CD Configuration
-
-- [.github/workflows/ci.yaml](../.github/workflows/ci.yaml) - Build, lint, deploy pipeline
-- [.github/workflows/scorecard.yml](../.github/workflows/scorecard.yml) - OpenSSF security scorecard
-- [.github/workflows/automerge-dependabot.yaml](../.github/workflows/automerge-dependabot.yaml) - Auto-merge dependencies
-
----
-
-## 🎯 Getting Started
+## Getting Started
 
 ### For New Developers
 
@@ -248,260 +170,170 @@ Essential for: Planning interactive features, choosing JavaScript libraries, GOV
    - [Source Tree Analysis](./source-tree-analysis.md) - Code organization
 
 3. **Start Coding:**
-   - [Development Guide](./development-guide.md#getting-started) - Setup steps
    - [Component Inventory](./component-inventory.md) - Available components
+   - [Development Guide](./development-guide.md#try-feature-development) - Try feature development
 
-### For Content Authors
+### For Web Developers
 
-1. **Understand Content Model:**
-   - [Component Inventory - Content Model](./component-inventory.md#content-model)
-   - [Architecture - Content Model](./architecture.md#content-model)
+```bash
+# Clone and setup
+git clone https://github.com/co-cddo/ndx.git
+cd ndx
+corepack enable
+yarn install
 
-2. **Add Content:**
-   - [Development Guide - Adding Content](./development-guide.md#adding-content)
-   - Catalogue entries: `src/catalogue/{vendor}/{product}.md`
-   - News items: `src/discover/news/*.md`
-   - Challenges: `src/challenges/{department}/*.md`
+# Development
+yarn start           # Dev server at localhost:8080
+yarn test            # Unit tests
+yarn test:e2e        # E2E tests
+```
 
-### For Architects
+### For Infrastructure Engineers
 
-1. **System Overview:**
-   - [Architecture Documentation](./architecture.md) - Complete architecture
-   - [Architecture - JAMstack Pattern](./architecture.md#jamstack-architecture)
-   - [Architecture - Technical Decisions](./architecture.md#technical-decisions--rationale)
+```bash
+cd infra
+yarn install
 
-2. **Future Planning:**
-   - [Architecture - Scalability](./architecture.md#scalability--growth)
-   - [Architecture - Future Considerations](./architecture.md#future-considerations)
+# Development
+yarn test            # Lambda + CDK tests
+yarn cdk diff        # Preview changes
+yarn cdk deploy      # Deploy (requires AWS credentials)
+```
 
 ---
 
-## 🔍 Content Sections
+## Content Sections
 
 ### Catalogue (`src/catalogue/`)
 
-**33+ vendors with multiple products:**
+47 products from vendors including:
+- AWS, Microsoft, Google, Anthropic
+- Salesforce, ServiceNow, Snowflake
+- GitLab, Databricks, UiPath
+- And more...
 
-- Anthropic, AWS, Cloudflare, Databricks, Figma, GitLab, Google, GovTech Solutions, Great Wave AI, Greenbridge, IBM, Idox Geospatial, Immersive Labs, Kong, LanguageLine, LinkedIn, Met Office, Microsoft, Mindweave Labs, Okta, Oracle, Salesforce, ServiceNow, Silktide, Snowflake, UiPath, Zevero, and more
+### Try Feature (`src/try/`)
 
-**Example:** `src/catalogue/google/firebase.md`
+TypeScript SPA for sandbox provisioning:
+- OAuth authentication with ISB
+- Lease management
+- Session tracking
+- AUP modal
 
 ### Discover (`src/discover/`)
 
-- **News:** `src/discover/news/` - Industry news items
-- **Events:** `src/discover/events/` - Industry events
-- **Case Studies:** `src/discover/case-studies/` - Implementation case studies
+- News items
+- Industry events
+- Case studies
 
 ### Challenges (`src/challenges/`)
 
-- **DEFRA:** `src/challenges/defra/` - Department for Environment challenges
-- **MOD:** `src/challenges/mod/` - Ministry of Defence challenges
-
-### Reviews (`src/reviews/`)
-
-- User reviews with star ratings (1-5)
-- Example: `src/reviews/mindweave-labs/synaplyte/*.md`
-
-### Product Assessments (`src/product-assessments/`)
-
-- Formal product evaluation reports
-- Example: `src/product-assessments/mindweave-labs/synaplyte/*.md`
+- DEFRA challenges
+- MOD challenges
 
 ---
 
-## 🛠️ Development Workflow
-
-### Quick Commands
-
-```bash
-# Start development server
-yarn start
-
-# Build for production
-yarn build
-
-# Run linter
-yarn lint
-
-# Fix formatting
-npx prettier --write .
-```
-
-### Creating New Content
-
-#### Add Catalogue Entry
-
-```bash
-# 1. Create vendor directory
-mkdir -p src/catalogue/vendor-name
-
-# 2. Create service markdown file
-touch src/catalogue/vendor-name/service-name.md
-
-# 3. Add logo
-# Place in: src/assets/catalogue/vendor-name/logo.svg
-
-# 4. Add frontmatter and content (see component-inventory.md)
-```
-
-#### Add News Item
-
-```bash
-touch src/discover/news/yyyy-mm-dd-news-title.md
-```
-
-#### Add Challenge
-
-```bash
-touch src/challenges/department-name/challenge-name.md
-```
-
----
-
-## 🏗️ Architecture Highlights
-
-### JAMstack Pattern
-
-- **Build Time:** Markdown → Eleventy → Static HTML
-- **Runtime:** Static files served from GitHub Pages CDN
-- **No Server:** Pure client-side, pre-rendered content
-- **Security:** Minimal attack surface (no backend, no database)
-
-### Technology Choices
-
-**Why Eleventy?**
-
-- Fast, simple static site generator
-- No client-side framework overhead
-- Excellent for content-heavy sites
-- Strong GOV.UK ecosystem
-
-**Why GOV.UK Frontend?**
-
-- Official UK government design system
-- Built-in accessibility (WCAG 2.1 AA)
-- Compliance with GDS standards
-- Familiar to government users
-
-**Why GitHub Pages?**
-
-- Free for public repos
-- Integrated with GitHub Actions
-- Automatic HTTPS
-- Fast global CDN (Fastly)
-
-### Key Design Decisions
-
-- **File-based content:** Version controlled, developer-friendly
-- **No database:** Simplified architecture, security
-- **Static generation:** Maximum performance, low cost
-- **Collection-based:** Flexible content organization
-
----
-
-## 🔐 Security
-
-### Security Layers
-
-1. **CI/CD:** Harden Runner, CodeQL scanning, OpenSSF Scorecard
-2. **Supply Chain:** Pinned dependencies, Dependabot updates
-3. **Code Quality:** Pre-commit hooks, lint-staged, Prettier
-4. **Runtime:** N/A (static site - no server)
-5. **Transport:** HTTPS enforced (GitHub Pages)
-
-### Compliance
-
-- **GOV.UK Standards:** GDS design principles
-- **Accessibility:** WCAG 2.1 AA (via GOV.UK Frontend)
-- **Security:** OpenSSF Best Practices badge
-
----
-
-## 📊 Project Statistics
+## Project Statistics
 
 ### Codebase
 
-- **Total Directories:** 85+
-- **Content Files:** 165+ markdown files
-- **Templates:** 11 Nunjucks templates
-- **Vendors:** 33 cloud service providers
-- **NPM Packages:** 271
+| Category | Count |
+|----------|-------|
+| Try feature TypeScript files | 49 |
+| Products in catalogue | 47 |
+| Lambda files | 36 |
+| E2E tests | 15 |
+| Nunjucks templates | 11 |
+| CloudWatch alarms | 12 |
+| Notify templates | 10 |
 
 ### Documentation
 
-- **Generated Docs:** 5 comprehensive documents
-- **Total Lines:** ~15,000+ lines of documentation
-- **Coverage:** Architecture, components, development, source tree
+| Document | Lines |
+|----------|-------|
+| architecture.md | ~310 |
+| component-inventory.md | ~210 |
+| source-tree-analysis.md | ~295 |
+| development-guide.md | ~500 |
 
 ---
 
-## 🚀 Deployment
+## Architecture Highlights
 
-### Production
+### JAMstack + Serverless
 
-- **URL:** https://co-cddo.github.io/ndx/
-- **Platform:** GitHub Pages
-- **CDN:** Fastly (global edge network)
-- **HTTPS:** Enforced, automatic certificates
+```
+Browser → Static Site (S3/CloudFront)
+       → ISB API → EventBridge → Lambda → Notify/Slack
+```
 
-### CI/CD Pipeline
+### Key Patterns
 
-1. Push to `main` branch
-2. GitHub Actions triggers
-3. Install dependencies (Yarn)
-4. Run linter (Prettier)
-5. Build site (Eleventy with PATH_PREFIX=/ndx/)
-6. Upload to GitHub Pages
-7. Deploy (seconds)
+- **Observer Pattern (ADR-024):** Auth state management
+- **Centralized API Client (ADR-021):** JWT injection, 401 handling
+- **One Brain Two Mouths:** Notification routing
+- **Request Deduplication (ADR-028):** Prevent duplicate API calls
 
-**Rollback:** Git revert + push (auto-redeploys previous version)
+### AWS Services
+
+- Lambda, EventBridge, SQS, DynamoDB
+- Secrets Manager, SNS, CloudWatch
+- S3, CloudFront
 
 ---
 
-## 📞 Contact & Support
+## Security
+
+### Authentication
+- JWT tokens in sessionStorage
+- OAuth via ISB/AWS IAM Identity Center
+- Automatic 401 → OAuth redirect
+
+### CI/CD Security
+- OIDC authentication (no long-lived credentials)
+- Step Security harden-runner
+- CodeQL scanning
+- OpenSSF Scorecard
+
+### Lambda Security
+- Source validation
+- Reserved concurrency (10)
+- PII redaction in logs
+
+---
+
+## Related Repositories
+
+| Repository | Purpose |
+|------------|---------|
+| ndx_try | React frontend for Try |
+| ndx_try_aws_scenarios | AWS scenario templates |
+| innovation-sandbox-on-aws | Core ISB solution |
+| innovation-sandbox-on-aws-approver | Lease approval |
+| innovation-sandbox-on-aws-deployer | Stack deployment |
+| cmm | Cloud Maturity Model |
+| govuk-eleventy-plugin | GOV.UK design plugin fork |
+
+---
+
+## Contact & Support
 
 - **Email:** ndx@digital.cabinet-office.gov.uk
 - **Issues:** https://github.com/co-cddo/ndx/issues
-- **Code of Conduct:** [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)
 - **License:** MIT
 
 ---
 
-## 🎓 Additional Resources
+## Document Maintenance
 
-### External Links
-
-- **Eleventy Documentation:** https://www.11ty.dev/docs/
-- **GOV.UK Frontend:** https://frontend.design-system.service.gov.uk/
-- **GOV.UK Eleventy Plugin:** https://github.com/x-govuk/govuk-eleventy-plugin
-- **Nunjucks:** https://mozilla.github.io/nunjucks/
-
-### Press & Media
-
-- [GOV.UK News: £2 billion savings announcement](https://www.gov.uk/government/news/one-stop-shop-for-tech-could-save-taxpayers-12-billion-and-overhaul-how-government-buys-digital-tools)
-- [Procurement Magazine: Digital procurement transformation](https://procurementmag.com/news/uk-government-making-digital-procurement-smarter)
-- [GOV.UK News: Tech investment and growth](https://www.gov.uk/government/news/raft-of-tech-companies-investing-in-britain-as-government-vows-to-unleash-growth)
-- [Gov Tech Speech: Google Cloud Summit London](https://www.gov.uk/government/speeches/peter-kyles-speech-at-google-cloud-summit-london)
-
----
-
-## 📝 Document Maintenance
-
-**This index is auto-generated.** To update:
-
-1. Run the document-project workflow
-2. Review and approve changes
-3. Commit updated documentation
+**This index is auto-generated** by the document-project workflow.
 
 **Last Scan:**
-
-- **Date:** 2025-11-18
-- **Mode:** Exhaustive
-- **Duration:** ~30 minutes
-- **Files Analyzed:** 165+ source files
+- **Date:** 2026-01-12
+- **Mode:** Exhaustive (full rescan)
+- **Classification:** Multi-part (web + infra)
 
 ---
 
-**For AI-Assisted Development:** This index provides comprehensive entry points into the NDX codebase. Use the architecture documentation for system-wide understanding, component inventory for UI work, development guide for setup, and source tree for navigation.
-
-**Maintained By:** UK Central Digital and Data Office (CDDO)
+*Generated by document-project workflow v1.2.0*
+*Maintained by UK Central Digital and Data Office (CDDO)*

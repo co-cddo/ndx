@@ -4,6 +4,8 @@ import {
   UpdateDistributionCommand,
   Origin,
   FunctionAssociation,
+  Method,
+  CacheBehavior,
 } from "@aws-sdk/client-cloudfront"
 import * as https from "https"
 
@@ -20,10 +22,16 @@ interface CloudFormationCustomResourceEvent {
     OriginId?: string
     OriginDomainName?: string
     OriginAccessControlId?: string
+    // HTTP origin configuration (for Lambda Function URLs)
+    OriginType?: "S3" | "HTTP"
     // Cache behavior configuration
     CachePolicyId?: string
     FunctionArn?: string
     FunctionEventType?: string
+    // Path-based cache behavior configuration
+    PathPattern?: string
+    TargetOriginId?: string
+    OriginRequestPolicyId?: string
     // Alternate domain name configuration
     AlternateDomainName?: string
     CertificateArn?: string
@@ -60,9 +68,13 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
     OriginId,
     OriginDomainName,
     OriginAccessControlId,
+    OriginType,
     CachePolicyId,
     FunctionArn,
     FunctionEventType,
+    PathPattern,
+    TargetOriginId,
+    OriginRequestPolicyId,
     AlternateDomainName,
     CertificateArn,
   } = ResourceProperties
@@ -75,13 +87,25 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
       const messages: string[] = []
 
       // Add/update origin if properties provided
-      if (OriginId && OriginDomainName && OriginAccessControlId) {
-        await addOriginToDistribution(DistributionId, OriginId, OriginDomainName, OriginAccessControlId)
-        messages.push(`Origin ${OriginId} configured`)
+      if (OriginId && OriginDomainName) {
+        if (OriginType === "HTTP") {
+          // HTTP origin (e.g., Lambda Function URL)
+          await addHttpOriginToDistribution(DistributionId, OriginId, OriginDomainName, OriginAccessControlId)
+          messages.push(`HTTP origin ${OriginId} configured`)
+        } else if (OriginAccessControlId) {
+          // S3 origin with OAC
+          await addOriginToDistribution(DistributionId, OriginId, OriginDomainName, OriginAccessControlId)
+          messages.push(`S3 origin ${OriginId} configured`)
+        }
       }
 
-      // Configure cache behavior if properties provided
-      if (CachePolicyId || FunctionArn) {
+      // Configure path-based cache behavior if properties provided
+      if (PathPattern && TargetOriginId) {
+        await addPathCacheBehavior(DistributionId, PathPattern, TargetOriginId, CachePolicyId, OriginRequestPolicyId)
+        messages.push(`Cache behavior for ${PathPattern} configured`)
+      }
+      // Configure default cache behavior if properties provided (no path pattern)
+      else if (CachePolicyId || FunctionArn) {
         await configureCacheBehavior(DistributionId, CachePolicyId, FunctionArn, FunctionEventType)
         if (CachePolicyId) messages.push(`Cache policy ${CachePolicyId} configured`)
         if (FunctionArn) messages.push(`Function ${FunctionArn} attached`)
@@ -342,6 +366,187 @@ async function configureAlternateDomainName(
   )
 
   console.log("Alternate domain name configured successfully")
+}
+
+/**
+ * Add HTTP origin to CloudFront distribution (for Lambda Function URLs)
+ * Idempotent - checks if origin already exists
+ */
+async function addHttpOriginToDistribution(
+  distributionId: string,
+  originId: string,
+  originDomainName: string,
+  originAccessControlId?: string,
+): Promise<void> {
+  console.log(`Adding HTTP origin ${originId} to distribution ${distributionId}`)
+
+  // Get current distribution config
+  const configResponse = await cloudfront.send(new GetDistributionConfigCommand({ Id: distributionId }))
+
+  if (!configResponse.DistributionConfig || !configResponse.ETag) {
+    throw new Error("Failed to get distribution config")
+  }
+
+  const config = configResponse.DistributionConfig
+  const etag = configResponse.ETag
+
+  // Check if origin already exists (idempotency)
+  const existingOriginIndex = config.Origins?.Items?.findIndex((origin: Origin) => origin.Id === originId)
+
+  if (existingOriginIndex !== undefined && existingOriginIndex >= 0) {
+    console.log(`Origin ${originId} already exists at index ${existingOriginIndex}`)
+
+    // Update existing origin
+    if (config.Origins?.Items) {
+      config.Origins.Items[existingOriginIndex] = createHttpOriginConfig(originId, originDomainName, originAccessControlId)
+      console.log(`Updated existing HTTP origin ${originId}`)
+    }
+  } else {
+    // Add new origin
+    const newOrigin = createHttpOriginConfig(originId, originDomainName, originAccessControlId)
+
+    if (!config.Origins) {
+      config.Origins = { Quantity: 0, Items: [] }
+    }
+
+    config.Origins.Items = config.Origins.Items || []
+    config.Origins.Items.push(newOrigin)
+    config.Origins.Quantity = config.Origins.Items.length
+
+    console.log(`Added new HTTP origin ${originId}. Total origins: ${config.Origins.Quantity}`)
+  }
+
+  // Update distribution with new config
+  console.log("Updating distribution...")
+  await cloudfront.send(
+    new UpdateDistributionCommand({
+      Id: distributionId,
+      DistributionConfig: config,
+      IfMatch: etag,
+    }),
+  )
+
+  console.log("Distribution updated successfully with HTTP origin")
+}
+
+/**
+ * Add path-based cache behavior to CloudFront distribution
+ * Used for routing specific paths (e.g., /signup-api/*) to different origins
+ */
+async function addPathCacheBehavior(
+  distributionId: string,
+  pathPattern: string,
+  targetOriginId: string,
+  cachePolicyId?: string,
+  originRequestPolicyId?: string,
+): Promise<void> {
+  console.log(`Adding cache behavior for ${pathPattern} to distribution ${distributionId}`)
+
+  // Get current distribution config
+  const configResponse = await cloudfront.send(new GetDistributionConfigCommand({ Id: distributionId }))
+
+  if (!configResponse.DistributionConfig || !configResponse.ETag) {
+    throw new Error("Failed to get distribution config")
+  }
+
+  const config = configResponse.DistributionConfig
+  const etag = configResponse.ETag
+
+  // Initialize CacheBehaviors if not present
+  if (!config.CacheBehaviors) {
+    config.CacheBehaviors = { Quantity: 0, Items: [] }
+  }
+  if (!config.CacheBehaviors.Items) {
+    config.CacheBehaviors.Items = []
+  }
+
+  // Check if path pattern already exists
+  const existingIndex = config.CacheBehaviors.Items.findIndex(
+    (behavior) => behavior.PathPattern === pathPattern,
+  )
+
+  const allowedMethods: Method[] = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
+  const cachedMethods: Method[] = ["HEAD", "GET"]
+
+  const newBehavior: CacheBehavior = {
+    PathPattern: pathPattern,
+    TargetOriginId: targetOriginId,
+    ViewerProtocolPolicy: "redirect-to-https",
+    AllowedMethods: {
+      Quantity: 7,
+      Items: allowedMethods,
+      CachedMethods: {
+        Quantity: 2,
+        Items: cachedMethods,
+      },
+    },
+    Compress: true,
+    // Use CachingDisabled policy for API endpoints (no caching)
+    CachePolicyId: cachePolicyId || "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+    // Use AllViewerExceptHostHeader for Lambda Function URLs
+    OriginRequestPolicyId: originRequestPolicyId || "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+    TrustedSigners: { Enabled: false, Quantity: 0 },
+    TrustedKeyGroups: { Enabled: false, Quantity: 0 },
+    SmoothStreaming: false,
+    LambdaFunctionAssociations: { Quantity: 0 },
+    FunctionAssociations: { Quantity: 0 },
+    FieldLevelEncryptionId: "",
+  }
+
+  if (existingIndex >= 0) {
+    // Update existing behavior
+    config.CacheBehaviors.Items[existingIndex] = newBehavior
+    console.log(`Updated existing cache behavior for ${pathPattern}`)
+  } else {
+    // Add new behavior
+    config.CacheBehaviors.Items.push(newBehavior)
+    config.CacheBehaviors.Quantity = config.CacheBehaviors.Items.length
+    console.log(`Added new cache behavior for ${pathPattern}. Total behaviors: ${config.CacheBehaviors.Quantity}`)
+  }
+
+  // Update distribution with new config
+  console.log("Updating distribution...")
+  await cloudfront.send(
+    new UpdateDistributionCommand({
+      Id: distributionId,
+      DistributionConfig: config,
+      IfMatch: etag,
+    }),
+  )
+
+  console.log("Cache behavior configured successfully")
+}
+
+/**
+ * Create HTTP origin configuration object (for Lambda Function URLs)
+ */
+function createHttpOriginConfig(originId: string, domainName: string, originAccessControlId?: string): Origin {
+  return {
+    Id: originId,
+    DomainName: domainName,
+    OriginPath: "",
+    CustomHeaders: {
+      Quantity: 0,
+    },
+    ConnectionAttempts: 3,
+    ConnectionTimeout: 10,
+    OriginShield: {
+      Enabled: false,
+    },
+    // Use OAC ID if provided (required for Lambda Function URLs with IAM auth)
+    OriginAccessControlId: originAccessControlId || "",
+    CustomOriginConfig: {
+      HTTPPort: 80,
+      HTTPSPort: 443,
+      OriginProtocolPolicy: "https-only",
+      OriginSslProtocols: {
+        Quantity: 1,
+        Items: ["TLSv1.2"],
+      },
+      OriginReadTimeout: 30,
+      OriginKeepaliveTimeout: 5,
+    },
+  }
 }
 
 /**

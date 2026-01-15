@@ -195,6 +195,76 @@ export class NdxStaticStack extends cdk.Stack {
     // Also ensure origin is added before configuring cache behavior
     configureCacheBehavior.node.addDependency(addOriginResource)
 
+    // =========================================================================
+    // Signup Lambda Origin Configuration (Story 1.2)
+    // =========================================================================
+    // Configure CloudFront to route /signup-api/* to the signup Lambda.
+    // The Lambda is deployed via infra-signup/, this adds the CloudFront routing.
+
+    if (config.signupLambdaFunctionUrl) {
+      const signupOriginId = "ndx-signup-lambda-origin"
+
+      // Create Lambda OAC for signing requests to Lambda Function URL
+      const signupLambdaOac = new cloudfront.CfnOriginAccessControl(this, "SignupLambdaOac", {
+        originAccessControlConfig: {
+          name: "ndx-signup-lambda-oac",
+          description: "OAC for signing requests to signup Lambda Function URL",
+          originAccessControlOriginType: "lambda",
+          signingBehavior: "always",
+          signingProtocol: "sigv4",
+        },
+      })
+
+      // Add HTTP origin for signup Lambda Function URL
+      const addSignupOrigin = new cdk.CustomResource(this, "AddSignupLambdaOrigin", {
+        serviceToken: addOriginProvider.serviceToken,
+        properties: {
+          DistributionId: config.distributionId,
+          OriginId: signupOriginId,
+          OriginDomainName: config.signupLambdaFunctionUrl,
+          OriginType: "HTTP",
+          OriginAccessControlId: signupLambdaOac.attrId,
+        },
+      })
+
+      // Ensure OAC is created before adding origin
+      addSignupOrigin.node.addDependency(signupLambdaOac)
+      // Ensure ndx-static-prod origin is added first
+      addSignupOrigin.node.addDependency(addOriginResource)
+
+      // Add cache behavior for /signup-api/* path
+      const addSignupCacheBehavior = new cdk.CustomResource(this, "AddSignupCacheBehavior", {
+        serviceToken: addOriginProvider.serviceToken,
+        properties: {
+          DistributionId: config.distributionId,
+          PathPattern: "/signup-api/*",
+          TargetOriginId: signupOriginId,
+          // CachingDisabled policy - no caching for API endpoints
+          CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+          // AllViewerExceptHostHeader policy for Lambda Function URLs
+          OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+        },
+      })
+
+      // Ensure origin is added before cache behavior
+      addSignupCacheBehavior.node.addDependency(addSignupOrigin)
+
+      new cdk.CfnOutput(this, "SignupLambdaOriginId", {
+        value: signupOriginId,
+        description: "Origin ID for signup Lambda Function URL",
+      })
+
+      new cdk.CfnOutput(this, "SignupLambdaOacId", {
+        value: signupLambdaOac.attrId,
+        description: "OAC ID for signup Lambda",
+      })
+
+      new cdk.CfnOutput(this, "SignupApiPath", {
+        value: "/signup-api/*",
+        description: "Path pattern routed to signup Lambda",
+      })
+    }
+
     // Alternate domain name configuration (e.g., ndx.digital.cabinet-office.gov.uk)
     // Prerequisites:
     // 1. Create ACM certificate in us-east-1 manually (aws acm request-certificate)

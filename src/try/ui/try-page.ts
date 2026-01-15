@@ -19,6 +19,7 @@
 import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
+import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 import "./styles/sessions-table.css"
 
 /**
@@ -178,6 +179,8 @@ async function loadAndRenderSessions(): Promise<void> {
  * - Body text explaining what Try feature offers
  * - Sign in button (GOV.UK start button style)
  *
+ * Story 2.1: Shows auth choice modal on click
+ *
  * @param container - DOM element to render into
  */
 export function renderEmptyState(container: HTMLElement): void {
@@ -189,13 +192,21 @@ export function renderEmptyState(container: HTMLElement): void {
     <p class="govuk-body">
       You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments.
     </p>
-    <a href="/api/auth/login" role="button" draggable="false" class="govuk-button govuk-button--start" data-module="govuk-button">
+    <button type="button" class="govuk-button govuk-button--start" data-module="govuk-button" id="try-page-sign-in">
       Sign in
       <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
         <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
       </svg>
-    </a>
+    </button>
   `
+
+  // Story 2.1: Open auth choice modal on click
+  const signInButton = container.querySelector("#try-page-sign-in")
+  if (signInButton) {
+    signInButton.addEventListener("click", () => {
+      openAuthChoiceModal()
+    })
+  }
 }
 
 /**

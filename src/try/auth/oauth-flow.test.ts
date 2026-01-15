@@ -78,6 +78,57 @@ describe("OAuth Flow Utilities", () => {
       storeReturnURL()
       expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/new-page")
     })
+
+    // Story 2.2: Return URL Preservation - Blocklist tests
+    describe("blocklist (Story 2.2)", () => {
+      it("should not store URL if on /signup page", () => {
+        setTestURL("https://ndx.gov.uk/signup")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+      })
+
+      it("should not store URL if on /signup.html page", () => {
+        setTestURL("https://ndx.gov.uk/signup.html")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+      })
+
+      it("should not store URL if on /signup/success page", () => {
+        setTestURL("https://ndx.gov.uk/signup/success")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+      })
+
+      it("should not store URL if on /signup/success.html page", () => {
+        setTestURL("https://ndx.gov.uk/signup/success.html")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+      })
+
+      it("should not store URL for nested signup paths", () => {
+        setTestURL("https://ndx.gov.uk/signup/something-else")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+      })
+
+      it("should not store URL if on /signup/ with trailing slash", () => {
+        setTestURL("https://ndx.gov.uk/signup/")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBeNull()
+      })
+
+      it("should store URL for non-blocklisted paths", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/aws/bedrock")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/catalogue/aws/bedrock")
+      })
+
+      it("should store URL for /try page (not blocklisted)", () => {
+        setTestURL("https://ndx.gov.uk/try")
+        storeReturnURL()
+        expect(sessionStorage.getItem("auth-return-to")).toBe("https://ndx.gov.uk/try")
+      })
+    })
   })
 
   describe("getReturnURL", () => {

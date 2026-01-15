@@ -6,7 +6,7 @@ This addon enables local Try Before You Buy feature development by conditionally
 routing HTTP requests based on their path:
 
 - UI Routes (/, /catalogue/*, /try, /assets/*) → Forward to localhost:8080 (local NDX server)
-- API Routes (/api/*) → Pass through to CloudFront (real Innovation Sandbox API)
+- API Routes (/api/*, /signup-api/*) → Pass through to CloudFront (real APIs)
 - All Other Routes → Pass through to CloudFront unchanged
 
 The CloudFront Host header is preserved for OAuth callback URL validation.
@@ -91,7 +91,7 @@ def request(flow: http.HTTPFlow) -> None:
     Routing Logic:
         1. Check if request is to CloudFront domain (ndx.digital.cabinet-office.gov.uk)
         2. If CloudFront domain:
-           a. If path starts with /api/ → Pass through unchanged (API)
+           a. If path starts with /api/ or /signup-api/ → Pass through unchanged (APIs)
            b. Else if path matches UI routes → Forward to localhost:8080 (UI)
            c. Else → Pass through unchanged (OAuth callbacks, etc.)
         3. If not CloudFront domain → Ignore (pass through unchanged)
@@ -106,7 +106,7 @@ def request(flow: http.HTTPFlow) -> None:
     request_path = flow.request.path
 
     # API routes pass through to CloudFront unchanged (preserve auth headers, OAuth, etc.)
-    if request_path.startswith("/api/"):
+    if request_path.startswith("/api/") or request_path.startswith("/signup-api/"):
         logging.info(f"API Route: {request_path} → CloudFront (passthrough)")
         return  # No modification - API requests go to CloudFront backend
 

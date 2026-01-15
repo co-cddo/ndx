@@ -15,7 +15,7 @@
  */
 
 import { authState } from "../auth/auth-provider"
-import { storeReturnURL } from "../auth/oauth-flow"
+import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 
 /**
  * Initialize authentication navigation component.
@@ -83,20 +83,18 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
     }
   } else {
     // Render "Sign in" button
-    // Links to OAuth login endpoint (handled by Innovation Sandbox)
-    // Story 5.2: Add click handler to store return URL before OAuth redirect
+    // Story 2.1: Opens auth choice modal to let user choose sign in or create account
     container.innerHTML = `
-      <a href="/api/auth/login" class="govuk-service-navigation__link govuk-header__link" id="sign-in-button">
+      <button type="button" class="govuk-service-navigation__link govuk-header__link" id="sign-in-button">
         Sign in
-      </a>
+      </button>
     `
 
-    // Story 5.2: Store return URL before OAuth redirect
+    // Story 2.1: Open auth choice modal on click
     const signInButton = container.querySelector("#sign-in-button")
     if (signInButton) {
       signInButton.addEventListener("click", () => {
-        storeReturnURL()
-        // Allow default link behavior (browser redirects to /api/auth/login)
+        openAuthChoiceModal()
       })
     }
   }

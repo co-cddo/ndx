@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Cross-account role for NDX Signup Lambda to access Identity Store
+
+Parameters:
+  NdxAccountId:
+    Type: String
+    Default: "568672915267"
+    Description: NDX account ID where Lambda runs
+
+  NdxLambdaRoleArn:
+    Type: String
+    Default: "arn:aws:iam::568672915267:role/NdxSignupStack-SignupHandlerServiceRole38969D8B-OQQNN38wKt8E"
+    Description: ARN of the Lambda execution role in NDX account
+
+  IdentityStoreId:
+    Type: String
+    Default: "d-9267e1e371"
+    Description: IAM Identity Center Identity Store ID
+
+  GroupId:
+    Type: String
+    Description: NDX Users Group ID in IAM Identity Center
+
+Resources:
+  SignupCrossAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ndx-signup-cross-account-role
+      Description: Allows NDX Signup Lambda to access Identity Store
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref NdxLambdaRoleArn
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: ndx-signup-external-id
+      Policies:
+        - PolicyName: IdentityStoreAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Identity Store operations - all actions need both Identitystore and resource-specific ARNs
+              # See: https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsidentitystore.html
+              - Sid: IdentityStoreUserOperations
+                Effect: Allow
+                Action:
+                  - identitystore:CreateUser
+                  - identitystore:ListUsers
+                  - identitystore:DescribeUser
+                Resource:
+                  # Identitystore resource (required for all user operations)
+                  - !Sub "arn:aws:identitystore::${AWS::AccountId}:identitystore/${IdentityStoreId}"
+                  # AllUsers resource (required for ListUsers, DescribeUser)
+                  - "arn:aws:identitystore:::user/*"
+              # CreateGroupMembership requires Group, Identitystore, and User resources
+              - Sid: CreateGroupMembership
+                Effect: Allow
+                Action:
+                  - identitystore:CreateGroupMembership
+                Resource:
+                  - !Sub "arn:aws:identitystore::${AWS::AccountId}:identitystore/${IdentityStoreId}"
+                  - "arn:aws:identitystore:::user/*"
+                  - !Sub "arn:aws:identitystore:::group/${GroupId}"
+      Tags:
+        - Key: project
+          Value: ndx
+        - Key: feature
+          Value: signup
+        - Key: managedby
+          Value: cloudformation
+
+Outputs:
+  CrossAccountRoleArn:
+    Description: ARN of the cross-account role (use this in NDX Lambda)
+    Value: !GetAtt SignupCrossAccountRole.Arn
+    Export:
+      Name: NdxSignupCrossAccountRoleArn

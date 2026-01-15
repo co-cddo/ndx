@@ -1,5 +1,5 @@
 ---
-layout: layouts/page.njk
+layout: page
 title: Accessibility statement for NDX Try Before You Buy
 ---
 

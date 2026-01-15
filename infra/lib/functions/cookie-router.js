@@ -15,6 +15,20 @@ function handler(event) {
   var cookies = request.cookies || {}
   var uri = request.uri
 
+  // API paths have their own cache behaviors and origins
+  // Use selectRequestOriginById() to ensure correct origin routing
+  // This is a safety net in case this function runs for API paths unexpectedly
+  if (uri.indexOf("/signup-api/") === 0) {
+    // Route to signup Lambda origin
+    cf.selectRequestOriginById("ndx-signup-lambda-origin")
+    return request
+  }
+  if (uri.indexOf("/api/") === 0) {
+    // Route to ISB API Gateway origin
+    cf.selectRequestOriginById("InnovationSandboxComputeCloudFrontUiApiIsbCloudFrontDistributionOrigin2A994B75A")
+    return request
+  }
+
   // Check if NDX cookie exists and has value 'legacy' (opt-out of new origin)
   var ndxCookie = cookies["NDX"]
 

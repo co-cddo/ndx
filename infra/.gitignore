@@ -1,4 +1,8 @@
 # Compiled JavaScript/TypeScript artifacts
+bin/**/*.js
+bin/**/*.d.ts
+bin/**/*.js.map
+
 lib/**/*.js
 lib/**/*.d.ts
 lib/**/*.js.map
@@ -7,6 +11,10 @@ lib/**/*.js.map
 test/**/*.js
 test/**/*.d.ts
 test/**/*.js.map
+
+# Root-level compiled files
+test-payload-inline.js
+test-payload-inline.d.ts
 
 # Build output
 *.js.map

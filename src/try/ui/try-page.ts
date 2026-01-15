@@ -19,6 +19,7 @@
 import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
+import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 import "./styles/sessions-table.css"
 
 /**
@@ -178,24 +179,50 @@ async function loadAndRenderSessions(): Promise<void> {
  * - Body text explaining what Try feature offers
  * - Sign in button (GOV.UK start button style)
  *
+ * Story 2.1: Shows auth choice modal on click
+ *
  * @param container - DOM element to render into
  */
 export function renderEmptyState(container: HTMLElement): void {
   // Stop auto-refresh timer when showing empty state
   stopAutoRefresh()
 
-  container.innerHTML = `
-    <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
-    <p class="govuk-body">
-      You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments.
-    </p>
-    <a href="/api/auth/login" role="button" draggable="false" class="govuk-button govuk-button--start" data-module="govuk-button">
-      Sign in
-      <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
-        <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
-      </svg>
-    </a>
-  `
+  // Try to show pre-rendered unauthenticated state (from Nunjucks govukButton macro)
+  const unauthState = document.getElementById("try-unauthenticated-state")
+  const authStateEl = document.getElementById("try-authenticated-state")
+
+  if (unauthState) {
+    // Use pre-rendered template (production path)
+    unauthState.removeAttribute("hidden")
+    unauthState.classList.remove("js-hidden")
+    if (authStateEl) {
+      authStateEl.setAttribute("hidden", "")
+      authStateEl.classList.add("js-hidden")
+    }
+  } else {
+    // Fallback: generate HTML (for tests or pages without template)
+    container.innerHTML = `
+      <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
+      <p class="govuk-body">
+        You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments.
+      </p>
+      <button type="button" class="govuk-button govuk-button--start" data-module="govuk-button" id="try-page-sign-in">
+        Sign in
+        <svg class="govuk-button__start-icon" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
+          <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
+        </svg>
+      </button>
+    `
+  }
+
+  // Story 2.1: Open auth choice modal on click
+  const signInButton = document.getElementById("try-page-sign-in")
+  if (signInButton && !signInButton.hasAttribute("data-listener-attached")) {
+    signInButton.setAttribute("data-listener-attached", "true")
+    signInButton.addEventListener("click", () => {
+      openAuthChoiceModal()
+    })
+  }
 }
 
 /**
@@ -208,6 +235,22 @@ export function renderEmptyState(container: HTMLElement): void {
  * @param leases - User's leases to display
  */
 export function renderAuthenticatedState(container: HTMLElement, leases: Lease[], isRefreshing = false): void {
+  // Hide unauthenticated state, show authenticated state container (if template elements exist)
+  const unauthState = document.getElementById("try-unauthenticated-state")
+  const authStateEl = document.getElementById("try-authenticated-state")
+
+  if (unauthState) {
+    unauthState.setAttribute("hidden", "")
+    unauthState.classList.add("js-hidden")
+  }
+  if (authStateEl) {
+    authStateEl.removeAttribute("hidden")
+    authStateEl.classList.remove("js-hidden")
+  }
+
+  // Use authenticated state container if available, otherwise fall back to passed container (tests)
+  const targetContainer = authStateEl ?? container
+
   const hasLeases = leases.length > 0
   const activeCount = leases.filter((l) => l.status === "Active").length
   const pendingCount = leases.filter((l) => l.status === "PendingApproval").length
@@ -227,7 +270,7 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
     ? `<span class="sessions-refresh-indicator" aria-live="polite">Updating...</span>`
     : `<span class="sessions-refresh-countdown" id="refresh-countdown">Refreshing in ${secondsUntilRefresh}s</span>`
 
-  container.innerHTML = `
+  targetContainer.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
     <p class="govuk-body sessions-description">This page updates automatically. ${refreshStatus}</p>
 

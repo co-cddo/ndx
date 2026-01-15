@@ -7,8 +7,9 @@ import util from "util"
 import mermaidTransformPlugin from "./lib/eleventy-mermaid-transform.js"
 import remoteImagesPlugin from "./lib/eleventy-remote-images.js"
 
-// esbuild context for watch mode (persists across rebuilds)
-let esbuildContext = null
+// esbuild contexts for watch mode (persists across rebuilds)
+let esbuildContextTry = null
+let esbuildContextSignup = null
 
 function gitRev() {
   // Handle both regular repos and worktrees
@@ -140,6 +141,11 @@ export default function (eleventyConfig) {
     },
     footer: {
       meta: {
+        items: [
+          { text: "Privacy", href: "/privacy/" },
+          { text: "Cookies", href: "/cookies/" },
+          { text: "Accessibility", href: "/accessibility/" },
+        ],
         text: `Page built from <a href="https://github.com/co-cddo/ndx/commit/${gitRev()}">${gitSHA()}</a> at ${new Date().toISOString()}`,
       },
     },
@@ -156,7 +162,9 @@ export default function (eleventyConfig) {
   // TypeScript bundling with esbuild
   eleventyConfig.on("eleventy.before", async ({ runMode }) => {
     const isDev = runMode === "serve"
-    const config = {
+
+    // Try bundle configuration
+    const tryConfig = {
       entryPoints: ["src/try/main.ts"],
       bundle: true,
       outfile: "src/assets/try.bundle.js",
@@ -166,32 +174,56 @@ export default function (eleventyConfig) {
       minify: !isDev,
     }
 
+    // Signup bundle configuration (Story 1.5)
+    const signupConfig = {
+      entryPoints: ["src/signup/main.ts"],
+      bundle: true,
+      outfile: "src/assets/signup.bundle.js",
+      sourcemap: isDev,
+      target: "es2020",
+      format: "esm",
+      minify: !isDev,
+    }
+
     if (isDev) {
       // Dev: Use context API for efficient watch mode
-      if (!esbuildContext) {
-        esbuildContext = await esbuild.context(config)
-        // Do an initial build before starting watch mode
-        await esbuildContext.rebuild()
-        await esbuildContext.watch()
-        console.log("[esbuild] Watching TypeScript files...")
+      if (!esbuildContextTry) {
+        esbuildContextTry = await esbuild.context(tryConfig)
+        await esbuildContextTry.rebuild()
+        await esbuildContextTry.watch()
+        console.log("[esbuild] Watching Try TypeScript files...")
+      }
+      if (!esbuildContextSignup) {
+        esbuildContextSignup = await esbuild.context(signupConfig)
+        await esbuildContextSignup.rebuild()
+        await esbuildContextSignup.watch()
+        console.log("[esbuild] Watching Signup TypeScript files...")
       }
     } else {
-      // Production: One-time build
-      await esbuild.build(config)
-      console.log("[esbuild] Production build complete")
+      // Production: One-time builds
+      await esbuild.build(tryConfig)
+      await esbuild.build(signupConfig)
+      console.log("[esbuild] Production build complete (try + signup bundles)")
     }
   })
 
-  // Cleanup context after production builds
+  // Cleanup contexts after production builds
   eleventyConfig.on("eleventy.after", async ({ runMode }) => {
-    if (runMode === "build" && esbuildContext) {
-      await esbuildContext.dispose()
-      esbuildContext = null
+    if (runMode === "build") {
+      if (esbuildContextTry) {
+        await esbuildContextTry.dispose()
+        esbuildContextTry = null
+      }
+      if (esbuildContextSignup) {
+        await esbuildContextSignup.dispose()
+        esbuildContextSignup = null
+      }
     }
   })
 
   // Tell Eleventy to watch TypeScript files (triggers browser refresh)
   eleventyConfig.addWatchTarget("./src/try/**/*.ts")
+  eleventyConfig.addWatchTarget("./src/signup/**/*.ts")
 
   eleventyConfig.addShortcode("remoteInclude", async function (url, start, end) {
     url = url.replace("https://github.com", "https://cdn.jsdelivr.net/gh").replace("/blob/", "@")

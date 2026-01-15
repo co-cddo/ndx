@@ -16,7 +16,7 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-023|ADR-023: OAuth Callback Page Pattern}
  */
 
-import { JWT_TOKEN_KEY, RETURN_URL_KEY, CALLBACK_PATH } from "../constants"
+import { JWT_TOKEN_KEY, RETURN_URL_KEY, RETURN_URL_BLOCKLIST } from "../constants"
 import { sanitizeReturnUrl } from "../utils/url-validator"
 
 /**
@@ -49,8 +49,14 @@ export interface OAuthError {
  * ```
  */
 export function storeReturnURL(): void {
-  // Prevent callback page from being stored as return URL (infinite loop protection)
-  if (window.location.pathname === CALLBACK_PATH || window.location.pathname === `${CALLBACK_PATH}.html`) {
+  // Story 2.2: Use blocklist to prevent storing problematic URLs
+  // Includes callback page and signup pages per ADR-042
+  const pathname = window.location.pathname
+  const isBlocklisted = RETURN_URL_BLOCKLIST.some(
+    (blocked) => pathname === blocked || pathname === `${blocked}.html` || pathname.startsWith(`${blocked}/`),
+  )
+
+  if (isBlocklisted) {
     return
   }
 

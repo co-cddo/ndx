@@ -9,6 +9,10 @@
  * - Unauthenticated users redirected to /api/auth/login
  * - Authenticated users proceed to AUP modal (Story 6.6)
  *
+ * Story 2.1: Auth Choice Modal
+ * - Unauthenticated users now see auth choice modal instead of direct redirect
+ * - Modal offers "Sign in" or "Create account" options
+ *
  * @module try-button
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-017|ADR-017: Try Button}
  */
@@ -16,7 +20,7 @@
 import { authState } from "../auth/auth-provider"
 import { openAupModal, closeAupModal, aupModal } from "./components/aup-modal"
 import { createLease } from "../api/leases-service"
-import { storeReturnURL } from "../auth/oauth-flow"
+import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 
 /**
  * Initialize try button click handlers.
@@ -74,13 +78,11 @@ function processTryButtonClick(button: HTMLElement): void {
     return
   }
 
-  // Story 6.5: Check authentication
+  // Story 6.5 & 2.1: Check authentication
   if (!authState.isAuthenticated()) {
-    // Store return URL for post-login redirect (uses oauth-flow's storage)
-    storeReturnURL()
-
-    // Redirect to OAuth login
-    window.location.href = "/api/auth/login"
+    // Story 2.1: Show auth choice modal instead of direct redirect
+    // Modal handles return URL storage internally before redirect
+    openAuthChoiceModal()
     return
   }
 

@@ -1,10 +1,10 @@
 {
   "workflow_version": "1.2.0",
   "timestamps": {
-    "started": "2025-11-17T23:50:00.000Z",
-    "last_updated": "2025-11-18T00:00:00.000Z"
+    "started": "2026-01-12T00:00:00.000Z",
+    "last_updated": "2026-01-12T00:30:00.000Z"
   },
-  "mode": "initial_scan",
+  "mode": "full_rescan",
   "scan_level": "exhaustive",
   "project_root": "/Users/cns/httpdocs/cddo/ndx",
   "output_folder": "/Users/cns/httpdocs/cddo/ndx/docs",
@@ -12,88 +12,100 @@
     {
       "step": "step_1",
       "status": "completed",
-      "timestamp": "2025-11-18T00:00:00.000Z",
-      "summary": "Classified as monolith with 1 part, web/Eleventy static site"
+      "timestamp": "2026-01-12T00:05:00.000Z",
+      "summary": "Classified as multi-part with 2 parts: web (Eleventy static site) + infra (AWS CDK infrastructure)"
     },
     {
       "step": "step_2",
       "status": "completed",
-      "timestamp": "2025-11-18T00:02:00.000Z",
-      "summary": "Found 2 project docs, user context: government procurement platform saving £2B"
+      "timestamp": "2026-01-12T00:10:00.000Z",
+      "summary": "Found 28 existing docs, identified 9 related repos in NDX ecosystem"
     },
     {
       "step": "step_3",
       "status": "completed",
-      "timestamp": "2025-11-18T00:03:00.000Z",
-      "summary": "Tech stack: Eleventy 3.1.2, Node 20.17.0, GOV.UK Frontend, JAMstack architecture"
+      "timestamp": "2026-01-12T00:12:00.000Z",
+      "summary": "Analyzed tech stack: Eleventy 3.1.2, AWS CDK 2.215.0, TypeScript 5.7.2/5.9.3"
     },
     {
       "step": "step_4",
       "status": "completed",
-      "timestamp": "2025-11-18T00:10:00.000Z",
-      "summary": "Exhaustive scan complete: 11 components, 8 collections, 165+ content files, component-inventory.md written"
+      "timestamp": "2026-01-12T00:15:00.000Z",
+      "summary": "Conditional analysis: Try feature API/UI components, Lambda handlers, CloudWatch alarms"
     },
     {
       "step": "step_5",
       "status": "completed",
-      "timestamp": "2025-11-18T00:15:00.000Z",
-      "summary": "Source tree documented: 85+ directories, 165+ files, source-tree-analysis.md written"
+      "timestamp": "2026-01-12T00:18:00.000Z",
+      "summary": "Generated source-tree-analysis.md with multi-part structure"
     },
     {
       "step": "step_6",
       "status": "completed",
-      "timestamp": "2025-11-18T00:20:00.000Z",
-      "summary": "Dev/deployment guides written: development-guide.md"
+      "timestamp": "2026-01-12T00:20:00.000Z",
+      "summary": "Extracted CI/CD pipelines, scripts, environments for both parts"
+    },
+    {
+      "step": "step_7",
+      "status": "completed",
+      "timestamp": "2026-01-12T00:22:00.000Z",
+      "summary": "Documented web↔infra integration, ISB EventBridge subscription, cross-account patterns"
     },
     {
       "step": "step_8",
       "status": "completed",
-      "timestamp": "2025-11-18T00:30:00.000Z",
-      "summary": "Architecture doc written: comprehensive JAMstack architecture documentation"
+      "timestamp": "2026-01-12T00:25:00.000Z",
+      "summary": "Generated comprehensive architecture.md covering both parts"
+    },
+    {
+      "step": "step_9",
+      "status": "completed",
+      "timestamp": "2026-01-12T00:28:00.000Z",
+      "summary": "Updated component-inventory.md, source-tree-analysis.md, development-guide.md"
     },
     {
       "step": "step_10",
       "status": "completed",
-      "timestamp": "2025-11-18T00:35:00.000Z",
-      "summary": "Master index generated: comprehensive navigation document with all links"
-    },
-    {
-      "step": "step_11",
-      "status": "completed",
-      "timestamp": "2025-11-18T00:40:00.000Z",
-      "summary": "Validation complete: 6 files, 2784 lines, no incomplete items. User confirmed: prototype demo, adding real capability soon."
-    },
-    {
-      "step": "step_12",
-      "status": "completed",
-      "timestamp": "2025-11-18T00:45:00.000Z",
-      "summary": "Workflow complete: Documented prototype baseline before evolution to production platform"
+      "timestamp": "2026-01-12T00:30:00.000Z",
+      "summary": "Generated master index (docs/index.md) with multi-part project overview"
     }
   ],
-  "current_step": "completed",
-  "timestamps": {
-    "started": "2025-11-17T23:50:00.000Z",
-    "last_updated": "2025-11-18T00:45:00.000Z",
-    "completed": "2025-11-18T00:45:00.000Z"
-  },
+  "current_step": "step_11",
   "findings": {
-    "project_classification": "Monolith web project using Eleventy static site generator"
+    "project_classification": "Multi-part project: JAMstack web frontend + Serverless backend infrastructure",
+    "repository_type": "multi-part",
+    "existing_docs_count": 28,
+    "related_repos": ["ndx_try", "ndx_try_aws_scenarios", "innovation-sandbox-on-aws", "innovation-sandbox-on-aws-approver", "innovation-sandbox-on-aws-deployer", "innovation-sandbox-on-aws-costs", "innovation-sandbox-on-aws-utils", "cmm", "govuk-eleventy-plugin"]
   },
   "project_types": [
     {
-      "part_id": "main",
+      "part_id": "web",
       "project_type_id": "web",
-      "display_name": "National Digital Exchange Website"
+      "display_name": "NDX Static Site (Eleventy)",
+      "root_path": "/Users/cns/httpdocs/cddo/ndx"
+    },
+    {
+      "part_id": "infra",
+      "project_type_id": "infra",
+      "display_name": "NDX Infrastructure (AWS CDK)",
+      "root_path": "/Users/cns/httpdocs/cddo/ndx/infra"
     }
   ],
   "outputs_generated": [
     "project-scan-report.json",
+    "architecture.md",
     "component-inventory.md",
     "source-tree-analysis.md",
     "development-guide.md",
-    "architecture.md",
     "index.md"
   ],
-  "resume_instructions": "Workflow complete",
-  "user_context": "NDX is currently a prototype/concept demo showing stakeholders the vision. Team is about to add real capability (service trials, access requests, authentication). Documentation captures baseline before evolution."
+  "statistics": {
+    "try_feature_ts_files": 49,
+    "products_in_catalogue": 47,
+    "lambda_files": 36,
+    "e2e_tests": 15,
+    "nunjucks_templates": 11,
+    "cloudwatch_alarms": 12,
+    "notify_templates": 10
+  }
 }

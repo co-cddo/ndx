@@ -243,6 +243,65 @@ body.aup-modal-open {
   overflow: hidden;
 }
 
+// ============================================================================
+// Auth Choice Modal - Story 2.1
+// ============================================================================
+// Modal for choosing between sign in and create account
+// Follows same pattern as AUP modal for consistency
+// ============================================================================
+
+.auth-choice-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+
+  &[aria-hidden="true"] {
+    display: none;
+  }
+}
+
+.auth-choice-modal {
+  background: #fff;
+  max-width: 500px;
+  width: 90%;
+  border-radius: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  margin: auto;
+
+  &__header {
+    padding: 20px 20px 0;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__body {
+    padding: 20px;
+  }
+
+  &__footer {
+    padding: 0 20px 20px;
+    display: flex;
+    gap: 15px;
+
+    .govuk-button {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// Body scroll lock when auth choice modal is open
+body.auth-choice-modal-open {
+  overflow: hidden;
+}
+
 // Document list title with inline tag - Story 6.2
 .app-document-list__item-title {
   display: flex;
@@ -499,6 +558,56 @@ body.aup-modal-open {
     overflow-x: auto;
     font-size: 0.875rem;
     margin: 0;
+  }
+}
+
+// ============================================================================
+// Signup Form - Split Email Input (Story 1.5)
+// ============================================================================
+// Split email input: local part text input + "@" + domain dropdown
+// Follows GOV.UK Design System patterns for form components
+// ============================================================================
+
+.ndx-email-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 5px;
+
+  &__local {
+    flex: 1;
+    min-width: 150px;
+    max-width: 200px;
+  }
+
+  &__at {
+    padding: 10px 5px 0;
+    font-size: 19px;
+    line-height: 1.3;
+    color: #0b0c0c; // GOV.UK text colour
+  }
+
+  &__domain {
+    flex: 2;
+    min-width: 200px;
+  }
+}
+
+// Mobile: Stack vertically
+@media (max-width: 640px) {
+  .ndx-email-input {
+    flex-direction: column;
+    gap: 10px;
+
+    &__local,
+    &__domain {
+      width: 100%;
+      max-width: none;
+    }
+
+    &__at {
+      display: none; // Hide @ on mobile, user understands format
+    }
   }
 }
 

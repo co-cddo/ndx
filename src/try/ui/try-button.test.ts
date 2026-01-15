@@ -4,6 +4,7 @@
  * Story 6.5: Authentication check before showing AUP modal
  * Story 6.6: AUP modal integration
  * Story 6.9: Lease request handling
+ * Story 2.1: Auth choice modal for unauthenticated users
  *
  * Uses jsdomReconfigure to properly mock window.location in jsdom v27+ (Jest 30).
  */
@@ -12,7 +13,7 @@ import { initTryButton } from "./try-button"
 import { authState } from "../auth/auth-provider"
 import { openAupModal, closeAupModal, aupModal } from "./components/aup-modal"
 import { createLease } from "../api/leases-service"
-import { storeReturnURL } from "../auth/oauth-flow"
+import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 
 // Mock dependencies
 jest.mock("../auth/auth-provider", () => ({
@@ -20,12 +21,6 @@ jest.mock("../auth/auth-provider", () => ({
     isAuthenticated: jest.fn(),
   },
 }))
-
-jest.mock("../auth/oauth-flow", () => ({
-  storeReturnURL: jest.fn(),
-}))
-
-const mockStoreReturnURL = storeReturnURL as jest.MockedFunction<typeof storeReturnURL>
 
 jest.mock("./components/aup-modal", () => ({
   openAupModal: jest.fn(),
@@ -35,9 +30,15 @@ jest.mock("./components/aup-modal", () => ({
   },
 }))
 
+jest.mock("../../signup/ui/auth-choice-modal", () => ({
+  openAuthChoiceModal: jest.fn(),
+}))
+
 jest.mock("../api/leases-service", () => ({
   createLease: jest.fn(),
 }))
+
+const mockOpenAuthChoiceModal = openAuthChoiceModal as jest.MockedFunction<typeof openAuthChoiceModal>
 
 const mockAuthState = authState as jest.Mocked<typeof authState>
 const mockOpenAupModal = openAupModal as jest.MockedFunction<typeof openAupModal>
@@ -145,7 +146,8 @@ describe("Try Button Handler", () => {
       mockAuthState.isAuthenticated.mockReturnValue(false)
     })
 
-    it("should store return URL before redirecting", () => {
+    // Story 2.1: Now shows auth choice modal instead of direct redirect
+    it("should open auth choice modal", () => {
       document.body.innerHTML = `
         <button data-try-id="${TEST_TRY_ID}">Try this now</button>
       `
@@ -154,10 +156,10 @@ describe("Try Button Handler", () => {
       const button = document.querySelector("button") as HTMLButtonElement
       button.click()
 
-      expect(mockStoreReturnURL).toHaveBeenCalled()
+      expect(mockOpenAuthChoiceModal).toHaveBeenCalled()
     })
 
-    it("should redirect to OAuth login", () => {
+    it("should not redirect directly to OAuth login", () => {
       document.body.innerHTML = `
         <button data-try-id="${TEST_TRY_ID}">Try this now</button>
       `
@@ -166,7 +168,8 @@ describe("Try Button Handler", () => {
       const button = document.querySelector("button") as HTMLButtonElement
       button.click()
 
-      expect(getRedirectUrl()).toBe("/api/auth/login")
+      // Auth choice modal handles redirect, not direct navigation
+      expect(getRedirectUrl()).not.toBe("/api/auth/login")
     })
 
     it("should not open AUP modal", () => {

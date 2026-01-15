@@ -7,6 +7,7 @@
  */
 
 import { test, expect } from "@playwright/test"
+import AxeBuilder from "@axe-core/playwright"
 
 // Page paths - uses baseURL from playwright.config.ts
 const PRODUCT_PAGE = "/catalogue/aws/innovation-sandbox-empty"
@@ -147,8 +148,8 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   })
 })
 
-test.describe("Try Before You Buy - Unauthenticated User", () => {
-  test("AC #8: Unauthenticated user redirected to login", async ({ page }) => {
+test.describe("Try Before You Buy - Unauthenticated User (Story 2.1)", () => {
+  test("AC #8: Unauthenticated user sees auth choice modal", async ({ page }) => {
     // Start without token
     await page.goto(PRODUCT_PAGE)
 
@@ -160,16 +161,195 @@ test.describe("Try Before You Buy - Unauthenticated User", () => {
     const tryButton = page.locator("[data-try-id]")
     await tryButton.click()
 
-    // Should redirect through /api/auth/login to OAuth provider (AWS SSO)
-    // Wait for navigation away from product page
+    // Story 2.1: Should show auth choice modal instead of redirect
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible({ timeout: 5000 })
+
+    // Verify modal has correct structure (AC1)
+    await expect(modal).toHaveAttribute("role", "dialog")
+    await expect(modal).toHaveAttribute("aria-modal", "true")
+
+    // Verify modal title
+    await expect(modal.locator("#auth-choice-modal-title")).toContainText("Sign in or create an account")
+  })
+
+  test("Auth choice modal has Sign in and Create account buttons (AC1)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Verify both buttons exist
+    const signInBtn = modal.locator("#auth-choice-sign-in-btn")
+    const createAccountBtn = modal.locator("#auth-choice-create-btn")
+
+    await expect(signInBtn).toBeVisible()
+    await expect(signInBtn).toHaveText("Sign in")
+
+    await expect(createAccountBtn).toBeVisible()
+    await expect(createAccountBtn).toHaveText("Create account")
+  })
+
+  test("Sign in button redirects to login (AC2)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Click Sign in button
+    await modal.locator("#auth-choice-sign-in-btn").click()
+
+    // Should redirect to /api/auth/login or OAuth provider
     await page.waitForURL((url) => !url.pathname.includes(PRODUCT_PAGE), { timeout: 5000 })
 
-    // Verify we were redirected (either to /api/auth/login or directly to OAuth provider)
-    // OAuth redirect is fast, so we might land at AWS SSO (awsapps.com)
     const finalUrl = page.url()
     const isRedirected =
       finalUrl.includes("/api/auth/login") || finalUrl.includes("awsapps.com") || finalUrl.includes("oauth")
     expect(isRedirected).toBe(true)
+  })
+
+  test("Create account button redirects to signup (AC3)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Click Create account button
+    await modal.locator("#auth-choice-create-btn").click()
+
+    // Should redirect to /signup
+    await page.waitForURL("**/signup**", { timeout: 5000 })
+
+    expect(page.url()).toContain("/signup")
+  })
+
+  test("Escape key closes auth choice modal (AC4)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Press Escape
+    await page.keyboard.press("Escape")
+
+    // Modal should close
+    await expect(modal).not.toBeVisible()
+
+    // Should still be on product page
+    expect(page.url()).toContain(PRODUCT_PAGE)
+  })
+
+  test("Clicking outside modal closes it (AC4)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Click on overlay (outside modal)
+    const overlay = page.locator(".auth-choice-modal-overlay")
+    await overlay.click({ position: { x: 10, y: 10 } })
+
+    // Modal should close
+    await expect(modal).not.toBeVisible()
+  })
+
+  test("Auth choice modal has no accessibility violations (AC5, AC6)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Run accessibility scan
+    const accessibilityScanResults = await new AxeBuilder({ page })
+      .include("#auth-choice-modal")
+      .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
+      .analyze()
+
+    // WCAG 2.2 AA requires zero violations
+    expect(accessibilityScanResults.violations).toHaveLength(0)
+  })
+
+  test("Focus trap keeps focus within auth choice modal (AC5)", async ({ page }) => {
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button as unauthenticated user
+    await page.locator("[data-try-id]").click()
+
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Tab through focusable elements multiple times
+    for (let i = 0; i < 10; i++) {
+      await page.keyboard.press("Tab")
+    }
+
+    // Focus should still be within the modal
+    const activeElement = await page.evaluate(() => {
+      const active = document.activeElement
+      return active?.closest("#auth-choice-modal") !== null
+    })
+    expect(activeElement).toBe(true)
+  })
+})
+
+test.describe("Return URL Preservation (Story 2.2)", () => {
+  test("should store return URL when clicking Create account from product page (AC1)", async ({ page }) => {
+    // Navigate to product page as unauthenticated user
+    await page.goto(PRODUCT_PAGE)
+
+    // Click try button
+    await page.locator("[data-try-id]").click()
+
+    // Wait for auth choice modal
+    const modal = page.locator("#auth-choice-modal")
+    await expect(modal).toBeVisible()
+
+    // Click Create account
+    await modal.locator("#auth-choice-create-btn").click()
+
+    // Wait for navigation to /signup
+    await page.waitForURL("**/signup**", { timeout: 5000 })
+
+    // Verify return URL is stored in sessionStorage
+    const returnUrl = await page.evaluate(() => sessionStorage.getItem("auth-return-to"))
+    expect(returnUrl).toContain(PRODUCT_PAGE)
+  })
+
+  test("should not store /signup as return URL (AC3, AC6)", async ({ page }) => {
+    // Navigate directly to signup page
+    await page.goto("/signup/")
+
+    // Verify the signup page is not stored as return URL
+    // (This happens because the signup bundle calls storeReturnURL on load, but blocklist should prevent it)
+    const returnUrl = await page.evaluate(() => sessionStorage.getItem("auth-return-to"))
+    expect(returnUrl).toBeNull()
+  })
+
+  test("should not store /signup/success as return URL (AC3, AC6)", async ({ page }) => {
+    // Navigate to success page
+    await page.goto("/signup/success/")
+
+    // Verify the success page is not stored as return URL
+    const returnUrl = await page.evaluate(() => sessionStorage.getItem("auth-return-to"))
+    expect(returnUrl).toBeNull()
   })
 })
 

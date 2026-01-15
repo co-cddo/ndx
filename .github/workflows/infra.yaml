@@ -257,3 +257,171 @@ jobs:
           name: cdk-outputs
           path: infra/cdk-outputs.json
           retention-days: 30
+
+  # ==========================================================================
+  # Signup Infrastructure (infra-signup/)
+  # ==========================================================================
+
+  # Signup infrastructure unit tests
+  signup-infra-unit-tests:
+    name: Signup Infrastructure Unit Tests
+    runs-on: ubuntu-latest
+    outputs:
+      signup-infra-changed: ${{ steps.changes.outputs.signup-infra }}
+    defaults:
+      run:
+        working-directory: infra-signup
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Check for signup infra changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: changes
+        with:
+          filters: |
+            signup-infra:
+              - 'infra-signup/**'
+              - '.github/workflows/infra.yaml'
+
+      - name: Skip notification
+        if: steps.changes.outputs.signup-infra != 'true'
+        run: |
+          echo "::notice::No signup infrastructure files changed. Tests skipped but check passed."
+          echo "Signup infra tests are only run when files in infra-signup/** are modified."
+
+      - name: Enable Corepack
+        if: steps.changes.outputs.signup-infra == 'true'
+        run: corepack enable
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.signup-infra == 'true'
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+          cache-dependency-path: infra-signup/yarn.lock
+
+      - name: Install dependencies
+        if: steps.changes.outputs.signup-infra == 'true'
+        run: yarn install --immutable
+
+      - name: Run infrastructure unit tests
+        if: steps.changes.outputs.signup-infra == 'true'
+        run: yarn test
+
+      - name: Run lint
+        if: steps.changes.outputs.signup-infra == 'true'
+        run: yarn lint
+
+  # Signup Lambda CDK Deploy (to NDX account, deploys Lambda for /signup-api/*)
+  signup-cdk-deploy:
+    name: Signup CDK Deploy
+    runs-on: ubuntu-latest
+    needs: [signup-infra-unit-tests]
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.signup-infra-unit-tests.outputs.signup-infra-changed == 'true' }}
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: infrastructure
+    defaults:
+      run:
+        working-directory: infra-signup
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "yarn"
+          cache-dependency-path: infra-signup/yarn.lock
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Configure AWS credentials via OIDC (NDX Account)
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-InfraDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run pre-deploy validation
+        run: |
+          # Build TypeScript
+          yarn build
+          # Run tests
+          yarn test --silent
+          # Run lint
+          yarn lint
+          # Synthesize CDK
+          npx cdk synth --quiet
+
+      - name: CDK Deploy
+        run: |
+          npx cdk deploy --all \
+            --require-approval never \
+            --outputs-file cdk-outputs.json
+
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: signup-cdk-outputs
+          path: infra-signup/cdk-outputs.json
+          retention-days: 30
+
+  # ISB Cross-Account Role Deploy (to ISB account, enables Lambda to access Identity Store)
+  # NOTE: Requires OIDC trust and role in ISB account (955063685555)
+  # See infra-signup/isb-cross-account-role.yaml for the template being deployed
+  isb-cross-account-role-deploy:
+    name: ISB Cross-Account Role Deploy
+    runs-on: ubuntu-latest
+    needs: [signup-infra-unit-tests]
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.signup-infra-unit-tests.outputs.signup-infra-changed == 'true' }}
+    permissions:
+      id-token: write
+      contents: read
+    environment:
+      name: isb-infrastructure
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Configure AWS credentials via OIDC (ISB Account)
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          role-to-assume: arn:aws:iam::955063685555:role/GitHubActions-ISB-InfraDeploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Cross-Account Role
+        run: |
+          aws cloudformation deploy \
+            --template-file infra-signup/isb-cross-account-role.yaml \
+            --stack-name ndx-signup-cross-account-role \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameter-overrides \
+              GroupId=${{ secrets.ISB_NDX_USERS_GROUP_ID }} \
+            --tags \
+              project=ndx \
+              feature=signup \
+              managedby=cloudformation

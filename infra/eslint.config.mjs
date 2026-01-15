@@ -20,6 +20,12 @@ export default [
     },
     rules: {
       ...awscdk.configs.recommended.rules,
+      // Disabled: Stack suffix is common convention and readable
+      "awscdk/no-construct-stack-suffix": "off",
+      // Disabled: Public properties exposing constructs needed for stack composition
+      "awscdk/no-construct-in-public-property-of-construct": "off",
+      // Disabled: Mutable props are acceptable for our use case
+      "awscdk/no-mutable-property-of-props-interface": "off",
     },
   },
   // Relaxed rules for test files where mocking requires flexible typing
@@ -34,6 +40,7 @@ export default [
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
+      "awscdk/no-construct-stack-suffix": "off",
     },
   },
   // Relaxed rules for Lambda handlers that work with dynamic event data

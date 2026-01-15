@@ -68,13 +68,13 @@ The signup Lambda requires IAM Identity Center configuration. Provide these via 
 
 ### Environment Variables
 
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `IDENTITY_STORE_ID` | Yes | IAM Identity Store ID from IAM Identity Center | `d-9267e1e371` |
-| `GROUP_ID` | Yes | UUID of the NDX Users group in IAM Identity Center | `a1b2c3d4-e5f6-...` |
-| `CROSS_ACCOUNT_ROLE_ARN` | Yes | ARN of the cross-account role in the ISB account | `arn:aws:iam::955063685555:role/ndx-signup-cross-account-role` |
-| `AWS_REGION` | No | AWS region for STS and Identity Store clients | `us-west-2` (default) |
-| `SSO_INSTANCE_ARN` | No | SSO Instance ARN (for future password setup flow) | `arn:aws:sso:::instance/...` |
+| Variable                 | Required | Description                                        | Example                                                        |
+| ------------------------ | -------- | -------------------------------------------------- | -------------------------------------------------------------- |
+| `IDENTITY_STORE_ID`      | Yes      | IAM Identity Store ID from IAM Identity Center     | `d-9267e1e371`                                                 |
+| `GROUP_ID`               | Yes      | UUID of the NDX Users group in IAM Identity Center | `a1b2c3d4-e5f6-...`                                            |
+| `CROSS_ACCOUNT_ROLE_ARN` | Yes      | ARN of the cross-account role in the ISB account   | `arn:aws:iam::955063685555:role/ndx-signup-cross-account-role` |
+| `AWS_REGION`             | No       | AWS region for STS and Identity Store clients      | `us-west-2` (default)                                          |
+| `SSO_INSTANCE_ARN`       | No       | SSO Instance ARN (for future password setup flow)  | `arn:aws:sso:::instance/...`                                   |
 
 **Finding the values:**
 
@@ -161,11 +161,11 @@ The signup feature uses cross-account role assumption:
 
 CI is configured in `.github/workflows/infra.yaml` with these jobs:
 
-| Job | Account | Description |
-|-----|---------|-------------|
-| `signup-infra-unit-tests` | - | Runs tests for `infra-signup/` changes |
-| `signup-cdk-deploy` | NDX (568672915267) | Deploys Lambda via CDK |
-| `isb-cross-account-role-deploy` | ISB (955063685555) | Deploys IAM role via CloudFormation |
+| Job                             | Account            | Description                            |
+| ------------------------------- | ------------------ | -------------------------------------- |
+| `signup-infra-unit-tests`       | -                  | Runs tests for `infra-signup/` changes |
+| `signup-cdk-deploy`             | NDX (568672915267) | Deploys Lambda via CDK                 |
+| `isb-cross-account-role-deploy` | ISB (955063685555) | Deploys IAM role via CloudFormation    |
 
 ### Prerequisites for CI
 

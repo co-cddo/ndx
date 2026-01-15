@@ -34,9 +34,27 @@ const sampleDomains: DomainInfo[] = [
 const sampleGitHubData = {
   version: "0.1.0",
   domains: [
-    { domain_pattern: "westbury.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Westbury District Council", source: "internal" },
-    { domain_pattern: "reading.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Reading Borough Council", source: "internal" },
-    { domain_pattern: "birmingham.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Birmingham City", source: "internal" },
+    {
+      domain_pattern: "westbury.gov.uk",
+      organisation_type_id: "local_authority",
+      organisation_id: null,
+      notes: "Local authority: Westbury District Council",
+      source: "internal",
+    },
+    {
+      domain_pattern: "reading.gov.uk",
+      organisation_type_id: "local_authority",
+      organisation_id: null,
+      notes: "Local authority: Reading Borough Council",
+      source: "internal",
+    },
+    {
+      domain_pattern: "birmingham.gov.uk",
+      organisation_type_id: "local_authority",
+      organisation_id: null,
+      notes: "Local authority: Birmingham City",
+      source: "internal",
+    },
   ],
 }
 
@@ -83,9 +101,7 @@ describe("domain-service", () => {
         json: async () => ({ invalid: "structure" }),
       })
 
-      await expect(fetchDomainsFromGitHub()).rejects.toThrow(
-        "Invalid GitHub response: missing domains array",
-      )
+      await expect(fetchDomainsFromGitHub()).rejects.toThrow("Invalid GitHub response: missing domains array")
     })
 
     it("should filter out invalid domain entries", async () => {
@@ -94,11 +110,29 @@ describe("domain-service", () => {
         json: async () => ({
           version: "0.1.0",
           domains: [
-            { domain_pattern: "valid.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Valid Council", source: "internal" },
+            {
+              domain_pattern: "valid.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: "Local authority: Valid Council",
+              source: "internal",
+            },
             null,
-            { domain_pattern: "", organisation_type_id: "local_authority", organisation_id: null, notes: null, source: "internal" },
+            {
+              domain_pattern: "",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: null,
+              source: "internal",
+            },
             "not-an-object",
-            { domain_pattern: "good.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Good Council", source: "internal" },
+            {
+              domain_pattern: "good.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: "Local authority: Good Council",
+              source: "internal",
+            },
           ],
         }),
       })
@@ -117,10 +151,34 @@ describe("domain-service", () => {
         json: async () => ({
           version: "0.1.0",
           domains: [
-            { domain_pattern: "birmingham.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Birmingham City", source: "internal" },
-            { domain_pattern: "bfi.org.uk", organisation_type_id: "ndpb", organisation_id: "uuid-123", notes: null, source: "internal" },
-            { domain_pattern: "army.mod.uk", organisation_type_id: "military", organisation_id: null, notes: null, source: "internal" },
-            { domain_pattern: "reading.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Reading Borough Council", source: "internal" },
+            {
+              domain_pattern: "birmingham.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: "Local authority: Birmingham City",
+              source: "internal",
+            },
+            {
+              domain_pattern: "bfi.org.uk",
+              organisation_type_id: "ndpb",
+              organisation_id: "uuid-123",
+              notes: null,
+              source: "internal",
+            },
+            {
+              domain_pattern: "army.mod.uk",
+              organisation_type_id: "military",
+              organisation_id: null,
+              notes: null,
+              source: "internal",
+            },
+            {
+              domain_pattern: "reading.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: "Local authority: Reading Borough Council",
+              source: "internal",
+            },
           ],
         }),
       })
@@ -132,8 +190,8 @@ describe("domain-service", () => {
         { domain: "birmingham.gov.uk", orgName: "Birmingham City" },
         { domain: "reading.gov.uk", orgName: "Reading Borough Council" },
       ])
-      expect(result.find(d => d.domain === "bfi.org.uk")).toBeUndefined()
-      expect(result.find(d => d.domain === "army.mod.uk")).toBeUndefined()
+      expect(result.find((d) => d.domain === "bfi.org.uk")).toBeUndefined()
+      expect(result.find((d) => d.domain === "army.mod.uk")).toBeUndefined()
     })
 
     it("should extract orgName from notes field", async () => {
@@ -142,7 +200,13 @@ describe("domain-service", () => {
         json: async () => ({
           version: "0.1.0",
           domains: [
-            { domain_pattern: "test.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: Test District Council", source: "internal" },
+            {
+              domain_pattern: "test.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: "Local authority: Test District Council",
+              source: "internal",
+            },
           ],
         }),
       })
@@ -158,7 +222,13 @@ describe("domain-service", () => {
         json: async () => ({
           version: "0.1.0",
           domains: [
-            { domain_pattern: "noname.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: null, source: "internal" },
+            {
+              domain_pattern: "noname.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: null,
+              source: "internal",
+            },
           ],
         }),
       })
@@ -174,7 +244,13 @@ describe("domain-service", () => {
         json: async () => ({
           version: "0.1.0",
           domains: [
-            { domain_pattern: "weird.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Some other format", source: "internal" },
+            {
+              domain_pattern: "weird.gov.uk",
+              organisation_type_id: "local_authority",
+              organisation_id: null,
+              notes: "Some other format",
+              source: "internal",
+            },
           ],
         }),
       })
@@ -193,9 +269,7 @@ describe("domain-service", () => {
         }),
       })
 
-      await expect(fetchDomainsFromGitHub()).rejects.toThrow(
-        "Invalid GitHub response: no valid domain entries",
-      )
+      await expect(fetchDomainsFromGitHub()).rejects.toThrow("Invalid GitHub response: no valid domain entries")
     })
 
     it("should handle fetch timeout via AbortController", async () => {
@@ -409,7 +483,15 @@ describe("domain-service", () => {
       const newDomains = [{ domain: "new.gov.uk", orgName: "New Council" }]
       const newGitHubData = {
         version: "0.1.0",
-        domains: [{ domain_pattern: "new.gov.uk", organisation_type_id: "local_authority", organisation_id: null, notes: "Local authority: New Council", source: "internal" }],
+        domains: [
+          {
+            domain_pattern: "new.gov.uk",
+            organisation_type_id: "local_authority",
+            organisation_id: null,
+            notes: "Local authority: New Council",
+            source: "internal",
+          },
+        ],
       }
       mockFetch.mockResolvedValueOnce({
         ok: true,

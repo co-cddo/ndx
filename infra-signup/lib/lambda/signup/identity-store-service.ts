@@ -124,7 +124,11 @@ async function getCrossAccountCredentials(): Promise<CredentialsResult> {
 
   const response = await getStsClient().send(command)
 
-  if (!response.Credentials?.AccessKeyId || !response.Credentials?.SecretAccessKey || !response.Credentials?.SessionToken) {
+  if (
+    !response.Credentials?.AccessKeyId ||
+    !response.Credentials?.SecretAccessKey ||
+    !response.Credentials?.SessionToken
+  ) {
     throw new Error("AssumeRole did not return valid credentials")
   }
 

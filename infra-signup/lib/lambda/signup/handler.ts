@@ -48,7 +48,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   // Function URL: event.rawPath, event.requestContext.http.method
   const path = event.path ?? (event as unknown as { rawPath?: string }).rawPath
   const method =
-    event.httpMethod ?? (event as unknown as { requestContext?: { http?: { method?: string } } }).requestContext?.http?.method
+    event.httpMethod ??
+    (event as unknown as { requestContext?: { http?: { method?: string } } }).requestContext?.http?.method
 
   // Structured logging (project-context.md requirement)
   console.log(
@@ -163,10 +164,7 @@ function parseBodySafe(body: string | null): unknown {
  * @param correlationId - Request correlation ID
  * @returns API Gateway proxy result
  */
-async function handleSignup(
-  event: APIGatewayProxyEvent,
-  correlationId: string,
-): Promise<APIGatewayProxyResult> {
+async function handleSignup(event: APIGatewayProxyEvent, correlationId: string): Promise<APIGatewayProxyResult> {
   // Add timing delay for security (prevents timing attacks)
   await addTimingDelay()
 
@@ -212,12 +210,7 @@ async function handleSignup(
         correlationId,
       }),
     )
-    return errorResponse(
-      403,
-      SignupErrorCode.CSRF_INVALID,
-      ERROR_MESSAGES[SignupErrorCode.CSRF_INVALID],
-      correlationId,
-    )
+    return errorResponse(403, SignupErrorCode.CSRF_INVALID, ERROR_MESSAGES[SignupErrorCode.CSRF_INVALID], correlationId)
   }
 
   // Parse request body with prototype pollution defense
@@ -332,12 +325,7 @@ async function handleSignup(
         correlationId,
       }),
     )
-    return errorResponse(
-      503,
-      "SERVICE_UNAVAILABLE",
-      "Service temporarily unavailable",
-      correlationId,
-    )
+    return errorResponse(503, "SERVICE_UNAVAILABLE", "Service temporarily unavailable", correlationId)
   }
 
   // Check if user already exists
@@ -370,12 +358,7 @@ async function handleSignup(
         correlationId,
       }),
     )
-    return errorResponse(
-      500,
-      SignupErrorCode.SERVER_ERROR,
-      ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR],
-      correlationId,
-    )
+    return errorResponse(500, SignupErrorCode.SERVER_ERROR, ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR], correlationId)
   }
 
   // Create user in IAM Identity Center
@@ -427,12 +410,7 @@ async function handleSignup(
         correlationId,
       }),
     )
-    return errorResponse(
-      500,
-      SignupErrorCode.SERVER_ERROR,
-      ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR],
-      correlationId,
-    )
+    return errorResponse(500, SignupErrorCode.SERVER_ERROR, ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR], correlationId)
   }
 }
 
@@ -443,10 +421,7 @@ async function handleSignup(
  * @param correlationId - Optional correlation ID for X-Request-ID header
  * @returns API Gateway proxy result
  */
-export function successResponse(
-  body: Record<string, unknown>,
-  correlationId?: string,
-): APIGatewayProxyResult {
+export function successResponse(body: Record<string, unknown>, correlationId?: string): APIGatewayProxyResult {
   return {
     statusCode: 200,
     headers: {

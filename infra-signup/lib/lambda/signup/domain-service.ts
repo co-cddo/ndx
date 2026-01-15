@@ -147,9 +147,7 @@ export async function fetchDomainsFromGitHub(): Promise<DomainInfo[]> {
 
     // Filter to only include local_authority domains
     // NDX signup is currently only available to local government organisations
-    const localAuthorityEntries = validEntries.filter(
-      (entry) => entry.organisation_type_id === "local_authority"
-    )
+    const localAuthorityEntries = validEntries.filter((entry) => entry.organisation_type_id === "local_authority")
 
     // Transform to DomainInfo format
     return localAuthorityEntries.map(transformToDomainInfo)

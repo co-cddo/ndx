@@ -1,24 +1,24 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: GitHub Actions OIDC role for ISB account infrastructure deployment
 
 Parameters:
   GitHubOrg:
     Type: String
-    Default: 'co-cddo'
+    Default: "co-cddo"
     Description: GitHub organization name
 
   GitHubRepo:
     Type: String
-    Default: 'ndx'
+    Default: "ndx"
     Description: GitHub repository name
 
   OIDCProviderArn:
     Type: String
-    Default: ''
+    Default: ""
     Description: Existing OIDC provider ARN (leave empty to create new)
 
 Conditions:
-  CreateOIDCProvider: !Equals [!Ref OIDCProviderArn, '']
+  CreateOIDCProvider: !Equals [!Ref OIDCProviderArn, ""]
 
 Resources:
   # GitHub OIDC Provider (only created if not provided)
@@ -49,7 +49,7 @@ Resources:
       Description: GitHub Actions role for ISB CloudFormation deployment (cross-account role)
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -63,12 +63,12 @@ Resources:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
                 token.actions.githubusercontent.com:sub:
-                  - !Sub 'repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main'
-                  - !Sub 'repo:${GitHubOrg}/${GitHubRepo}:environment:isb-infrastructure'
+                  - !Sub "repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main"
+                  - !Sub "repo:${GitHubOrg}/${GitHubRepo}:environment:isb-infrastructure"
       Policies:
         - PolicyName: CloudFormationDeployAccess
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               # CloudFormation permissions for deploying stacks
               - Sid: CloudFormationAccess
@@ -85,7 +85,7 @@ Resources:
                   - cloudformation:ExecuteChangeSet
                   - cloudformation:DeleteChangeSet
                 Resource:
-                  - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/ndx-signup-*'
+                  - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/ndx-signup-*"
               # IAM permissions for managing the cross-account role
               - Sid: IAMRoleManagement
                 Effect: Allow
@@ -104,13 +104,13 @@ Resources:
                   - iam:ListRolePolicies
                   - iam:ListAttachedRolePolicies
                 Resource:
-                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/ndx-signup-*'
+                  - !Sub "arn:aws:iam::${AWS::AccountId}:role/ndx-signup-*"
               # Read permissions for validation
               - Sid: CloudFormationListRead
                 Effect: Allow
                 Action:
                   - cloudformation:ListStacks
-                Resource: '*'
+                Resource: "*"
       Tags:
         - Key: project
           Value: ndx

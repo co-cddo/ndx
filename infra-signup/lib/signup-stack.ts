@@ -113,13 +113,24 @@ export class SignupStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SignupStackProps) {
     super(scope, id, props)
 
-    const { identityStoreId, groupId, ssoInstanceArn, ndxAccountId, isbAccountId, crossAccountRoleArn, distributionId, slackWorkspaceId, slackChannelId } = props
+    const {
+      identityStoreId,
+      groupId,
+      ssoInstanceArn,
+      ndxAccountId,
+      isbAccountId,
+      crossAccountRoleArn,
+      distributionId,
+      slackWorkspaceId,
+      slackChannelId,
+    } = props
 
     // Identity Store account - defaults to ISB account where IAM Identity Center resides
     const identityStoreAccountId = isbAccountId ?? "955063685555"
 
     // Cross-account role for Identity Store access
-    const isbRoleArn = crossAccountRoleArn ?? `arn:aws:iam::${identityStoreAccountId}:role/ndx-signup-cross-account-role`
+    const isbRoleArn =
+      crossAccountRoleArn ?? `arn:aws:iam::${identityStoreAccountId}:role/ndx-signup-cross-account-role`
 
     // Read environment context for multi-environment support
     const env = (this.node.tryGetContext("env") as string | undefined) ?? "prod"

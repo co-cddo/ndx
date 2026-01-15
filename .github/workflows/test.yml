@@ -23,7 +23,11 @@ jobs:
           filters: |
             frontend:
               - '!infra/**'
+              - '!infra-signup/**'
               - '!docs/**'
+              - '.github/workflows/test.yml'
+            signup:
+              - 'infra-signup/**'
               - '.github/workflows/test.yml'
 
       - name: Skip notification
@@ -65,6 +69,22 @@ jobs:
 
       - name: Run unit tests
         if: steps.changes.outputs.frontend == 'true'
+        run: yarn test
+
+      # Signup Lambda tests
+      - name: Skip signup notification
+        if: steps.changes.outputs.signup != 'true'
+        run: |
+          echo "::notice::No signup infrastructure files changed. Signup tests skipped."
+
+      - name: Install signup dependencies
+        if: steps.changes.outputs.signup == 'true'
+        working-directory: infra-signup
+        run: yarn install --immutable
+
+      - name: Run signup tests
+        if: steps.changes.outputs.signup == 'true'
+        working-directory: infra-signup
         run: yarn test
 
       # Temporarily disabled - proxy configuration issues in CI

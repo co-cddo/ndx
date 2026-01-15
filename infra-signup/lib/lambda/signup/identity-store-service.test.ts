@@ -53,9 +53,12 @@ describe("identity-store-service", () => {
 
     // Create mock send function for Identity Store client
     mockSend = jest.fn()
-    MockedIdentitystoreClient.mockImplementation(() => ({
-      send: mockSend,
-    }) as unknown as IdentitystoreClient)
+    MockedIdentitystoreClient.mockImplementation(
+      () =>
+        ({
+          send: mockSend,
+        }) as unknown as IdentitystoreClient,
+    )
 
     // Create mock send function for STS client (cross-account role assumption)
     mockStsSend = jest.fn().mockResolvedValue({
@@ -66,9 +69,12 @@ describe("identity-store-service", () => {
         Expiration: new Date(Date.now() + 3600 * 1000), // 1 hour from now
       },
     })
-    MockedSTSClient.mockImplementation(() => ({
-      send: mockStsSend,
-    }) as unknown as STSClient)
+    MockedSTSClient.mockImplementation(
+      () =>
+        ({
+          send: mockStsSend,
+        }) as unknown as STSClient,
+    )
 
     // Set required environment variables
     process.env.IDENTITY_STORE_ID = "d-test-store-id"
@@ -215,9 +221,7 @@ describe("identity-store-service", () => {
     })
 
     it("should use correct parameters for CreateUserCommand", async () => {
-      mockSend
-        .mockResolvedValueOnce({ UserId: "new-user-id" })
-        .mockResolvedValueOnce({ MembershipId: "membership-id" })
+      mockSend.mockResolvedValueOnce({ UserId: "new-user-id" }).mockResolvedValueOnce({ MembershipId: "membership-id" })
 
       await createUser(validRequest, "test-correlation-id")
 
@@ -242,9 +246,7 @@ describe("identity-store-service", () => {
     })
 
     it("should use correct parameters for CreateGroupMembershipCommand", async () => {
-      mockSend
-        .mockResolvedValueOnce({ UserId: "new-user-id" })
-        .mockResolvedValueOnce({ MembershipId: "membership-id" })
+      mockSend.mockResolvedValueOnce({ UserId: "new-user-id" }).mockResolvedValueOnce({ MembershipId: "membership-id" })
 
       await createUser(validRequest, "test-correlation-id")
 
@@ -296,9 +298,7 @@ describe("identity-store-service", () => {
     })
 
     it("should log INFO messages for successful creation", async () => {
-      mockSend
-        .mockResolvedValueOnce({ UserId: "new-user-id" })
-        .mockResolvedValueOnce({ MembershipId: "membership-id" })
+      mockSend.mockResolvedValueOnce({ UserId: "new-user-id" }).mockResolvedValueOnce({ MembershipId: "membership-id" })
 
       await createUser(validRequest, "test-correlation-id")
 
@@ -325,9 +325,7 @@ describe("identity-store-service", () => {
     })
 
     it("should not log PII (email or name)", async () => {
-      mockSend
-        .mockResolvedValueOnce({ UserId: "new-user-id" })
-        .mockResolvedValueOnce({ MembershipId: "membership-id" })
+      mockSend.mockResolvedValueOnce({ UserId: "new-user-id" }).mockResolvedValueOnce({ MembershipId: "membership-id" })
 
       await createUser(validRequest, "test-correlation-id")
 

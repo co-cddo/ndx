@@ -135,9 +135,7 @@ describe("handler", () => {
   })
 
   describe("GET /signup-api/domains", () => {
-    const mockGetDomains = domainService.getDomains as jest.MockedFunction<
-      typeof domainService.getDomains
-    >
+    const mockGetDomains = domainService.getDomains as jest.MockedFunction<typeof domainService.getDomains>
 
     const sampleDomains = [
       { domain: "westbury.gov.uk", orgName: "Westbury District Council" },
@@ -532,7 +530,12 @@ describe("handler", () => {
           email: "jane@westbury.gov.uk",
           domain: "westbury.gov.uk",
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithoutFirstName), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithoutFirstName),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -544,7 +547,12 @@ describe("handler", () => {
           email: "jane@westbury.gov.uk",
           domain: "westbury.gov.uk",
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithoutLastName), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithoutLastName),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -579,7 +587,12 @@ describe("handler", () => {
           ...validSignupRequest,
           email: "jаne@westbury.gov.uk", // Cyrillic 'а' instead of Latin 'a'
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithUnicodeEmail), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithUnicodeEmail),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -593,7 +606,12 @@ describe("handler", () => {
           ...validSignupRequest,
           firstName: "A".repeat(101),
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithLongFirstName), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithLongFirstName),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -608,7 +626,12 @@ describe("handler", () => {
           ...validSignupRequest,
           lastName: "B".repeat(101),
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithLongLastName), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithLongLastName),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -638,7 +661,12 @@ describe("handler", () => {
           ...validSignupRequest,
           lastName: "Smith\x00Null",
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithControlChars), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithControlChars),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -668,7 +696,12 @@ describe("handler", () => {
           ...validSignupRequest,
           firstName: 'John"Test',
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithDoubleQuote), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithDoubleQuote),
+          validHeaders,
+        )
         const result = await handler(event)
 
         expect(result.statusCode).toBe(400)
@@ -712,7 +745,12 @@ describe("handler", () => {
           ...validSignupRequest,
           firstName: "A".repeat(100),
         }
-        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithMaxLengthName), validHeaders)
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(requestWithMaxLengthName),
+          validHeaders,
+        )
         const result = await handler(event)
 
         // Should proceed to domain validation (200 if all mocks pass)

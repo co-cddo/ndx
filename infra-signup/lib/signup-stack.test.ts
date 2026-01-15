@@ -129,17 +129,13 @@ describe("SignupStack", () => {
   describe("Tags", () => {
     it("should tag Lambda function with project tags", () => {
       template.hasResourceProperties("AWS::Lambda::Function", {
-        Tags: Match.arrayWith([
-          { Key: "project", Value: "ndx" },
-        ]),
+        Tags: Match.arrayWith([{ Key: "project", Value: "ndx" }]),
       })
     })
 
     it("should tag Lambda function with feature tag", () => {
       template.hasResourceProperties("AWS::Lambda::Function", {
-        Tags: Match.arrayWith([
-          { Key: "feature", Value: "signup" },
-        ]),
+        Tags: Match.arrayWith([{ Key: "feature", Value: "signup" }]),
       })
     })
   })

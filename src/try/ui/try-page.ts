@@ -124,7 +124,7 @@ export function initTryPage(): (() => void) | undefined {
         consoleLink.dataset.leaseId || "",
         consoleLink.dataset.leaseTemplate || "",
         consoleLink.dataset.budget || "",
-        consoleLink.dataset.expires || ""
+        consoleLink.dataset.expires || "",
       )
     }
 
@@ -135,7 +135,7 @@ export function initTryPage(): (() => void) | undefined {
         credentialsLink.dataset.leaseId || "",
         credentialsLink.dataset.leaseTemplate || "",
         credentialsLink.dataset.budget || "",
-        credentialsLink.dataset.expires || ""
+        credentialsLink.dataset.expires || "",
       )
       // Show instruction alert - link handles navigation after alert is dismissed
       window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")

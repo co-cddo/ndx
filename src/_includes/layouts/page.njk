@@ -2,6 +2,10 @@
 
 {% block pageTitle %}{{ title }} - NDX{% endblock %}
 
+{% block bodyStart %}
+  {% include "components/cookie-banner/template.njk" %}
+{% endblock %}
+
 {% block head %}
   <link rel="stylesheet" href="/assets/styles.css">
 {% endblock %}

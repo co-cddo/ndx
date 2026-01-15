@@ -174,12 +174,17 @@ Recommended CSP headers (for CloudFront/server configuration):
 ```
 Content-Security-Policy:
   default-src 'self';
-  script-src 'self';
+  script-src 'self' https://www.googletagmanager.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data:;
-  connect-src 'self' https://*.awsapps.com;
+  img-src 'self' data: https://www.google-analytics.com;
+  connect-src 'self' https://*.awsapps.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com;
   frame-ancestors 'none';
 ```
+
+**Note:** GA4 Analytics (Measurement ID: G-B5GRJRC7XC) requires:
+- `script-src`: googletagmanager.com for the gtag.js script
+- `connect-src`: google-analytics.com domains for sending analytics data
+- `img-src`: google-analytics.com for pixel tracking (fallback)
 
 ---
 

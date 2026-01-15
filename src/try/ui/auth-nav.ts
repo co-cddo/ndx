@@ -16,6 +16,7 @@
 
 import { authState } from "../auth/auth-provider"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
+import { trackSignIn, trackSignOut } from "../analytics"
 
 /**
  * Initialize authentication navigation component.
@@ -94,6 +95,7 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
     const signInButton = container.querySelector("#sign-in-button")
     if (signInButton) {
       signInButton.addEventListener("click", () => {
+        trackSignIn() // Track sign-in intent (consent-gated)
         openAuthChoiceModal()
       })
     }
@@ -115,6 +117,7 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
  */
 function handleSignOut(event: Event): void {
   event.preventDefault()
+  trackSignOut() // Track sign-out (consent-gated)
   authState.logout()
   window.location.href = "/"
 }

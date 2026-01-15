@@ -26,6 +26,7 @@ import { initTryButton, handleTryButtonClickDelegated } from "./ui/try-button"
 import { initTryButtonText } from "./ui/try-button-text"
 import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
 import { WELCOME_BACK_KEY } from "./constants"
+import { initCookieBanner, initCookieSettings, initAnalytics } from "./analytics/cookie-banner"
 
 // CRITICAL: Set up delegated event handler immediately at module parse time.
 // This ensures try button clicks are captured even if init() hasn't run yet.
@@ -146,6 +147,11 @@ function handlePageOAuthCallback(): void {
 function init(): void {
   // Initialize GOV.UK Frontend components (accordions, tabs, etc.)
   GOVUKFrontend()
+
+  // Initialize cookie banner and analytics (must come early)
+  initCookieBanner()
+  initCookieSettings()
+  initAnalytics()
 
   // Story 5.3: Handle OAuth callback parameters (token or error in URL)
   handlePageOAuthCallback()

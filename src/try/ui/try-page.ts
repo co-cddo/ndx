@@ -20,6 +20,7 @@ import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
+import { trackSessionAccess, trackCliCredentials } from "../analytics"
 import "./styles/sessions-table.css"
 
 /**
@@ -116,9 +117,26 @@ export function initTryPage(): (() => void) | undefined {
       loadAndRenderSessions()
     }
 
-    // Get CLI Credentials link - show alert before navigation
+    // Launch AWS Console - track session access
+    const consoleLink = target.closest('[data-action="launch-console"]') as HTMLElement | null
+    if (consoleLink) {
+      trackSessionAccess(
+        consoleLink.dataset.leaseId || "",
+        consoleLink.dataset.leaseTemplate || "",
+        consoleLink.dataset.budget || "",
+        consoleLink.dataset.expires || ""
+      )
+    }
+
+    // Get CLI Credentials link - track and show alert before navigation
     const credentialsLink = target.closest('[data-action="get-credentials"]') as HTMLElement | null
     if (credentialsLink) {
+      trackCliCredentials(
+        credentialsLink.dataset.leaseId || "",
+        credentialsLink.dataset.leaseTemplate || "",
+        credentialsLink.dataset.budget || "",
+        credentialsLink.dataset.expires || ""
+      )
       // Show instruction alert - link handles navigation after alert is dismissed
       window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")
     }

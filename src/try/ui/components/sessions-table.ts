@@ -140,6 +140,11 @@ function renderActions(lease: Lease): string {
         rel="noopener noreferrer"
         class="govuk-button govuk-button--secondary govuk-!-margin-bottom-1"
         data-module="govuk-button"
+        data-action="launch-console"
+        data-lease-id="${escapeHtml(lease.leaseId)}"
+        data-lease-template="${escapeHtml(lease.leaseTemplateName)}"
+        data-budget="${lease.maxSpend}"
+        data-expires="${escapeHtml(lease.expiresAt || "")}"
       >
         Launch AWS Console
         <span class="govuk-visually-hidden">(opens in new tab)</span>
@@ -151,6 +156,10 @@ function renderActions(lease: Lease): string {
         class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
         data-module="govuk-button"
         data-action="get-credentials"
+        data-lease-id="${escapeHtml(lease.leaseId)}"
+        data-lease-template="${escapeHtml(lease.leaseTemplateName)}"
+        data-budget="${lease.maxSpend}"
+        data-expires="${escapeHtml(lease.expiresAt || "")}"
       >
         Get CLI Credentials
         <span class="govuk-visually-hidden">(opens in new tab)</span>

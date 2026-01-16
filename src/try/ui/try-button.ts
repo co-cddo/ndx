@@ -21,6 +21,7 @@ import { authState } from "../auth/auth-provider"
 import { openAupModal, closeAupModal, aupModal } from "./components/aup-modal"
 import { createLease } from "../api/leases-service"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
+import { trackTryButtonClick } from "../analytics"
 
 /**
  * Initialize try button click handlers.
@@ -77,6 +78,9 @@ function processTryButtonClick(button: HTMLElement): void {
     console.error("[TryButton] Button missing data-try-id attribute")
     return
   }
+
+  // Track try button click (consent-gated)
+  trackTryButtonClick(tryId)
 
   // Story 6.5 & 2.1: Check authentication
   if (!authState.isAuthenticated()) {

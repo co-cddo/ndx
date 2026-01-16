@@ -36,6 +36,7 @@ import { createFocusTrap, type FocusTrap } from "../utils/focus-trap"
 import { announce } from "../utils/aria-live"
 import { fetchConfigurations, getFallbackAup } from "../../api/configurations-service"
 import { fetchLeaseTemplate, type LeaseTemplateResult } from "../../api/lease-templates-service"
+import { trackAupViewed, trackAupAccepted } from "../../analytics"
 
 /**
  * Lease template data for displaying session terms.
@@ -196,6 +197,9 @@ class AupModal {
     document.body.classList.add(BODY_MODAL_OPEN_CLASS)
 
     announce("Request AWS Sandbox Access dialog opened")
+
+    // Track AUP modal viewed (product name/vendor not passed to modal, using tryId only)
+    trackAupViewed(tryId, "", "")
 
     // Story 9.2: Announce loading session terms
     announce("Loading session terms...")
@@ -660,6 +664,9 @@ class AupModal {
     // Continue button click - store handler for cleanup
     this.boundHandlers.continueClick = async () => {
       if (!this.state.aupAccepted || this.state.isLoading || !this.state.tryId) return
+
+      // Track AUP accepted (product name/vendor not passed to modal, using tryId only)
+      trackAupAccepted(this.state.tryId, "", "")
 
       this.state.isLoading = true
       this.updateButtons()

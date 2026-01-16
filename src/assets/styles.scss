@@ -638,7 +638,8 @@ body.auth-choice-modal-open {
 
   // Match link styling (no underline by default)
   text-decoration: none;
-  color: inherit; // White in inverse nav
+  // Default: darkened link color for non-inverse nav (matches govuk-service-navigation-link-colour)
+  color: #1559a3;
 
   &:hover {
     text-decoration: underline;
@@ -654,6 +655,15 @@ body.auth-choice-modal-open {
       0 -2px #fd0,
       0 4px #0b0c0c;
     text-decoration: none;
+  }
+}
+
+// Inverse navigation context (blue background) - use white
+.govuk-service-navigation--inverse #sign-in-button {
+  color: #fff;
+
+  &:hover {
+    color: #fff;
   }
 }
 

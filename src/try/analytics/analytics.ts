@@ -1,18 +1,25 @@
 /**
  * Google Analytics 4 Core Module
  *
- * Provides GA4 integration with consent-gated tracking.
+ * Provides GA4 integration using the Measurement Protocol.
+ * Uses fetch() instead of gtag.js to be fully CSP compliant.
  * All tracking functions check consent before firing.
  *
+ * @see https://developers.google.com/analytics/devguides/collection/protocol/ga4
  * @module analytics/analytics
  */
 
 import { hasAnalyticsConsent } from "./consent"
 
 /**
- * GA4 Measurement ID (Analytics 360)
+ * GA4 Measurement ID
  */
 const GA4_MEASUREMENT_ID = "G-B5GRJRC7XC"
+
+/**
+ * GA4 Measurement Protocol endpoint
+ */
+const GA4_ENDPOINT = "https://www.google-analytics.com/g/collect"
 
 /**
  * User properties for GA4
@@ -23,36 +30,157 @@ export interface UserProperties {
   is_authenticated: string
 }
 
+/**
+ * Client ID cookie name - persists across sessions
+ */
+const CLIENT_ID_COOKIE = "ndx_ga_client_id"
+
 // Module-level state
 let ga4Initialized = false
 let analyticsDisabled = false
+let clientId: string | null = null
+let userId: string | null = null
+let userProperties: UserProperties | null = null
+let sessionId: string | null = null
+let sessionNumber = 1
 
-// Extend window for gtag
-declare global {
-  interface Window {
-    dataLayer: unknown[]
-    gtag: (...args: unknown[]) => void
-  }
+/**
+ * Generate a random client ID (mimics GA4 format)
+ */
+function generateClientId(): string {
+  const timestamp = Math.floor(Date.now() / 1000)
+  const random = Math.floor(Math.random() * 2147483647)
+  return `${random}.${timestamp}`
 }
 
 /**
- * Internal gtag wrapper that queues commands to dataLayer.
+ * Get or create the client ID from cookie
  */
-function gtag(...args: unknown[]): void {
-  if (typeof window !== "undefined" && window.dataLayer) {
-    window.dataLayer.push(args)
+function getClientId(): string {
+  if (clientId) {
+    return clientId
+  }
+
+  // Try to read from cookie
+  if (typeof document !== "undefined") {
+    const cookies = document.cookie.split(";")
+    const cidCookie = cookies.find((c) => c.trim().startsWith(`${CLIENT_ID_COOKIE}=`))
+    if (cidCookie) {
+      clientId = cidCookie.split("=")[1].trim()
+      return clientId
+    }
+  }
+
+  // Generate new client ID
+  clientId = generateClientId()
+
+  // Store in cookie (2 years, matching GA4)
+  if (typeof document !== "undefined") {
+    const isSecure = typeof window !== "undefined" && window.location.protocol === "https:"
+    const secureFlag = isSecure ? "; Secure" : ""
+    document.cookie = `${CLIENT_ID_COOKIE}=${clientId}; path=/; max-age=63072000; SameSite=Strict${secureFlag}`
+  }
+
+  return clientId
+}
+
+/**
+ * Generate a session ID (random number, persists for session)
+ */
+function getSessionId(): string {
+  if (!sessionId) {
+    sessionId = String(Math.floor(Math.random() * 2147483647))
+  }
+  return sessionId
+}
+
+/**
+ * Build the Measurement Protocol payload
+ */
+function buildPayload(eventName: string, params?: Record<string, unknown>): URLSearchParams {
+  const payload = new URLSearchParams()
+
+  // Required parameters
+  payload.set("v", "2") // Protocol version
+  payload.set("tid", GA4_MEASUREMENT_ID) // Measurement ID
+  payload.set("cid", getClientId()) // Client ID
+  payload.set("sid", getSessionId()) // Session ID
+  payload.set("sct", String(sessionNumber)) // Session count
+
+  // Event name
+  payload.set("en", eventName)
+
+  // User ID if set
+  if (userId) {
+    payload.set("uid", userId)
+  }
+
+  // Page info
+  if (typeof window !== "undefined") {
+    payload.set("dl", window.location.href) // Document location
+    payload.set("dr", document.referrer || "") // Document referrer
+    payload.set("dt", document.title) // Document title
+    payload.set("sr", `${window.screen.width}x${window.screen.height}`) // Screen resolution
+    payload.set("ul", navigator.language) // User language
+  }
+
+  // User properties
+  if (userProperties) {
+    Object.entries(userProperties).forEach(([key, value]) => {
+      payload.set(`up.${key}`, value)
+    })
+  }
+
+  // Event parameters
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        payload.set(`ep.${key}`, String(value))
+      }
+    })
+  }
+
+  // Engagement time (required for events to show in realtime)
+  payload.set("_et", "1")
+
+  // Random cache buster
+  payload.set("_z", String(Math.random()).slice(2, 12))
+
+  return payload
+}
+
+/**
+ * Send event to GA4 using Measurement Protocol
+ */
+function sendToGA4(eventName: string, params?: Record<string, unknown>): void {
+  if (typeof navigator === "undefined") {
+    return
+  }
+
+  const payload = buildPayload(eventName, params)
+
+  // Use sendBeacon for reliability (works on page unload)
+  // Falls back to fetch if sendBeacon unavailable
+  const url = `${GA4_ENDPOINT}?${payload.toString()}`
+
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(url)
+  } else {
+    fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      keepalive: true,
+    }).catch(() => {
+      // Silently fail - analytics shouldn't break the app
+    })
   }
 }
 
 /**
  * Initialize Google Analytics 4.
  *
- * Critical initialization sequence:
- * 1. Check idempotency (prevent double init)
- * 2. Setup dataLayer array
- * 3. Define gtag function
- * 4. Send initial config
- * 5. Inject script tag (events queued in dataLayer fire when loaded)
+ * Sets up client ID and marks as initialized.
+ * No external scripts are loaded - uses Measurement Protocol.
  *
  * @example
  * ```typescript
@@ -73,29 +201,12 @@ export function initGA4(): void {
   }
 
   // Check if we're in a browser environment
-  if (typeof window === "undefined" || typeof document === "undefined") {
+  if (typeof window === "undefined") {
     return
   }
 
-  // Step 1: Setup dataLayer
-  window.dataLayer = window.dataLayer || []
-
-  // Step 2: Define gtag function
-  window.gtag = function (...args: unknown[]) {
-    window.dataLayer.push(args)
-  }
-
-  // Step 3: Initial gtag calls (queued, will fire when script loads)
-  window.gtag("js", new Date())
-  window.gtag("config", GA4_MEASUREMENT_ID, {
-    send_page_view: false, // We'll send page views manually for better control
-  })
-
-  // Step 4: Inject script tag
-  const script = document.createElement("script")
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`
-  script.async = true
-  document.head.appendChild(script)
+  // Initialize client ID
+  getClientId()
 
   // Mark as initialized
   ga4Initialized = true
@@ -105,8 +216,6 @@ export function initGA4(): void {
  * Disable GA4 tracking.
  *
  * Called when user revokes consent. Sets internal flag to stop all tracking.
- * Does NOT remove the gtag script (causes errors). On next page load,
- * GA4 won't be initialized since consent is false.
  *
  * @example
  * ```typescript
@@ -144,9 +253,7 @@ export function setUserId(hashedEmail: string): void {
     return
   }
 
-  gtag("config", GA4_MEASUREMENT_ID, {
-    user_id: hashedEmail,
-  })
+  userId = hashedEmail
 }
 
 /**
@@ -168,7 +275,7 @@ export function setUserProperties(props: UserProperties): void {
     return
   }
 
-  gtag("set", "user_properties", props)
+  userProperties = props
 }
 
 /**
@@ -189,7 +296,7 @@ export function trackEvent(eventName: string, params?: Record<string, unknown>):
     return
   }
 
-  gtag("event", eventName, params)
+  sendToGA4(eventName, params)
 }
 
 /**
@@ -221,8 +328,8 @@ export function trackPageView(pageTitle?: string, pagePath?: string): void {
   }
 
   if (pagePath) {
-    params.page_path = pagePath
+    params.page_location = pagePath
   }
 
-  gtag("event", "page_view", params)
+  sendToGA4("page_view", params)
 }

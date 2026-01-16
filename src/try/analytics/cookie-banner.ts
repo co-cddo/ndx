@@ -26,9 +26,82 @@ function extractDomain(email: string): string {
 }
 
 /**
+ * GOV.UK cookie banner HTML template.
+ * Matches the output of govukCookieBanner macro.
+ */
+const COOKIE_BANNER_HTML = `
+<div class="govuk-cookie-banner" data-nosnippet role="region" aria-label="Cookies on NDX" hidden data-cookie-banner>
+  <div class="govuk-cookie-banner__message govuk-width-container" data-cookie-banner-question>
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <h2 class="govuk-cookie-banner__heading govuk-heading-m">Cookies on NDX</h2>
+        <div class="govuk-cookie-banner__content">
+          <p class="govuk-body">We use some essential cookies to make this service work.</p>
+          <p class="govuk-body">We'd also like to use analytics cookies so we can understand how you use the service and make improvements.</p>
+        </div>
+      </div>
+    </div>
+    <div class="govuk-button-group">
+      <button type="button" class="govuk-button" data-module="govuk-button" data-cookie-banner-accept>
+        Accept analytics cookies
+      </button>
+      <button type="button" class="govuk-button govuk-button--secondary" data-module="govuk-button" data-cookie-banner-reject>
+        Reject analytics cookies
+      </button>
+      <a class="govuk-link" href="/cookies/">View cookies</a>
+    </div>
+  </div>
+  <div class="govuk-cookie-banner__message govuk-width-container" role="alert" hidden data-cookie-banner-accepted tabindex="-1">
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-cookie-banner__content">
+          <p class="govuk-body">You've accepted analytics cookies. You can <a class="govuk-link" href="/cookies/">change your cookie settings</a> at any time.</p>
+        </div>
+      </div>
+    </div>
+    <div class="govuk-button-group">
+      <button type="button" class="govuk-button govuk-button--secondary" data-module="govuk-button" data-cookie-banner-hide>
+        Hide cookie message
+      </button>
+    </div>
+  </div>
+  <div class="govuk-cookie-banner__message govuk-width-container" role="alert" hidden data-cookie-banner-rejected tabindex="-1">
+    <div class="govuk-grid-row">
+      <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-cookie-banner__content">
+          <p class="govuk-body">You've rejected analytics cookies. You can <a class="govuk-link" href="/cookies/">change your cookie settings</a> at any time.</p>
+        </div>
+      </div>
+    </div>
+    <div class="govuk-button-group">
+      <button type="button" class="govuk-button govuk-button--secondary" data-module="govuk-button" data-cookie-banner-hide>
+        Hide cookie message
+      </button>
+    </div>
+  </div>
+</div>
+`
+
+/**
+ * Inject the cookie banner HTML into the page.
+ * Inserts at the start of body, before any other content.
+ */
+function injectCookieBanner(): HTMLElement | null {
+  // Don't inject if already present
+  if (document.querySelector("[data-cookie-banner]")) {
+    return document.querySelector("[data-cookie-banner]")
+  }
+
+  // Insert at start of body
+  document.body.insertAdjacentHTML("afterbegin", COOKIE_BANNER_HTML)
+  return document.querySelector("[data-cookie-banner]")
+}
+
+/**
  * Initialize the cookie banner.
  *
- * Sets up event handlers for banner buttons and manages show/hide state.
+ * Injects the banner HTML if not present, sets up event handlers,
+ * and manages show/hide state.
  * Skips showing banner on the /cookies/ page.
  */
 export function initCookieBanner(): void {
@@ -38,7 +111,15 @@ export function initCookieBanner(): void {
     return
   }
 
-  const banner = document.querySelector("[data-cookie-banner]") as HTMLElement | null
+  // Check for existing consent before injecting
+  const existingConsent = getCookieConsent()
+  if (existingConsent !== null) {
+    // User has already made a choice - don't show banner
+    return
+  }
+
+  // Inject banner HTML if not present
+  const banner = injectCookieBanner()
   if (!banner) {
     return
   }
@@ -47,14 +128,7 @@ export function initCookieBanner(): void {
   const acceptedMessage = banner.querySelector("[data-cookie-banner-accepted]") as HTMLElement | null
   const rejectedMessage = banner.querySelector("[data-cookie-banner-rejected]") as HTMLElement | null
 
-  // Check for existing consent
-  const existingConsent = getCookieConsent()
-  if (existingConsent !== null) {
-    // User has already made a choice - keep banner hidden
-    return
-  }
-
-  // No consent yet - show the banner question
+  // Show the banner question
   banner.removeAttribute("hidden")
   if (questionMessage) {
     questionMessage.removeAttribute("hidden")

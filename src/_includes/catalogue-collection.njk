@@ -1,33 +1,73 @@
----
-layout: collection
-related:
-  sections:
-    - title: Filters
-      items:
-        - text: All Services
-          href: /catalogue
-        - text: NDX:Try
-          href: /catalogue/tags/try-before-you-buy
-        - text: GOV.UK Services
-          href: /catalogue/tags/govuk
-        - text: Campaign Products
-          href: /catalogue/tags/Campaign
-        - text: AI
-          href: /catalogue/tags/AI
-        - text: Low-code
-          href: /catalogue/tags/Low-code
-        - text: Security
-          href: /catalogue/tags/security
-        - text: Amazon
-          href: /catalogue/tags/Amazon
-        - text: Google
-          href: /catalogue/tags/Google
-        - text: IBM
-          href: /catalogue/tags/ibm
-        - text: Microsoft
-          href: /catalogue/tags/Microsoft
-        - text: Oracle
-          href: /catalogue/tags/Oracle
-        - text: Red Hat
-          href: /catalogue/tags/Red%20Hat
---- 
+{% extends "layouts/base.njk" %}
+
+{% block main %}
+  {{ xGovukMasthead({
+    title: {
+      html: title | smart
+    } if title,
+    description: {
+      html: description | markdown("inline") | noOrphans
+    } if description,
+    breadcrumbs: {
+      classes: "govuk-!-display-none-print",
+      items: breadcrumbItems
+    } if showBreadcrumbs
+  }) }}
+
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="govuk-grid-row">
+  <section class="govuk-grid-column-two-thirds-from-desktop">
+    {{ appProseScope(content) if content }}
+
+    {{ appHeading({
+      level: 2,
+      size: "l",
+      title: paginationHeading
+    }) if paginationHeading }}
+
+    {{ appDocumentList({
+      headingLevel: 3 if paginationHeading else 2,
+      classes: "app-document-list--large",
+      items: pagination.items
+    }) }}
+
+    {{ govukPagination({
+      previous: {
+        href: pagination.href.previous
+      },
+      next: {
+        href: pagination.href.next
+      },
+      items: pagination | itemsFromPagination
+    }) if pagination.pages.length > 1 }}
+  </section>
+
+  {% if not hideFilters %}
+  <div class="govuk-grid-column-one-third-from-desktop">
+    {{ xGovukRelatedNavigation({
+      sections: [{
+        title: "Filters",
+        items: [
+          { text: "All Services", href: "/catalogue" },
+          { text: "NDX:Try", href: "/catalogue/tags/try-before-you-buy" },
+          { text: "GOV.UK Services", href: "/catalogue/tags/govuk" },
+          { text: "Campaign Products", href: "/catalogue/tags/Campaign" },
+          { text: "AI", href: "/catalogue/tags/AI" },
+          { text: "Low-code", href: "/catalogue/tags/Low-code" },
+          { text: "Security", href: "/catalogue/tags/security" },
+          { text: "Amazon", href: "/catalogue/tags/Amazon" },
+          { text: "Google", href: "/catalogue/tags/Google" },
+          { text: "IBM", href: "/catalogue/tags/ibm" },
+          { text: "Microsoft", href: "/catalogue/tags/Microsoft" },
+          { text: "Oracle", href: "/catalogue/tags/Oracle" },
+          { text: "Red Hat", href: "/catalogue/tags/Red%20Hat" }
+        ]
+      }]
+    }) }}
+  </div>
+  {% endif %}
+</div>
+{% endblock %} 

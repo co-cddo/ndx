@@ -26,13 +26,6 @@ tags:
   href: "/try/aws-connect",
   isStartButton: true
 }) }}
-</br>
-
-{{ govukButton({
-  text: "Deploy this now",
-  href: "/access/aws-connect",
-  isStartButton: true
-}) }}
 
 Amazon Connect is an AI-powered cloud contact centre solution that enables public sector organisations to establish a fully functional cloud contact centre quickly, offering omnichannel communication capabilities without requiring any specialised infrastructure.
 

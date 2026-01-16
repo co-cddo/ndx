@@ -1,16 +1,17 @@
 ---
 layout: catalogue-collection
-title: "Catalogue: NDX:Try"
+title: "Catalogue NDX:Try"
 description: "Products available for hands-on evaluation through NDX:Try"
 includeInBreadcrumbs: true
 eleventyNavigation:
-  parent: Catalogue
+  key: Catalogue NDX:Try
 pagination:
   data: collections.catalogueTryable
   size: 50
 activeFilter: try-before-you-buy
+hideFilters: true
 ---
 
-These products are available for hands-on evaluation through NDX:Try. You can try each product for 24 hours at no commitment, with a $50 budget cap.
+These products are available for hands-on evaluation through NDX:Try. Each product has its own evaluation period and budget cap — no commitment required.
 
 Select any product to learn more and start your evaluation session.

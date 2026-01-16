@@ -1,36 +1,26 @@
 ---
-layout: sub-navigation
-title: National Digital Exchange (NDX)
-description: The **NDX** is a centralised platform that allows for the streamlined access and utilisation of data and digital services across the public sector.
+layout: page
+title: About NDX
+description: The National Digital Exchange (NDX) is a digital marketplace designed to transform how the public sector buys technology.
 eleventyNavigation:
   parent: About
-  key: National Digital Exchange
+  key: About NDX
   order: -1
 sectionKey: About
 ---
 
-It will build on existing initiatives such as the data marketplace, the National Data Library, and the Cloud Marketplace. NDX combines several technologies and platforms, including an API gateway, an event bus, a data streaming service, Reddit, StackOverflow, and GitHub.
+The National Digital Exchange (NDX) is a digital marketplace designed to transform how the public sector buys technology.
 
-## The innovation pipeline
+## Current phase: NDX:Try
 
-NDX creates a complete innovation ecosystem that connects government challenges to practical solutions through a structured pipeline:
+NDX is currently offering [NDX:Try](/catalogue/tags/try-before-you-buy/) — a hands-on evaluation programme that lets public sector buyers test products before committing. Each product has its own evaluation period and budget cap, with no obligation to purchase.
 
-1. **[Challenges](/challenges/)** - Government departments publish problem statements that identify specific operational needs, inefficiencies, or capability gaps requiring innovative solutions
-2. **Campaigns** - Industry and academia create kickstarter-style pre-commitment products that address these challenges, requiring buy-in from multiple organisations before development begins
-3. **[Catalogue](/catalogue/)** - Successfully funded campaigns become deployed solutions available for immediate procurement and use across government
-4. **[Reviews](/reviews/)** - Users provide feedback and assessments on deployed solutions, creating a feedback loop that improves future procurement decisions
+This early phase allows us to:
 
-This pipeline ensures that innovation is driven by real government needs, solutions are validated before development, and successful products become widely available across the public sector. It transforms traditional procurement from reactive purchasing to proactive problem-solving through collaborative innovation.
+- Test the marketplace model with real users and suppliers
+- Gather feedback to shape the full platform
+- Build a library of genuine user reviews
 
-By enabling the sharing of data and resources, the NDX aims to address the challenge of siloed working within the public sector. It is hoped that this will foster collaboration and prevent duplication of effort.
+## What's next
 
-### NDX objectives
-
-- Provide **standardised and secure cloud environments** to reduce activation time and costs for departments.
-- Offer a **marketplace for pre-approved cloud services** to simplify the procurement process and ensure compliance with government standards.
-- Establish a **community platform** for knowledge sharing and collaboration among digital data professionals.
-- Provide **access to high-value datasets and APIs** to encourage data sharing and collaboration between departments.
-
-![A diagram with two pathways: a long winding road labelled traditional cloud procurement, and a straight shorter path labelled NDX](/assets/ndx%20path.svg)
-
-The hope is that by simplifying the process of accessing and utilising cloud services, the NDX will accelerate cloud adoption across the UK public sector and address issues such as prolonged activation times and inconsistent cloud environments.
+The full NDX platform will include AI-powered supplier matching, pre-approved deals at nationally negotiated prices, and user ratings to inform purchasing decisions. For more on the vision, see the [gov.uk press release](https://www.gov.uk/government/news/one-stop-shop-for-tech-could-save-taxpayers-12-billion-and-overhaul-how-government-buys-digital-tools).

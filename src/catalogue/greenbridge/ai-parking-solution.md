@@ -31,13 +31,6 @@ tags:
   href: "/try/greenbridge-ai-parking",
   isStartButton: true
 }) }}
-</br>
-
-{{ govukButton({
-  text: "Deploy this now",
-  href: "/access/greenbridge-ai-parking",
-  isStartButton: true
-}) }}
 
 ## Transform Your Local Authority's Parking Management with AI
 

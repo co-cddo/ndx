@@ -623,12 +623,21 @@ button.govuk-header__link {
   border: none;
   padding: 0;
   font: inherit;
-  color: inherit;
+  color: #fff; // Match govuk-header__link:link color
   cursor: pointer;
   text-decoration: underline;
 
   &:hover {
+    color: hsla(0, 0%, 100%, 0.99); // Match govuk-header__link:hover
     text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
+  }
+
+  &:focus {
+    outline: 3px solid transparent;
+    color: #0b0c0c;
+    background-color: #fd0;
+    box-shadow: 0 -2px #fd0, 0 4px #0b0c0c;
+    text-decoration: none;
   }
 }
 

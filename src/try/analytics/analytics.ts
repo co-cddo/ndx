@@ -153,27 +153,28 @@ function buildPayload(eventName: string, params?: Record<string, unknown>): URLS
  * Send event to GA4 using Measurement Protocol
  */
 function sendToGA4(eventName: string, params?: Record<string, unknown>): void {
-  if (typeof navigator === "undefined") {
+  if (typeof window === "undefined") {
     return
   }
 
   const payload = buildPayload(eventName, params)
-
-  // Use sendBeacon for reliability (works on page unload)
-  // Falls back to fetch if sendBeacon unavailable
   const url = `${GA4_ENDPOINT}?${payload.toString()}`
 
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(url)
-  } else {
-    fetch(url, {
-      method: "POST",
-      mode: "no-cors",
-      keepalive: true,
-    }).catch(() => {
-      // Silently fail - analytics shouldn't break the app
-    })
-  }
+  console.debug("[GA4] Sending event:", eventName, url)
+
+  // Use fetch for better proxy compatibility and debugging
+  // Fall back to image pixel if fetch fails
+  fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+    credentials: "omit",
+  }).catch(() => {
+    // Fallback: Use image pixel (works everywhere, shows in network tab)
+    console.debug("[GA4] Fetch failed, using image pixel")
+    const img = new Image()
+    img.src = url
+  })
 }
 
 /**
@@ -192,11 +193,13 @@ function sendToGA4(eventName: string, params?: Record<string, unknown>): void {
 export function initGA4(): void {
   // Idempotency check - prevent double initialization
   if (ga4Initialized) {
+    console.debug("[GA4] Already initialized")
     return
   }
 
   // Consent check
   if (!hasAnalyticsConsent()) {
+    console.debug("[GA4] No analytics consent")
     return
   }
 
@@ -206,7 +209,8 @@ export function initGA4(): void {
   }
 
   // Initialize client ID
-  getClientId()
+  const cid = getClientId()
+  console.debug("[GA4] Initialized with client ID:", cid)
 
   // Mark as initialized
   ga4Initialized = true

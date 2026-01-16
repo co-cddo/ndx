@@ -4,32 +4,56 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    groups:
+      devcontainers:
+        patterns:
+          - "*"
 
   # Root package.json (Eleventy site)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      npm-root:
+        patterns:
+          - "*"
 
   # CDK infrastructure package.json
   - package-ecosystem: "npm"
     directory: "/infra"
     schedule:
       interval: "daily"
+    groups:
+      npm-infra:
+        patterns:
+          - "*"
 
   # Lambda functions package.json
   - package-ecosystem: "npm"
     directory: "/infra/lib/functions"
     schedule:
       interval: "daily"
+    groups:
+      npm-functions:
+        patterns:
+          - "*"
 
   # Signup infrastructure package.json
   - package-ecosystem: "npm"
     directory: "/infra-signup"
     schedule:
       interval: "daily"
+    groups:
+      npm-infra-signup:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

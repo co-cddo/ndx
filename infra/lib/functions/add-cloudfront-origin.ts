@@ -26,6 +26,7 @@ interface CloudFormationCustomResourceEvent {
     OriginType?: "S3" | "HTTP"
     // Cache behavior configuration
     CachePolicyId?: string
+    ResponseHeadersPolicyId?: string
     FunctionArn?: string
     FunctionEventType?: string
     // Path-based cache behavior configuration
@@ -70,6 +71,7 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
     OriginAccessControlId,
     OriginType,
     CachePolicyId,
+    ResponseHeadersPolicyId,
     FunctionArn,
     FunctionEventType,
     PathPattern,
@@ -105,9 +107,16 @@ export async function handler(event: CloudFormationCustomResourceEvent): Promise
         messages.push(`Cache behavior for ${PathPattern} configured`)
       }
       // Configure default cache behavior if properties provided (no path pattern)
-      else if (CachePolicyId || FunctionArn) {
-        await configureCacheBehavior(DistributionId, CachePolicyId, FunctionArn, FunctionEventType)
+      else if (CachePolicyId || ResponseHeadersPolicyId || FunctionArn) {
+        await configureCacheBehavior(
+          DistributionId,
+          CachePolicyId,
+          ResponseHeadersPolicyId,
+          FunctionArn,
+          FunctionEventType,
+        )
         if (CachePolicyId) messages.push(`Cache policy ${CachePolicyId} configured`)
+        if (ResponseHeadersPolicyId) messages.push(`Response headers policy ${ResponseHeadersPolicyId} configured`)
         if (FunctionArn) messages.push(`Function ${FunctionArn} attached`)
       }
 
@@ -216,12 +225,13 @@ async function addOriginToDistribution(
 }
 
 /**
- * Configure cache behavior with cache policy and/or function association
+ * Configure cache behavior with cache policy, response headers policy, and/or function association
  * Idempotent - only updates specified properties
  */
 async function configureCacheBehavior(
   distributionId: string,
   cachePolicyId?: string,
+  responseHeadersPolicyId?: string,
   functionArn?: string,
   functionEventType?: string,
 ): Promise<void> {
@@ -251,6 +261,12 @@ async function configureCacheBehavior(
     delete config.DefaultCacheBehavior.MinTTL
     delete config.DefaultCacheBehavior.DefaultTTL
     delete config.DefaultCacheBehavior.MaxTTL
+  }
+
+  // Update response headers policy if provided (for CSP, security headers, etc.)
+  if (responseHeadersPolicyId) {
+    console.log(`Setting response headers policy to ${responseHeadersPolicyId}`)
+    config.DefaultCacheBehavior.ResponseHeadersPolicyId = responseHeadersPolicyId
   }
 
   // Update function association if provided

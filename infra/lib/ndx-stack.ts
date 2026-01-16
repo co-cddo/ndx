@@ -147,6 +147,50 @@ export class NdxStaticStack extends cdk.Stack {
     // Ensure bucket is created before adding origin
     addOriginResource.node.addDependency(bucket)
 
+    // =========================================================================
+    // Response Headers Policy for security headers including CSP
+    // =========================================================================
+    // This policy configures security headers including Content-Security-Policy
+    // that allows Google Analytics 4 Measurement Protocol requests.
+    const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, "NdxSecurityHeadersPolicy", {
+      responseHeadersPolicyName: "NdxSecurityHeadersPolicy",
+      comment: "Security headers for NDX static site including GA4 CSP",
+      securityHeadersBehavior: {
+        contentSecurityPolicy: {
+          contentSecurityPolicy: [
+            "upgrade-insecure-requests",
+            "default-src 'none'",
+            "object-src 'none'",
+            "script-src 'self'",
+            "style-src 'self'",
+            "img-src 'self' data: https://www.google-analytics.com",
+            "font-src 'self' data:",
+            "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+            "manifest-src 'self'",
+            "frame-ancestors 'none'",
+            "base-uri 'none'",
+          ].join("; "),
+          override: true,
+        },
+        frameOptions: {
+          frameOption: cloudfront.HeadersFrameOption.DENY,
+          override: true,
+        },
+        contentTypeOptions: {
+          override: true,
+        },
+        referrerPolicy: {
+          referrerPolicy: cloudfront.HeadersReferrerPolicy.NO_REFERRER,
+          override: true,
+        },
+        strictTransportSecurity: {
+          accessControlMaxAge: cdk.Duration.days(540),
+          includeSubdomains: true,
+          override: true,
+        },
+      },
+    })
+
     // Story 2.3: Cache Policy for NDX cookie forwarding
     // Allows CloudFront to forward only the NDX cookie to the function
     // Preserves cache effectiveness (users without cookie share cache)
@@ -184,13 +228,15 @@ export class NdxStaticStack extends cdk.Stack {
       properties: {
         DistributionId: config.distributionId,
         CachePolicyId: cachePolicy.cachePolicyId,
+        ResponseHeadersPolicyId: responseHeadersPolicy.responseHeadersPolicyId,
         FunctionArn: cookieRouterFunction.functionArn,
         FunctionEventType: "viewer-request",
       },
     })
 
-    // Ensure cache policy and function are created first
+    // Ensure cache policy, response headers policy, and function are created first
     configureCacheBehavior.node.addDependency(cachePolicy)
+    configureCacheBehavior.node.addDependency(responseHeadersPolicy)
     configureCacheBehavior.node.addDependency(cookieRouterFunction)
     // Also ensure origin is added before configuring cache behavior
     configureCacheBehavior.node.addDependency(addOriginResource)
@@ -317,6 +363,12 @@ export class NdxStaticStack extends cdk.Stack {
     new cdk.CfnOutput(this, "CookieRouterFunctionArn", {
       value: cookieRouterFunction.functionArn,
       description: "ARN of CloudFront cookie router function",
+    })
+
+    // Output the Response Headers Policy ID for reference
+    new cdk.CfnOutput(this, "ResponseHeadersPolicyId", {
+      value: responseHeadersPolicy.responseHeadersPolicyId,
+      description: "Response Headers Policy ID with GA4 CSP",
     })
   }
 }

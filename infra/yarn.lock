@@ -715,14 +715,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/util-dynamodb@npm:3.966.0":
-  version: 3.966.0
-  resolution: "@aws-sdk/util-dynamodb@npm:3.966.0"
+"@aws-sdk/util-dynamodb@npm:3.970.0":
+  version: 3.970.0
+  resolution: "@aws-sdk/util-dynamodb@npm:3.970.0"
   dependencies:
     tslib: "npm:^2.6.2"
   peerDependencies:
-    "@aws-sdk/client-dynamodb": ^3.966.0
-  checksum: 10c0/a536c33155ac0b0d7eec31b9e010e55dafa3fdf70fac22daa861ec61b02f44fc91102f890a8cd2a258c832d8b59d8131eefcdfcc3dfa94c21652cfce789182f4
+    "@aws-sdk/client-dynamodb": 3.970.0
+  checksum: 10c0/a4febcd123c30653c073bdd57167de9135e87bbfdc16e493e1d93df074cc7d54b2e5b09922bd66f91424ce56eef16b9b9990ddd443c6ae9dfc91b22a65507165
   languageName: node
   linkType: hard
 
@@ -4539,7 +4539,7 @@ __metadata:
     "@aws-sdk/client-dynamodb": "npm:3.966.0"
     "@aws-sdk/client-secrets-manager": "npm:3.966.0"
     "@aws-sdk/client-sqs": "npm:3.966.0"
-    "@aws-sdk/util-dynamodb": "npm:3.966.0"
+    "@aws-sdk/util-dynamodb": "npm:3.970.0"
     "@eslint/js": "npm:9.39.1"
     "@types/aws-lambda": "npm:8.10.159"
     "@types/jest": "npm:29.5.14"

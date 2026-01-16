@@ -1,5 +1,5 @@
 // GOV.UK Frontend components
-$_font-family: system-ui, sans-serif;
+$_font-family: Arial, sans-serif;
 @use "pkg:govuk-frontend/dist/govuk" with (
   $govuk-font-family: $_font-family
 );
@@ -337,7 +337,7 @@ body.auth-choice-modal-open {
   --mermaid-cluster-fill: #ffffde;
   --mermaid-cluster-stroke: #aaaa33;
   --mermaid-edge-label-bg: rgba(232, 232, 232, 0.8);
-  --mermaid-font-family: system-ui, sans-serif;
+  --mermaid-font-family: Arial, sans-serif;
   --mermaid-font-size: 16px;
 
   margin: 2em 0;

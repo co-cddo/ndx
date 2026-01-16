@@ -242,7 +242,8 @@ test.describe("Try Before You Buy User Journey", () => {
     test("Try page has catalogue link", async ({ page }) => {
       // Wait for JS to render authenticated state content
       await page.waitForSelector('h1:has-text("sessions")', { timeout: 5000 })
-      const catalogueLink = page.locator('a[href*="try-before-you-buy"]')
+      // Use .first() since navigation also has this link now
+      const catalogueLink = page.locator('a[href*="try-before-you-buy"]').first()
       await expect(catalogueLink).toBeVisible({ timeout: 5000 })
     })
 

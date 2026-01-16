@@ -618,23 +618,26 @@ body.auth-choice-modal-open {
 // Button is used instead of anchor for semantic correctness (triggers JS action)
 // ============================================================================
 
-button.govuk-header__link {
+// Sign in button in service navigation - styled to look like a link
+// Uses ID selector for specificity since GOV.UK :link/:visited don't apply to buttons
+// Service navigation has light background, so use GOV.UK blue link color (not white)
+#sign-in-button {
   background: none;
   border: none;
   padding: 0;
   font: inherit;
-  color: #fff; // Match govuk-header__link:link color
+  color: #1d70b8 !important; // GOV.UK blue - matches service nav links
   cursor: pointer;
   text-decoration: underline;
 
   &:hover {
-    color: hsla(0, 0%, 100%, 0.99); // Match govuk-header__link:hover
+    color: #003078 !important; // Darker blue on hover
     text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
   }
 
   &:focus {
     outline: 3px solid transparent;
-    color: #0b0c0c;
+    color: #0b0c0c !important;
     background-color: #fd0;
     box-shadow:
       0 -2px #fd0,

@@ -57,6 +57,23 @@ export default defineConfig({
 
     // Use proxy only when explicitly enabled (local development)
     ...(proxyConfig ? { proxy: proxyConfig } : {}),
+
+    // Pre-set cookie consent to avoid cookie banner interfering with tests
+    // The banner would otherwise be the first focusable element on the page
+    storageState: {
+      cookies: [
+        {
+          name: "ndx_cookies_policy",
+          value: encodeURIComponent(JSON.stringify({ analytics: false, version: 1 })),
+          domain: isCI ? "localhost" : "ndx.digital.cabinet-office.gov.uk",
+          path: "/",
+          httpOnly: false,
+          secure: !isCI,
+          sameSite: "Strict" as const,
+        },
+      ],
+      origins: [],
+    },
   },
 
   projects: [

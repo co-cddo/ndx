@@ -153,27 +153,39 @@ function buildPayload(eventName: string, params?: Record<string, unknown>): URLS
  * Send event to GA4 using Measurement Protocol
  */
 function sendToGA4(eventName: string, params?: Record<string, unknown>): void {
-  if (typeof navigator === "undefined") {
+  if (typeof window === "undefined") {
     return
   }
 
   const payload = buildPayload(eventName, params)
-
-  // Use sendBeacon for reliability (works on page unload)
-  // Falls back to fetch if sendBeacon unavailable
   const url = `${GA4_ENDPOINT}?${payload.toString()}`
 
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(url)
-  } else {
-    fetch(url, {
-      method: "POST",
-      mode: "no-cors",
-      keepalive: true,
-    }).catch(() => {
-      // Silently fail - analytics shouldn't break the app
+  console.debug("[GA4] Sending event:", eventName, params)
+  console.debug("[GA4] URL:", url)
+
+  // Use fetch for better proxy/devtools visibility
+  // Falls back to sendBeacon on page unload, then image pixel
+  fetch(url, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+  })
+    .then(() => {
+      console.debug("[GA4] Event sent successfully:", eventName)
     })
-  }
+    .catch((error) => {
+      console.debug("[GA4] Fetch failed, trying sendBeacon:", error)
+      // Fallback to sendBeacon
+      if (navigator.sendBeacon) {
+        const sent = navigator.sendBeacon(url)
+        console.debug("[GA4] sendBeacon result:", sent)
+      } else {
+        // Final fallback: image pixel
+        console.debug("[GA4] Using image pixel fallback")
+        const img = new Image()
+        img.src = url
+      }
+    })
 }
 
 /**
@@ -190,26 +202,33 @@ function sendToGA4(eventName: string, params?: Record<string, unknown>): void {
  * ```
  */
 export function initGA4(): void {
+  console.debug("[GA4] initGA4 called")
+
   // Idempotency check - prevent double initialization
   if (ga4Initialized) {
+    console.debug("[GA4] Already initialized, skipping")
     return
   }
 
   // Consent check
   if (!hasAnalyticsConsent()) {
+    console.debug("[GA4] No consent, skipping initialization")
     return
   }
 
   // Check if we're in a browser environment
   if (typeof window === "undefined") {
+    console.debug("[GA4] Not in browser, skipping")
     return
   }
 
   // Initialize client ID
-  getClientId()
+  const cid = getClientId()
+  console.debug("[GA4] Client ID:", cid)
 
   // Mark as initialized
   ga4Initialized = true
+  console.debug("[GA4] Initialized successfully")
 }
 
 /**
@@ -234,7 +253,10 @@ export function disableGA4(): void {
  * @returns true if GA4 is initialized and not disabled
  */
 export function isGA4Active(): boolean {
-  return ga4Initialized && !analyticsDisabled && hasAnalyticsConsent()
+  const consent = hasAnalyticsConsent()
+  const active = ga4Initialized && !analyticsDisabled && consent
+  console.debug("[GA4] isGA4Active:", { ga4Initialized, analyticsDisabled, consent, active })
+  return active
 }
 
 /**
@@ -292,7 +314,10 @@ export function setUserProperties(props: UserProperties): void {
  * ```
  */
 export function trackEvent(eventName: string, params?: Record<string, unknown>): void {
+  console.debug("[GA4] trackEvent called:", eventName, params)
+
   if (!isGA4Active()) {
+    console.debug("[GA4] GA4 not active, skipping event")
     return
   }
 
@@ -317,7 +342,10 @@ export function trackEvent(eventName: string, params?: Record<string, unknown>):
  * ```
  */
 export function trackPageView(pageTitle?: string, pagePath?: string): void {
+  console.debug("[GA4] trackPageView called:", { pageTitle, pagePath })
+
   if (!isGA4Active()) {
+    console.debug("[GA4] GA4 not active, skipping page view")
     return
   }
 

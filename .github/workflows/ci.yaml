@@ -82,9 +82,9 @@ jobs:
           name: site.tar
           path: site.tar
 
-  # Frontend tests (always runs to produce a check, but skips work if no frontend changes)
-  test:
-    name: Frontend Tests
+  # Unit tests (Jest) - no Playwright needed
+  test-unit:
+    name: Unit Tests
     runs-on: ubuntu-latest
     needs: [build]
     steps:
@@ -114,25 +114,61 @@ jobs:
         if: needs.build.outputs.frontend-changed == 'true'
         run: yarn install --immutable
 
-      - name: Install Playwright Browsers
-        if: needs.build.outputs.frontend-changed == 'true'
-        run: npx playwright install --with-deps
-
       - name: Run unit tests
         if: needs.build.outputs.frontend-changed == 'true'
         run: yarn test
 
+  # E2E tests (Playwright) - sharded across 2 runners
+  test-e2e:
+    name: E2E Tests (${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Skip notification
+        if: needs.build.outputs.frontend-changed != 'true'
+        run: |
+          echo "::notice::No frontend files changed. Tests skipped but check passed."
+
+      - name: Enable corepack
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: corepack enable
+
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        if: needs.build.outputs.frontend-changed == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: yarn install --immutable
+
+      - name: Cache Playwright browsers
+        if: needs.build.outputs.frontend-changed == 'true'
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install Playwright Browsers
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: npx playwright install --with-deps
+
       - name: Run E2E tests
         if: needs.build.outputs.frontend-changed == 'true'
-        run: yarn test:e2e
-        env:
-          CI: true
-          # E2E tests run against localhost:8080 (webServer in playwright.config.ts)
-          # No proxy needed - tests connect directly to local dev server
-
-      - name: Run Accessibility tests
-        if: needs.build.outputs.frontend-changed == 'true'
-        run: yarn test:e2e:accessibility
+        run: yarn test:e2e:core --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           CI: true
 
@@ -140,7 +176,69 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: playwright-report
+          name: playwright-report-e2e-${{ matrix.shardIndex }}
+          path: playwright-report/
+          retention-days: 7
+
+  # Accessibility tests (Playwright) - sharded across 2 runners
+  test-a11y:
+    name: Accessibility Tests (${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+    runs-on: ubuntu-latest
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Skip notification
+        if: needs.build.outputs.frontend-changed != 'true'
+        run: |
+          echo "::notice::No frontend files changed. Tests skipped but check passed."
+
+      - name: Enable corepack
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: corepack enable
+
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        if: needs.build.outputs.frontend-changed == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: yarn install --immutable
+
+      - name: Cache Playwright browsers
+        if: needs.build.outputs.frontend-changed == 'true'
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install Playwright Browsers
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: npx playwright install --with-deps
+
+      - name: Run Accessibility tests
+        if: needs.build.outputs.frontend-changed == 'true'
+        run: yarn test:e2e:accessibility --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        env:
+          CI: true
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: playwright-report-a11y-${{ matrix.shardIndex }}
           path: playwright-report/
           retention-days: 7
 
@@ -152,7 +250,9 @@ jobs:
       contents: read
     needs:
       - build
-      - test
+      - test-unit
+      - test-e2e
+      - test-a11y
     # Only deploy when on main, frontend changed, and artifact was built
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.build.outputs.frontend-changed == 'true' }}
     environment:

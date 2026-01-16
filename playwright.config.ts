@@ -29,9 +29,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   // Use HTML reporter but don't auto-open (use 'yarn playwright show-report' to view)
-  reporter: [["html", { open: "never" }]],
+  // In CI, also use blob reporter for sharded test merging
+  reporter: process.env.CI ? [["blob"], ["html", { open: "never" }]] : [["html", { open: "never" }]],
 
   // Global timeout for entire test run (2 minutes max)
   globalTimeout: 2 * 60 * 1000,

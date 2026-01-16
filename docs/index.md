@@ -318,7 +318,7 @@ Browser → Static Site (S3/CloudFront)
 
 ## Contact & Support
 
-- **Email:** ndx@digital.cabinet-office.gov.uk
+- **Email:** ndx@dsit.gov.uk
 - **Issues:** https://github.com/co-cddo/ndx/issues
 - **License:** MIT
 

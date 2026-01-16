@@ -483,4 +483,263 @@ describe("Try Page Component (Story 5.9)", () => {
       spy.mockRestore()
     })
   })
+
+  describe("Regression: Auto-refresh data fetching", () => {
+    let cleanup: (() => void) | undefined
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+      // Clean up try page to stop timers
+      if (cleanup) {
+        cleanup()
+        cleanup = undefined
+      }
+      jest.clearAllTimers()
+      jest.useRealTimers()
+    })
+
+    it("should fetch fresh data from API during auto-refresh, not just re-render stale data", async () => {
+      // Arrange
+      const initialLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Initial Product",
+          status: "PendingApproval" as const,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+        },
+      ]
+
+      const updatedLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Initial Product",
+          status: "Active" as const, // Status changed from PendingApproval to Active
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 15, // Spend also changed
+        },
+      ]
+
+      // First call returns initial leases, subsequent calls return updated leases
+      let callCount = 0
+      mockFetchUserLeases.mockImplementation(async () => {
+        callCount++
+        if (callCount === 1) {
+          return { success: true, leases: initialLeases }
+        }
+        return { success: true, leases: updatedLeases }
+      })
+
+      let subscribeCallback: (isAuth: boolean) => void = () => {}
+      ;(authState.subscribe as jest.Mock).mockImplementation((cb) => {
+        subscribeCallback = cb
+        return () => {}
+      })
+      ;(authState.isAuthenticated as jest.Mock).mockReturnValue(true)
+
+      // Act - Initialize page (triggers first fetch)
+      cleanup = initTryPage()
+      subscribeCallback(true)
+
+      // Wait for initial async fetch - flush microtasks (don't use runAllTimers which hangs on infinite intervals)
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      jest.advanceTimersByTime(100) // Allow initial render to complete
+      await Promise.resolve()
+
+      // Verify initial state shows pending status
+      expect(container.innerHTML).toContain("Pending approval")
+
+      // Advance timer to trigger auto-refresh (10 seconds)
+      jest.advanceTimersByTime(10000)
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+
+      // Assert - API should have been called again during refresh
+      // BUG: Currently only called once because refresh only re-renders stale data
+      expect(mockFetchUserLeases).toHaveBeenCalledTimes(2)
+
+      // Assert - Updated status should be shown (Active instead of Pending)
+      expect(container.innerHTML).toContain("Active")
+      expect(container.innerHTML).not.toContain("Pending approval")
+    })
+
+    it("should show countdown indicator after refresh completes, not stay stuck on Updating", async () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Active" as const,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+        },
+      ]
+
+      mockFetchUserLeases.mockResolvedValue({ success: true, leases: mockLeases })
+
+      let subscribeCallback: (isAuth: boolean) => void = () => {}
+      ;(authState.subscribe as jest.Mock).mockImplementation((cb) => {
+        subscribeCallback = cb
+        return () => {}
+      })
+      ;(authState.isAuthenticated as jest.Mock).mockReturnValue(true)
+
+      // Act - Initialize page
+      cleanup = initTryPage()
+      subscribeCallback(true)
+
+      // Wait for initial async fetch
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      jest.advanceTimersByTime(100)
+      await Promise.resolve()
+
+      // Verify countdown is shown initially
+      expect(container.innerHTML).toContain("Refreshing in")
+      expect(container.innerHTML).not.toContain("Updating...")
+
+      // Trigger auto-refresh (10 seconds) - this shows "Updating..."
+      jest.advanceTimersByTime(10000)
+      await Promise.resolve()
+      await Promise.resolve()
+
+      // Advance 2 more seconds to allow the setTimeout(1000) to fire and reset state
+      jest.advanceTimersByTime(2000)
+      await Promise.resolve()
+
+      // After refresh completes, countdown should be shown again
+      // BUG: Previously showed "Updating..." that never returned to countdown
+      const countdownElement = container.querySelector("#refresh-countdown")
+      expect(countdownElement).not.toBeNull()
+      expect(container.innerHTML).toContain("Refreshing in")
+      expect(container.innerHTML).not.toContain("Updating...")
+    })
+
+    it("should display countdown timer with seconds remaining", async () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Active" as const,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+        },
+      ]
+
+      mockFetchUserLeases.mockResolvedValue({ success: true, leases: mockLeases })
+
+      let subscribeCallback: (isAuth: boolean) => void = () => {}
+      ;(authState.subscribe as jest.Mock).mockImplementation((cb) => {
+        subscribeCallback = cb
+        return () => {}
+      })
+      ;(authState.isAuthenticated as jest.Mock).mockReturnValue(true)
+
+      // Act
+      cleanup = initTryPage()
+      subscribeCallback(true)
+
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      jest.advanceTimersByTime(100)
+      await Promise.resolve()
+
+      // Verify countdown is displayed with seconds format
+      expect(container.innerHTML).toMatch(/Refreshing in \d+s/)
+
+      // Verify countdown element exists
+      const countdownElement = container.querySelector("#refresh-countdown")
+      expect(countdownElement).not.toBeNull()
+
+      // Verify countdown shows a reasonable number (1-10 seconds)
+      const match = countdownElement?.textContent?.match(/(\d+)s/)
+      expect(match).not.toBeNull()
+      const seconds = parseInt(match![1])
+      expect(seconds).toBeGreaterThanOrEqual(1)
+      expect(seconds).toBeLessThanOrEqual(10)
+    })
+
+    it("should handle refresh errors gracefully without breaking countdown", async () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "lease-1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Active" as const,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          maxSpend: 50,
+          currentSpend: 10,
+        },
+      ]
+
+      // First call succeeds, second call (refresh) fails
+      let callCount = 0
+      mockFetchUserLeases.mockImplementation(async () => {
+        callCount++
+        if (callCount === 1) {
+          return { success: true, leases: mockLeases }
+        }
+        return { success: false, error: "Network error" }
+      })
+
+      let subscribeCallback: (isAuth: boolean) => void = () => {}
+      ;(authState.subscribe as jest.Mock).mockImplementation((cb) => {
+        subscribeCallback = cb
+        return () => {}
+      })
+      ;(authState.isAuthenticated as jest.Mock).mockReturnValue(true)
+
+      // Act
+      cleanup = initTryPage()
+      subscribeCallback(true)
+
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      jest.advanceTimersByTime(100)
+      await Promise.resolve()
+
+      // Verify initial render succeeded
+      expect(container.innerHTML).toContain("Test Product")
+
+      // Trigger refresh (which will fail)
+      jest.advanceTimersByTime(10000)
+      await Promise.resolve()
+      await Promise.resolve()
+      jest.advanceTimersByTime(2000)
+      await Promise.resolve()
+
+      // Should still show session data (not replace with error)
+      // and countdown should resume
+      expect(container.innerHTML).toContain("Refreshing in")
+    })
+  })
 })

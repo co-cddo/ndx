@@ -125,15 +125,12 @@ export default function (eleventyConfig) {
       navigation: [
         { text: "Home", href: "/" },
         { text: "About", href: "/About/" },
-        { text: "Catalogue", href: "/catalogue" },
-        { text: "Challenges", href: "/challenges" },
+        { text: "Catalogue", href: "/catalogue/tags/try-before-you-buy/" },
         {
           text: "Try",
           href: "/try",
         },
-        { text: "Access", href: "/access" },
         { text: "Optimise", href: "/optimise/" },
-        { text: '<span class="sparkle">Begin with AI</span>', href: "/begin/" },
       ],
       slots: {
         end: '<span id="auth-nav" class="app-auth-nav"></span>',

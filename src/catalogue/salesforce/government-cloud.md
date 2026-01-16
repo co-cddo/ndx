@@ -31,13 +31,6 @@ tags:
   href: "https://www.salesforce.com/uk/solutions/industries/government/overview/",
   isStartButton: true
 }) }}
-</br>
-
-{{ govukButton({
-  text: "Deploy this now",
-  href: "/access/salesforce-government-cloud",
-  isStartButton: true
-}) }}
 
 ## About Salesforce Government Cloud
 

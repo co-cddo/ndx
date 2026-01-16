@@ -5,6 +5,9 @@ description: <br/>Welcome to the next generation of cloud and data sharing.
 image:
   src: /assets/missionbadge.png
   alt: National Digital Exchange Mission Badge
+startButton:
+  text: Get started
+  href: /catalogue/tags/try-before-you-buy/
 eleventyComputed:
   title: National Digital Exchange
 styles: |
@@ -20,7 +23,7 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 ---
 
 <div class="govuk-grid-row homepage-grid">
-  <section class="govuk-grid-column-one-third-from-desktop">
+  <section class="govuk-grid-column-one-half-from-desktop">
 
 ### [Try](/catalogue/tags/try-before-you-buy/)
 
@@ -28,13 +31,7 @@ Create a secure short-lived cloud environment for learning, experiments and proo
 
   </section>
 
-### [Access](/access)
-
-Create turnkey production ready environments for your team to collaborate on developing and deploying to production
-
-</section>
-  
-<section class="govuk-grid-column-one-third-from-desktop">
+  <section class="govuk-grid-column-one-half-from-desktop">
 
 ### [Optimise](/optimise)
 

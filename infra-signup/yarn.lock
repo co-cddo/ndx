@@ -3535,9 +3535,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-cdk@npm:2.1032.0":
-  version: 2.1032.0
-  resolution: "aws-cdk@npm:2.1032.0"
+"aws-cdk@npm:2.1101.0":
+  version: 2.1101.0
+  resolution: "aws-cdk@npm:2.1101.0"
   dependencies:
     fsevents: "npm:2.3.2"
   dependenciesMeta:
@@ -3545,7 +3545,7 @@ __metadata:
       optional: true
   bin:
     cdk: bin/cdk
-  checksum: 10c0/c33ae8dec4d6fc1704452c6103b14d84970f75a7e25e5c2cf04a200fe32b7b5305d5d11de181569da9a0c4df3fa29388b9a7e8de51a88ba6890ad9d1d8899a95
+  checksum: 10c0/d3b9eb8b23076c0c9ae4fcae89a8a726598f268302d747e6f6b1fdb181ea6cb3f332d7a6bd2fdc16f4fc26c9798ce9f8ea3d16bd5256bd4ea509558d1cce9c6a
   languageName: node
   linkType: hard
 
@@ -5773,7 +5773,7 @@ __metadata:
     "@types/aws-lambda": "npm:8.10.159"
     "@types/jest": "npm:29.5.14"
     "@types/node": "npm:22.7.9"
-    aws-cdk: "npm:2.1032.0"
+    aws-cdk: "npm:2.1101.0"
     aws-cdk-lib: "npm:2.215.0"
     constructs: "npm:10.0.0"
     esbuild: "npm:^0.27.2"

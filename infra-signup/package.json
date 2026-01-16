@@ -19,7 +19,7 @@
     "@types/aws-lambda": "8.10.159",
     "@types/jest": "29.5.14",
     "@types/node": "22.7.9",
-    "aws-cdk": "2.1032.0",
+    "aws-cdk": "2.1101.0",
     "esbuild": "^0.27.2",
     "eslint": "9.39.1",
     "eslint-plugin-awscdk": "4.0.4",

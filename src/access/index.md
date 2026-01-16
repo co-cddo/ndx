@@ -55,4 +55,4 @@ By following these steps, your organisation can swiftly and securely access the 
 
 **Need help?**
 
-If you have any questions or need assistance during the process, contact our support team at [ndx@digital.cabinet-office.gov.uk](mailto:ndx@digital.cabinet-office.gov.uk).
+If you have any questions or need assistance during the process, contact our support team at [ndx@dsit.gov.uk](mailto:ndx@dsit.gov.uk).

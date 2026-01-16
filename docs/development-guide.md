@@ -488,7 +488,7 @@ yarn test --clearCache
 
 ## Support & Contact
 
-- **Email:** ndx@digital.cabinet-office.gov.uk
+- **Email:** ndx@dsit.gov.uk
 - **Issues:** https://github.com/co-cddo/ndx/issues
 
 ---

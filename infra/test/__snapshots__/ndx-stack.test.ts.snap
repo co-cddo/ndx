@@ -28,6 +28,12 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
       "Description": "Origin ID added to CloudFront distribution",
       "Value": "ndx-static-prod-origin",
     },
+    "ResponseHeadersPolicyId": {
+      "Description": "Response Headers Policy ID with GA4 CSP",
+      "Value": {
+        "Ref": "NdxSecurityHeadersPolicyCBD94FF7",
+      },
+    },
     "SignupApiPath": {
       "Description": "Path pattern routed to signup Lambda",
       "Value": "/signup-api/*",
@@ -96,7 +102,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "c4507751c4203a54dadbc3fdc07784673f91065a6689b5b1bbb7402be0265985.zip",
+          "S3Key": "5401a5527fd745cdbf30b569200917614888a0ddcd6f6e49f949dff1f4d5851d.zip",
         },
         "Description": "Custom Resource: Add origin to CloudFront distribution",
         "Handler": "index.handler",
@@ -373,6 +379,7 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
         "AddCloudFrontOrigin",
         "CookieRouterFunction6BEF430A",
         "NdxCookieRoutingPolicy99C7239B",
+        "NdxSecurityHeadersPolicyCBD94FF7",
       ],
       "Properties": {
         "CachePolicyId": {
@@ -386,6 +393,9 @@ exports[`NdxStaticStack CloudFront configuration snapshot 1`] = `
           ],
         },
         "FunctionEventType": "viewer-request",
+        "ResponseHeadersPolicyId": {
+          "Ref": "NdxSecurityHeadersPolicyCBD94FF7",
+        },
         "ServiceToken": {
           "Fn::GetAtt": [
             "AddOriginProviderframeworkonEvent5094AA52",
@@ -501,6 +511,37 @@ function handler(event) {
         },
       },
       "Type": "AWS::CloudFront::CachePolicy",
+    },
+    "NdxSecurityHeadersPolicyCBD94FF7": {
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Comment": "Security headers for NDX static site including GA4 CSP",
+          "Name": "NdxSecurityHeadersPolicy",
+          "SecurityHeadersConfig": {
+            "ContentSecurityPolicy": {
+              "ContentSecurityPolicy": "upgrade-insecure-requests; default-src 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'",
+              "Override": true,
+            },
+            "ContentTypeOptions": {
+              "Override": true,
+            },
+            "FrameOptions": {
+              "FrameOption": "DENY",
+              "Override": true,
+            },
+            "ReferrerPolicy": {
+              "Override": true,
+              "ReferrerPolicy": "no-referrer",
+            },
+            "StrictTransportSecurity": {
+              "AccessControlMaxAgeSec": 46656000,
+              "IncludeSubdomains": true,
+              "Override": true,
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
     },
     "SignupLambdaOac": {
       "Properties": {

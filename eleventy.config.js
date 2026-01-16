@@ -113,10 +113,6 @@ export default function (eleventyConfig) {
         },
         html: 'This is a new service. Help us improve it and <a class="govuk-link" href="mailto:ndx@dsit.gov.uk">give your feedback by email</a>.',
       },
-      search: {
-        indexPath: "/search.json",
-        sitemapPath: "/sitemap",
-      },
     },
     stylesheets: ["/assets/styles.css"],
     scripts: ["/assets/try.bundle.js"],

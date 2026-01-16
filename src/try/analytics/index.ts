@@ -38,7 +38,6 @@ export {
   trackSessionAccess,
   trackCliCredentials,
   trackNavClick,
-  trackSearch,
   trackExternalLink,
   trackConsentChoice,
 } from "./events"

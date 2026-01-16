@@ -9,12 +9,9 @@
 
 import { trackEvent, trackPageView as coreTrackPageView } from "./analytics"
 
-// Debounce/dedupe state
-let lastSearchQuery = ""
-let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+// Dedupe state
 const recentClicks = new Map<string, number>()
 
-const SEARCH_DEBOUNCE_MS = 500
 const CLICK_DEDUPE_MS = 100
 
 /**
@@ -131,29 +128,6 @@ export function trackNavClick(destination: string): void {
 
   // Cleanup old entries after 1 second
   setTimeout(() => recentClicks.delete(key), 1000)
-}
-
-/**
- * Track search query with debouncing.
- *
- * @param query - Search query string
- */
-export function trackSearch(query: string): void {
-  // Clear existing timer
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer)
-  }
-
-  // Don't track empty or duplicate queries
-  if (!query.trim() || query === lastSearchQuery) {
-    return
-  }
-
-  // Debounce search tracking
-  searchDebounceTimer = setTimeout(() => {
-    lastSearchQuery = query
-    trackEvent("search", { search_term: query })
-  }, SEARCH_DEBOUNCE_MS)
 }
 
 /**

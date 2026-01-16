@@ -3401,10 +3401,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"constructs@npm:10.0.0":
-  version: 10.0.0
-  resolution: "constructs@npm:10.0.0"
-  checksum: 10c0/67a200e2bb582b35210b101ba31f42603650ebf35b88f912a2d2dd66069649e4aa02391252c8f2e2eb4d3fa4d13d57171caf066d4fbafeaf030650914f0b26d4
+"constructs@npm:10.4.4":
+  version: 10.4.4
+  resolution: "constructs@npm:10.4.4"
+  checksum: 10c0/d3eb0a240adbc2304c347b96cb8eee391a2286c9cbdf97255f856ec58838edc8c7c27ff41ff9d60316dccc92c3be5277abd08b517b3c55c32cea52def7c4163c
   languageName: node
   linkType: hard
 
@@ -4547,7 +4547,7 @@ __metadata:
     aws-cdk: "npm:2.1032.0"
     aws-cdk-lib: "npm:2.215.0"
     aws-sdk-client-mock: "npm:4.1.0"
-    constructs: "npm:10.0.0"
+    constructs: "npm:10.4.4"
     esbuild: "npm:^0.27.2"
     eslint: "npm:9.39.1"
     eslint-plugin-awscdk: "npm:4.0.4"

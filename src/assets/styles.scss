@@ -618,22 +618,32 @@ body.auth-choice-modal-open {
 // Button is used instead of anchor for semantic correctness (triggers JS action)
 // ============================================================================
 
-// Sign in button in service navigation - styled to look like a link
-// GOV.UK :link/:visited only apply to <a> elements, so buttons need explicit colors
+// Sign in button in header navigation - styled to match other nav links
+// Matches .govuk-service-navigation__link styling for buttons
 #sign-in-button {
+  // Reset button defaults
   background: none;
   border: none;
   padding: 0;
-  font: inherit;
+  margin: 0;
   cursor: pointer;
-  text-decoration: underline;
 
-  // Default: blue text for light backgrounds (non-inverse nav)
-  color: #1d70b8;
+  // Match GDS typography (govuk-font size 19)
+  font-family: Arial, sans-serif;
+  font-size: 1.1875rem; // 19px
+  line-height: 1.3157894737; // 25/19
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // Match link styling (no underline by default)
+  text-decoration: none;
+  color: inherit; // White in inverse nav
 
   &:hover {
-    color: #003078;
+    text-decoration: underline;
     text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
+    text-underline-offset: 0.1578em;
   }
 
   &:focus {
@@ -644,15 +654,6 @@ body.auth-choice-modal-open {
       0 -2px #fd0,
       0 4px #0b0c0c;
     text-decoration: none;
-  }
-}
-
-// Inverse nav (dark background on homepage): white text
-.govuk-service-navigation--inverse #sign-in-button {
-  color: #fff;
-
-  &:hover {
-    color: hsla(0, 0%, 100%, 0.99);
   }
 }
 

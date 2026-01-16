@@ -355,10 +355,48 @@ function renderActiveSessionGuidance(): string {
 }
 
 /**
- * Start auto-refresh timer for relative expiry times.
+ * Refresh sessions from API without showing full loading state.
  *
- * Story 7.5: AC requires expiry dates to update automatically every minute.
- * This ensures relative time displays (e.g., "in 2 hours") stay current.
+ * Fetches fresh data from the API and updates the display.
+ * On success, updates the leases and re-renders.
+ * On failure, keeps showing current data (graceful degradation).
+ */
+async function refreshSessions(): Promise<void> {
+  if (!container || currentState.loading) return
+
+  // Show refreshing indicator
+  currentState.refreshing = true
+  const refreshIndicator = container.querySelector(".sessions-description")
+  if (refreshIndicator) {
+    refreshIndicator.innerHTML = `This page updates automatically. <span class="sessions-refresh-indicator" aria-live="polite">Updating...</span>`
+  }
+
+  // Fetch fresh data from API
+  const result = await fetchUserLeases()
+
+  // Check if we're still on the page (may have navigated away during fetch)
+  if (!container) return
+
+  if (result.success && result.leases) {
+    // Update state with fresh data
+    currentState = { loading: false, refreshing: false, error: null, leases: result.leases }
+    // Re-render with fresh data (not refreshing state, so countdown is shown)
+    renderAuthenticatedState(container, result.leases, false)
+  } else {
+    // On error, keep showing current data but reset refreshing state
+    currentState.refreshing = false
+    // Re-render current data to restore countdown
+    if (currentState.leases.length > 0) {
+      renderAuthenticatedState(container, currentState.leases, false)
+    }
+  }
+}
+
+/**
+ * Start auto-refresh timer for fetching fresh data.
+ *
+ * Story 7.5: AC requires data to refresh automatically.
+ * Fetches fresh session data every 10 seconds to show status updates.
  *
  * Clears any existing timer before starting a new one to prevent multiple timers.
  */
@@ -378,17 +416,10 @@ function startAutoRefresh(): void {
     }
   }, 1000)
 
-  // Refresh table display every 10 seconds
+  // Fetch fresh data every 10 seconds
   refreshTimer = window.setInterval(() => {
-    if (container && currentState.leases.length > 0 && !currentState.loading) {
-      // Show refreshing indicator and re-render table with current leases
-      currentState.refreshing = true
-      renderAuthenticatedState(container, currentState.leases, true)
-      // Reset countdown and hide indicator after a brief delay
-      setTimeout(() => {
-        currentState.refreshing = false
-        secondsUntilRefresh = 10
-      }, 1000)
+    if (container && currentState.leases.length > 0 && !currentState.loading && !currentState.refreshing) {
+      refreshSessions()
     }
   }, 10000) // 10 seconds
 }

@@ -20,13 +20,6 @@ import { checkUserExists, createUser } from "./identity-store-service"
 import { normalizeEmail, isEmailDomainAllowed } from "./services"
 
 /**
- * Temporary flag to disable signups.
- * Set SIGNUPS_DISABLED=true in Lambda environment to return 503 for signup endpoints.
- * Remove this when re-enabling signups.
- */
-const SIGNUPS_DISABLED = process.env.SIGNUPS_DISABLED === "true"
-
-/**
  * Security headers for all Lambda responses (from project-context.md)
  */
 const securityHeaders = {
@@ -72,19 +65,6 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   // Route handling
   if (method === "GET" && path === "/signup-api/health") {
     return successResponse({ status: "ok" }, correlationId)
-  }
-
-  // Temporary: disable all signup endpoints except health check
-  if (SIGNUPS_DISABLED) {
-    console.log(
-      JSON.stringify({
-        level: "INFO",
-        message: "Signups temporarily disabled",
-        path,
-        correlationId,
-      }),
-    )
-    return errorResponse(503, "SERVICE_UNAVAILABLE", "Signups are temporarily disabled", correlationId)
   }
 
   if (method === "GET" && path === "/signup-api/domains") {

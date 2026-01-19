@@ -1,5 +1,5 @@
 ---
-layout: layouts/base.njk
+layout: layouts/page.njk
 title: Create an account
 permalink: /signup/
 ---

@@ -21,10 +21,10 @@ import { normalizeEmail, isEmailDomainAllowed } from "./services"
 
 /**
  * Temporary flag to disable signups.
- * Set to true to return 503 for signup-related endpoints.
+ * Set SIGNUPS_DISABLED=true in Lambda environment to return 503 for signup endpoints.
  * Remove this when re-enabling signups.
  */
-const SIGNUPS_DISABLED = true
+const SIGNUPS_DISABLED = process.env.SIGNUPS_DISABLED === "true"
 
 /**
  * Security headers for all Lambda responses (from project-context.md)

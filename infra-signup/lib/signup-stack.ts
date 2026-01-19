@@ -176,6 +176,8 @@ export class SignupStack extends cdk.Stack {
         // Cross-account role for Identity Store access
         CROSS_ACCOUNT_ROLE_ARN: isbRoleArn,
         ...(ssoInstanceArn && { SSO_INSTANCE_ARN: ssoInstanceArn }),
+        // Temporary: disable signups until early February 2026
+        SIGNUPS_DISABLED: "true",
       },
     })
 

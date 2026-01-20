@@ -157,7 +157,7 @@ jobs:
 
       - name: Cache Playwright browsers
         if: needs.build.outputs.frontend-changed == 'true'
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
@@ -219,7 +219,7 @@ jobs:
 
       - name: Cache Playwright browsers
         if: needs.build.outputs.frontend-changed == 'true'
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}

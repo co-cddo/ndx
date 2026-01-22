@@ -11,13 +11,7 @@ import * as sns from "aws-cdk-lib/aws-sns"
 import * as sqs from "aws-cdk-lib/aws-sqs"
 import { Construct } from "constructs"
 import * as path from "path"
-import {
-  getISBConfig,
-  getISBEventBusArn,
-  ISB_EVENT_TYPES,
-  NOTIFY_TEMPLATE_IDS,
-  CHATBOT_SLACK_CONFIG,
-} from "./config"
+import { getISBConfig, getISBEventBusArn, ISB_EVENT_TYPES, NOTIFY_TEMPLATE_IDS, CHATBOT_SLACK_CONFIG } from "./config"
 import * as chatbot from "aws-cdk-lib/aws-chatbot"
 
 // Configuration constants

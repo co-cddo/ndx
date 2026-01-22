@@ -2,11 +2,12 @@
  * NDX Notification Handler - Entry Point
  *
  * This Lambda function processes EventBridge events from the Innovation Sandbox (ISB)
- * and routes them to appropriate notification channels:
- * - GOV.UK Notify for user emails
- * - Slack webhooks for ops alerts
+ * and routes them to GOV.UK Notify for user emails.
  *
- * Architecture: "One brain, two mouths" pattern
+ * Note: Slack notifications for ops alerts are handled by AWS Chatbot via
+ * EventBridge → SNS → Chatbot (Story 6.1). This Lambda no longer sends
+ * direct Slack webhooks (removed in Story 6.3).
+ *
  * @see docs/notification-architecture.md
  *
  * Security Controls:
@@ -28,7 +29,6 @@ import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 import type { EventBridgeEvent, HandlerResponse, NotificationEventType } from "./types"
 import { ALLOWED_SOURCES } from "./types"
 import { SecurityError } from "./errors"
-import { processSlackAlert, isSlackAlertType } from "./slack-alerts"
 import { validateEvent } from "./validation"
 import { validateAllTemplatesOnce } from "./template-validation"
 import { NotifySender } from "./notify-sender"
@@ -218,19 +218,23 @@ export function validateEventSource(event: EventBridgeEvent): void {
 // =========================================================================
 
 /**
- * Determine which notification channel(s) to use based on event type
- * All events now go to Slack; user-facing events also get email (N5)
+ * Determine which notification channel(s) to use based on event type.
+ *
+ * Note: Slack notifications are now handled by AWS Chatbot via EventBridge → SNS.
+ * This function only determines if email notifications should be sent.
+ * Ops-only events (AccountCleanupFailed, AccountQuarantined, AccountDriftDetected)
+ * do NOT trigger email - they are ops alerts only via Chatbot.
  */
-function getNotificationChannels(eventType: NotificationEventType): ("email" | "slack")[] {
-  // Ops events go to Slack only (no user email)
+function getNotificationChannels(eventType: NotificationEventType): "email"[] {
+  // Ops events go to Chatbot only (no user email from this Lambda)
   const opsOnlyEvents: NotificationEventType[] = ["AccountCleanupFailed", "AccountQuarantined", "AccountDriftDetected"]
 
   if (opsOnlyEvents.includes(eventType)) {
-    return ["slack"]
+    return [] // No email for ops-only events
   }
 
-  // All lease lifecycle events go to both Slack (visibility) and email (user notification)
-  return ["email", "slack"]
+  // All lease lifecycle events get email notifications to users
+  return ["email"]
 }
 
 /**
@@ -323,17 +327,8 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
     // Step 3: Determine notification channels
     const channels = getNotificationChannels(eventType)
 
-    // Step 4: Process notifications for each channel
-    // Slack alerts (ops events)
-    if (channels.includes("slack") && isSlackAlertType(eventType)) {
-      const validatedEvent = validateEvent(event)
-
-      await processSlackAlert(validatedEvent as any)
-      logger.info("Slack alert sent successfully", {
-        eventId,
-        eventType: sanitizedEventType,
-      })
-    }
+    // Step 4: Process email notifications
+    // Note: Slack alerts are handled by AWS Chatbot via EventBridge → SNS (Story 6.1)
 
     // Email notifications (user events)
     if (channels.includes("email") && (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType))) {

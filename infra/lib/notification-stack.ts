@@ -11,15 +11,24 @@ import * as sns from "aws-cdk-lib/aws-sns"
 import * as sqs from "aws-cdk-lib/aws-sqs"
 import { Construct } from "constructs"
 import * as path from "path"
-import { getISBConfig, getISBEventBusArn, ISB_EVENT_TYPES, NOTIFY_TEMPLATE_IDS } from "./config"
+import {
+  getISBConfig,
+  getISBEventBusArn,
+  ISB_EVENT_TYPES,
+  NOTIFY_TEMPLATE_IDS,
+  CHATBOT_EVENT_TYPES,
+  CHATBOT_SLACK_CONFIG,
+} from "./config"
+import * as chatbot from "aws-cdk-lib/aws-chatbot"
 
 // Configuration constants
 const LAMBDA_TIMEOUT_SECONDS = 30
-const LAMBDA_MEMORY_MB = 512 // TC-AC-2: Increased from 256MB for Slack webhook integration
+const LAMBDA_MEMORY_MB = 512 // TC-AC-2: Increased from 256MB for notification processing
 const DLQ_RETENTION_DAYS = 14
 const DLQ_VISIBILITY_TIMEOUT_SECONDS = 300
 const SECRETS_PATH = "/ndx/notifications/credentials"
-const SLACK_WEBHOOK_SECRET_PATH = "/ndx/notifications/slack-webhook" // IC-AC-1: Separate Slack webhook secret
+// Note: SLACK_WEBHOOK_SECRET_PATH removed in Story 6.3. Slack notifications now
+// handled by AWS Chatbot via EventBridge → SNS (Story 6.1).
 
 // Alarm thresholds (n4-6)
 const ALARM_DLQ_RATE_THRESHOLD = 50 // Messages per 5 minutes
@@ -55,11 +64,14 @@ const RUNBOOK_URLS = {
  * This stack provisions the notification infrastructure for NDX:
  * - Lambda function for processing EventBridge events from Innovation Sandbox (ISB)
  * - GOV.UK Notify integration for user emails
- * - Slack webhook integration for ops alerts
+ * - AWS Chatbot integration for Slack ops alerts (Story 6.1)
  *
- * Architecture: "One brain, two mouths" pattern
- * - Single Lambda processes all events
- * - Routes to GOV.UK Notify (user emails) or Slack (ops alerts) based on event type
+ * Architecture:
+ * - Lambda processes events and routes to GOV.UK Notify for user emails
+ * - AWS Chatbot (EventBridge → SNS → Chatbot → Slack) handles ops alerts
+ *
+ * Note: Direct Slack webhook integration removed in Story 6.3. All Slack
+ * notifications now flow through AWS Chatbot for improved reliability.
  *
  * This stack is separate from NdxStaticStack for:
  * - Independent lifecycle management
@@ -78,6 +90,12 @@ export class NdxNotificationStack extends cdk.Stack {
 
   /** SNS topic for alarm notifications (n4-6) */
   public readonly alarmTopic: sns.Topic
+
+  /** Story 6.1: SNS topic for EventBridge events to Chatbot */
+  public readonly eventsTopic: sns.Topic
+
+  /** Story 6.1: AWS Chatbot Slack channel configuration */
+  public readonly slackChannel: chatbot.SlackChannelConfiguration
 
   /** CloudWatch dashboard for unified health visibility (n4-6) */
   public readonly dashboard: cloudwatch.Dashboard
@@ -161,17 +179,23 @@ export class NdxNotificationStack extends cdk.Stack {
         NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
         // DynamoDB table names for enrichment (n7-1)
         // AC-3: Table names from config, not hardcoded
+        // Note: LEASE_TABLE_NAME retained for account/template lookups and backwards compatibility.
+        // Story 5.1 replaced direct lease DynamoDB reads with ISB API (ISB_API_BASE_URL).
         LEASE_TABLE_NAME: dynamoDbTables.leaseTable,
         SANDBOX_ACCOUNT_TABLE_NAME: dynamoDbTables.sandboxAccountTable,
         LEASE_TEMPLATE_TABLE_NAME: dynamoDbTables.leaseTemplateTable,
+        // Story 5.1: ISB REST API base URL for lease data retrieval
+        // Used instead of direct DynamoDB access for cleaner API contract
+        ...(isbConfig.apiBaseUrl && { ISB_API_BASE_URL: isbConfig.apiBaseUrl }),
       },
     })
 
     // =========================================================================
-    // Secrets Manager IAM Permissions (n4-5, IC-AC-1)
+    // Secrets Manager IAM Permissions (n4-5)
     // =========================================================================
-    // Grant Lambda permission to retrieve notification credentials.
+    // Grant Lambda permission to retrieve notification credentials (GOV.UK Notify).
     // Restricted to specific secret paths for least privilege.
+    // Note: Slack webhook secret access removed in Story 6.3.
     // @see docs/notification-architecture.md#Secrets-Handling
 
     this.notificationHandler.addToRolePolicy(
@@ -179,11 +203,7 @@ export class NdxNotificationStack extends cdk.Stack {
         effect: iam.Effect.ALLOW,
         actions: ["secretsmanager:GetSecretValue"],
         // Restrict to specific secret ARN patterns for security
-        // IC-AC-1: Added separate Slack webhook secret path
-        resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SECRETS_PATH}*`,
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SLACK_WEBHOOK_SECRET_PATH}*`,
-        ],
+        resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SECRETS_PATH}*`],
       }),
     )
 
@@ -266,6 +286,71 @@ export class NdxNotificationStack extends cdk.Stack {
     cdk.Tags.of(this).add("project", "ndx")
     cdk.Tags.of(this).add("environment", env)
     cdk.Tags.of(this).add("managedby", "cdk")
+
+    // =========================================================================
+    // Story 6.1: AWS Chatbot Integration for ISB Events
+    // =========================================================================
+    // Routes all 18 ISB EventBridge events to Slack via AWS Chatbot.
+    // This provides real-time visibility without Lambda processing.
+    // Architecture: EventBridge → SNS → AWS Chatbot → Slack
+    // @see _bmad-output/planning-artifacts/prd-ndx-try-enhancements.md#Operations-Notifications
+
+    // SNS Topic for EventBridge events (AC-1)
+    // All 18 ISB events route through this topic to AWS Chatbot
+    this.eventsTopic = new sns.Topic(this, "EventsTopic", {
+      topicName: "ndx-try-alerts",
+      displayName: "NDX:Try EventBridge Events",
+    })
+
+    cdk.Tags.of(this.eventsTopic).add("project", "ndx")
+    cdk.Tags.of(this.eventsTopic).add("environment", env)
+    cdk.Tags.of(this.eventsTopic).add("managedby", "cdk")
+    cdk.Tags.of(this.eventsTopic).add("component", "notifications")
+
+    // EventBridge rule for Chatbot - captures all 18 ISB event types (AC-4)
+    // Separate from Lambda rule to provide comprehensive event visibility
+    const chatbotRule = new events.Rule(this, "ChatbotRule", {
+      ruleName: "ndx-chatbot-rule",
+      description: "Routes all ISB events to SNS for AWS Chatbot delivery to Slack",
+      eventBus: isbEventBus,
+      eventPattern: {
+        // Account filter: Security control to prevent cross-account event injection
+        account: [isbConfig.accountId],
+        // Detail-type filter: Subscribe to all 18 ISB event types
+        detailType: [...CHATBOT_EVENT_TYPES],
+      },
+      targets: [
+        new targets.SnsTopic(this.eventsTopic, {
+          // DLQ for failed SNS deliveries
+          deadLetterQueue: this.deadLetterQueue,
+          // Retry configuration
+          retryAttempts: 2,
+          maxEventAge: cdk.Duration.hours(1),
+        }),
+      ],
+    })
+
+    cdk.Tags.of(chatbotRule).add("project", "ndx")
+    cdk.Tags.of(chatbotRule).add("environment", env)
+    cdk.Tags.of(chatbotRule).add("managedby", "cdk")
+    cdk.Tags.of(chatbotRule).add("component", "notifications")
+
+    // AWS Chatbot Slack channel configuration (AC-2)
+    // Note: AWS Chatbot workspace authorization is a one-time manual setup via AWS Console
+    this.slackChannel = new chatbot.SlackChannelConfiguration(this, "SlackChannel", {
+      slackChannelConfigurationName: CHATBOT_SLACK_CONFIG.configurationName,
+      slackWorkspaceId: CHATBOT_SLACK_CONFIG.workspaceId,
+      slackChannelId: CHATBOT_SLACK_CONFIG.channelId,
+      // Subscribe to the events topic
+      notificationTopics: [this.eventsTopic],
+      // Configure logging level for observability (AC-5)
+      loggingLevel: chatbot.LoggingLevel.INFO,
+    })
+
+    cdk.Tags.of(this.slackChannel).add("project", "ndx")
+    cdk.Tags.of(this.slackChannel).add("environment", env)
+    cdk.Tags.of(this.slackChannel).add("managedby", "cdk")
+    cdk.Tags.of(this.slackChannel).add("component", "notifications")
 
     // =========================================================================
     // CloudWatch Monitoring and Alarms (n4-6)
@@ -556,25 +641,9 @@ export class NdxNotificationStack extends cdk.Stack {
     })
     unsubscribeRateAlarm.addAlarmAction(alarmAction)
 
-    // -------------------------------------------------------------------------
-    // Alarm 12: Slack Message Failures (AC-NEW-1, AC-NEW-2)
-    // -------------------------------------------------------------------------
-    // Detects Slack webhook integration issues - backup alerting via SNS
-    const slackFailureAlarm = new cloudwatch.Alarm(this, "SlackFailureAlarm", {
-      alarmName: "ndx-notification-slack-failure",
-      alarmDescription: `Slack message failures detected - check webhook configuration and SNS backup. Runbook: ${RUNBOOK_BASE_URL}/slack-failure-alarm`,
-      metric: new cloudwatch.Metric({
-        namespace: "NDX/Notifications",
-        metricName: "SlackMessageFailed",
-        period: cdk.Duration.minutes(5),
-        statistic: "Sum",
-      }),
-      threshold: 0,
-      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
-      evaluationPeriods: 1,
-      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    })
-    slackFailureAlarm.addAlarmAction(alarmAction)
+    // Note: SlackFailureAlarm removed in Story 6.3. Slack webhook code removed;
+    // AWS Chatbot now handles Slack notifications via EventBridge → SNS (Story 6.1).
+    // Chatbot has its own monitoring via CloudWatch Logs and SNS delivery metrics.
 
     // Tag all alarms for governance
     ;[
@@ -589,7 +658,6 @@ export class NdxNotificationStack extends cdk.Stack {
       complaintRateAlarm,
       bounceRateAlarm,
       unsubscribeRateAlarm,
-      slackFailureAlarm,
     ].forEach((alarm) => {
       cdk.Tags.of(alarm).add("project", "ndx")
       cdk.Tags.of(alarm).add("environment", env)
@@ -717,15 +785,13 @@ export class NdxNotificationStack extends cdk.Stack {
     // Grant DLQ Digest Lambda permissions to read from DLQ (peek without consuming)
     this.deadLetterQueue.grantConsumeMessages(this.dlqDigestHandler)
 
-    // Grant Secrets Manager access for Slack webhook
+    // Grant Secrets Manager access for GOV.UK Notify credentials
+    // Note: Slack webhook secret removed in Story 6.3.
     this.dlqDigestHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ["secretsmanager:GetSecretValue"],
-        resources: [
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SECRETS_PATH}*`,
-          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SLACK_WEBHOOK_SECRET_PATH}*`,
-        ],
+        resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:${SECRETS_PATH}*`],
       }),
     )
 
@@ -806,6 +872,22 @@ export class NdxNotificationStack extends cdk.Stack {
     new cdk.CfnOutput(this, "DLQDigestHandlerName", {
       value: this.dlqDigestHandler.functionName,
       description: "Name of the DLQ digest Lambda function",
+    })
+
+    // Story 6.1: AWS Chatbot outputs
+    new cdk.CfnOutput(this, "EventsTopicArn", {
+      value: this.eventsTopic.topicArn,
+      description: "ARN of the SNS topic for EventBridge events (Chatbot integration)",
+    })
+
+    new cdk.CfnOutput(this, "ChatbotRuleArn", {
+      value: chatbotRule.ruleArn,
+      description: "ARN of the EventBridge rule for Chatbot (all 18 event types)",
+    })
+
+    new cdk.CfnOutput(this, "SlackChannelConfigurationArn", {
+      value: this.slackChannel.slackChannelConfigurationArn,
+      description: "ARN of the AWS Chatbot Slack channel configuration",
     })
   }
 }

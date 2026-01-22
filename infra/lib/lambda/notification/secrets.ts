@@ -8,7 +8,9 @@
  * - Secrets retrieved at runtime (not in env vars)
  * - Cached per Lambda container (cleared on cold start)
  * - CriticalError thrown for auth/credential failures
- * - Webhook URLs never logged (AC-6.18)
+ *
+ * Note: Slack webhook URL removed in Story 6.3. Slack notifications are now
+ * handled by AWS Chatbot via EventBridge → SNS (Story 6.1).
  *
  * @see docs/notification-architecture.md#Secrets-Handling
  */
@@ -30,12 +32,13 @@ const secretsClient = new SecretsManagerClient({})
 /**
  * Notification secrets structure
  * Retrieved from Secrets Manager at runtime
+ *
+ * Note: slackWebhookUrl removed in Story 6.3. Slack notifications now
+ * handled by AWS Chatbot via EventBridge → SNS (Story 6.1).
  */
 export interface NotificationSecrets {
   /** GOV.UK Notify API key (team + service key format) */
   notifyApiKey: string
-  /** Slack Incoming Webhook URL for ops alerts */
-  slackWebhookUrl: string
 }
 
 /**
@@ -98,7 +101,7 @@ async function fetchSecretsInternal(secretPath: string): Promise<NotificationSec
   }
 
   if (!validateSecrets(parsed)) {
-    throw new CriticalError("Secret missing required fields (notifyApiKey, slackWebhookUrl)", "secrets")
+    throw new CriticalError("Secret missing required field (notifyApiKey)", "secrets")
   }
 
   return parsed
@@ -141,12 +144,7 @@ function validateSecrets(parsed: unknown): parsed is NotificationSecrets {
     return false
   }
   const obj = parsed as Record<string, unknown>
-  return (
-    typeof obj.notifyApiKey === "string" &&
-    typeof obj.slackWebhookUrl === "string" &&
-    obj.notifyApiKey.length > 0 &&
-    obj.slackWebhookUrl.length > 0
-  )
+  return typeof obj.notifyApiKey === "string" && obj.notifyApiKey.length > 0
 }
 
 /**

@@ -17,9 +17,9 @@ import type { NotifyEmailResponse } from "notifications-node-client"
 import type { NotificationSecrets } from "./secrets"
 
 // Mock return values
+// Note: slackWebhookUrl removed in Story 6.3. Slack visibility now via AWS Chatbot.
 const mockSecrets: NotificationSecrets = {
   notifyApiKey: "test-api-key-1234567890",
-  slackWebhookUrl: "https://hooks.slack.com/test",
 }
 
 const mockEmailResponse: NotifyEmailResponse = {

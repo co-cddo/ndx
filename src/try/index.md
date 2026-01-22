@@ -11,7 +11,7 @@ includeInBreadcrumbs: true
   <div id="try-unauthenticated-state" class="js-hidden" hidden>
     <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
     <p class="govuk-body">
-      You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments.
+      You need to sign in with your NDX:Try account to request and manage AWS sandbox environments.
     </p>
     {{ govukButton({
       text: "Sign in",

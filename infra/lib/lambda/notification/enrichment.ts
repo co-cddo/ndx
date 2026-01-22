@@ -20,6 +20,7 @@
 import { DynamoDBClient, GetItemCommand, ProvisionedThroughputExceededException } from "@aws-sdk/client-dynamodb"
 import { createHash } from "crypto"
 import { unmarshall } from "@aws-sdk/util-dynamodb"
+import { fetchLeaseByKey, ISBLeaseRecord } from "./isb-client"
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 import { PermanentError, RetriableError } from "./errors"
@@ -247,53 +248,8 @@ export function resetCircuitBreaker(): void {
 // DynamoDB Query Functions
 // =============================================================================
 
-/**
- * AC-6.2: Query LeaseTable for lease-specific fields
- * Uses GetItem with ConsistentRead: true (AC-6.11)
- */
-export async function queryLeaseTable(
-  dynamoClient: DynamoDBClient,
-  userEmail: string,
-  uuid: string,
-  eventId: string,
-): Promise<LeaseRecord | null> {
-  const tableName = process.env.LEASE_TABLE_NAME
-  if (!tableName) {
-    logger.warn("LEASE_TABLE_NAME not configured", { eventId })
-    return null
-  }
-
-  logger.debug("Querying LeaseTable for enrichment", {
-    eventId,
-    userEmailHash: hashForLog(userEmail),
-    uuid,
-  })
-
-  try {
-    // AC-6.9: Read-only access (GetItem)
-    // AC-6.11: ConsistentRead: true for correctness
-    const command = new GetItemCommand({
-      TableName: tableName,
-      Key: {
-        userEmail: { S: userEmail },
-        uuid: { S: uuid },
-      },
-      ConsistentRead: true,
-    })
-
-    const result = await dynamoClient.send(command)
-
-    if (!result.Item) {
-      logger.debug("No lease record found", { eventId, uuid })
-      return null
-    }
-
-    return unmarshall(result.Item) as LeaseRecord
-  } catch (error) {
-    handleDynamoDBError(error, "LeaseTable", eventId)
-    return null // unreachable but TypeScript needs it
-  }
-}
+// Story 5.1 AC-2.5: queryLeaseTable removed - lease data now fetched via ISB API
+// See fetchLeaseRecord() which uses fetchLeaseByKey() from isb-client.ts
 
 /**
  * AC-6.3: Query SandboxAccountTable for account name
@@ -488,15 +444,17 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
- * N7-1: Enhanced lease record fetching with:
- * - AC-1: Composite key query (userEmail PK, uuid SK)
- * - AC-5: EnrichmentQueryLatencyMs metric
- * - AC-7, AC-8: Input validation with type checking
- * - AC-9: 500ms backoff retry for ProvisionedThroughputExceededException
- * - AC-10: Schema fingerprint logging for drift detection
+ * Story 5.1: Lease record fetching via ISB API
  *
- * @param userEmail - Partition key (PK) for LeaseTable
- * @param uuid - Sort key (SK) for LeaseTable
+ * Refactored to use ISB REST API instead of direct DynamoDB access.
+ * Provides same interface for backward compatibility.
+ *
+ * - AC-1: Calls GET /leases/{id} on ISB API
+ * - AC-2: Maps ISB API response to LeaseRecord interface
+ * - AC-4, AC-5, AC-6: Graceful degradation on errors/timeout
+ *
+ * @param userEmail - User's email address
+ * @param uuid - Lease UUID
  * @param eventId - Event ID for logging correlation
  * @returns LeaseRecord or null if not found/validation fails
  */
@@ -505,128 +463,99 @@ export async function fetchLeaseRecord(
   uuid: unknown,
   eventId: string,
 ): Promise<LeaseRecord | null> {
-  // AC-7, AC-8: Validate inputs
+  // AC-7, AC-8: Validate inputs (reusing existing validation)
   const validatedInputs = validateLeaseKeyInputs(userEmail, uuid, eventId)
   if (!validatedInputs) {
     return null
   }
 
   const { userEmail: validEmail, uuid: validUuid } = validatedInputs
-  const tableName = process.env.LEASE_TABLE_NAME
+  const startTime = Date.now()
 
-  if (!tableName) {
-    logger.warn("LEASE_TABLE_NAME not configured", { eventId })
-    metrics.addMetric("EnrichmentConfigMissing", MetricUnit.Count, 1)
+  try {
+    logger.debug("Fetching lease record via ISB API", {
+      eventId,
+      userEmailHash: hashForLog(validEmail),
+      uuid: validUuid,
+    })
+
+    // Story 5.1 AC-1: Use ISB API instead of DynamoDB
+    const isbRecord = await fetchLeaseByKey(validEmail, validUuid, eventId)
+
+    const latencyMs = Date.now() - startTime
+    metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
+
+    if (!isbRecord) {
+      logger.debug("No lease record found via ISB API", {
+        eventId,
+        uuid: validUuid,
+        latencyMs,
+      })
+      metrics.addMetric("LeaseNotFound", MetricUnit.Count, 1)
+      return null
+    }
+
+    // Story 5.1 AC-2: Map ISB API response to LeaseRecord interface
+    const leaseRecord = mapISBRecordToLeaseRecord(isbRecord)
+
+    // Log schema fingerprint for monitoring (reusing existing pattern)
+    const fingerprint = generateSchemaFingerprint(isbRecord as unknown as Record<string, unknown>)
+    const fieldCount = Object.keys(isbRecord).length
+    logger.info("Lease record schema fingerprint", {
+      eventId,
+      fingerprint,
+      keyCount: fieldCount,
+      source: "isb-api",
+    })
+    metrics.addMetric("EnrichmentSchemaFields", MetricUnit.Count, fieldCount)
+
+    // Record success for circuit breaker
+    circuitBreaker.recordSuccess()
+
+    logger.debug("Lease record fetched successfully via ISB API", {
+      eventId,
+      latencyMs,
+      hasStatus: !!leaseRecord.status,
+      hasMaxSpend: leaseRecord.maxSpend !== undefined,
+    })
+
+    return leaseRecord
+  } catch (error) {
+    // Story 5.1 AC-5: Graceful degradation on errors
+    const latencyMs = Date.now() - startTime
+    logger.warn("ISB API lease fetch failed - proceeding without enrichment", {
+      eventId,
+      error: error instanceof Error ? error.message : String(error),
+      latencyMs,
+    })
+    metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
+    metrics.addMetric("ISBAPIError", MetricUnit.Count, 1)
+    circuitBreaker.recordFailure()
     return null
   }
+}
 
-  const dynamoClient = getDynamoDBClient()
-  const startTime = Date.now()
-  let retryCount = 0
-
-  // AC-9: Retry loop with 500ms backoff for throttling
-  while (retryCount <= THROTTLE_MAX_RETRIES) {
-    try {
-      logger.debug("Fetching lease record for enrichment", {
-        eventId,
-        userEmailHash: hashForLog(validEmail),
-        uuid: validUuid,
-        attempt: retryCount + 1,
-      })
-
-      // AC-1: Composite key query with GetItem
-      // AC-6.11: ConsistentRead: true for correctness
-      const command = new GetItemCommand({
-        TableName: tableName,
-        Key: {
-          userEmail: { S: validEmail },
-          uuid: { S: validUuid },
-        },
-        ConsistentRead: true,
-      })
-
-      const result = await dynamoClient.send(command)
-
-      // AC-5: Record query latency metric
-      const latencyMs = Date.now() - startTime
-      metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
-
-      if (!result.Item) {
-        logger.debug("No lease record found for enrichment", {
-          eventId,
-          uuid: validUuid,
-          latencyMs,
-        })
-        metrics.addMetric("LeaseNotFound", MetricUnit.Count, 1)
-        return null
-      }
-
-      const leaseRecord = unmarshall(result.Item) as LeaseRecord
-
-      // AC-10: Generate and log schema fingerprint for drift detection
-      const fingerprint = generateSchemaFingerprint(result.Item)
-      const fieldCount = Object.keys(result.Item).length
-      logger.info("Lease record schema fingerprint", {
-        eventId,
-        fingerprint,
-        keyCount: fieldCount,
-      })
-      metrics.addMetric("EnrichmentSchemaFields", MetricUnit.Count, fieldCount)
-
-      // Record success for circuit breaker
-      circuitBreaker.recordSuccess()
-
-      logger.debug("Lease record fetched successfully", {
-        eventId,
-        latencyMs,
-        hasStatus: !!leaseRecord.status,
-        hasMaxSpend: leaseRecord.maxSpend !== undefined,
-      })
-
-      return leaseRecord
-    } catch (error) {
-      // AC-9: Handle throttle with 500ms backoff retry
-      if (error instanceof ProvisionedThroughputExceededException) {
-        retryCount++
-        if (retryCount <= THROTTLE_MAX_RETRIES) {
-          logger.warn("DynamoDB throttled - retrying with backoff", {
-            eventId,
-            attempt: retryCount,
-            delayMs: THROTTLE_RETRY_DELAY_MS,
-          })
-          metrics.addMetric("EnrichmentThrottleRetry", MetricUnit.Count, 1)
-          await sleep(THROTTLE_RETRY_DELAY_MS)
-          continue
-        }
-
-        // Max retries exceeded
-        logger.warn("DynamoDB throttle retry exhausted - proceeding without enrichment", {
-          eventId,
-          attempts: retryCount,
-        })
-        circuitBreaker.recordFailure()
-        metrics.addMetric("EnrichmentThrottleExhausted", MetricUnit.Count, 1)
-        return null
-      }
-
-      // AC-9: Other errors fail immediately (no retry)
-      const latencyMs = Date.now() - startTime
-      logger.error("DynamoDB query failed", {
-        eventId,
-        error: error instanceof Error ? error.message : String(error),
-        latencyMs,
-      })
-      metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
-      metrics.addMetric("DynamoDBError", MetricUnit.Count, 1)
-      metrics.addDimension("ErrorType", error instanceof Error ? error.name : "Unknown")
-
-      // For non-throttle errors, let the caller handle via circuit breaker
-      handleDynamoDBError(error, "LeaseTable", eventId)
-    }
+/**
+ * Story 5.1 AC-2: Map ISB API response to LeaseRecord interface
+ *
+ * Ensures field compatibility between ISB API response and existing LeaseRecord interface.
+ *
+ * @param isbRecord - Record from ISB API
+ * @returns LeaseRecord compatible with existing enrichment logic
+ */
+function mapISBRecordToLeaseRecord(isbRecord: ISBLeaseRecord): LeaseRecord {
+  return {
+    userEmail: isbRecord.userEmail,
+    uuid: isbRecord.uuid,
+    status: isbRecord.status,
+    templateName: isbRecord.templateName ?? isbRecord.originalLeaseTemplateName,
+    // Map awsAccountId to accountId for compatibility
+    accountId: isbRecord.accountId ?? isbRecord.awsAccountId,
+    expirationDate: isbRecord.expirationDate,
+    maxSpend: isbRecord.maxSpend,
+    totalCostAccrued: isbRecord.totalCostAccrued,
+    lastModified: isbRecord.lastModified,
   }
-
-  // Should not reach here, but return null for safety
-  return null
 }
 
 // =============================================================================
@@ -861,12 +790,14 @@ export async function enrichIfNeeded(
     // AC-6.5: Build parallel query promises
     const queryPromises: Promise<void>[] = []
 
-    // Query LeaseTable if needed (AC-6.2)
+    // Query LeaseTable if needed (AC-6.2) - Story 5.1: Use ISB API instead of DynamoDB
     if (queries.includes("lease") && leaseKey) {
       queryPromises.push(
-        queryLeaseTable(dynamoClient, leaseKey.userEmail, leaseKey.uuid, eventId)
-          .then((lease) => {
-            if (lease) {
+        fetchLeaseByKey(leaseKey.userEmail, leaseKey.uuid, eventId)
+          .then((isbRecord) => {
+            if (isbRecord) {
+              // Map ISB record to lease record format
+              const lease = mapISBRecordToLeaseRecord(isbRecord)
               // AC-6.12: Include lastModified for debugging
               enrichedData._internalStatus = lease.status
               enrichedData.maxSpend = lease.maxSpend
@@ -881,7 +812,7 @@ export async function enrichIfNeeded(
           })
           .catch((error) => {
             // AC-6.7, AC-6.16: Log warning and continue
-            logger.warn("LeaseTable query failed - continuing with partial data", {
+            logger.warn("ISB API lease query failed - continuing with partial data", {
               eventId,
               error: error instanceof Error ? error.message : String(error),
             })

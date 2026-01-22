@@ -2,9 +2,10 @@
  * DLQ Digest Handler - Daily Summary of Dead Letter Queue Messages
  *
  * This Lambda runs daily (scheduled) and summarizes any messages in the
- * notification system's DLQ, sending a digest to Slack for ops visibility.
+ * notification system's DLQ, logging a digest for ops visibility.
  *
- * Story: N6.7 - Daily DLQ Summary Slack Digest (Pre-mortem)
+ * Story: N6.7 - Daily DLQ Summary
+ * Updated: Story 6.3 - Removed Slack webhook integration
  *
  * Acceptance Criteria:
  * - UJ-AC-7: DLQ digest includes direct link to SQS queue in Console
@@ -15,11 +16,14 @@
  * - Runs on CloudWatch Events schedule (9am UTC daily)
  * - Reads DLQ messages using ReceiveMessage with VisibilityTimeout=0 (peek)
  * - Aggregates by error type and event type
- * - Posts summary to Slack via SlackSender
+ * - Logs summary to CloudWatch (ops can view via CloudWatch Logs Insights)
+ *
+ * Note: Slack webhook integration removed in Story 6.3. Slack visibility is
+ * now provided by AWS Chatbot (EventBridge → SNS → Chatbot) for events, and
+ * CloudWatch alarms for DLQ issues.
  *
  * Security Controls:
  * - No PII exposed (only aggregate counts and error categories)
- * - Uses existing SlackSender with webhook from Secrets Manager
  */
 
 import { Logger } from "@aws-lambda-powertools/logger"
@@ -31,7 +35,6 @@ import {
   GetQueueAttributesCommand,
   MessageSystemAttributeName,
 } from "@aws-sdk/client-sqs"
-import { SlackSender } from "./slack-sender"
 
 // =============================================================================
 // Configuration
@@ -217,7 +220,7 @@ async function peekDLQMessages(): Promise<DLQMessageSummary> {
 }
 
 /**
- * Build Slack message for DLQ digest
+ * Build DLQ digest payload for logging
  */
 function buildDigestPayload(summary: DLQMessageSummary): DLQDigestPayload {
   const dlqUrl = getDLQUrl()
@@ -248,41 +251,38 @@ function buildDigestPayload(summary: DLQMessageSummary): DLQDigestPayload {
 }
 
 /**
- * Send DLQ digest to Slack
+ * Log DLQ digest summary to CloudWatch
+ *
+ * Note: Slack webhook integration removed in Story 6.3.
+ * DLQ visibility is now provided via:
+ * - CloudWatch Logs (this digest)
+ * - CloudWatch alarms (DLQ depth, stale messages)
+ * - AWS Chatbot for event visibility
  */
-async function sendDigestToSlack(payload: DLQDigestPayload): Promise<void> {
-  const sender = await SlackSender.getInstance()
-
-  // Build details for the Slack message
-  const details: Record<string, string | number | undefined> = {
-    "Total Messages": payload.messageCount,
-    "Oldest Message Age": `${payload.oldestMessageHours} hours`,
-    "Top Error Types": payload.topErrors.map((e) => `${e.type}: ${e.count}`).join(", "),
-    "Top Event Types": payload.topEventTypes.map((e) => `${e.type}: ${e.count}`).join(", "),
-  }
-
+function logDigestSummary(payload: DLQDigestPayload): void {
   // Determine priority based on message count and age
   const priority: "critical" | "normal" =
     payload.messageCount > 10 || payload.oldestMessageHours > 48 ? "critical" : "normal"
 
-  await sender.send({
-    alertType: "DLQDigest" as "AccountQuarantined", // Cast for type compatibility
-    accountId: "N/A",
-    priority,
-    details,
-    eventId: `dlq-digest-${new Date().toISOString().split("T")[0]}`,
-    actionLinks: [
-      {
-        label: "View DLQ in Console",
-        url: payload.consoleUrl,
-        style: "primary",
-      },
-      {
-        label: "DLQ Runbook",
-        url: "https://github.com/cddo/ndx/wiki/runbooks/dlq-investigation",
-      },
-    ],
-  })
+  // Log at WARN level for visibility in CloudWatch
+  if (priority === "critical") {
+    logger.warn("DLQ digest - CRITICAL: messages require immediate attention", {
+      messageCount: payload.messageCount,
+      oldestMessageHours: payload.oldestMessageHours,
+      topErrors: payload.topErrors,
+      topEventTypes: payload.topEventTypes,
+      consoleUrl: payload.consoleUrl,
+      runbookUrl: "https://github.com/cddo/ndx/wiki/runbooks/dlq-investigation",
+    })
+  } else {
+    logger.info("DLQ digest - messages present in queue", {
+      messageCount: payload.messageCount,
+      oldestMessageHours: payload.oldestMessageHours,
+      topErrors: payload.topErrors,
+      topEventTypes: payload.topEventTypes,
+      consoleUrl: payload.consoleUrl,
+    })
+  }
 }
 
 // =============================================================================
@@ -293,7 +293,10 @@ async function sendDigestToSlack(payload: DLQDigestPayload): Promise<void> {
  * DLQ Digest Handler
  *
  * Scheduled to run daily at 9am UTC. Checks DLQ for messages and
- * sends a summary digest to Slack if there are any.
+ * logs a summary digest if there are any.
+ *
+ * Note: Slack webhook notification removed in Story 6.3. CloudWatch alarms
+ * now handle DLQ alerting, and this handler provides diagnostic logs.
  *
  * @param event - CloudWatch scheduled event
  */
@@ -325,17 +328,17 @@ export async function handler(event: ScheduledEvent): Promise<void> {
     metrics.addMetric("DLQMessageCount", MetricUnit.Count, summary.totalMessages)
     metrics.addMetric("DLQOldestMessageAge", MetricUnit.Seconds, summary.oldestMessageAge)
 
-    // Only send digest if there are messages in the DLQ
+    // Log digest if there are messages in the DLQ
     if (summary.totalMessages > 0) {
       const payload = buildDigestPayload(summary)
-      await sendDigestToSlack(payload)
+      logDigestSummary(payload)
 
-      logger.info("DLQ digest sent to Slack", {
+      logger.info("DLQ digest logged", {
         messageCount: payload.messageCount,
         oldestMessageHours: payload.oldestMessageHours,
       })
 
-      metrics.addMetric("DLQDigestSent", MetricUnit.Count, 1)
+      metrics.addMetric("DLQDigestLogged", MetricUnit.Count, 1)
     } else {
       logger.info("No messages in DLQ, skipping digest")
       metrics.addMetric("DLQDigestSkipped", MetricUnit.Count, 1)

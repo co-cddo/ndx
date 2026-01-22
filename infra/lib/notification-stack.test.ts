@@ -574,7 +574,7 @@ describe("NdxNotificationStack", () => {
     test("creates EventBridge rule for Chatbot with correct name (AC-1)", () => {
       template.hasResourceProperties("AWS::Events::Rule", {
         Name: "ndx-chatbot-rule",
-        Description: Match.stringLikeRegexp("ISB events.*Chatbot.*Slack"),
+        Description: Match.stringLikeRegexp("ISB events.*Chatbot"),
       })
     })
 
@@ -591,40 +591,31 @@ describe("NdxNotificationStack", () => {
       })
     })
 
-    test("Chatbot rule captures all 18 ISB event types (AC-4)", () => {
+    test("Chatbot rule captures ops-only events (AC-4)", () => {
+      // Note: Lease events go through Lambda for enrichment, then Lambda sends to Slack.
+      // Only ops-only events (no enrichment needed) go directly to Chatbot via SNS.
       template.hasResourceProperties("AWS::Events::Rule", {
         Name: "ndx-chatbot-rule",
         EventPattern: Match.objectLike({
           "detail-type": Match.arrayWith([
-            // Lease lifecycle events (6)
-            "LeaseRequested",
-            "LeaseApproved",
-            "LeaseDenied",
-            "LeaseFrozen",
-            "LeaseUnfrozen",
-            "LeaseTerminated",
-            // Monitoring alerts (5)
-            "LeaseBudgetThresholdAlert",
-            "LeaseDurationThresholdAlert",
-            "LeaseFreezingThresholdAlert",
-            "LeaseBudgetExceeded",
-            "LeaseExpiredAlert",
-            // Operations (4)
+            // Operations events (4)
             "AccountQuarantined",
             "AccountCleanupFailed",
-            "AccountCleanupSuccessful",
+            "AccountCleanupSucceeded", // ISB uses "Succeeded" not "Successful"
             "AccountDriftDetected",
-            // Reporting (2)
-            "GroupCostReportGenerated",
-            "GroupCostReportGeneratedFailure",
             // Account requests (1)
             "CleanAccountRequest",
+            // Reporting (2)
+            "GroupCostReportGenerated",
+            "GroupUtilizationReportGenerated",
           ]),
         }),
       })
     })
 
-    test("Chatbot rule event pattern has exactly 18 detail-types (AC-4)", () => {
+    test("Chatbot rule event pattern has exactly 7 ops-only detail-types (AC-4)", () => {
+      // Note: Only ops-only events go directly to Chatbot. Lease events need enrichment
+      // and are handled by the notification Lambda, which sends them to Slack via Notify.
       const rules = template.findResources("AWS::Events::Rule")
       const chatbotRule = Object.values(rules).find(
         (rule) => (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
@@ -636,7 +627,7 @@ describe("NdxNotificationStack", () => {
         }
       }
       expect(chatbotRule).toBeDefined()
-      expect(chatbotRule.Properties.EventPattern["detail-type"]).toHaveLength(18)
+      expect(chatbotRule.Properties.EventPattern["detail-type"]).toHaveLength(7)
     })
 
     test("Chatbot rule has account filter for security", () => {

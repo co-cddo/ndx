@@ -16,7 +16,6 @@ import {
   getISBEventBusArn,
   ISB_EVENT_TYPES,
   NOTIFY_TEMPLATE_IDS,
-  CHATBOT_EVENT_TYPES,
   CHATBOT_SLACK_CONFIG,
 } from "./config"
 import * as chatbot from "aws-cdk-lib/aws-chatbot"

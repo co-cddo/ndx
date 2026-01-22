@@ -5,10 +5,10 @@
  * ACs: 3.1-3.28
  *
  * Test naming convention: test_n5-3_{ACID}_{scenario}
+ *
+ * Note: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
  */
 
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb"
-import { mockClient } from "aws-sdk-client-mock"
 import {
   verifyEmailOwnership,
   hashForLog,
@@ -27,7 +27,14 @@ import { SecurityError, PermanentError, RetriableError } from "./errors"
 // Mock Setup
 // =========================================================================
 
-const dynamoMock = mockClient(DynamoDBClient)
+// Mock ISB client functions
+const mockFetchLeaseByKey = jest.fn()
+const mockFetchAccountFromISB = jest.fn()
+
+jest.mock("./isb-client", () => ({
+  fetchLeaseByKey: (...args: unknown[]) => mockFetchLeaseByKey(...args),
+  fetchAccountFromISB: (...args: unknown[]) => mockFetchAccountFromISB(...args),
+}))
 
 // Mock Logger
 jest.mock("@aws-lambda-powertools/logger", () => ({
@@ -73,22 +80,23 @@ const createValidatedEvent = (
   },
 })
 
-const createLeaseRecord = (userEmail: string, uuid: string, accountId?: string) => {
-  const record: Record<string, { S: string }> = {
-    userEmail: { S: userEmail },
-    uuid: { S: uuid },
-    leaseStatus: { S: "Active" },
-  }
-  if (accountId) {
-    record.accountId = { S: accountId }
-  }
-  return record
-}
+/**
+ * Create mock ISB lease record
+ */
+const createISBLeaseRecord = (userEmail: string, uuid: string, accountId?: string) => ({
+  userEmail,
+  uuid,
+  status: "Active",
+  ...(accountId && { awsAccountId: accountId }),
+})
 
-const createAccountRecord = (accountId: string, ownerEmail: string) => ({
-  accountId: { S: accountId },
-  ownerEmail: { S: ownerEmail },
-  status: { S: "Active" },
+/**
+ * Create mock ISB account record
+ */
+const createISBAccountRecord = (accountId: string, ownerEmail: string) => ({
+  awsAccountId: accountId,
+  email: ownerEmail,
+  status: "Active",
 })
 
 // =========================================================================
@@ -274,62 +282,49 @@ describe("generateAuditSignature", () => {
 // =========================================================================
 
 describe("verifyEmailOwnership", () => {
-  let dynamoClient: DynamoDBClient
-
   beforeEach(() => {
-    dynamoMock.reset()
-    dynamoClient = new DynamoDBClient({})
-    process.env.LEASE_TABLE_NAME = "TestLeaseTable"
-    process.env.SANDBOX_ACCOUNT_TABLE_NAME = "TestAccountTable"
+    mockFetchLeaseByKey.mockReset()
+    mockFetchAccountFromISB.mockReset()
+    process.env.ISB_LEASES_LAMBDA_NAME = "ISB-LeasesLambdaFunction-ndx"
+    process.env.ISB_ACCOUNTS_LAMBDA_NAME = "ISB-AccountsLambdaFunction-ndx"
   })
 
   afterEach(() => {
-    delete process.env.LEASE_TABLE_NAME
-    delete process.env.SANDBOX_ACCOUNT_TABLE_NAME
+    delete process.env.ISB_LEASES_LAMBDA_NAME
+    delete process.env.ISB_ACCOUNTS_LAMBDA_NAME
   })
 
-  // AC-3.1: Queries LeaseTable with leaseId key
-  describe("AC-3.1: LeaseTable Query", () => {
-    it("should query LeaseTable with correct key", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("user@example.gov.uk", "test-uuid"),
-      })
+  // AC-3.1: Queries ISB Leases API with leaseId key
+  describe("AC-3.1: ISB Leases API Query", () => {
+    it("should query ISB Leases API with correct key", async () => {
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("user@example.gov.uk", "test-uuid"))
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      await verifyEmailOwnership(event, dynamoClient)
+      await verifyEmailOwnership(event)
 
-      const calls = dynamoMock.calls()
-      expect(calls).toHaveLength(1)
-
-      const input = calls[0].args[0].input as { Key: Record<string, { S: string }> }
-      expect(input.Key.userEmail.S).toBe("user@example.gov.uk")
-      expect(input.Key.uuid.S).toBe("test-uuid")
+      expect(mockFetchLeaseByKey).toHaveBeenCalledWith("user@example.gov.uk", "test-uuid", "evt-test-123")
     })
   })
 
   // AC-3.2: Case-insensitive email comparison
   describe("AC-3.2: Case-Insensitive Comparison", () => {
     it("should match emails with different case", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("user@example.gov.uk", "test-uuid"),
-      })
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("user@example.gov.uk", "test-uuid"))
 
       const event = createValidatedEvent("USER@EXAMPLE.GOV.UK", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      const result = await verifyEmailOwnership(event, dynamoClient)
+      const result = await verifyEmailOwnership(event)
 
       expect(result.verified).toBe(true)
     })
 
     it("should match mixed case emails", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("User@Example.Gov.UK", "test-uuid"),
-      })
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("User@Example.Gov.UK", "test-uuid"))
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      const result = await verifyEmailOwnership(event, dynamoClient)
+      const result = await verifyEmailOwnership(event)
 
       expect(result.verified).toBe(true)
     })
@@ -338,23 +333,19 @@ describe("verifyEmailOwnership", () => {
   // AC-3.3: Email mismatch throws SecurityError
   describe("AC-3.3: Email Mismatch SecurityError", () => {
     it("should throw SecurityError when emails do not match", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("different@example.gov.uk", "test-uuid"),
-      })
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("different@example.gov.uk", "test-uuid"))
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(SecurityError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(SecurityError)
     })
 
     it("should include message about lease owner mismatch", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("different@example.gov.uk", "test-uuid"),
-      })
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("different@example.gov.uk", "test-uuid"))
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(/Email does not match lease owner/)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(/Email does not match lease owner/)
     })
   })
 
@@ -365,46 +356,27 @@ describe("verifyEmailOwnership", () => {
   // AC-3.6: Lease not found throws PermanentError
   describe("AC-3.6: Lease Not Found PermanentError", () => {
     it("should throw PermanentError when lease not found", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: undefined,
-      })
+      mockFetchLeaseByKey.mockResolvedValue(null)
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(PermanentError)
     })
 
     it('should include "Lease not found" message', async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: undefined,
-      })
+      mockFetchLeaseByKey.mockResolvedValue(null)
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(/Lease not found/)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(/Lease not found/)
     })
   })
 
-  // AC-3.7: Read-only DynamoDB access (GetItem only) - verified by DynamoDBClient usage
+  // AC-3.7: Read-only access - verified by ISB API usage (GET requests only)
 
   // AC-3.8: Mandatory verification - no config to bypass (architectural)
 
-  // AC-3.9: ConsistentRead: true
-  describe("AC-3.9: Strongly Consistent Read", () => {
-    it("should use ConsistentRead: true for lease query", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("user@example.gov.uk", "test-uuid"),
-      })
-
-      const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
-
-      await verifyEmailOwnership(event, dynamoClient)
-
-      const calls = dynamoMock.calls()
-      const input = calls[0].args[0].input as { ConsistentRead: boolean }
-      expect(input.ConsistentRead).toBe(true)
-    })
-  })
+  // AC-3.9: Note - ConsistentRead was DynamoDB-specific; ISB API handles consistency internally
 
   // AC-3.10: Compares BOTH userEmail AND uuid - tested in AC-3.1
 
@@ -428,27 +400,20 @@ describe("verifyEmailOwnership", () => {
         },
       }
 
-      const result = await verifyEmailOwnership(event, dynamoClient)
+      const result = await verifyEmailOwnership(event)
 
       expect(result.verified).toBe(true)
       expect(result.leaseOwner).toBe("")
-      // DynamoDB should NOT have been called
-      expect(dynamoMock.calls()).toHaveLength(0)
+      // ISB API should NOT have been called
+      expect(mockFetchLeaseByKey).not.toHaveBeenCalled()
     })
   })
 
-  // AC-3.13, AC-3.14, AC-3.15: Cross-verification with SandboxAccountTable
+  // AC-3.13, AC-3.14, AC-3.15: Cross-verification with ISB Accounts API
   describe("AC-3.13-3.15: Cross-Verification", () => {
-    it("should cross-verify with account table when accountId present", async () => {
-      dynamoMock
-        .on(GetItemCommand, { TableName: "TestLeaseTable" })
-        .resolves({
-          Item: createLeaseRecord("user@example.gov.uk", "test-uuid", "123456789012"),
-        })
-        .on(GetItemCommand, { TableName: "TestAccountTable" })
-        .resolves({
-          Item: createAccountRecord("123456789012", "user@example.gov.uk"),
-        })
+    it("should cross-verify with ISB Accounts API when accountId present", async () => {
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("user@example.gov.uk", "test-uuid", "123456789012"))
+      mockFetchAccountFromISB.mockResolvedValue(createISBAccountRecord("123456789012", "user@example.gov.uk"))
 
       const event = createValidatedEvent(
         "user@example.gov.uk",
@@ -456,22 +421,16 @@ describe("verifyEmailOwnership", () => {
         "123456789012",
       )
 
-      const result = await verifyEmailOwnership(event, dynamoClient)
+      const result = await verifyEmailOwnership(event)
 
       expect(result.verified).toBe(true)
       expect(result.accountOwner).toBe("user@example.gov.uk")
+      expect(mockFetchAccountFromISB).toHaveBeenCalledWith("123456789012", "evt-test-123")
     })
 
     it("should throw SecurityError when account owner differs", async () => {
-      dynamoMock
-        .on(GetItemCommand, { TableName: "TestLeaseTable" })
-        .resolves({
-          Item: createLeaseRecord("user@example.gov.uk", "test-uuid", "123456789012"),
-        })
-        .on(GetItemCommand, { TableName: "TestAccountTable" })
-        .resolves({
-          Item: createAccountRecord("123456789012", "different@example.gov.uk"),
-        })
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("user@example.gov.uk", "test-uuid", "123456789012"))
+      mockFetchAccountFromISB.mockResolvedValue(createISBAccountRecord("123456789012", "different@example.gov.uk"))
 
       const event = createValidatedEvent(
         "user@example.gov.uk",
@@ -479,7 +438,7 @@ describe("verifyEmailOwnership", () => {
         "123456789012",
       )
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(SecurityError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(SecurityError)
     })
   })
 
@@ -488,7 +447,7 @@ describe("verifyEmailOwnership", () => {
     it("should reject non-.gov.uk domain", async () => {
       const event = createValidatedEvent("user@gmail.com", { userEmail: "user@gmail.com", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(PermanentError)
     })
   })
 
@@ -500,7 +459,7 @@ describe("verifyEmailOwnership", () => {
         uuid: "test-uuid",
       })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(PermanentError)
     })
   })
 
@@ -512,7 +471,7 @@ describe("verifyEmailOwnership", () => {
         uuid: "test-uuid",
       })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(/suspicious/i)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(/suspicious/i)
     })
 
     it("should reject email with .. pattern", async () => {
@@ -521,7 +480,7 @@ describe("verifyEmailOwnership", () => {
         uuid: "test-uuid",
       })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(/suspicious/i)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(/suspicious/i)
     })
   })
 
@@ -530,55 +489,58 @@ describe("verifyEmailOwnership", () => {
     it("should reject @test.com addresses", async () => {
       const event = createValidatedEvent("user@test.com", { userEmail: "user@test.com", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(PermanentError)
     })
 
     it("should reject @localhost addresses", async () => {
       const event = createValidatedEvent("user@localhost", { userEmail: "user@localhost", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(PermanentError)
     })
 
     it("should reject 123@ prefix", async () => {
       const event = createValidatedEvent("123@example.gov.uk", { userEmail: "123@example.gov.uk", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(PermanentError)
     })
   })
 
-  // DynamoDB error handling
-  describe("DynamoDB Error Handling", () => {
-    it("should throw RetriableError on throughput exceeded", async () => {
-      const error = new Error("Throughput exceeded")
-      error.name = "ProvisionedThroughputExceededException"
-      dynamoMock.on(GetItemCommand).rejects(error)
+  // ISB API error handling
+  describe("ISB API Error Handling", () => {
+    it("should throw RetriableError when ISB API fails", async () => {
+      const error = new Error("Service unavailable")
+      mockFetchLeaseByKey.mockRejectedValue(error)
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(RetriableError)
+      await expect(verifyEmailOwnership(event)).rejects.toThrow(RetriableError)
     })
 
-    it("should throw PermanentError when table not found", async () => {
-      const error = new Error("Table not found")
-      error.name = "ResourceNotFoundException"
-      dynamoMock.on(GetItemCommand).rejects(error)
+    it("should gracefully handle account API errors without failing verification", async () => {
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("user@example.gov.uk", "test-uuid", "123456789012"))
+      mockFetchAccountFromISB.mockResolvedValue(null) // API returns null on error/not found
 
-      const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
+      const event = createValidatedEvent(
+        "user@example.gov.uk",
+        { userEmail: "user@example.gov.uk", uuid: "test-uuid" },
+        "123456789012",
+      )
 
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(PermanentError)
+      // Should still verify successfully - account cross-verification is secondary
+      const result = await verifyEmailOwnership(event)
+      expect(result.verified).toBe(true)
+      expect(result.accountOwner).toBeUndefined()
     })
   })
 
   // Success case with audit data
   describe("Success Case with Audit Data", () => {
     it("should return complete verification result", async () => {
-      dynamoMock.on(GetItemCommand).resolves({
-        Item: createLeaseRecord("user@example.gov.uk", "test-uuid"),
-      })
+      mockFetchLeaseByKey.mockResolvedValue(createISBLeaseRecord("user@example.gov.uk", "test-uuid"))
 
       const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
 
-      const result = await verifyEmailOwnership(event, dynamoClient)
+      const result = await verifyEmailOwnership(event)
 
       expect(result.verified).toBe(true)
       expect(result.leaseOwner).toBe("user@example.gov.uk")
@@ -588,14 +550,6 @@ describe("verifyEmailOwnership", () => {
     })
   })
 
-  // Missing configuration
-  describe("Missing Configuration", () => {
-    it("should throw PermanentError when LEASE_TABLE_NAME not set", async () => {
-      delete process.env.LEASE_TABLE_NAME
-
-      const event = createValidatedEvent("user@example.gov.uk", { userEmail: "user@example.gov.uk", uuid: "test-uuid" })
-
-      await expect(verifyEmailOwnership(event, dynamoClient)).rejects.toThrow(/LEASE_TABLE_NAME not configured/)
-    })
-  })
+  // Note: Missing configuration test removed - ISB Lambda name validation happens
+  // at the isb-client.ts level and is tested in isb-client.test.ts
 })

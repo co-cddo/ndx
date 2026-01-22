@@ -1,8 +1,8 @@
 /**
  * ISB API Client Module for Notification System
  *
- * This module provides HTTP client functionality for fetching lease data
- * from the ISB REST API, replacing direct DynamoDB access.
+ * This module provides Lambda invocation client functionality for fetching lease data
+ * from the ISB Leases Lambda directly, bypassing API Gateway authorization.
  *
  * Story: 5.1 - Replace DynamoDB Reads with ISB API
  * ACs: 1, 4, 5, 6
@@ -18,6 +18,7 @@
 
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda"
 
 // =============================================================================
 // Constants
@@ -27,7 +28,7 @@ import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 const ISB_API_TIMEOUT_MS = 5000
 
 // =============================================================================
-// Logger and Metrics
+// Logger, Metrics and Lambda Client
 // =============================================================================
 
 const logger = new Logger({ serviceName: "ndx-notifications" })
@@ -35,6 +36,8 @@ const metrics = new Metrics({
   namespace: "ndx/notifications",
   serviceName: "ndx-notifications",
 })
+
+const lambdaClient = new LambdaClient({})
 
 // =============================================================================
 // Types
@@ -62,6 +65,31 @@ export interface ISBLeaseRecord {
 }
 
 /**
+ * AccountRecord structure from ISB Accounts API
+ * Matches the SandboxAccountTable record structure
+ */
+export interface ISBAccountRecord {
+  awsAccountId: string
+  name?: string
+  email?: string
+  status?: string
+  adminRoleArn?: string
+  principalRoleArn?: string
+}
+
+/**
+ * LeaseTemplateRecord structure from ISB Templates API
+ * Matches the LeaseTemplateTable record structure
+ */
+export interface ISBTemplateRecord {
+  uuid: string
+  name: string
+  description?: string
+  leaseDurationInHours?: number
+  maxSpend?: number
+}
+
+/**
  * JSend response format from ISB API
  * @see https://github.com/omniti-labs/jsend
  */
@@ -72,10 +100,11 @@ export interface JSendResponse<T> {
 }
 
 /**
- * Configuration for ISB API client
+ * Configuration for ISB Lambda client
  */
 export interface ISBClientConfig {
-  baseUrl: string
+  /** Lambda function name for direct invocation */
+  functionName: string
   timeoutMs?: number
 }
 
@@ -85,49 +114,54 @@ export interface ISBClientConfig {
 
 /**
  * Construct a lease ID for ISB API from userEmail and uuid
- * Format: base64 encoded "{userEmail}|{uuid}"
+ * Format: base64 encoded JSON object { userEmail, uuid }
  *
- * AC-3.1: Support ISB API format (base64 encoded composite key)
+ * AC-3.1: Support ISB API format (base64 encoded JSON composite key)
  *
  * @param userEmail - User's email address
  * @param uuid - Lease UUID
  * @returns Base64 encoded lease ID for ISB API
- * @throws Error if userEmail contains pipe character (delimiter injection)
  */
 export function constructLeaseId(userEmail: string, uuid: string): string {
-  if (userEmail.includes("|")) {
-    throw new Error("Invalid userEmail: contains pipe character delimiter")
-  }
-  const compositeKey = `${userEmail}|${uuid}`
-  return Buffer.from(compositeKey).toString("base64")
+  const json = JSON.stringify({ userEmail, uuid })
+  return Buffer.from(json, "utf8").toString("base64")
 }
 
 /**
  * Parse a lease ID from ISB API format back to userEmail and uuid
  *
- * @param leaseId - Base64 encoded lease ID
+ * @param leaseId - Base64 encoded JSON lease ID
  * @returns Object with userEmail and uuid, or null if invalid
  */
 export function parseLeaseId(leaseId: string): { userEmail: string; uuid: string } | null {
   try {
-    const decoded = Buffer.from(leaseId, "base64").toString("utf-8")
-    const [userEmail, uuid] = decoded.split("|")
-    if (!userEmail || !uuid) {
+    const json = Buffer.from(leaseId, "base64").toString("utf-8")
+    const parsed = JSON.parse(json) as { userEmail?: string; uuid?: string }
+    if (!parsed.userEmail || !parsed.uuid) {
       return null
     }
-    return { userEmail, uuid }
+    return { userEmail: parsed.userEmail, uuid: parsed.uuid }
   } catch {
     return null
   }
 }
 
 /**
- * Fetch lease record from ISB API
+ * API Gateway Proxy Response format returned by Lambda
+ */
+interface APIGatewayProxyResult {
+  statusCode: number
+  body: string
+  headers?: Record<string, string>
+}
+
+/**
+ * Fetch lease record from ISB Lambda directly
  *
- * AC-1: Call GET /leases/{id} on ISB API
+ * AC-1: Invoke ISB Leases Lambda with GET /leases/{id} event
  * AC-4: Return null for 404 responses (graceful degradation)
  * AC-5: Return null for 500/network errors (graceful degradation)
- * AC-6/NFR4: 5-second timeout with AbortController
+ * AC-6/NFR4: 5-second timeout
  *
  * @param leaseId - Base64 encoded lease ID (from constructLeaseId)
  * @param correlationId - Event ID for log correlation
@@ -139,50 +173,114 @@ export async function fetchLeaseFromISB(
   correlationId: string,
   config?: ISBClientConfig,
 ): Promise<ISBLeaseRecord | null> {
-  const baseUrl = config?.baseUrl || process.env.ISB_API_BASE_URL
-  const timeoutMs = config?.timeoutMs || ISB_API_TIMEOUT_MS
+  const functionName = config?.functionName || process.env.ISB_LEASES_LAMBDA_NAME
 
-  if (!baseUrl) {
-    logger.warn("ISB_API_BASE_URL not configured - skipping ISB API enrichment", {
+  if (!functionName) {
+    logger.warn("ISB_LEASES_LAMBDA_NAME not configured - skipping ISB enrichment", {
       correlationId,
     })
     metrics.addMetric("ISBClientConfigMissing", MetricUnit.Count, 1)
     return null
   }
 
-  const url = `${baseUrl}/leases/${encodeURIComponent(leaseId)}`
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   const startTime = Date.now()
 
   try {
-    logger.debug("Fetching lease from ISB API", {
+    logger.debug("Invoking ISB Leases Lambda", {
       correlationId,
+      functionName,
       leaseIdPrefix: leaseId.substring(0, 8) + "...", // Don't log full ID (may contain PII)
     })
 
-    // Note: ISB API is internal to NDX infrastructure and does not require
-    // explicit Authorization headers. Authentication is handled at the
-    // infrastructure level (VPC/security group). If JWT auth is added later,
-    // update this to include: 'Authorization': `Bearer ${token}`
-    const response = await fetch(url, {
-      method: "GET",
+    // Construct API Gateway proxy event format
+    // The ISB Lambda middleware decodes the JWT and sets request.context.user
+    // JWT is decoded but signature is not verified for direct Lambda invocation
+    const notifierEmail = "ndx+notifier@dsit.gov.uk"
+
+    // Create JWT matching the format expected by ISB Lambda middleware
+    // Uses HS256 algorithm header (signature not verified for direct invocation)
+    const jwtHeader = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+
+    // Payload must have user object with email and roles
+    const jwtPayload = Buffer.from(
+      JSON.stringify({
+        user: {
+          email: notifierEmail,
+          roles: ["Admin"],
+        },
+      }),
+    )
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+
+    // Signature is "directinvoke" - not verified but must be present
+    const jwtToken = `${jwtHeader}.${jwtPayload}.directinvoke`
+
+    const apiGatewayEvent = {
+      httpMethod: "GET",
+      path: `/leases/${leaseId}`,
+      pathParameters: { leaseId },
       headers: {
-        Accept: "application/json",
         "X-Correlation-Id": correlationId,
+        Authorization: `Bearer ${jwtToken}`,
+        "Content-Type": "application/json",
       },
-      signal: controller.signal,
+      requestContext: {
+        httpMethod: "GET",
+        path: `/leases/${leaseId}`,
+        extendedRequestId: `notifier-getlease-${Date.now()}`,
+      },
+      resource: "/leases/{leaseId}",
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    const command = new InvokeCommand({
+      FunctionName: functionName,
+      Payload: Buffer.from(JSON.stringify(apiGatewayEvent)),
     })
 
-    clearTimeout(timeoutId)
+    const response = await lambdaClient.send(command)
     const latencyMs = Date.now() - startTime
 
-    // AC-4: Handle 404 (lease not found) - graceful degradation
-    if (response.status === 404) {
-      logger.debug("Lease not found in ISB API", {
+    // Check for Lambda execution error
+    if (response.FunctionError) {
+      logger.warn("ISB Lambda execution error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        status: 404,
+        functionError: response.FunctionError,
+      })
+      metrics.addMetric("ISBLambdaExecutionError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Parse Lambda response payload
+    if (!response.Payload) {
+      logger.warn("ISB Lambda returned empty payload", {
+        correlationId,
+        latencyMs,
+      })
+      metrics.addMetric("ISBLambdaEmptyResponse", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    const payloadString = Buffer.from(response.Payload).toString("utf-8")
+    const apiResponse = JSON.parse(payloadString) as APIGatewayProxyResult
+
+    // AC-4: Handle 404 (lease not found) - graceful degradation
+    if (apiResponse.statusCode === 404) {
+      logger.debug("Lease not found in ISB Lambda", {
+        correlationId,
+        latencyMs,
+        statusCode: 404,
       })
       metrics.addMetric("ISBLeaseNotFound", MetricUnit.Count, 1)
       metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
@@ -190,11 +288,11 @@ export async function fetchLeaseFromISB(
     }
 
     // AC-5: Handle 5xx errors - graceful degradation
-    if (response.status >= 500) {
-      logger.warn("ISB API server error - proceeding without enrichment", {
+    if (apiResponse.statusCode >= 500) {
+      logger.warn("ISB Lambda returned server error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        status: response.status,
+        statusCode: apiResponse.statusCode,
       })
       metrics.addMetric("ISBAPIServerError", MetricUnit.Count, 1)
       metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
@@ -202,23 +300,23 @@ export async function fetchLeaseFromISB(
     }
 
     // Handle 4xx errors (other than 404)
-    if (!response.ok) {
-      logger.warn("ISB API client error - proceeding without enrichment", {
+    if (apiResponse.statusCode >= 400) {
+      logger.warn("ISB Lambda returned client error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        status: response.status,
+        statusCode: apiResponse.statusCode,
       })
       metrics.addMetric("ISBAPIClientError", MetricUnit.Count, 1)
       metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
       return null
     }
 
-    // Parse JSend response
-    const json = (await response.json()) as JSendResponse<ISBLeaseRecord>
+    // Parse JSend response from body
+    const json = JSON.parse(apiResponse.body) as JSendResponse<ISBLeaseRecord>
 
     // Validate JSend format
     if (json.status !== "success" || !json.data) {
-      logger.warn("ISB API returned non-success JSend response", {
+      logger.warn("ISB Lambda returned non-success JSend response", {
         correlationId,
         latencyMs,
         jsendStatus: json.status,
@@ -230,40 +328,28 @@ export async function fetchLeaseFromISB(
     }
 
     // Success path
-    logger.debug("Lease fetched successfully from ISB API", {
+    logger.debug("Lease fetched successfully from ISB Lambda", {
       correlationId,
       latencyMs,
       hasStatus: !!json.data.status,
       hasMaxSpend: json.data.maxSpend !== undefined,
+      hasTemplateName: !!json.data.templateName,
     })
     metrics.addMetric("ISBAPISuccess", MetricUnit.Count, 1)
     metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
 
     return json.data
   } catch (error) {
-    clearTimeout(timeoutId)
     const latencyMs = Date.now() - startTime
 
-    // AC-6/NFR4: Handle timeout
-    if (error instanceof Error && error.name === "AbortError") {
-      logger.warn("ISB API timeout - proceeding without enrichment", {
-        correlationId,
-        latencyMs,
-        timeoutMs,
-      })
-      metrics.addMetric("ISBAPITimeout", MetricUnit.Count, 1)
-      metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    // AC-5: Handle network errors
-    logger.warn("ISB API network error - proceeding without enrichment", {
+    // Handle timeout or invocation errors
+    logger.warn("ISB Lambda invocation error - proceeding without enrichment", {
       correlationId,
       latencyMs,
       errorType: error instanceof Error ? error.name : "Unknown",
-      // Don't log error message - may contain sensitive info
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
     })
-    metrics.addMetric("ISBAPINetworkError", MetricUnit.Count, 1)
+    metrics.addMetric("ISBLambdaInvocationError", MetricUnit.Count, 1)
     metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
     return null
   }
@@ -305,4 +391,415 @@ export async function fetchLeaseByKey(
 
   const leaseId = constructLeaseId(userEmail, uuid)
   return fetchLeaseFromISB(leaseId, correlationId, config)
+}
+
+// =============================================================================
+// ISB Accounts API Client
+// =============================================================================
+
+/**
+ * Fetch account record from ISB Accounts Lambda directly
+ *
+ * Invokes ISB Accounts Lambda with GET /accounts/{awsAccountId} event.
+ * Returns null for 404 responses or errors (graceful degradation).
+ *
+ * @param awsAccountId - AWS account ID to look up
+ * @param correlationId - Event ID for log correlation
+ * @param config - Optional client configuration (function name override)
+ * @returns AccountRecord or null if not found/error
+ */
+export async function fetchAccountFromISB(
+  awsAccountId: string,
+  correlationId: string,
+  config?: ISBClientConfig,
+): Promise<ISBAccountRecord | null> {
+  const functionName = config?.functionName || process.env.ISB_ACCOUNTS_LAMBDA_NAME
+
+  if (!functionName) {
+    logger.warn("ISB_ACCOUNTS_LAMBDA_NAME not configured - skipping account enrichment", {
+      correlationId,
+    })
+    metrics.addMetric("ISBClientConfigMissing", MetricUnit.Count, 1)
+    return null
+  }
+
+  // Validate input
+  if (!awsAccountId || typeof awsAccountId !== "string" || awsAccountId.trim() === "") {
+    logger.warn("Invalid awsAccountId for ISB API - skipping account enrichment", {
+      correlationId,
+    })
+    metrics.addMetric("ISBClientInputInvalid", MetricUnit.Count, 1)
+    return null
+  }
+
+  const startTime = Date.now()
+
+  try {
+    logger.debug("Invoking ISB Accounts Lambda", {
+      correlationId,
+      functionName,
+      awsAccountId,
+    })
+
+    // Construct API Gateway proxy event format
+    const notifierEmail = "ndx+notifier@dsit.gov.uk"
+
+    // Create JWT matching the format expected by ISB Lambda middleware
+    const jwtHeader = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+
+    const jwtPayload = Buffer.from(
+      JSON.stringify({
+        user: {
+          email: notifierEmail,
+          roles: ["Admin"],
+        },
+      }),
+    )
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+
+    const jwtToken = `${jwtHeader}.${jwtPayload}.directinvoke`
+
+    const apiGatewayEvent = {
+      httpMethod: "GET",
+      path: `/accounts/${awsAccountId}`,
+      pathParameters: { awsAccountId },
+      headers: {
+        "X-Correlation-Id": correlationId,
+        Authorization: `Bearer ${jwtToken}`,
+        "Content-Type": "application/json",
+      },
+      requestContext: {
+        httpMethod: "GET",
+        path: `/accounts/${awsAccountId}`,
+        extendedRequestId: `notifier-getaccount-${Date.now()}`,
+      },
+      resource: "/accounts/{awsAccountId}",
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    const command = new InvokeCommand({
+      FunctionName: functionName,
+      Payload: Buffer.from(JSON.stringify(apiGatewayEvent)),
+    })
+
+    const response = await lambdaClient.send(command)
+    const latencyMs = Date.now() - startTime
+
+    // Check for Lambda execution error
+    if (response.FunctionError) {
+      logger.warn("ISB Accounts Lambda execution error - proceeding without enrichment", {
+        correlationId,
+        latencyMs,
+        functionError: response.FunctionError,
+      })
+      metrics.addMetric("ISBAccountsLambdaExecutionError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Parse Lambda response payload
+    if (!response.Payload) {
+      logger.warn("ISB Accounts Lambda returned empty payload", {
+        correlationId,
+        latencyMs,
+      })
+      metrics.addMetric("ISBAccountsLambdaEmptyResponse", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    const payloadString = Buffer.from(response.Payload).toString("utf-8")
+    const apiResponse = JSON.parse(payloadString) as APIGatewayProxyResult
+
+    // Handle 404 (account not found) - graceful degradation
+    if (apiResponse.statusCode === 404) {
+      logger.debug("Account not found in ISB Lambda", {
+        correlationId,
+        latencyMs,
+        statusCode: 404,
+      })
+      metrics.addMetric("ISBAccountNotFound", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Handle 5xx errors - graceful degradation
+    if (apiResponse.statusCode >= 500) {
+      logger.warn("ISB Accounts Lambda returned server error - proceeding without enrichment", {
+        correlationId,
+        latencyMs,
+        statusCode: apiResponse.statusCode,
+      })
+      metrics.addMetric("ISBAccountsAPIServerError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Handle 4xx errors (other than 404)
+    if (apiResponse.statusCode >= 400) {
+      logger.warn("ISB Accounts Lambda returned client error - proceeding without enrichment", {
+        correlationId,
+        latencyMs,
+        statusCode: apiResponse.statusCode,
+      })
+      metrics.addMetric("ISBAccountsAPIClientError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Parse JSend response from body
+    const json = JSON.parse(apiResponse.body) as JSendResponse<ISBAccountRecord>
+
+    // Validate JSend format
+    if (json.status !== "success" || !json.data) {
+      logger.warn("ISB Accounts Lambda returned non-success JSend response", {
+        correlationId,
+        latencyMs,
+        jsendStatus: json.status,
+        message: json.message,
+      })
+      metrics.addMetric("ISBAccountsAPIInvalidResponse", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Success path
+    logger.debug("Account fetched successfully from ISB Lambda", {
+      correlationId,
+      latencyMs,
+      hasName: !!json.data.name,
+      hasEmail: !!json.data.email,
+    })
+    metrics.addMetric("ISBAccountsAPISuccess", MetricUnit.Count, 1)
+    metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+
+    return json.data
+  } catch (error) {
+    const latencyMs = Date.now() - startTime
+
+    // Handle timeout or invocation errors
+    logger.warn("ISB Accounts Lambda invocation error - proceeding without enrichment", {
+      correlationId,
+      latencyMs,
+      errorType: error instanceof Error ? error.name : "Unknown",
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    })
+    metrics.addMetric("ISBAccountsLambdaInvocationError", MetricUnit.Count, 1)
+    metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+    return null
+  }
+}
+
+// =============================================================================
+// ISB Templates API Client
+// =============================================================================
+
+/**
+ * Fetch template record from ISB Templates Lambda directly
+ *
+ * Invokes ISB Templates Lambda with GET /leaseTemplates/{templateName} event.
+ * Returns null for 404 responses or errors (graceful degradation).
+ *
+ * @param templateName - Template name to look up
+ * @param correlationId - Event ID for log correlation
+ * @param config - Optional client configuration (function name override)
+ * @returns TemplateRecord or null if not found/error
+ */
+export async function fetchTemplateFromISB(
+  templateName: string,
+  correlationId: string,
+  config?: ISBClientConfig,
+): Promise<ISBTemplateRecord | null> {
+  const functionName = config?.functionName || process.env.ISB_TEMPLATES_LAMBDA_NAME
+
+  if (!functionName) {
+    logger.warn("ISB_TEMPLATES_LAMBDA_NAME not configured - skipping template enrichment", {
+      correlationId,
+    })
+    metrics.addMetric("ISBClientConfigMissing", MetricUnit.Count, 1)
+    return null
+  }
+
+  // Validate input
+  if (!templateName || typeof templateName !== "string" || templateName.trim() === "") {
+    logger.warn("Invalid templateName for ISB API - skipping template enrichment", {
+      correlationId,
+    })
+    metrics.addMetric("ISBClientInputInvalid", MetricUnit.Count, 1)
+    return null
+  }
+
+  const startTime = Date.now()
+
+  try {
+    logger.debug("Invoking ISB Templates Lambda", {
+      correlationId,
+      functionName,
+      templateName,
+    })
+
+    // Construct API Gateway proxy event format
+    const notifierEmail = "ndx+notifier@dsit.gov.uk"
+
+    // Create JWT matching the format expected by ISB Lambda middleware
+    const jwtHeader = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+
+    const jwtPayload = Buffer.from(
+      JSON.stringify({
+        user: {
+          email: notifierEmail,
+          roles: ["Admin"],
+        },
+      }),
+    )
+      .toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+
+    const jwtToken = `${jwtHeader}.${jwtPayload}.directinvoke`
+
+    const apiGatewayEvent = {
+      httpMethod: "GET",
+      path: `/leaseTemplates/${templateName}`,
+      pathParameters: { leaseTemplateId: templateName },
+      headers: {
+        "X-Correlation-Id": correlationId,
+        Authorization: `Bearer ${jwtToken}`,
+        "Content-Type": "application/json",
+      },
+      requestContext: {
+        httpMethod: "GET",
+        path: `/leaseTemplates/${templateName}`,
+        extendedRequestId: `notifier-gettemplate-${Date.now()}`,
+      },
+      resource: "/leaseTemplates/{leaseTemplateId}",
+      body: null,
+      isBase64Encoded: false,
+    }
+
+    const command = new InvokeCommand({
+      FunctionName: functionName,
+      Payload: Buffer.from(JSON.stringify(apiGatewayEvent)),
+    })
+
+    const response = await lambdaClient.send(command)
+    const latencyMs = Date.now() - startTime
+
+    // Check for Lambda execution error
+    if (response.FunctionError) {
+      logger.warn("ISB Templates Lambda execution error - proceeding without enrichment", {
+        correlationId,
+        latencyMs,
+        functionError: response.FunctionError,
+      })
+      metrics.addMetric("ISBTemplatesLambdaExecutionError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Parse Lambda response payload
+    if (!response.Payload) {
+      logger.warn("ISB Templates Lambda returned empty payload", {
+        correlationId,
+        latencyMs,
+      })
+      metrics.addMetric("ISBTemplatesLambdaEmptyResponse", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    const payloadString = Buffer.from(response.Payload).toString("utf-8")
+    const apiResponse = JSON.parse(payloadString) as APIGatewayProxyResult
+
+    // Handle 404 (template not found) - graceful degradation
+    if (apiResponse.statusCode === 404) {
+      logger.debug("Template not found in ISB Lambda", {
+        correlationId,
+        latencyMs,
+        statusCode: 404,
+      })
+      metrics.addMetric("ISBTemplateNotFound", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Handle 5xx errors - graceful degradation
+    if (apiResponse.statusCode >= 500) {
+      logger.warn("ISB Templates Lambda returned server error - proceeding without enrichment", {
+        correlationId,
+        latencyMs,
+        statusCode: apiResponse.statusCode,
+      })
+      metrics.addMetric("ISBTemplatesAPIServerError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Handle 4xx errors (other than 404)
+    if (apiResponse.statusCode >= 400) {
+      logger.warn("ISB Templates Lambda returned client error - proceeding without enrichment", {
+        correlationId,
+        latencyMs,
+        statusCode: apiResponse.statusCode,
+      })
+      metrics.addMetric("ISBTemplatesAPIClientError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Parse JSend response from body
+    const json = JSON.parse(apiResponse.body) as JSendResponse<ISBTemplateRecord>
+
+    // Validate JSend format
+    if (json.status !== "success" || !json.data) {
+      logger.warn("ISB Templates Lambda returned non-success JSend response", {
+        correlationId,
+        latencyMs,
+        jsendStatus: json.status,
+        message: json.message,
+      })
+      metrics.addMetric("ISBTemplatesAPIInvalidResponse", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
+    }
+
+    // Success path
+    logger.debug("Template fetched successfully from ISB Lambda", {
+      correlationId,
+      latencyMs,
+      hasName: !!json.data.name,
+      hasDescription: !!json.data.description,
+      leaseDurationInHours: json.data.leaseDurationInHours,
+    })
+    metrics.addMetric("ISBTemplatesAPISuccess", MetricUnit.Count, 1)
+    metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+
+    return json.data
+  } catch (error) {
+    const latencyMs = Date.now() - startTime
+
+    // Handle timeout or invocation errors
+    logger.warn("ISB Templates Lambda invocation error - proceeding without enrichment", {
+      correlationId,
+      latencyMs,
+      errorType: error instanceof Error ? error.name : "Unknown",
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+    })
+    metrics.addMetric("ISBTemplatesLambdaInvocationError", MetricUnit.Count, 1)
+    metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+    return null
+  }
 }

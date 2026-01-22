@@ -112,7 +112,6 @@ export class NdxNotificationStack extends cdk.Stack {
     // Get ISB configuration for the current environment (moved earlier for use in Lambda env)
     const isbConfig = getISBConfig(env)
     const isbEventBusArn = getISBEventBusArn(isbConfig)
-    const { dynamoDbTables } = isbConfig
 
     // =========================================================================
     // Dead Letter Queue (n4-4)
@@ -177,16 +176,15 @@ export class NdxNotificationStack extends cdk.Stack {
         NOTIFY_TEMPLATE_BUDGET_EXCEEDED: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
         NOTIFY_TEMPLATE_LEASE_EXPIRED: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
         NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
-        // DynamoDB table names for enrichment (n7-1)
-        // AC-3: Table names from config, not hardcoded
-        // Note: LEASE_TABLE_NAME retained for account/template lookups and backwards compatibility.
-        // Story 5.1 replaced direct lease DynamoDB reads with ISB API (ISB_API_BASE_URL).
-        LEASE_TABLE_NAME: dynamoDbTables.leaseTable,
-        SANDBOX_ACCOUNT_TABLE_NAME: dynamoDbTables.sandboxAccountTable,
-        LEASE_TEMPLATE_TABLE_NAME: dynamoDbTables.leaseTemplateTable,
-        // Story 5.1: ISB REST API base URL for lease data retrieval
-        // Used instead of direct DynamoDB access for cleaner API contract
-        ...(isbConfig.apiBaseUrl && { ISB_API_BASE_URL: isbConfig.apiBaseUrl }),
+        // ISB Lambda function names for direct invocation
+        // All data is now fetched via ISB APIs instead of direct DynamoDB access
+        ...(isbConfig.leasesLambdaName && { ISB_LEASES_LAMBDA_NAME: isbConfig.leasesLambdaName }),
+        ...(isbConfig.accountsLambdaName && { ISB_ACCOUNTS_LAMBDA_NAME: isbConfig.accountsLambdaName }),
+        ...(isbConfig.templatesLambdaName && { ISB_TEMPLATES_LAMBDA_NAME: isbConfig.templatesLambdaName }),
+        // Note: EVENTS_TOPIC_ARN is added after topic creation (see below)
+        // Temporary: Skip template validation until GOV.UK Notify templates are fixed
+        // LeaseTerminated and LeaseBudgetExceeded templates need finalCost/finalSpend fields
+        SKIP_TEMPLATE_VALIDATION: "true",
       },
     })
 
@@ -208,35 +206,48 @@ export class NdxNotificationStack extends cdk.Stack {
     )
 
     // =========================================================================
+    // ISB Lambda Invoke Permissions
+    // =========================================================================
+    // Grant permission to invoke ISB Lambdas directly for enrichment.
+    // This bypasses API Gateway authorization for internal service calls.
+    // All data (leases, accounts, templates) is now fetched via Lambda APIs.
+    const isbLambdaArns: string[] = []
+
+    if (isbConfig.leasesLambdaName) {
+      isbLambdaArns.push(
+        `arn:aws:lambda:${isbConfig.region}:${isbConfig.accountId}:function:${isbConfig.leasesLambdaName}`,
+      )
+    }
+    if (isbConfig.accountsLambdaName) {
+      isbLambdaArns.push(
+        `arn:aws:lambda:${isbConfig.region}:${isbConfig.accountId}:function:${isbConfig.accountsLambdaName}`,
+      )
+    }
+    if (isbConfig.templatesLambdaName) {
+      isbLambdaArns.push(
+        `arn:aws:lambda:${isbConfig.region}:${isbConfig.accountId}:function:${isbConfig.templatesLambdaName}`,
+      )
+    }
+
+    if (isbLambdaArns.length > 0) {
+      this.notificationHandler.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["lambda:InvokeFunction"],
+          resources: isbLambdaArns,
+        }),
+      )
+    }
+
+    // =========================================================================
     // EventBridge Subscription to ISB Event Bus
     // =========================================================================
     // Subscribe to Innovation Sandbox events for notification processing.
     // Security: Account-level filtering prevents cross-account event injection.
     // @see docs/notification-architecture.md#ISB-Integration
 
-    // =========================================================================
-    // DynamoDB Read Permissions (n5-6 prerequisite)
-    // =========================================================================
-    // Grant Lambda permission to read from ISB DynamoDB tables for data enrichment.
-    // Used to look up user email, lease details, and sandbox account information.
-    // @see docs/sprint-artifacts/tech-spec-epic-n5.md#n5-6
-    const tableArns = [
-      `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.leaseTable}`,
-      `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.leaseTemplateTable}`,
-      `arn:aws:dynamodb:${isbConfig.region}:${isbConfig.accountId}:table/${dynamoDbTables.sandboxAccountTable}`,
-    ]
-
-    this.notificationHandler.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ["dynamodb:GetItem", "dynamodb:Query"],
-        resources: [
-          ...tableArns,
-          // Include index ARNs for querying by secondary indexes
-          ...tableArns.map((arn) => `${arn}/index/*`),
-        ],
-      }),
-    )
+    // Note: DynamoDB permissions removed - all data now fetched via ISB Lambda APIs
+    // (leases, accounts, templates) for better separation of concerns.
 
     // Reference the ISB EventBridge bus (cross-account)
     // Note: ISB team must add resource policy allowing NDX account to subscribe
@@ -307,27 +318,66 @@ export class NdxNotificationStack extends cdk.Stack {
     cdk.Tags.of(this.eventsTopic).add("managedby", "cdk")
     cdk.Tags.of(this.eventsTopic).add("component", "notifications")
 
-    // EventBridge rule for Chatbot - captures all 18 ISB event types (AC-4)
-    // Separate from Lambda rule to provide comprehensive event visibility
+    // Grant Lambda permission to publish to events topic (for enriched Slack messages)
+    this.eventsTopic.grantPublish(this.notificationHandler)
+
+    // Update Lambda environment with events topic ARN
+    this.notificationHandler.addEnvironment("EVENTS_TOPIC_ARN", this.eventsTopic.topicArn)
+
+    // Ops-only events that don't need enrichment - sent directly to SNS
+    // Lease events are handled by Lambda which publishes enriched messages
+    const opsOnlyEvents = [
+      "AccountQuarantined",
+      "AccountCleanupFailed",
+      "AccountCleanupSucceeded", // ISB uses "Succeeded" not "Successful"
+      "AccountDriftDetected",
+      "CleanAccountRequest",
+      "GroupCostReportGenerated",
+      "GroupUtilizationReportGenerated",
+    ]
+
+    // EventBridge rule for ops-only events - sent directly to Chatbot (no enrichment needed)
     const chatbotRule = new events.Rule(this, "ChatbotRule", {
       ruleName: "ndx-chatbot-rule",
-      description: "Routes all ISB events to SNS for AWS Chatbot delivery to Slack",
+      description: "Routes ops-only ISB events to SNS for AWS Chatbot (lease events sent by Lambda)",
       eventBus: isbEventBus,
       eventPattern: {
-        // Account filter: Security control to prevent cross-account event injection
         account: [isbConfig.accountId],
-        // Detail-type filter: Subscribe to all 18 ISB event types
-        detailType: [...CHATBOT_EVENT_TYPES],
+        detailType: opsOnlyEvents,
       },
-      targets: [
-        new targets.SnsTopic(this.eventsTopic, {
-          // DLQ for failed SNS deliveries
-          deadLetterQueue: this.deadLetterQueue,
-          // Retry configuration
-          retryAttempts: 2,
-          maxEventAge: cdk.Duration.hours(1),
-        }),
-      ],
+    })
+
+    // Add SNS target for ops events (simple format, no enrichment needed)
+    const snsTarget = new targets.SnsTopic(this.eventsTopic, {
+      deadLetterQueue: this.deadLetterQueue,
+      retryAttempts: 2,
+      maxEventAge: cdk.Duration.hours(1),
+    })
+    chatbotRule.addTarget(snsTarget)
+
+    // Simple input transformer for ops events (no user/template fields)
+    // Note: Uses detail.accountId (sandbox account) not $.account (ISB source account)
+    const cfnRule = chatbotRule.node.defaultChild as events.CfnRule
+    const inputTemplate = [
+      "{",
+      '"version":"1.0",',
+      '"source":"custom",',
+      '"content":{',
+      '"textType":"client-markdown",',
+      '"title":"<detailType>",',
+      '"description":"*Account:* <sandboxAccount>"',
+      "},",
+      '"metadata":{',
+      '"eventType":"<detailType>"',
+      "}}",
+    ].join("")
+
+    cfnRule.addPropertyOverride("Targets.0.InputTransformer", {
+      InputPathsMap: {
+        detailType: "$.detail-type",
+        sandboxAccount: "$.detail.accountId",
+      },
+      InputTemplate: inputTemplate,
     })
 
     cdk.Tags.of(chatbotRule).add("project", "ndx")

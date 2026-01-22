@@ -26,6 +26,7 @@
 
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns"
 import type { EventBridgeEvent, HandlerResponse, NotificationEventType } from "./types"
 import { ALLOWED_SOURCES } from "./types"
 import { SecurityError } from "./errors"
@@ -44,6 +45,117 @@ import {
 import { fetchLeaseRecord } from "./enrichment"
 import { flattenObject, addKeysParameter } from "./flatten"
 import { validateLeaseStatus, logFieldPresence } from "./lease-status"
+
+// SNS client for publishing Slack notifications
+const snsClient = new SNSClient({})
+
+// =========================================================================
+// Slack Notification Publishing (Story 6.1)
+// =========================================================================
+
+/**
+ * Publish enriched notification to SNS for AWS Chatbot → Slack
+ *
+ * Uses AWS Chatbot custom notification format:
+ * @see https://docs.aws.amazon.com/chatbot/latest/adminguide/custom-notifs.html
+ */
+async function publishSlackNotification(
+  event: EventBridgeEvent,
+  enrichedData: Record<string, string>,
+  eventId: string,
+): Promise<void> {
+  const topicArn = process.env.EVENTS_TOPIC_ARN
+  if (!topicArn) {
+    logger.debug("EVENTS_TOPIC_ARN not configured - skipping Slack notification", { eventId })
+    return
+  }
+
+  const eventType = event["detail-type"]
+  const detail = event.detail as Record<string, unknown>
+
+  // Extract user email from enriched data or event
+  const userEmail = enrichedData.userEmail || enrichedData.principalEmail || (detail.userEmail as string) || (detail.principalEmail as string) || ""
+
+  // Extract template name from enriched data or event (ISB uses various field names)
+  const templateName =
+    enrichedData.templateName ||
+    enrichedData.leaseTemplateName ||
+    enrichedData.originalLeaseTemplateName ||
+    (detail.templateName as string) ||
+    (detail.leaseTemplateName as string) ||
+    (detail.originalLeaseTemplateName as string) ||
+    ""
+
+  // Extract lease ID
+  const leaseId = (typeof detail.leaseId === "string" ? detail.leaseId : enrichedData.uuid) || ""
+
+  // Extract account ID from enriched data or event
+  const accountId = enrichedData.awsAccountId || enrichedData.accountId || (detail.accountId as string) || (detail.awsAccountId as string) || ""
+
+  // Build description lines (only include non-empty fields)
+  const descriptionParts: string[] = []
+  if (userEmail) descriptionParts.push(`*User:* ${userEmail}`)
+  if (templateName) descriptionParts.push(`*Template:* ${templateName}`)
+  if (leaseId) descriptionParts.push(`*Lease ID:* ${leaseId}`)
+  if (accountId) descriptionParts.push(`*Account:* ${accountId}`)
+
+  // AWS Chatbot custom notification format
+  const chatbotMessage = {
+    version: "1.0",
+    source: "custom",
+    content: {
+      textType: "client-markdown",
+      title: eventType,
+      description: descriptionParts.join("\n"),
+    },
+    metadata: {
+      eventType,
+      eventId,
+    },
+  }
+
+  // Log field resolution for debugging (INFO level to see in prod)
+  logger.info("Slack notification field resolution", {
+    detailKeys: Object.keys(detail),
+    eventId,
+    enrichedTemplateName: enrichedData.templateName,
+    enrichedLeaseTemplateName: enrichedData.leaseTemplateName,
+    enrichedOriginalLeaseTemplateName: enrichedData.originalLeaseTemplateName,
+    detailTemplateName: detail.templateName,
+    detailLeaseTemplateName: detail.leaseTemplateName,
+    resolvedTemplateName: templateName,
+    enrichedKeys: Object.keys(enrichedData).filter((k) => k.toLowerCase().includes("template")),
+  })
+
+  // Log the full Chatbot message for debugging
+  logger.info("Publishing Slack notification", {
+    eventId,
+    eventType,
+    chatbotMessage,
+  })
+
+  try {
+    await snsClient.send(
+      new PublishCommand({
+        TopicArn: topicArn,
+        Message: JSON.stringify(chatbotMessage),
+      }),
+    )
+
+    logger.info("Slack notification published successfully", {
+      eventId,
+      eventType,
+    })
+    metrics.addMetric("SlackNotificationSent", MetricUnit.Count, 1)
+  } catch (error) {
+    // Log but don't fail - Slack is best-effort
+    logger.warn("Failed to publish Slack notification", {
+      eventId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    })
+    metrics.addMetric("SlackNotificationFailed", MetricUnit.Count, 1)
+  }
+}
 
 // =========================================================================
 // Field Mapping (DynamoDB → GOV.UK Notify Templates)
@@ -514,6 +626,9 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
       if (enrichedData["_enriched"] === "true") {
         metrics.addMetric("EnrichedEmailSent", MetricUnit.Count, 1)
       }
+
+      // Publish enriched Slack notification via SNS → AWS Chatbot
+      await publishSlackNotification(event, mappedEnrichedData, eventId)
     }
 
     logger.info("Event processed successfully", {

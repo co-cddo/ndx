@@ -45,20 +45,22 @@ export interface ISBConfig {
   readonly region: string
 
   /**
-   * DynamoDB table names for data enrichment (Epic N-5)
-   * Used to look up user email, lease details, sandbox account info
+   * Story 5.1: ISB Leases Lambda function name for direct invocation
+   * Used for fetching lease data - bypasses API Gateway authorization
    */
-  readonly dynamoDbTables: {
-    readonly leaseTable: string
-    readonly leaseTemplateTable: string
-    readonly sandboxAccountTable: string
-  }
+  readonly leasesLambdaName?: string
 
   /**
-   * Story 5.1: ISB REST API base URL for lease data retrieval
-   * Used instead of direct DynamoDB access for cleaner API contract
+   * ISB Accounts Lambda function name for direct invocation
+   * Used for fetching account data - bypasses API Gateway authorization
    */
-  readonly apiBaseUrl?: string
+  readonly accountsLambdaName?: string
+
+  /**
+   * ISB Templates Lambda function name for direct invocation
+   * Used for fetching lease template data - bypasses API Gateway authorization
+   */
+  readonly templatesLambdaName?: string
 }
 
 /**
@@ -72,25 +74,19 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
     namespace: "InnovationSandboxCompute",
     accountId: "568672915267",
     region: "us-west-2",
-    dynamoDbTables: {
-      leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
-      leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
-      sandboxAccountTable: "ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV",
-    },
-    // Story 5.1: ISB REST API endpoint for lease data retrieval
-    apiBaseUrl: "https://isb.ndx.digital.cabinet-office.gov.uk/api",
+    // ISB Lambda function names for direct invocation
+    leasesLambdaName: "ISB-LeasesLambdaFunction-ndx",
+    accountsLambdaName: "ISB-AccountsLambdaFunction-ndx",
+    templatesLambdaName: "ISB-LeaseTemplatesLambdaFunction-ndx",
   },
   staging: {
     namespace: "InnovationSandboxCompute",
     accountId: "568672915267",
     region: "us-west-2",
-    dynamoDbTables: {
-      leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
-      leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
-      sandboxAccountTable: "ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV",
-    },
-    // Story 5.1: ISB REST API endpoint for lease data retrieval (staging)
-    apiBaseUrl: "https://isb.staging.ndx.digital.cabinet-office.gov.uk/api",
+    // ISB Lambda function names for direct invocation (staging)
+    leasesLambdaName: "ISB-LeasesLambdaFunction-ndx",
+    accountsLambdaName: "ISB-AccountsLambdaFunction-ndx",
+    templatesLambdaName: "ISB-LeaseTemplatesLambdaFunction-ndx",
   },
 }
 
@@ -185,7 +181,7 @@ export const CHATBOT_EVENT_TYPES = [
   // Operations events (4) - critical events marked
   "AccountQuarantined", // critical
   "AccountCleanupFailed", // critical
-  "AccountCleanupSuccessful",
+  "AccountCleanupSucceeded",
   "AccountDriftDetected", // critical
   // Reporting events (2)
   "GroupCostReportGenerated",

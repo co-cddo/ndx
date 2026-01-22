@@ -10,20 +10,20 @@
  *
  * Security Controls:
  * - AC-3.8: MANDATORY verification - cannot be bypassed via configuration
- * - AC-3.9: DynamoDB ConsistentRead: true for all reads
  * - AC-3.5: PII redaction - never log raw email addresses
  * - AC-3.3: Email mismatch throws SecurityError
  * - AC-3.6: Lease not found throws PermanentError
  *
+ * Note: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
+ *
  * @see docs/notification-architecture.md#Security-Architecture
  */
 
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb"
-import { unmarshall } from "@aws-sdk/util-dynamodb"
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 import { createHash } from "crypto"
 import { SecurityError, PermanentError, RetriableError } from "./errors"
+import { fetchLeaseByKey, fetchAccountFromISB, ISBLeaseRecord, ISBAccountRecord } from "./isb-client"
 import type { ValidatedEvent } from "./validation"
 import type { NotificationEventType } from "./types"
 
@@ -216,108 +216,70 @@ export function generateAuditSignature(eventId: string, verificationResult: bool
 }
 
 // =========================================================================
-// DynamoDB Query Functions
+// ISB API Query Functions
 // =========================================================================
 
 /**
- * Query LeaseTable for ownership verification (AC-3.1, AC-3.7, AC-3.9)
- * Uses GetItem with ConsistentRead: true
+ * Query lease via ISB Leases API for ownership verification (AC-3.1)
+ * Replaces direct DynamoDB access with ISB Lambda invocation
  */
 async function queryLeaseTable(
-  dynamoClient: DynamoDBClient,
   userEmail: string,
   uuid: string,
   eventId: string,
 ): Promise<LeaseRecord | null> {
-  const tableName = process.env.LEASE_TABLE_NAME
-  if (!tableName) {
-    throw new PermanentError("LEASE_TABLE_NAME not configured")
-  }
-
-  logger.debug("Querying LeaseTable", {
+  logger.debug("Querying ISB Leases API", {
     eventId,
     userEmailHash: hashForLog(userEmail),
     uuid,
   })
 
   try {
-    // AC-3.7: Read-only DynamoDB access (GetItem only)
-    // AC-3.9: ConsistentRead: true for strongly consistent read
-    const command = new GetItemCommand({
-      TableName: tableName,
-      Key: {
-        userEmail: { S: userEmail },
-        uuid: { S: uuid },
-      },
-      ConsistentRead: true, // AC-3.9: MANDATORY
-    })
+    const isbRecord = await fetchLeaseByKey(userEmail, uuid, eventId)
 
-    const result = await dynamoClient.send(command)
-
-    if (!result.Item) {
+    if (!isbRecord) {
       return null
     }
 
-    const item = unmarshall(result.Item) as LeaseRecord
-    return item
+    // Map ISB record to LeaseRecord interface
+    return mapISBLeaseToLeaseRecord(isbRecord)
   } catch (error) {
-    // Classify DynamoDB errors
+    // Handle ISB API errors
     if (error instanceof Error) {
-      if (error.name === "ProvisionedThroughputExceededException") {
-        throw new RetriableError("DynamoDB throughput exceeded", { cause: error })
-      }
-      if (error.name === "ResourceNotFoundException") {
-        throw new PermanentError("LeaseTable not found")
-      }
+      logger.warn("ISB Leases API error", {
+        eventId,
+        errorType: error.name,
+        errorMessage: error.message,
+      })
     }
-    throw new RetriableError("DynamoDB error during lease query", {
+    throw new RetriableError("ISB API error during lease query", {
       cause: error instanceof Error ? error : undefined,
     })
   }
 }
 
 /**
- * Query SandboxAccountTable for cross-verification (AC-3.13)
- * Uses GetItem with ConsistentRead: true
+ * Query account via ISB Accounts API for cross-verification (AC-3.13)
+ * Replaces direct DynamoDB access with ISB Lambda invocation
  */
-async function queryAccountTable(
-  dynamoClient: DynamoDBClient,
-  accountId: string,
-  eventId: string,
-): Promise<AccountRecord | null> {
-  const tableName = process.env.SANDBOX_ACCOUNT_TABLE_NAME
-  if (!tableName) {
-    logger.warn("SANDBOX_ACCOUNT_TABLE_NAME not configured - skipping cross-verification", {
-      eventId,
-    })
-    return null
-  }
-
-  logger.debug("Querying SandboxAccountTable for cross-verification", {
+async function queryAccountTable(accountId: string, eventId: string): Promise<AccountRecord | null> {
+  logger.debug("Querying ISB Accounts API for cross-verification", {
     eventId,
     accountId,
   })
 
   try {
-    const command = new GetItemCommand({
-      TableName: tableName,
-      Key: {
-        accountId: { S: accountId },
-      },
-      ConsistentRead: true,
-    })
+    const isbAccount = await fetchAccountFromISB(accountId, eventId)
 
-    const result = await dynamoClient.send(command)
-
-    if (!result.Item) {
+    if (!isbAccount) {
       return null
     }
 
-    const item = unmarshall(result.Item) as AccountRecord
-    return item
+    // Map ISB record to AccountRecord interface
+    return mapISBAccountToAccountRecord(isbAccount)
   } catch (error) {
     // Log but don't fail - cross-verification is secondary
-    logger.warn("SandboxAccountTable query failed", {
+    logger.warn("ISB Accounts API query failed", {
       eventId,
       accountId,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -326,26 +288,50 @@ async function queryAccountTable(
   }
 }
 
+/**
+ * Map ISB Lease record to internal LeaseRecord interface
+ */
+function mapISBLeaseToLeaseRecord(isbRecord: ISBLeaseRecord): LeaseRecord {
+  return {
+    userEmail: isbRecord.userEmail,
+    uuid: isbRecord.uuid,
+    accountId: isbRecord.accountId ?? isbRecord.awsAccountId,
+    leaseStatus: isbRecord.status,
+    templateName: isbRecord.templateName ?? isbRecord.originalLeaseTemplateName,
+    expirationDate: isbRecord.expirationDate,
+    maxSpend: isbRecord.maxSpend,
+  }
+}
+
+/**
+ * Map ISB Account record to internal AccountRecord interface
+ */
+function mapISBAccountToAccountRecord(isbAccount: ISBAccountRecord): AccountRecord {
+  return {
+    accountId: isbAccount.awsAccountId,
+    ownerEmail: isbAccount.email,
+    status: isbAccount.status,
+  }
+}
+
 // =========================================================================
 // Main Verification Function
 // =========================================================================
 
 /**
- * Verify email ownership against DynamoDB lease records
+ * Verify email ownership against ISB lease records
  *
  * MANDATORY: This verification MUST occur before any email is sent (AC-3.8)
  * Cannot be bypassed via configuration.
  *
  * @param event - Validated event from schema validation
- * @param dynamoClient - DynamoDB client instance
  * @returns OwnershipResult if verified
  * @throws SecurityError if email mismatch (AC-3.3)
  * @throws PermanentError if lease not found (AC-3.6)
- * @throws RetriableError for transient DynamoDB errors
+ * @throws RetriableError for transient API errors
  */
 export async function verifyEmailOwnership(
   event: ValidatedEvent,
-  dynamoClient: DynamoDBClient,
 ): Promise<OwnershipResult> {
   const eventId = event.eventId
   const eventType = event.eventType
@@ -399,12 +385,12 @@ export async function verifyEmailOwnership(
     }
   }
 
-  // Query LeaseTable (AC-3.1)
-  const leaseRecord = await queryLeaseTable(dynamoClient, leaseKey.userEmail, leaseKey.uuid, eventId)
+  // Query lease via ISB API (AC-3.1)
+  const leaseRecord = await queryLeaseTable(leaseKey.userEmail, leaseKey.uuid, eventId)
 
   // AC-3.6: Lease not found throws PermanentError
   if (!leaseRecord) {
-    logger.error("Lease not found in DynamoDB", {
+    logger.error("Lease not found via ISB API", {
       eventId,
       leaseKeyEmailHash: hashForLog(leaseKey.userEmail),
       leaseKeyUuid: leaseKey.uuid,
@@ -454,11 +440,11 @@ export async function verifyEmailOwnership(
   // Initialize result
   let accountOwner: string | undefined
 
-  // AC-3.13, AC-3.14, AC-3.15: Cross-verify with SandboxAccountTable
+  // AC-3.13, AC-3.14, AC-3.15: Cross-verify with ISB Accounts API
   if (detail.accountId || leaseRecord.accountId) {
     const accountId = detail.accountId || leaseRecord.accountId
     if (accountId) {
-      const accountRecord = await queryAccountTable(dynamoClient, accountId, eventId)
+      const accountRecord = await queryAccountTable(accountId, eventId)
 
       if (accountRecord && accountRecord.ownerEmail) {
         accountOwner = accountRecord.ownerEmail

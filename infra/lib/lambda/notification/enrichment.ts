@@ -17,7 +17,7 @@
  * @see docs/sprint-artifacts/tech-spec-epic-n5.md#Story-n5-6
  */
 
-import { DynamoDBClient, GetItemCommand, ProvisionedThroughputExceededException } from "@aws-sdk/client-dynamodb"
+import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb"
 import { createHash } from "crypto"
 import { unmarshall } from "@aws-sdk/util-dynamodb"
 import { fetchLeaseByKey, ISBLeaseRecord } from "./isb-client"
@@ -45,10 +45,6 @@ const DATA_STALENESS_THRESHOLD_MS = 5 * 60 * 1000
 
 /** AC-6.13: Budget discrepancy threshold (10%) */
 const BUDGET_DISCREPANCY_THRESHOLD = 0.1
-
-/** N7-1 AC-9: Throttle retry configuration */
-const THROTTLE_RETRY_DELAY_MS = 500
-const THROTTLE_MAX_RETRIES = 1
 
 // =============================================================================
 // Logger and Metrics
@@ -434,13 +430,6 @@ export function validateLeaseKeyInputs(
   }
 
   return { userEmail, uuid }
-}
-
-/**
- * N7-1 AC-9: Sleep utility for throttle retry backoff
- */
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**

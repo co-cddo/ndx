@@ -202,8 +202,8 @@ function renderActions(lease: Lease): string {
 
   const ssoUrl = getSsoUrl(lease)
   const portalUrl = getPortalUrl(lease)
-  // Story 5.2: CloudFormation console URL (uses us-west-2 as default region for NDX sandboxes)
-  const cfnUrl = getCfnConsoleUrl(lease, "us-west-2")
+  // Story 5.2: CloudFormation console URL
+  const cfnUrl = getCfnConsoleUrl(lease, "us-east-1")
 
   return `
     <div class="sessions-actions">

@@ -37,7 +37,7 @@ jest.mock("../../api/sessions-service", () => ({
   ),
   // Story 5.2: CloudFormation console URL via SSO
   getCfnConsoleUrl: jest.fn(
-    (lease: { awsAccountId: string }, region = "us-west-2") =>
+    (lease: { awsAccountId: string }, region = "us-east-1") =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=ndx_IsbUsersPS&destination=${encodeURIComponent(`https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}`)}`,
   ),
 }))

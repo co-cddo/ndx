@@ -74,7 +74,12 @@ async function publishSlackNotification(
   const detail = event.detail as Record<string, unknown>
 
   // Extract user email from enriched data or event
-  const userEmail = enrichedData.userEmail || enrichedData.principalEmail || (detail.userEmail as string) || (detail.principalEmail as string) || ""
+  const userEmail =
+    enrichedData.userEmail ||
+    enrichedData.principalEmail ||
+    (detail.userEmail as string) ||
+    (detail.principalEmail as string) ||
+    ""
 
   // Extract template name from enriched data or event (ISB uses various field names)
   const templateName =
@@ -90,7 +95,12 @@ async function publishSlackNotification(
   const leaseId = (typeof detail.leaseId === "string" ? detail.leaseId : enrichedData.uuid) || ""
 
   // Extract account ID from enriched data or event
-  const accountId = enrichedData.awsAccountId || enrichedData.accountId || (detail.accountId as string) || (detail.awsAccountId as string) || ""
+  const accountId =
+    enrichedData.awsAccountId ||
+    enrichedData.accountId ||
+    (detail.accountId as string) ||
+    (detail.awsAccountId as string) ||
+    ""
 
   // Build description lines (only include non-empty fields)
   const descriptionParts: string[] = []

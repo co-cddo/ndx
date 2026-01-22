@@ -223,11 +223,7 @@ export function generateAuditSignature(eventId: string, verificationResult: bool
  * Query lease via ISB Leases API for ownership verification (AC-3.1)
  * Replaces direct DynamoDB access with ISB Lambda invocation
  */
-async function queryLeaseTable(
-  userEmail: string,
-  uuid: string,
-  eventId: string,
-): Promise<LeaseRecord | null> {
+async function queryLeaseTable(userEmail: string, uuid: string, eventId: string): Promise<LeaseRecord | null> {
   logger.debug("Querying ISB Leases API", {
     eventId,
     userEmailHash: hashForLog(userEmail),
@@ -330,9 +326,7 @@ function mapISBAccountToAccountRecord(isbAccount: ISBAccountRecord): AccountReco
  * @throws PermanentError if lease not found (AC-3.6)
  * @throws RetriableError for transient API errors
  */
-export async function verifyEmailOwnership(
-  event: ValidatedEvent,
-): Promise<OwnershipResult> {
+export async function verifyEmailOwnership(event: ValidatedEvent): Promise<OwnershipResult> {
   const eventId = event.eventId
   const eventType = event.eventType
   const detail = event.detail as LeaseEventDetail

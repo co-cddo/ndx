@@ -16,12 +16,7 @@
  */
 
 import { createHash } from "crypto"
-import {
-  fetchLeaseByKey,
-  fetchAccountFromISB,
-  fetchTemplateFromISB,
-  ISBLeaseRecord,
-} from "./isb-client"
+import { fetchLeaseByKey, fetchAccountFromISB, fetchTemplateFromISB, ISBLeaseRecord } from "./isb-client"
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 import { PermanentError } from "./errors"
@@ -221,10 +216,7 @@ export function resetCircuitBreaker(): void {
  * AC-6.3: Query account details via ISB Accounts API
  * Replaces direct DynamoDB access with ISB Lambda invocation
  */
-export async function queryAccountTable(
-  accountId: string,
-  eventId: string,
-): Promise<SandboxAccountRecord | null> {
+export async function queryAccountTable(accountId: string, eventId: string): Promise<SandboxAccountRecord | null> {
   logger.debug("Querying ISB Accounts API for enrichment", {
     eventId,
     accountId,
@@ -679,10 +671,7 @@ function extractLeaseKey(event: ValidatedEvent): { userEmail: string; uuid: stri
  * AC-6.38: 2-second timeout
  * AC-6.39, AC-6.16, AC-6.7: Graceful degradation with partial data
  */
-export async function enrichIfNeeded(
-  event: ValidatedEvent,
-  templateConfig: TemplateConfig,
-): Promise<EnrichedData> {
+export async function enrichIfNeeded(event: ValidatedEvent, templateConfig: TemplateConfig): Promise<EnrichedData> {
   const eventId = event.eventId
   const startTime = Date.now()
 

@@ -69,7 +69,7 @@ jest.mock("./isb-client", () => ({
 }))
 
 // Get references to the mocks for tests - must be after jest.mock
- 
+
 const {
   fetchLeaseByKey: mockFetchLeaseByKey,
   fetchAccountFromISB: mockFetchAccountFromISB,
@@ -1104,7 +1104,6 @@ describe("N7-1 AC-8: Wrong type validation", () => {
 // =========================================================================
 
 describe("N7-1 / Story 5.1: ISB API error handling", () => {
-
   it("should return lease record on successful ISB API call", async () => {
     mockFetchLeaseByKey.mockResolvedValueOnce({
       userEmail: "user@example.gov.uk",
@@ -1149,7 +1148,6 @@ describe("N7-1 / Story 5.1: ISB API error handling", () => {
 // =========================================================================
 
 describe("N7-1: fetchLeaseRecord input validation", () => {
-
   it("should return null when userEmail is missing (AC-7)", async () => {
     const result = await fetchLeaseRecord(undefined, "uuid-123", "evt-test")
 

@@ -2445,12 +2445,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:25.0.9":
-  version: 25.0.9
-  resolution: "@types/node@npm:25.0.9"
+"@types/node@npm:25.0.10":
+  version: 25.0.10
+  resolution: "@types/node@npm:25.0.10"
   dependencies:
     undici-types: "npm:~7.16.0"
-  checksum: 10c0/a757efafe303d9c8833eb53c2e9a0981cd5ac725cdc04c5612a71db86468c938778d4fa328be4231b68fffc68258638764df7b9c69e86cf55f0bb67105eb056f
+  checksum: 10c0/9edc3c812b487c32c76eebac7c87acae1f69515a0bc3f6b545806d513eb9e918c3217bf751dc93da39f60e06bf1b0caa92258ef3a6dd6457124b2e761e54f61f
   languageName: node
   linkType: hard
 
@@ -5116,7 +5116,7 @@ __metadata:
     "@eslint/js": "npm:9.39.2"
     "@types/aws-lambda": "npm:8.10.160"
     "@types/jest": "npm:30.0.0"
-    "@types/node": "npm:25.0.9"
+    "@types/node": "npm:25.0.10"
     aws-cdk: "npm:2.1101.0"
     aws-cdk-lib: "npm:2.235.1"
     constructs: "npm:10.4.5"
@@ -5124,7 +5124,7 @@ __metadata:
     eslint: "npm:9.39.2"
     eslint-plugin-awscdk: "npm:4.0.5"
     jest: "npm:30.2.0"
-    prettier: "npm:^3.8.0"
+    prettier: "npm:^3.8.1"
     source-map-support: "npm:^0.5.21"
     ts-jest: "npm:29.4.6"
     ts-node: "npm:10.9.2"
@@ -5403,12 +5403,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.8.0":
-  version: 3.8.0
-  resolution: "prettier@npm:3.8.0"
+"prettier@npm:^3.8.1":
+  version: 3.8.1
+  resolution: "prettier@npm:3.8.1"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10c0/8926e9c9941a293b76c2d799089d038e9f6d84fb37702fc370bedd03b3c70d7fcf507e2e3c4f151f222d81820a3b74cac5e692c955cfafe34dd0d02616ce8327
+  checksum: 10c0/33169b594009e48f570471271be7eac7cdcf88a209eed39ac3b8d6d78984039bfa9132f82b7e6ba3b06711f3bfe0222a62a1bfb87c43f50c25a83df1b78a2c42
   languageName: node
   linkType: hard
 

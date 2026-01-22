@@ -35,10 +35,10 @@ jest.mock("../../api/sessions-service", () => ({
   getPortalUrl: jest.fn(
     (lease: { awsAccountId: string }) => `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}`,
   ),
-  // Story 5.2: CloudFormation console URL
+  // Story 5.2: CloudFormation console URL via SSO
   getCfnConsoleUrl: jest.fn(
-    (_lease: unknown, region = "us-west-2") =>
-      `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks`,
+    (lease: { awsAccountId: string }, region = "us-west-2") =>
+      `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=ndx_IsbUsersPS&destination=${encodeURIComponent(`https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}`)}`,
   ),
 }))
 
@@ -446,12 +446,15 @@ describe("Sessions Table Component", () => {
       expect(html).not.toContain("Open CloudFormation")
     })
 
-    it("should include correct CloudFormation URL format", () => {
+    it("should include correct CloudFormation URL format via SSO", () => {
       const html = renderSessionsTable([mockActiveLease])
 
-      // URL is mocked but should contain the CloudFormation console pattern
-      expect(html).toContain("console.aws.amazon.com/cloudformation/home")
-      expect(html).toContain("#/stacks")
+      // URL goes through SSO portal with destination parameter
+      expect(html).toContain(".awsapps.com/start/#/console")
+      expect(html).toContain("account_id=")
+      expect(html).toContain("destination=")
+      // CloudFormation URL is URL-encoded in the destination parameter
+      expect(html).toContain("cloudformation")
     })
 
     it("should include data attributes for analytics tracking", () => {

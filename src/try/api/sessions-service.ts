@@ -325,18 +325,24 @@ export function getPortalUrl(lease: Lease): string {
 }
 
 /**
- * Get the CloudFormation console URL for a lease.
+ * Get the CloudFormation console URL for a lease via SSO.
  *
- * Story 5.2: Opens the CloudFormation console in the correct region.
- * URL format: https://{region}.console.aws.amazon.com/cloudformation/home?region={region}#/stacks
+ * Story 5.2: Opens the CloudFormation console in the correct region via SSO portal.
+ * Uses the same SSO flow as getSsoUrl but with a destination parameter to redirect
+ * to the CloudFormation console after authentication.
  *
- * Note: The user must be logged into the correct AWS account via SSO first.
- * This URL will open the CloudFormation stacks page in their session's region.
+ * URL format: https://d-9267e1e371.awsapps.com/start/#/console?account_id={accountId}&role_name=ndx_IsbUsersPS&destination={encodedCfnUrl}
  *
  * @param lease - Lease to get CloudFormation URL for
- * @param region - AWS region (defaults to us-east-1, but callers typically pass us-west-2 for NDX sandboxes)
- * @returns CloudFormation console URL
+ * @param region - AWS region (defaults to us-east-1)
+ * @returns SSO URL that redirects to CloudFormation console
  */
 export function getCfnConsoleUrl(lease: Lease, region = "us-east-1"): string {
-  return `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks`
+  const baseUrl = config.awsSsoPortalUrl
+  const accountId = lease.awsAccountId
+  const roleName = config.ssoRoleName
+  const cfnConsoleUrl = `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}`
+  const encodedDestination = encodeURIComponent(cfnConsoleUrl)
+
+  return `${baseUrl}/#/console?account_id=${accountId}&role_name=${roleName}&destination=${encodedDestination}`
 }

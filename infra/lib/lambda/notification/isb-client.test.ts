@@ -54,6 +54,7 @@ describe("ISB Client", () => {
       headers: { "Content-Type": "application/json" },
     }
     // Cast to any to avoid Uint8ArrayBlobAdapter type issues in tests
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return new Uint8Array(Buffer.from(JSON.stringify(apiGatewayResponse))) as any
   }
 
@@ -470,6 +471,7 @@ describe("ISB Accounts Client", () => {
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" },
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return new Uint8Array(Buffer.from(JSON.stringify(apiGatewayResponse))) as any
   }
 
@@ -623,6 +625,7 @@ describe("ISB Templates Client", () => {
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" },
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return new Uint8Array(Buffer.from(JSON.stringify(apiGatewayResponse))) as any
   }
 

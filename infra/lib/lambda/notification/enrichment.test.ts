@@ -69,7 +69,7 @@ jest.mock("./isb-client", () => ({
 }))
 
 // Get references to the mocks for tests - must be after jest.mock
-
+/* eslint-disable @typescript-eslint/no-require-imports */
 const {
   fetchLeaseByKey: mockFetchLeaseByKey,
   fetchAccountFromISB: mockFetchAccountFromISB,
@@ -79,6 +79,7 @@ const {
   fetchAccountFromISB: jest.Mock
   fetchTemplateFromISB: jest.Mock
 }
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 // =========================================================================
 // Test Fixtures

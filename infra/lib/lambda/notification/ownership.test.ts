@@ -32,7 +32,9 @@ const mockFetchLeaseByKey = jest.fn()
 const mockFetchAccountFromISB = jest.fn()
 
 jest.mock("./isb-client", () => ({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchLeaseByKey: (...args: unknown[]) => mockFetchLeaseByKey(...args),
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   fetchAccountFromISB: (...args: unknown[]) => mockFetchAccountFromISB(...args),
 }))
 

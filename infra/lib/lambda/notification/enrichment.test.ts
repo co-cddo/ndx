@@ -60,6 +60,18 @@ jest.mock("@aws-lambda-powertools/metrics", () => ({
   },
 }))
 
+// Story 5.1: Mock ISB client for fetchLeaseRecord tests
+jest.mock("./isb-client", () => ({
+  fetchLeaseByKey: jest.fn(),
+  ISBLeaseRecord: {},
+}))
+
+// Get reference to the mock for tests - must be after jest.mock
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { fetchLeaseByKey: mockFetchLeaseByKey } = require("./isb-client") as {
+  fetchLeaseByKey: jest.Mock
+}
+
 // =========================================================================
 // Test Fixtures
 // =========================================================================
@@ -181,10 +193,14 @@ describe("AC-6.1: enrichIfNeeded identifies missing fields", () => {
 })
 
 // =========================================================================
-// AC-6.2: Enrichment queries LeaseTable
+// AC-6.2: Enrichment queries LeaseTable (Story 5.1: via ISB API)
 // =========================================================================
 
 describe("AC-6.2: LeaseTable enrichment queries", () => {
+  beforeEach(() => {
+    mockFetchLeaseByKey.mockReset()
+  })
+
   it("should query LeaseTable and return lease-specific fields", async () => {
     const event = createValidatedEvent(
       "user@example.gov.uk",
@@ -194,8 +210,12 @@ describe("AC-6.2: LeaseTable enrichment queries", () => {
     const templateConfig = createTemplateConfig(["lease"])
     const dynamoClient = new DynamoDBClient({})
 
-    dynamoMock.on(GetItemCommand).resolves({
-      Item: createLeaseRecord("user@example.gov.uk", "lease-123", "Active", 150),
+    // Story 5.1: Mock ISB API for lease fetch
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "lease-123",
+      status: "Active",
+      maxSpend: 150,
     })
 
     const result = await enrichIfNeeded(event, templateConfig, dynamoClient)
@@ -278,10 +298,14 @@ describe("AC-6.4: LeaseTemplateTable enrichment queries", () => {
 })
 
 // =========================================================================
-// AC-6.5: Parallel query execution
+// AC-6.5: Parallel query execution (Story 5.1: Lease via ISB API)
 // =========================================================================
 
 describe("AC-6.5: Parallel query execution with Promise.all", () => {
+  beforeEach(() => {
+    mockFetchLeaseByKey.mockReset()
+  })
+
   it("should execute multiple queries in parallel", async () => {
     const event = createValidatedEvent(
       "user@example.gov.uk",
@@ -291,17 +315,17 @@ describe("AC-6.5: Parallel query execution with Promise.all", () => {
     const templateConfig = createTemplateConfig(["lease", "account"])
     const dynamoClient = new DynamoDBClient({})
 
-    let callCount = 0
-    dynamoMock.on(GetItemCommand).callsFake(() => {
-      callCount++
-      if (callCount === 1) {
-        return Promise.resolve({
-          Item: createLeaseRecord("user@example.gov.uk", "lease-123"),
-        })
-      }
-      return Promise.resolve({
-        Item: createAccountRecord("123456789012", "Sandbox Account"),
-      })
+    // Story 5.1: Mock ISB API for lease fetch
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "lease-123",
+      status: "Active",
+      maxSpend: 100,
+    })
+
+    // Account queries still use DynamoDB
+    dynamoMock.on(GetItemCommand).resolves({
+      Item: createAccountRecord("123456789012", "Sandbox Account"),
     })
 
     const result = await enrichIfNeeded(event, templateConfig, dynamoClient)
@@ -430,28 +454,47 @@ describe("AC-6.10: SSO URL constructed from config", () => {
 })
 
 // =========================================================================
-// AC-6.11: ConsistentRead used for all queries
+// AC-6.11: ConsistentRead used for all DynamoDB queries
+// Story 5.1: Lease queries now go through ISB API, account queries still use DynamoDB
 // =========================================================================
 
 describe("AC-6.11: ConsistentRead for all DynamoDB queries", () => {
-  it("should use ConsistentRead: true for lease table queries", async () => {
+  beforeEach(() => {
+    mockFetchLeaseByKey.mockReset()
+  })
+
+  it("should use ConsistentRead: true for account table queries (lease via ISB API)", async () => {
     const event = createValidatedEvent(
       "user@example.gov.uk",
       { userEmail: "user@example.gov.uk", uuid: "lease-123" },
       "123456789012",
     )
-    const templateConfig = createTemplateConfig(["lease"])
+    // Request both lease and account enrichment
+    const templateConfig = createTemplateConfig(["lease", "account"])
     const dynamoClient = new DynamoDBClient({})
 
+    // Story 5.1: Lease is fetched via ISB API
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "lease-123",
+      status: "Active",
+      maxSpend: 100,
+    })
+
+    // Account is still fetched via DynamoDB
     dynamoMock.on(GetItemCommand).resolves({
-      Item: createLeaseRecord("user@example.gov.uk", "lease-123"),
+      Item: createAccountRecord("123456789012", "Sandbox Account"),
     })
 
     await enrichIfNeeded(event, templateConfig, dynamoClient)
 
+    // Only account queries should go through DynamoDB
     const calls = dynamoMock.commandCalls(GetItemCommand)
     expect(calls.length).toBeGreaterThan(0)
     expect(calls[0].args[0].input.ConsistentRead).toBe(true)
+
+    // Lease should have been fetched via ISB API
+    expect(mockFetchLeaseByKey).toHaveBeenCalledWith("user@example.gov.uk", "lease-123", expect.any(String))
   })
 })
 
@@ -799,6 +842,10 @@ describe("AC-6.40: Data staleness warning", () => {
 // =========================================================================
 
 describe("AC-6.41: Never use enriched.status in email content", () => {
+  beforeEach(() => {
+    mockFetchLeaseByKey.mockReset()
+  })
+
   it("should not include status in EnrichedData output (only _internalStatus)", async () => {
     const event = createValidatedEvent(
       "user@example.gov.uk",
@@ -808,8 +855,12 @@ describe("AC-6.41: Never use enriched.status in email content", () => {
     const templateConfig = createTemplateConfig(["lease"])
     const dynamoClient = new DynamoDBClient({})
 
-    dynamoMock.on(GetItemCommand).resolves({
-      Item: createLeaseRecord("user@example.gov.uk", "lease-123", "Active"),
+    // Story 5.1: Mock ISB API for lease fetch
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "lease-123",
+      status: "Active",
+      maxSpend: 100,
     })
 
     const result = await enrichIfNeeded(event, templateConfig, dynamoClient)
@@ -839,6 +890,10 @@ describe("AC-6.41: Never use enriched.status in email content", () => {
 // =========================================================================
 
 describe("Integration: Parallel enrichment queries", () => {
+  beforeEach(() => {
+    mockFetchLeaseByKey.mockReset()
+  })
+
   it("should execute lease and account queries in parallel", async () => {
     const event = createValidatedEvent(
       "user@example.gov.uk",
@@ -850,15 +905,22 @@ describe("Integration: Parallel enrichment queries", () => {
 
     const callOrder: string[] = []
 
+    // Story 5.1: Mock ISB API for lease query
+    mockFetchLeaseByKey.mockImplementationOnce(async () => {
+      callOrder.push("lease")
+      return {
+        userEmail: "user@example.gov.uk",
+        uuid: "lease-123",
+        status: "Active",
+        maxSpend: 100,
+      }
+    })
+
+    // Account queries still use DynamoDB
     dynamoMock.on(GetItemCommand).callsFake((input) => {
       const tableName = input.TableName as string
       callOrder.push(tableName)
 
-      if (tableName.includes("lease")) {
-        return Promise.resolve({
-          Item: createLeaseRecord("user@example.gov.uk", "lease-123"),
-        })
-      }
       if (tableName.includes("account")) {
         return Promise.resolve({
           Item: createAccountRecord("123456789012", "Sandbox Account"),
@@ -869,7 +931,7 @@ describe("Integration: Parallel enrichment queries", () => {
 
     const result = await enrichIfNeeded(event, templateConfig, dynamoClient)
 
-    // Both queries should have been made
+    // Both queries should have been made (lease via ISB API, account via DynamoDB)
     expect(callOrder.length).toBe(2)
     expect(result.maxSpend).toBeDefined()
     expect(result.accountName).toBe("Sandbox Account")
@@ -1092,78 +1154,53 @@ describe("N7-1 AC-4: Module-level DynamoDB client singleton", () => {
 })
 
 // =========================================================================
-// N7-1: fetchLeaseRecord with Throttle Retry (AC-9)
+// N7-1 / Story 5.1: fetchLeaseRecord error handling via ISB API
+// Note: Throttle retry logic was removed when migrating to ISB API
+// ISB API handles errors with graceful degradation (returns null)
 // =========================================================================
 
-describe("N7-1 AC-9: Throttle retry with 500ms backoff", () => {
+describe("N7-1 / Story 5.1: ISB API error handling", () => {
   beforeEach(() => {
     resetCircuitBreaker()
     resetDynamoDBClient()
-    process.env.LEASE_TABLE_NAME = "test-lease-table"
+    mockFetchLeaseByKey.mockReset()
   })
 
-  afterEach(() => {
-    delete process.env.LEASE_TABLE_NAME
-  })
-
-  it("should retry once on ProvisionedThroughputExceededException", async () => {
-    const startTime = Date.now()
-    let callCount = 0
-
-    dynamoMock.on(GetItemCommand).callsFake(() => {
-      callCount++
-      if (callCount === 1) {
-        // First call throws throttle
-        throw new ProvisionedThroughputExceededException({
-          message: "Throttled",
-          $metadata: {},
-        })
-      }
-      // Second call succeeds
-      return Promise.resolve({
-        Item: createLeaseRecord("user@example.gov.uk", "lease-123"),
-      })
+  it("should return lease record on successful ISB API call", async () => {
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "lease-123",
+      status: "Active",
+      maxSpend: 100,
     })
 
     const result = await fetchLeaseRecord("user@example.gov.uk", "lease-123", "evt-test")
-    const elapsed = Date.now() - startTime
 
     expect(result).not.toBeNull()
     expect(result?.userEmail).toBe("user@example.gov.uk")
-    expect(callCount).toBe(2)
-    // Should have waited ~500ms for backoff
-    expect(elapsed).toBeGreaterThanOrEqual(450)
-  }, 10000)
+    expect(mockFetchLeaseByKey).toHaveBeenCalledTimes(1)
+  })
 
-  it("should return null after max retries exhausted", async () => {
-    dynamoMock.on(GetItemCommand).rejects(
-      new ProvisionedThroughputExceededException({
-        message: "Throttled",
-        $metadata: {},
-      }),
-    )
+  it("should return null when ISB API returns null (graceful degradation)", async () => {
+    mockFetchLeaseByKey.mockResolvedValueOnce(null)
 
     const result = await fetchLeaseRecord("user@example.gov.uk", "lease-123", "evt-test")
 
     expect(result).toBeNull()
-  }, 10000)
+  })
 
-  it("should not retry on non-throttle errors", async () => {
+  it("should return null on ISB API errors (graceful degradation)", async () => {
     let callCount = 0
 
-    dynamoMock.on(GetItemCommand).callsFake(() => {
+    mockFetchLeaseByKey.mockImplementationOnce(async () => {
       callCount++
-      throw new Error("Some other error")
+      throw new Error("Some API error")
     })
 
-    // This will throw due to handleDynamoDBError
-    try {
-      await fetchLeaseRecord("user@example.gov.uk", "lease-123", "evt-test")
-    } catch {
-      // Expected to throw
-    }
+    // Story 5.1: ISB API errors result in graceful degradation (return null)
+    const result = await fetchLeaseRecord("user@example.gov.uk", "lease-123", "evt-test")
 
-    // Should only have called once (no retry for non-throttle errors)
+    expect(result).toBeNull()
     expect(callCount).toBe(1)
   })
 })
@@ -1176,39 +1213,40 @@ describe("N7-1: fetchLeaseRecord input validation", () => {
   beforeEach(() => {
     resetCircuitBreaker()
     resetDynamoDBClient()
-    process.env.LEASE_TABLE_NAME = "test-lease-table"
-  })
-
-  afterEach(() => {
-    delete process.env.LEASE_TABLE_NAME
+    mockFetchLeaseByKey.mockReset()
   })
 
   it("should return null when userEmail is missing (AC-7)", async () => {
     const result = await fetchLeaseRecord(undefined, "uuid-123", "evt-test")
 
     expect(result).toBeNull()
-    // Should not have made any DynamoDB calls
-    expect(dynamoMock.commandCalls(GetItemCommand).length).toBe(0)
+    // Should not have called ISB API with invalid inputs
+    expect(mockFetchLeaseByKey).not.toHaveBeenCalled()
   })
 
   it("should return null when uuid has wrong type (AC-8)", async () => {
     const result = await fetchLeaseRecord("user@example.gov.uk", 12345, "evt-test")
 
     expect(result).toBeNull()
-    expect(dynamoMock.commandCalls(GetItemCommand).length).toBe(0)
+    expect(mockFetchLeaseByKey).not.toHaveBeenCalled()
   })
 
-  it("should return null when LEASE_TABLE_NAME not configured", async () => {
-    delete process.env.LEASE_TABLE_NAME
-
-    const result = await fetchLeaseRecord("user@example.gov.uk", "uuid-123", "evt-test")
+  it("should return null when userEmail is empty string", async () => {
+    const result = await fetchLeaseRecord("", "uuid-123", "evt-test")
 
     expect(result).toBeNull()
+    expect(mockFetchLeaseByKey).not.toHaveBeenCalled()
   })
 
-  it("should successfully fetch lease record with valid inputs", async () => {
-    dynamoMock.on(GetItemCommand).resolves({
-      Item: createLeaseRecord("user@example.gov.uk", "uuid-123", "Active", 150),
+  it("should successfully fetch lease record with valid inputs via ISB API", async () => {
+    // Story 5.1: Mock ISB API response
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "uuid-123",
+      status: "Active",
+      maxSpend: 150,
+      awsAccountId: "123456789012",
+      expirationDate: "2026-02-15T00:00:00Z",
     })
 
     const result = await fetchLeaseRecord("user@example.gov.uk", "uuid-123", "evt-test")
@@ -1217,15 +1255,47 @@ describe("N7-1: fetchLeaseRecord input validation", () => {
     expect(result?.userEmail).toBe("user@example.gov.uk")
     expect(result?.uuid).toBe("uuid-123")
     expect(result?.maxSpend).toBe(150)
+    expect(mockFetchLeaseByKey).toHaveBeenCalledWith("user@example.gov.uk", "uuid-123", "evt-test")
   })
 
-  it("should return null when lease record not found", async () => {
-    dynamoMock.on(GetItemCommand).resolves({
-      Item: undefined,
-    })
+  it("should return null when ISB API returns null (lease not found)", async () => {
+    mockFetchLeaseByKey.mockResolvedValueOnce(null)
 
     const result = await fetchLeaseRecord("user@example.gov.uk", "nonexistent", "evt-test")
 
     expect(result).toBeNull()
+  })
+
+  it("should return null when ISB API throws error (graceful degradation)", async () => {
+    mockFetchLeaseByKey.mockRejectedValueOnce(new Error("ISB API error"))
+
+    const result = await fetchLeaseRecord("user@example.gov.uk", "uuid-123", "evt-test")
+
+    expect(result).toBeNull()
+  })
+
+  it("should map awsAccountId to accountId for compatibility", async () => {
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "uuid-123",
+      status: "Active",
+      awsAccountId: "123456789012",
+    })
+
+    const result = await fetchLeaseRecord("user@example.gov.uk", "uuid-123", "evt-test")
+
+    expect(result?.accountId).toBe("123456789012")
+  })
+
+  it("should map originalLeaseTemplateName to templateName when templateName is missing", async () => {
+    mockFetchLeaseByKey.mockResolvedValueOnce({
+      userEmail: "user@example.gov.uk",
+      uuid: "uuid-123",
+      originalLeaseTemplateName: "SandboxTemplate",
+    })
+
+    const result = await fetchLeaseRecord("user@example.gov.uk", "uuid-123", "evt-test")
+
+    expect(result?.templateName).toBe("SandboxTemplate")
   })
 })

@@ -6,11 +6,20 @@
  * Story 7.5: Expiry date formatting
  * Story 7.6: Budget display
  * Story 7.7: "Launch AWS Console" button
+ * Story 5.2: CloudFormation console button
+ * Story 7-1: Catalogue links for template names
  *
  * @module sessions-table
  */
 
-import { Lease, LeaseStatus, isLeaseActive, getSsoUrl, getPortalUrl } from "../../api/sessions-service"
+import {
+  Lease,
+  LeaseStatus,
+  isLeaseActive,
+  getSsoUrl,
+  getPortalUrl,
+  getCfnConsoleUrl,
+} from "../../api/sessions-service"
 import { formatExpiry } from "../../utils/date-utils"
 
 /**
@@ -43,6 +52,42 @@ const STATUS_LABELS: Record<LeaseStatus, string> = {
   ManuallyTerminated: "Completed",
   AccountQuarantined: "Quarantined",
   Ejected: "Ejected",
+}
+
+/**
+ * Story 7-1: Mapping from template display names to catalogue page slugs.
+ *
+ * Maps the `leaseTemplateName` from the API to the corresponding catalogue
+ * page slug. Used to generate links to product documentation.
+ *
+ * Note: Template names come from ISB API's `originalLeaseTemplateName` field.
+ * Slugs correspond to files in `src/catalogue/aws/`.
+ *
+ * @internal Exported for testing only
+ */
+export const CATALOGUE_SLUGS: Record<string, string> = {
+  "Council Chatbot": "council-chatbot",
+  "NDX:Try for AWS": "innovation-sandbox-empty",
+  "FOI Redaction": "foi-redaction",
+  "LocalGov Drupal": "localgov-drupal",
+  "Planning AI": "planning-ai",
+  "QuickSight Dashboard": "quicksight-dashboard",
+  "Smart Car Park": "smart-car-park",
+  "Text to Speech": "text-to-speech",
+}
+
+/**
+ * Story 7-1: Get the catalogue page URL for a template name.
+ *
+ * Returns the full path to the catalogue page if the template has a known
+ * mapping, or null if the template is not in the catalogue.
+ *
+ * @param templateName - The template display name from the lease
+ * @returns Catalogue page URL (e.g., "/catalogue/aws/foi-redaction/") or null
+ */
+export function getCatalogueUrl(templateName: string): string | null {
+  const slug = CATALOGUE_SLUGS[templateName]
+  return slug ? `/catalogue/aws/${slug}/` : null
 }
 
 /**
@@ -92,11 +137,13 @@ function renderSessionRow(lease: Lease, index: number): string {
   const budgetDisplay = `$${lease.maxSpend.toFixed(2)} budget`
   const actions = renderActions(lease)
   const commentsRow = renderCommentsRow(lease, index)
+  // Story 7-1: Render template name as link to catalogue page if mapping exists
+  const productCell = renderProductCell(lease.leaseTemplateName)
 
   return `
     <tr class="govuk-table__row">
       <td class="govuk-table__cell" data-label="Product">
-        <strong>${escapeHtml(lease.leaseTemplateName)}</strong>
+        ${productCell}
       </td>
       <td class="govuk-table__cell" data-label="AWS Account ID">
         <code class="govuk-!-font-size-16">${escapeHtml(lease.awsAccountId)}</code>
@@ -119,6 +166,29 @@ function renderSessionRow(lease: Lease, index: number): string {
 }
 
 /**
+ * Story 7-1: Render the product cell with catalogue link or plain text.
+ *
+ * If the template has a known catalogue page, renders as a GOV.UK styled link.
+ * Otherwise, renders as plain bold text (graceful fallback).
+ *
+ * @param templateName - Template display name
+ * @returns HTML string for product cell content
+ */
+function renderProductCell(templateName: string): string {
+  const catalogueUrl = getCatalogueUrl(templateName)
+  const escapedName = escapeHtml(templateName)
+
+  if (catalogueUrl) {
+    // Render as link to catalogue page (AC-1, AC-2, AC-4, AC-7)
+    // data-action attribute for analytics tracking consistency
+    return `<a href="${catalogueUrl}" class="govuk-link" data-action="view-catalogue"><strong>${escapedName}</strong></a>`
+  }
+
+  // Fallback: render as plain text (AC-6)
+  return `<strong>${escapedName}</strong>`
+}
+
+/**
  * Render action buttons for a lease.
  *
  * @param lease - Lease data
@@ -131,6 +201,8 @@ function renderActions(lease: Lease): string {
 
   const ssoUrl = getSsoUrl(lease)
   const portalUrl = getPortalUrl(lease)
+  // Story 5.2: CloudFormation console URL (uses us-west-2 as default region for NDX sandboxes)
+  const cfnUrl = getCfnConsoleUrl(lease, "us-west-2")
 
   return `
     <div class="sessions-actions">
@@ -153,7 +225,7 @@ function renderActions(lease: Lease): string {
         href="${portalUrl}"
         target="_blank"
         rel="noopener noreferrer"
-        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-1"
         data-module="govuk-button"
         data-action="get-credentials"
         data-lease-id="${escapeHtml(lease.leaseId)}"
@@ -162,6 +234,21 @@ function renderActions(lease: Lease): string {
         data-expires="${escapeHtml(lease.expiresAt || "")}"
       >
         Get CLI Credentials
+        <span class="govuk-visually-hidden">(opens in new tab)</span>
+      </a>
+      <a
+        href="${cfnUrl}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+        data-module="govuk-button"
+        data-action="launch-cloudformation"
+        data-lease-id="${escapeHtml(lease.leaseId)}"
+        data-lease-template="${escapeHtml(lease.leaseTemplateName)}"
+        data-budget="${lease.maxSpend}"
+        data-expires="${escapeHtml(lease.expiresAt || "")}"
+      >
+        Open CloudFormation
         <span class="govuk-visually-hidden">(opens in new tab)</span>
       </a>
     </div>

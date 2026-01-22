@@ -38,10 +38,11 @@ export type NotificationEventType =
   | "LeaseFreezingThresholdAlert"
   | "LeaseBudgetExceeded"
   | "LeaseExpired"
-  // Ops events (Slack alerts)
+  // Ops events (visible via AWS Chatbot)
   | "AccountCleanupFailed"
   | "AccountQuarantined"
   | "AccountDriftDetected"
+  | "GroupCostReportGeneratedFailure"
 
 /**
  * Allowed event sources for security validation
@@ -52,8 +53,11 @@ export type AllowedSource = (typeof ALLOWED_SOURCES)[number]
 
 /**
  * Notification channels
+ *
+ * Note: Slack notifications removed in Story 6.3. Slack visibility is now
+ * provided by AWS Chatbot via EventBridge → SNS (Story 6.1).
  */
-export type NotificationChannel = "email" | "slack"
+export type NotificationChannel = "email"
 
 /**
  * Result of processing a notification

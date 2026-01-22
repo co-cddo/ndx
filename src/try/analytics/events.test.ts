@@ -13,6 +13,7 @@ import {
   trackSignOut,
   trackSessionAccess,
   trackCliCredentials,
+  trackCloudFormationAccess,
   trackConsentChoice,
 } from "./events"
 import * as analytics from "./analytics"
@@ -109,6 +110,30 @@ describe("events module", () => {
         lease_template: "Template B",
         budget: "50",
         duration: "12",
+      })
+    })
+  })
+
+  describe("trackCloudFormationAccess", () => {
+    it("should track with lease parameters including expires", () => {
+      trackCloudFormationAccess("lease-789", "Template C", "75", "2025-01-15T00:00:00Z")
+
+      expect(mockTrackEvent).toHaveBeenCalledWith("cloudformation_access", {
+        lease_id: "lease-789",
+        lease_template: "Template C",
+        budget: "75",
+        expires: "2025-01-15T00:00:00Z",
+      })
+    })
+
+    it("should handle empty string values", () => {
+      trackCloudFormationAccess("", "", "", "")
+
+      expect(mockTrackEvent).toHaveBeenCalledWith("cloudformation_access", {
+        lease_id: "",
+        lease_template: "",
+        budget: "",
+        expires: "",
       })
     })
   })

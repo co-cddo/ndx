@@ -74,7 +74,7 @@ export interface ConfigurationsResult {
  * Default fallback AUP content if API call fails.
  */
 const FALLBACK_AUP = `
-Acceptable Use Policy for AWS Innovation Sandbox
+Acceptable Use Policy for NDX:Try
 
 By using this service, you agree to:
 
@@ -86,7 +86,7 @@ By using this service, you agree to:
 
 Resources will be automatically terminated after the session expires.
 
-For full terms, please contact the Innovation Sandbox team.
+For full terms, please contact the NDX:Try team.
 `.trim()
 
 /**

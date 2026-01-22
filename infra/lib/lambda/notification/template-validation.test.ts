@@ -38,10 +38,10 @@ jest.mock("notifications-node-client", () => {
 })
 
 // Mock secrets
+// Note: slackWebhookUrl removed in Story 6.3. Slack visibility now via AWS Chatbot.
 jest.mock("./secrets", () => ({
   getSecrets: jest.fn().mockResolvedValue({
     notifyApiKey: "test-api-key-xxxxx",
-    slackWebhookUrl: "https://hooks.slack.com/test",
   }),
 }))
 

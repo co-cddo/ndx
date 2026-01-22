@@ -39,13 +39,7 @@ jest.mock("@aws-lambda-powertools/metrics", () => {
   }
 })
 
-// Mock slack-alerts module
-jest.mock("./slack-alerts", () => ({
-  processSlackAlert: jest.fn().mockResolvedValue(undefined),
-  isSlackAlertType: jest.fn((type: string) =>
-    ["AccountQuarantined", "LeaseFrozen", "AccountCleanupFailed", "AccountDriftDetected"].includes(type),
-  ),
-}))
+// Note: Slack webhook code removed in Story 6.3. Slack visibility now via AWS Chatbot.
 
 // Mock validation module
 jest.mock("./validation", () => ({
@@ -236,31 +230,30 @@ describe("NDX Notification Handler", () => {
       await expect(handler(event)).rejects.toThrow(SecurityError)
     })
 
-    // Note: Per design decision, ALL lease events go to both email AND Slack
-    // for ops visibility. See docs/sprint-artifacts/code-review-fix-plan.md
-    test("returns correct channels for lease events (email + slack)", async () => {
+    // Note: Slack webhook code removed in Story 6.3. Slack visibility now via AWS Chatbot.
+    test("returns correct channels for lease events (email only)", async () => {
       const event = createTestEvent({ "detail-type": "LeaseApproved" })
       const response = await handler(event)
 
       const body = JSON.parse(response.body) as { channels: string[] }
       expect(body.channels).toContain("email")
-      expect(body.channels).toContain("slack")
     })
 
-    test("returns correct channels for ops events", async () => {
+    test("returns no channels for ops-only events", async () => {
       const event = createTestEvent({ "detail-type": "AccountQuarantined" })
       const response = await handler(event)
 
       const body = JSON.parse(response.body) as { channels: string[] }
-      expect(body.channels).toEqual(["slack"])
+      // Ops events visible via AWS Chatbot, not via this handler
+      expect(body.channels).toEqual([])
     })
 
-    test("returns both channels for LeaseFrozen", async () => {
+    test("returns email channel for LeaseFrozen", async () => {
       const event = createTestEvent({ "detail-type": "LeaseFrozen" })
       const response = await handler(event)
 
       const body = JSON.parse(response.body) as { channels: string[] }
-      expect(body.channels).toEqual(["email", "slack"])
+      expect(body.channels).toEqual(["email"])
     })
   })
 

@@ -109,6 +109,30 @@ export function trackCliCredentials(leaseId: string, leaseTemplate: string, budg
 }
 
 /**
+ * Track CloudFormation console access.
+ *
+ * Story 5.2: Track when users open the CloudFormation console.
+ *
+ * @param leaseId - Lease identifier
+ * @param leaseTemplate - Lease template name
+ * @param budget - Budget amount
+ * @param expires - Session expiry time
+ */
+export function trackCloudFormationAccess(
+  leaseId: string,
+  leaseTemplate: string,
+  budget: string,
+  expires: string,
+): void {
+  trackEvent("cloudformation_access", {
+    lease_id: leaseId,
+    lease_template: leaseTemplate,
+    budget,
+    expires,
+  })
+}
+
+/**
  * Track navigation click with deduplication.
  *
  * @param destination - Navigation destination (link text or path)

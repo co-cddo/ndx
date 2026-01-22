@@ -19,6 +19,7 @@ import {
   isLeasePending,
   getSsoUrl,
   getPortalUrl,
+  getCfnConsoleUrl,
   Lease,
   LeaseStatus,
 } from "./sessions-service"
@@ -638,6 +639,62 @@ describe("Sessions Service", () => {
       const url = getPortalUrl(lease)
 
       expect(url).toBe("https://custom.example.com/sso")
+    })
+  })
+
+  describe("getCfnConsoleUrl", () => {
+    it("should return CloudFormation console URL with default region (us-east-1)", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getCfnConsoleUrl(lease)
+
+      expect(url).toBe("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks")
+    })
+
+    it("should accept a custom region parameter", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getCfnConsoleUrl(lease, "eu-west-1")
+
+      expect(url).toBe("https://eu-west-1.console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks")
+    })
+
+    it("should work with us-west-2 region", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getCfnConsoleUrl(lease, "us-west-2")
+
+      expect(url).toBe("https://us-west-2.console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks")
     })
   })
 })

@@ -176,7 +176,7 @@ export const LeaseBudgetExceededDetailSchema = PermissiveLeaseSchema
 export const LeaseExpiredDetailSchema = PermissiveLeaseSchema
 
 // =============================================================================
-// Ops Event Schemas (Slack alerts - not user emails but need validation)
+// Ops Event Schemas (visible via AWS Chatbot - not user emails but need validation)
 // =============================================================================
 
 /**
@@ -218,6 +218,17 @@ export const AccountDriftDetectedDetailSchema = z
   })
   .passthrough()
 
+/**
+ * GroupCostReportGeneratedFailure event detail schema (Story 6-2)
+ */
+export const GroupCostReportGeneratedFailureDetailSchema = z
+  .object({
+    groupId: z.string().optional(),
+    errorMessage: z.string().optional(),
+    failedAt: z.string().optional(),
+  })
+  .passthrough()
+
 // =============================================================================
 // Event Schema Registry (AC-2.1, AC-2.10)
 // =============================================================================
@@ -238,10 +249,11 @@ export const EVENT_SCHEMAS: Record<NotificationEventType, z.ZodSchema> = {
   LeaseFreezingThresholdAlert: LeaseFreezingThresholdAlertDetailSchema,
   LeaseBudgetExceeded: LeaseBudgetExceededDetailSchema,
   LeaseExpired: LeaseExpiredDetailSchema,
-  // Ops events (3 types)
+  // Ops events (4 types)
   AccountCleanupFailed: AccountCleanupFailedDetailSchema,
   AccountQuarantined: AccountQuarantinedDetailSchema,
   AccountDriftDetected: AccountDriftDetectedDetailSchema,
+  GroupCostReportGeneratedFailure: GroupCostReportGeneratedFailureDetailSchema,
 }
 
 // =============================================================================

@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib"
 import { Template, Match } from "aws-cdk-lib/assertions"
 import { NdxNotificationStack } from "./notification-stack"
+import { CHATBOT_SLACK_CONFIG } from "./config"
 
 describe("NdxNotificationStack", () => {
   let app: cdk.App
@@ -292,8 +293,8 @@ describe("NdxNotificationStack", () => {
     test("EventBridge rules have project tag", () => {
       // Note: Tags on EventBridge rules are applied at stack level
       // We verify the rules are created correctly, tags are inherited
-      // We have 2 rules: notification subscription and DLQ digest schedule (n6-7)
-      template.resourceCountIs("AWS::Events::Rule", 2)
+      // We have 3 rules: notification subscription, Chatbot (Story 6.1), and DLQ digest schedule (n6-7)
+      template.resourceCountIs("AWS::Events::Rule", 3)
     })
   })
 
@@ -423,17 +424,15 @@ describe("NdxNotificationStack", () => {
     })
 
     test("GetSecretValue permission is scoped to secret paths", () => {
-      // n4-5: credentials secret, IC-AC-1: separate Slack webhook secret
+      // n4-5: credentials secret only (Slack webhook removed in Story 6.3)
       template.hasResourceProperties("AWS::IAM::Policy", {
         PolicyDocument: {
           Statement: Match.arrayWith([
             Match.objectLike({
               Action: "secretsmanager:GetSecretValue",
-              // IC-AC-1: Now includes both consolidated and separate Slack webhook secrets
-              Resource: Match.arrayWith([
-                Match.stringLikeRegexp("/ndx/notifications/credentials"),
-                Match.stringLikeRegexp("/ndx/notifications/slack-webhook"),
-              ]),
+              // Note: Slack webhook secret path removed in Story 6.3. Slack notifications
+              // now handled by AWS Chatbot via EventBridge → SNS (Story 6.1).
+              Resource: Match.stringLikeRegexp("/ndx/notifications/credentials"),
             }),
           ]),
         },
@@ -449,11 +448,11 @@ describe("NdxNotificationStack", () => {
       })
     })
 
-    test("creates 12 CloudWatch alarms (8 n4-6 + 3 n5-4 + 1 n6-1)", () => {
+    test("creates 11 CloudWatch alarms (8 n4-6 + 3 n5-4)", () => {
       // n4-6: DLQ depth, Lambda errors, canary, DLQ rate, auth failure, error rate, DLQ stale, secrets expiry
       // n5-4: complaint rate (AC-4.21), bounce rate (AC-4.22), unsubscribe rate (AC-4.24)
-      // n6-1: Slack message failure (AC-NEW-2)
-      template.resourceCountIs("AWS::CloudWatch::Alarm", 12)
+      // Note: SlackFailureAlarm removed in Story 6.3 (Slack webhook code removed)
+      template.resourceCountIs("AWS::CloudWatch::Alarm", 11)
     })
 
     test("creates DLQ depth alarm with threshold > 0 (AC-6.1)", () => {
@@ -521,13 +520,9 @@ describe("NdxNotificationStack", () => {
       })
     })
 
-    test("creates Slack failure alarm (AC-NEW-2, n6-1)", () => {
-      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-        AlarmName: "ndx-notification-slack-failure",
-        Threshold: 0,
-        ComparisonOperator: "GreaterThanThreshold",
-      })
-    })
+    // Note: Slack failure alarm test removed in Story 6.3.
+    // SlackFailureAlarm was removed because Slack webhook code was deleted.
+    // AWS Chatbot now handles Slack notifications via EventBridge → SNS (Story 6.1).
 
     test("all alarms include runbook URL in description (AC-6.14)", () => {
       const alarms = template.findResources("AWS::CloudWatch::Alarm")
@@ -564,6 +559,159 @@ describe("NdxNotificationStack", () => {
     test("exports dashboard URL", () => {
       template.hasOutput("DashboardUrl", {
         Description: Match.stringLikeRegexp("CloudWatch dashboard"),
+      })
+    })
+  })
+
+  describe("AWS Chatbot Integration (Story 6.1)", () => {
+    test("creates SNS topic for EventBridge events (AC-1)", () => {
+      template.hasResourceProperties("AWS::SNS::Topic", {
+        TopicName: "ndx-try-alerts",
+        DisplayName: "NDX:Try EventBridge Events",
+      })
+    })
+
+    test("creates EventBridge rule for Chatbot with correct name (AC-1)", () => {
+      template.hasResourceProperties("AWS::Events::Rule", {
+        Name: "ndx-chatbot-rule",
+        Description: Match.stringLikeRegexp("ISB events.*Chatbot.*Slack"),
+      })
+    })
+
+    test("Chatbot rule targets SNS topic (AC-1)", () => {
+      template.hasResourceProperties("AWS::Events::Rule", {
+        Name: "ndx-chatbot-rule",
+        Targets: Match.arrayWith([
+          Match.objectLike({
+            Arn: Match.objectLike({
+              Ref: Match.stringLikeRegexp("EventsTopic"),
+            }),
+          }),
+        ]),
+      })
+    })
+
+    test("Chatbot rule captures all 18 ISB event types (AC-4)", () => {
+      template.hasResourceProperties("AWS::Events::Rule", {
+        Name: "ndx-chatbot-rule",
+        EventPattern: Match.objectLike({
+          "detail-type": Match.arrayWith([
+            // Lease lifecycle events (6)
+            "LeaseRequested",
+            "LeaseApproved",
+            "LeaseDenied",
+            "LeaseFrozen",
+            "LeaseUnfrozen",
+            "LeaseTerminated",
+            // Monitoring alerts (5)
+            "LeaseBudgetThresholdAlert",
+            "LeaseDurationThresholdAlert",
+            "LeaseFreezingThresholdAlert",
+            "LeaseBudgetExceeded",
+            "LeaseExpiredAlert",
+            // Operations (4)
+            "AccountQuarantined",
+            "AccountCleanupFailed",
+            "AccountCleanupSuccessful",
+            "AccountDriftDetected",
+            // Reporting (2)
+            "GroupCostReportGenerated",
+            "GroupCostReportGeneratedFailure",
+            // Account requests (1)
+            "CleanAccountRequest",
+          ]),
+        }),
+      })
+    })
+
+    test("Chatbot rule event pattern has exactly 18 detail-types (AC-4)", () => {
+      const rules = template.findResources("AWS::Events::Rule")
+      const chatbotRule = Object.values(rules).find(
+        (rule) =>
+          (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
+      ) as {
+        Properties: {
+          EventPattern: {
+            "detail-type": string[]
+          }
+        }
+      }
+      expect(chatbotRule).toBeDefined()
+      expect(chatbotRule.Properties.EventPattern["detail-type"]).toHaveLength(18)
+    })
+
+    test("Chatbot rule has account filter for security", () => {
+      const rules = template.findResources("AWS::Events::Rule")
+      const chatbotRule = Object.values(rules).find(
+        (rule) =>
+          (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
+      ) as {
+        Properties: {
+          EventPattern: {
+            account: string[]
+          }
+        }
+      }
+      expect(chatbotRule).toBeDefined()
+      expect(chatbotRule.Properties.EventPattern.account).toBeDefined()
+      expect(chatbotRule.Properties.EventPattern.account.length).toBe(1)
+      expect(chatbotRule.Properties.EventPattern.account[0]).toMatch(/^\d{12}$/)
+    })
+
+    test("Chatbot rule has DLQ configured for failed deliveries", () => {
+      template.hasResourceProperties("AWS::Events::Rule", {
+        Name: "ndx-chatbot-rule",
+        Targets: Match.arrayWith([
+          Match.objectLike({
+            DeadLetterConfig: Match.objectLike({
+              Arn: Match.objectLike({
+                "Fn::GetAtt": Match.arrayWith([Match.stringLikeRegexp("NotificationDLQ")]),
+              }),
+            }),
+          }),
+        ]),
+      })
+    })
+
+    test("creates AWS Chatbot Slack channel configuration (AC-2)", () => {
+      template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
+        ConfigurationName: CHATBOT_SLACK_CONFIG.configurationName,
+        SlackWorkspaceId: CHATBOT_SLACK_CONFIG.workspaceId,
+        SlackChannelId: CHATBOT_SLACK_CONFIG.channelId,
+      })
+    })
+
+    test("Chatbot subscribes to events SNS topic (AC-2)", () => {
+      template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
+        SnsTopicArns: Match.arrayWith([
+          Match.objectLike({
+            Ref: Match.stringLikeRegexp("EventsTopic"),
+          }),
+        ]),
+      })
+    })
+
+    test("Chatbot has logging level INFO for observability (AC-5)", () => {
+      template.hasResourceProperties("AWS::Chatbot::SlackChannelConfiguration", {
+        LoggingLevel: "INFO",
+      })
+    })
+
+    test("exports events topic ARN", () => {
+      template.hasOutput("EventsTopicArn", {
+        Description: Match.stringLikeRegexp("EventBridge events.*Chatbot"),
+      })
+    })
+
+    test("exports Chatbot rule ARN", () => {
+      template.hasOutput("ChatbotRuleArn", {
+        Description: Match.stringLikeRegexp("EventBridge rule.*Chatbot.*18"),
+      })
+    })
+
+    test("exports Slack channel configuration ARN", () => {
+      template.hasOutput("SlackChannelConfigurationArn", {
+        Description: Match.stringLikeRegexp("AWS Chatbot Slack channel"),
       })
     })
   })

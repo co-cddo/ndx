@@ -68,7 +68,8 @@ export class CriticalError extends NotificationError {
 
   constructor(
     message: string,
-    public readonly service: "notify" | "slack" | "secrets",
+    // Note: "slack" removed in Story 6.3. Slack visibility now via AWS Chatbot.
+    public readonly service: "notify" | "secrets",
     cause?: Error,
   ) {
     super(message, cause)
@@ -98,13 +99,14 @@ export class SecurityError extends NotificationError {
 
 /**
  * Classify HTTP status codes into appropriate error types
+ *
+ * Note: "slack" service removed in Story 6.3. Slack visibility now via AWS Chatbot.
  */
-export function classifyHttpError(statusCode: number, message: string, service: "notify" | "slack"): NotificationError {
+export function classifyHttpError(statusCode: number, message: string, service: "notify"): NotificationError {
   if (statusCode === 429) {
     // AC-1.9: 429 errors use 1000ms retry delay for Notify
-    const retryDelay = service === "notify" ? 1000 : 60000
     return new RetriableError(`Rate limited by ${service}: ${message}`, {
-      retryAfterMs: retryDelay,
+      retryAfterMs: 1000,
     })
   }
 

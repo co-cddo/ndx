@@ -572,7 +572,7 @@ describe("Configurations Service", () => {
       const fallback = getFallbackAup()
 
       expect(fallback).toContain("Acceptable Use Policy")
-      expect(fallback).toContain("AWS Innovation Sandbox")
+      expect(fallback).toContain("NDX:Try")
       expect(fallback).toContain("evaluation and testing purposes")
     })
 

@@ -92,8 +92,12 @@ export interface ISBClientConfig {
  * @param userEmail - User's email address
  * @param uuid - Lease UUID
  * @returns Base64 encoded lease ID for ISB API
+ * @throws Error if userEmail contains pipe character (delimiter injection)
  */
 export function constructLeaseId(userEmail: string, uuid: string): string {
+  if (userEmail.includes("|")) {
+    throw new Error("Invalid userEmail: contains pipe character delimiter")
+  }
   const compositeKey = `${userEmail}|${uuid}`
   return Buffer.from(compositeKey).toString("base64")
 }

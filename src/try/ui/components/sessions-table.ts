@@ -21,6 +21,7 @@ import {
   getCfnConsoleUrl,
 } from "../../api/sessions-service"
 import { formatExpiry } from "../../utils/date-utils"
+import { escapeHtml } from "../../utils/html-utils"
 
 /**
  * Status badge color mapping per Story 7.4.
@@ -272,18 +273,6 @@ function renderEmptyTable(): string {
       </p>
     </div>
   `
-}
-
-/**
- * Escape HTML special characters to prevent XSS.
- *
- * @param str - String to escape
- * @returns Escaped string
- */
-function escapeHtml(str: string): string {
-  const div = document.createElement("div")
-  div.textContent = str
-  return div.innerHTML
 }
 
 /**

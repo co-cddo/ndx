@@ -627,8 +627,7 @@ describe("NdxNotificationStack", () => {
     test("Chatbot rule event pattern has exactly 18 detail-types (AC-4)", () => {
       const rules = template.findResources("AWS::Events::Rule")
       const chatbotRule = Object.values(rules).find(
-        (rule) =>
-          (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
+        (rule) => (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
       ) as {
         Properties: {
           EventPattern: {
@@ -643,8 +642,7 @@ describe("NdxNotificationStack", () => {
     test("Chatbot rule has account filter for security", () => {
       const rules = template.findResources("AWS::Events::Rule")
       const chatbotRule = Object.values(rules).find(
-        (rule) =>
-          (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
+        (rule) => (rule as { Properties: { Name: string } }).Properties.Name === "ndx-chatbot-rule",
       ) as {
         Properties: {
           EventPattern: {

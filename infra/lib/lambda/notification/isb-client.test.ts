@@ -16,13 +16,6 @@ import {
   JSendResponse,
 } from "./isb-client"
 
-// Mock fetch globally
-const mockFetch = jest.fn()
-global.fetch = mockFetch
-
-// Mock timers for timeout tests
-jest.useFakeTimers()
-
 describe("ISB Client", () => {
   const testCorrelationId = "test-event-123"
   const testUserEmail = "user@example.gov.uk"
@@ -30,15 +23,19 @@ describe("ISB Client", () => {
   const testBaseUrl = "https://isb-api.example.com"
   const testConfig = { baseUrl: testBaseUrl }
 
+  // Use jest.spyOn instead of global assignment for proper cleanup
+  let mockFetch: jest.SpyInstance
+
   beforeEach(() => {
     jest.clearAllMocks()
-    mockFetch.mockReset()
+    mockFetch = jest.spyOn(global, "fetch").mockImplementation(jest.fn())
     // Reset environment
     delete process.env.ISB_API_BASE_URL
   })
 
   afterEach(() => {
-    jest.clearAllTimers()
+    mockFetch.mockRestore()
+    jest.useRealTimers()
   })
 
   // ===========================================================================
@@ -60,6 +57,13 @@ describe("ISB Client", () => {
 
       const decoded = Buffer.from(leaseId, "base64").toString("utf-8")
       expect(decoded).toBe(`${email}|${testUuid}`)
+    })
+
+    it("should throw error if userEmail contains pipe character (delimiter injection)", () => {
+      const maliciousEmail = "user|injected@example.com"
+      expect(() => constructLeaseId(maliciousEmail, testUuid)).toThrow(
+        "Invalid userEmail: contains pipe character delimiter",
+      )
     })
   })
 
@@ -250,6 +254,15 @@ describe("ISB Client", () => {
   // ===========================================================================
 
   describe("fetchLeaseFromISB - AC-6/NFR4: Timeout handling", () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+      jest.clearAllTimers()
+      jest.useRealTimers()
+    })
+
     it("should timeout after 5 seconds and return null", async () => {
       // Create a promise that never resolves
       mockFetch.mockImplementationOnce(() => {

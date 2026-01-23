@@ -685,7 +685,9 @@ describe("Sessions Table Component", () => {
       it("should render template name as link when mapping exists (AC-1, AC-2)", () => {
         const html = renderSessionsTable([mockLeaseWithKnownTemplate])
 
-        expect(html).toContain('<a href="/catalogue/aws/foi-redaction/" class="govuk-link" data-action="view-catalogue">')
+        expect(html).toContain(
+          '<a href="/catalogue/aws/foi-redaction/" class="govuk-link" data-action="view-catalogue">',
+        )
         expect(html).toContain("<strong>FOI Redaction</strong>")
         expect(html).toContain("</a>")
       })

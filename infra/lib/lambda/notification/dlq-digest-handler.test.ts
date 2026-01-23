@@ -1,13 +1,17 @@
 /**
  * DLQ Digest Handler Tests
  *
- * Story: N6.7 - Daily DLQ Summary Slack Digest
+ * Story: N6.7 - Daily DLQ Summary
+ * Updated: Story 6.3 - Removed Slack webhook integration
  *
  * Test Coverage:
  * - Message summarization and categorization
  * - Console URL generation
- * - Slack digest formatting
+ * - CloudWatch logging (no longer Slack)
  * - Error handling
+ *
+ * Note: Slack webhook integration removed in Story 6.3. DLQ visibility
+ * is now provided via CloudWatch Logs and CloudWatch alarms.
  */
 
 // Set env vars BEFORE any imports
@@ -16,19 +20,14 @@ process.env.AWS_REGION = "eu-west-2"
 
 import { ScheduledEvent } from "aws-lambda"
 
-// Type for Slack send parameters
-interface SlackSendParams {
-  alertType: string
-  accountId: string
-  priority: "critical" | "normal"
-  details: Record<string, string | number | undefined>
-  eventId: string
-  actionLinks?: Array<{ label: string; url: string; style?: string }>
-}
-
 // Mock functions for SQS
 const mockSQSSend = jest.fn()
-const mockSlackSend = jest.fn<Promise<void>, [SlackSendParams]>().mockResolvedValue(undefined)
+
+// Mock logger to capture log calls
+const mockLoggerInfo = jest.fn()
+const mockLoggerWarn = jest.fn()
+const mockLoggerError = jest.fn()
+const mockLoggerDebug = jest.fn()
 
 // Mock @aws-sdk/client-sqs module
 jest.mock("@aws-sdk/client-sqs", () => ({
@@ -53,21 +52,31 @@ jest.mock("@aws-sdk/client-sqs", () => ({
   },
 }))
 
-// Mock SlackSender
-jest.mock("./slack-sender", () => ({
-  SlackSender: {
-    getInstance: jest.fn().mockImplementation(() =>
-      Promise.resolve({
-        send: mockSlackSend,
-      }),
-    ),
-  },
-}))
+// Mock Lambda Powertools
+jest.mock("@aws-lambda-powertools/logger", () => {
+  return {
+    Logger: jest.fn().mockImplementation(() => ({
+      info: mockLoggerInfo,
+      warn: mockLoggerWarn,
+      error: mockLoggerError,
+      debug: mockLoggerDebug,
+    })),
+  }
+})
 
-// Mock block-kit-builder
-jest.mock("./block-kit-builder", () => ({
-  buildBlockKitPayload: jest.fn(),
-}))
+jest.mock("@aws-lambda-powertools/metrics", () => {
+  return {
+    Metrics: jest.fn().mockImplementation(() => ({
+      addMetric: jest.fn(),
+      publishStoredMetrics: jest.fn(),
+    })),
+    MetricUnit: {
+      Count: "Count",
+      Seconds: "Seconds",
+      Milliseconds: "Milliseconds",
+    },
+  }
+})
 
 // Import after mocks
 import { handler } from "./dlq-digest-handler"
@@ -81,8 +90,10 @@ describe("DLQ Digest Handler", () => {
     // Clear all mocks and reset implementations
     jest.clearAllMocks()
     mockSQSSend.mockReset()
-    mockSlackSend.mockReset()
-    mockSlackSend.mockResolvedValue(undefined)
+    mockLoggerInfo.mockReset()
+    mockLoggerWarn.mockReset()
+    mockLoggerError.mockReset()
+    mockLoggerDebug.mockReset()
 
     // Ensure env vars are set for each test
     process.env.DLQ_URL = TEST_DLQ_URL
@@ -143,13 +154,13 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      // Should not send Slack message
-      expect(mockSlackSend).not.toHaveBeenCalled()
+      // Should log that no messages found, not log a digest
+      expect(mockLoggerInfo).toHaveBeenCalledWith("No messages in DLQ, skipping digest")
     })
   })
 
   describe("DLQ with Messages", () => {
-    it("should send digest with message count (UJ-AC-7)", async () => {
+    it("should log digest with message count (UJ-AC-7)", async () => {
       const now = Date.now()
       const twoHoursAgo = now - 2 * 60 * 60 * 1000
 
@@ -165,12 +176,16 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.details["Total Messages"]).toBe(5)
+      // Should log digest with message count
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          messageCount: 5,
+        }),
+      )
     })
 
-    it("should include direct link to SQS console (UJ-AC-7)", async () => {
+    it("should include console URL in log (UJ-AC-7)", async () => {
       setupSQSMock({ visible: "5", notVisible: "0" }, [
         {
           body: JSON.stringify({ "detail-type": "LeaseFrozen" }),
@@ -180,17 +195,16 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-
-      // Check for console URL in action links
-      const viewDLQLink = call.actionLinks?.find((l: { label: string }) => l.label === "View DLQ in Console")
-      expect(viewDLQLink).toBeDefined()
-      expect(viewDLQLink!.url).toContain("console.aws.amazon.com/sqs")
-      expect(viewDLQLink!.url).toContain("eu-west-2")
+      // Check that console URL is logged
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          consoleUrl: expect.stringContaining("console.aws.amazon.com/sqs"),
+        }),
+      )
     })
 
-    it("should show top 3 error types (UJ-AC-8)", async () => {
+    it("should show top error types in log (UJ-AC-8)", async () => {
       setupSQSMock({ visible: "5", notVisible: "0" }, [
         {
           body: JSON.stringify({
@@ -213,43 +227,20 @@ describe("DLQ Digest Handler", () => {
           }),
           sentTimestamp: String(Date.now()),
         },
-        {
-          body: JSON.stringify({
-            "detail-type": "AccountDriftDetected",
-            errorType: "NetworkError",
-          }),
-          sentTimestamp: String(Date.now()),
-        },
       ])
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-
-      // Should include top error types
-      expect(call.details["Top Error Types"]).toContain("ValidationError")
+      // Should log with top errors
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          topErrors: expect.arrayContaining([expect.objectContaining({ type: "ValidationError" })]),
+        }),
+      )
     })
 
-    it("should show oldest message age in hours", async () => {
-      const now = Date.now()
-      const eighteenHoursAgo = now - 18 * 60 * 60 * 1000
-
-      setupSQSMock({ visible: "5", notVisible: "0" }, [
-        {
-          body: JSON.stringify({ "detail-type": "AccountQuarantined" }),
-          sentTimestamp: String(eighteenHoursAgo),
-        },
-      ])
-
-      await handler(createScheduledEvent())
-
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.details["Oldest Message Age"]).toBe("18 hours")
-    })
-
-    it("should use critical priority for > 10 messages", async () => {
+    it("should use warn level for critical priority (> 10 messages)", async () => {
       setupSQSMock({ visible: "15", notVisible: "0" }, [
         {
           body: JSON.stringify({ "detail-type": "AccountQuarantined" }),
@@ -259,12 +250,16 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.priority).toBe("critical")
+      // Should log at WARN level for critical
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining("CRITICAL"),
+        expect.objectContaining({
+          messageCount: 15,
+        }),
+      )
     })
 
-    it("should use critical priority for messages > 48 hours old", async () => {
+    it("should use warn level for critical priority (messages > 48 hours old)", async () => {
       const now = Date.now()
       const fiftyHoursAgo = now - 50 * 60 * 60 * 1000
 
@@ -277,12 +272,16 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.priority).toBe("critical")
+      // Should log at WARN level for critical
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining("CRITICAL"),
+        expect.objectContaining({
+          oldestMessageHours: expect.any(Number),
+        }),
+      )
     })
 
-    it("should use normal priority for small, fresh queue", async () => {
+    it("should use info level for normal priority (small, fresh queue)", async () => {
       setupSQSMock({ visible: "3", notVisible: "0" }, [
         {
           body: JSON.stringify({ "detail-type": "AccountQuarantined" }),
@@ -292,27 +291,15 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.priority).toBe("normal")
-    })
-
-    it("should include DLQ runbook link in action links", async () => {
-      setupSQSMock({ visible: "5", notVisible: "0" }, [
-        {
-          body: JSON.stringify({ "detail-type": "LeaseFrozen" }),
-          sentTimestamp: String(Date.now()),
-        },
-      ])
-
-      await handler(createScheduledEvent())
-
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-
-      const runbookLink = call.actionLinks?.find((l: { label: string }) => l.label === "DLQ Runbook")
-      expect(runbookLink).toBeDefined()
-      expect(runbookLink!.url).toContain("runbooks")
+      // Should log at INFO level (not WARN)
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest - messages present"),
+        expect.objectContaining({
+          messageCount: 3,
+        }),
+      )
+      // Should NOT have warned
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(expect.stringContaining("CRITICAL"), expect.anything())
     })
   })
 
@@ -335,10 +322,15 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.details["Top Error Types"]).toContain("ValidationError: 2")
-      expect(call.details["Top Error Types"]).toContain("TimeoutError: 1")
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          topErrors: expect.arrayContaining([
+            expect.objectContaining({ type: "ValidationError", count: 2 }),
+            expect.objectContaining({ type: "TimeoutError", count: 1 }),
+          ]),
+        }),
+      )
     })
 
     it("should categorize by error.name field", async () => {
@@ -351,9 +343,12 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.details["Top Error Types"]).toContain("PermanentError")
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          topErrors: expect.arrayContaining([expect.objectContaining({ type: "PermanentError" })]),
+        }),
+      )
     })
 
     it("should handle malformed JSON gracefully", async () => {
@@ -366,9 +361,12 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.details["Top Error Types"]).toContain("ParseError")
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          topErrors: expect.arrayContaining([expect.objectContaining({ type: "ParseError" })]),
+        }),
+      )
     })
   })
 
@@ -391,68 +389,45 @@ describe("DLQ Digest Handler", () => {
 
       await handler(createScheduledEvent())
 
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-      expect(call.details["Top Event Types"]).toContain("AccountQuarantined: 2")
-      expect(call.details["Top Event Types"]).toContain("LeaseFrozen: 1")
-    })
-  })
-
-  describe("Console URL Generation", () => {
-    it("should generate correct AWS Console URL format", async () => {
-      setupSQSMock({ visible: "1", notVisible: "0" }, [
-        {
-          body: JSON.stringify({ "detail-type": "AccountQuarantined" }),
-          sentTimestamp: String(Date.now()),
-        },
-      ])
-
-      await handler(createScheduledEvent())
-
-      expect(mockSlackSend).toHaveBeenCalledTimes(1)
-      const call = mockSlackSend.mock.calls[0][0]
-
-      const viewDLQLink = call.actionLinks?.find((l: { label: string }) => l.label === "View DLQ in Console")
-      expect(viewDLQLink).toBeDefined()
-      expect(viewDLQLink!.url).toBe(
-        "https://eu-west-2.console.aws.amazon.com/sqs/v3/home?region=eu-west-2#/queues/https%3A%2F%2Fsqs.eu-west-2.amazonaws.com%2F123456789012%2Fndx-notification-dlq",
+      expect(mockLoggerInfo).toHaveBeenCalledWith(
+        expect.stringContaining("DLQ digest"),
+        expect.objectContaining({
+          topEventTypes: expect.arrayContaining([
+            expect.objectContaining({ type: "AccountQuarantined", count: 2 }),
+            expect.objectContaining({ type: "LeaseFrozen", count: 1 }),
+          ]),
+        }),
       )
     })
   })
 
   describe("Error Handling", () => {
-    // Note: Testing missing DLQ_URL at handler level is complex due to Jest module caching.
-    // The handler correctly throws when DLQ_URL is empty - this is verified by the
-    // successful execution of all other tests which require DLQ_URL to be set.
-
     it("should propagate SQS errors", async () => {
       mockSQSSend.mockRejectedValue(new Error("SQS unavailable"))
 
       await expect(handler(createScheduledEvent())).rejects.toThrow("SQS unavailable")
     })
 
-    it("should propagate Slack errors", async () => {
-      setupSQSMock({ visible: "1", notVisible: "0" }, [
+    it("should throw when DLQ_URL not configured", async () => {
+      delete process.env.DLQ_URL
+
+      await expect(handler(createScheduledEvent())).rejects.toThrow("DLQ_URL")
+    })
+  })
+
+  describe("Metrics", () => {
+    it("should complete successfully and emit metrics", async () => {
+      setupSQSMock({ visible: "7", notVisible: "0" }, [
         {
           body: JSON.stringify({ "detail-type": "AccountQuarantined" }),
           sentTimestamp: String(Date.now()),
         },
       ])
 
-      mockSlackSend.mockRejectedValue(new Error("Slack webhook failed"))
-
-      await expect(handler(createScheduledEvent())).rejects.toThrow("Slack webhook failed")
-    })
-  })
-
-  describe("Metrics", () => {
-    it("should emit DLQMessageCount metric", async () => {
-      setupSQSMock({ visible: "7", notVisible: "0" }, [])
-
       await handler(createScheduledEvent())
 
-      // Metrics are emitted via Powertools - test indirectly via successful completion
-      expect(mockSlackSend).toHaveBeenCalled()
+      // Handler should complete successfully
+      expect(mockLoggerInfo).toHaveBeenCalledWith(expect.stringContaining("completed"), expect.anything())
     })
   })
 })

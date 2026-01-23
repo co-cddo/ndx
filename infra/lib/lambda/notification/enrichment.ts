@@ -1,15 +1,13 @@
 /**
- * DynamoDB Enrichment Module for Notification System
+ * Enrichment Module for Notification System
  *
- * This module queries ISB DynamoDB tables to enrich events with missing
+ * This module fetches data from ISB APIs to enrich events with missing
  * personalisation fields required by email templates.
  *
- * Story: N5.6 - DynamoDB Enrichment for Missing Fields
+ * Story: N5.6 - DynamoDB Enrichment for Missing Fields (now via ISB APIs)
  * ACs: 6.1-6.51
  *
  * Security Controls:
- * - AC-6.9: Read-only DynamoDB access (GetItem, Query only)
- * - AC-6.11: ConsistentRead: true for all queries
  * - AC-6.19: URL encode all untrusted fields
  * - AC-6.21: Log SECURITY alert for status conflicts
  * - AC-6.41: Never use enriched.status in email content
@@ -17,12 +15,11 @@
  * @see docs/sprint-artifacts/tech-spec-epic-n5.md#Story-n5-6
  */
 
-import { DynamoDBClient, GetItemCommand, ProvisionedThroughputExceededException } from "@aws-sdk/client-dynamodb"
 import { createHash } from "crypto"
-import { unmarshall } from "@aws-sdk/util-dynamodb"
+import { fetchLeaseByKey, fetchAccountFromISB, fetchTemplateFromISB, ISBLeaseRecord } from "./isb-client"
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
-import { PermanentError, RetriableError } from "./errors"
+import { PermanentError } from "./errors"
 import { hashForLog } from "./ownership"
 import type { EnrichedData, TemplateConfig, EnrichmentQuery } from "./templates"
 import type { ValidatedEvent } from "./validation"
@@ -45,10 +42,6 @@ const DATA_STALENESS_THRESHOLD_MS = 5 * 60 * 1000
 /** AC-6.13: Budget discrepancy threshold (10%) */
 const BUDGET_DISCREPANCY_THRESHOLD = 0.1
 
-/** N7-1 AC-9: Throttle retry configuration */
-const THROTTLE_RETRY_DELAY_MS = 500
-const THROTTLE_MAX_RETRIES = 1
-
 // =============================================================================
 // Logger and Metrics
 // =============================================================================
@@ -58,37 +51,6 @@ const metrics = new Metrics({
   namespace: "ndx/notifications",
   serviceName: "ndx-notifications",
 })
-
-// =============================================================================
-// Module-level DynamoDB Client (N7-1 AC-4: Connection Pooling)
-// =============================================================================
-
-/**
- * N7-1 AC-4: Module-level DynamoDB client singleton for connection pooling.
- * Reused across Lambda invocations for efficient connection management.
- * Created lazily on first use.
- */
-let dynamoClientSingleton: DynamoDBClient | null = null
-
-/**
- * Get or create the module-level DynamoDB client
- * N7-1 AC-4: Connection pooling via module-level singleton
- */
-export function getDynamoDBClient(): DynamoDBClient {
-  if (!dynamoClientSingleton) {
-    dynamoClientSingleton = new DynamoDBClient({
-      region: process.env.AWS_REGION || "us-west-2",
-    })
-  }
-  return dynamoClientSingleton
-}
-
-/**
- * Reset DynamoDB client singleton (for testing only)
- */
-export function resetDynamoDBClient(): void {
-  dynamoClientSingleton = null
-}
 
 // =============================================================================
 // Types
@@ -244,168 +206,85 @@ export function resetCircuitBreaker(): void {
 }
 
 // =============================================================================
-// DynamoDB Query Functions
+// ISB API Query Functions
 // =============================================================================
 
-/**
- * AC-6.2: Query LeaseTable for lease-specific fields
- * Uses GetItem with ConsistentRead: true (AC-6.11)
- */
-export async function queryLeaseTable(
-  dynamoClient: DynamoDBClient,
-  userEmail: string,
-  uuid: string,
-  eventId: string,
-): Promise<LeaseRecord | null> {
-  const tableName = process.env.LEASE_TABLE_NAME
-  if (!tableName) {
-    logger.warn("LEASE_TABLE_NAME not configured", { eventId })
-    return null
-  }
-
-  logger.debug("Querying LeaseTable for enrichment", {
-    eventId,
-    userEmailHash: hashForLog(userEmail),
-    uuid,
-  })
-
-  try {
-    // AC-6.9: Read-only access (GetItem)
-    // AC-6.11: ConsistentRead: true for correctness
-    const command = new GetItemCommand({
-      TableName: tableName,
-      Key: {
-        userEmail: { S: userEmail },
-        uuid: { S: uuid },
-      },
-      ConsistentRead: true,
-    })
-
-    const result = await dynamoClient.send(command)
-
-    if (!result.Item) {
-      logger.debug("No lease record found", { eventId, uuid })
-      return null
-    }
-
-    return unmarshall(result.Item) as LeaseRecord
-  } catch (error) {
-    handleDynamoDBError(error, "LeaseTable", eventId)
-    return null // unreachable but TypeScript needs it
-  }
-}
+// Story 5.1: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
+// This improves separation of concerns and reduces cross-service coupling
 
 /**
- * AC-6.3: Query SandboxAccountTable for account name
- * Uses GetItem with ConsistentRead: true (AC-6.11)
+ * AC-6.3: Query account details via ISB Accounts API
+ * Replaces direct DynamoDB access with ISB Lambda invocation
  */
-export async function queryAccountTable(
-  dynamoClient: DynamoDBClient,
-  accountId: string,
-  eventId: string,
-): Promise<SandboxAccountRecord | null> {
-  const tableName = process.env.SANDBOX_ACCOUNT_TABLE_NAME
-  if (!tableName) {
-    logger.warn("SANDBOX_ACCOUNT_TABLE_NAME not configured", { eventId })
-    return null
-  }
-
-  logger.debug("Querying SandboxAccountTable for enrichment", {
+export async function queryAccountTable(accountId: string, eventId: string): Promise<SandboxAccountRecord | null> {
+  logger.debug("Querying ISB Accounts API for enrichment", {
     eventId,
     accountId,
   })
 
   try {
-    // AC-6.9: Read-only access (GetItem)
-    // AC-6.11: ConsistentRead: true for correctness
-    const command = new GetItemCommand({
-      TableName: tableName,
-      Key: {
-        accountId: { S: accountId },
-      },
-      ConsistentRead: true,
-    })
+    const account = await fetchAccountFromISB(accountId, eventId)
 
-    const result = await dynamoClient.send(command)
-
-    if (!result.Item) {
-      logger.debug("No account record found", { eventId, accountId })
+    if (!account) {
+      logger.debug("No account record found via ISB API", { eventId, accountId })
       return null
     }
 
-    return unmarshall(result.Item) as SandboxAccountRecord
+    // Map ISB record to SandboxAccountRecord
+    return {
+      accountId: account.awsAccountId,
+      accountName: account.name,
+      ownerEmail: account.email,
+    }
   } catch (error) {
-    handleDynamoDBError(error, "SandboxAccountTable", eventId)
+    // Graceful degradation - return null on errors
+    logger.warn("ISB Accounts API query failed - continuing with partial data", {
+      eventId,
+      accountId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    circuitBreaker.recordFailure()
     return null
   }
 }
 
 /**
- * AC-6.4: Query LeaseTemplateTable for template name
- * Uses GetItem with ConsistentRead: true (AC-6.11)
+ * AC-6.4: Query template details via ISB Templates API
+ * Replaces direct DynamoDB access with ISB Lambda invocation
  */
 export async function queryLeaseTemplateTable(
-  dynamoClient: DynamoDBClient,
   templateName: string,
   eventId: string,
 ): Promise<LeaseTemplateRecord | null> {
-  const tableName = process.env.LEASE_TEMPLATE_TABLE_NAME
-  if (!tableName) {
-    logger.warn("LEASE_TEMPLATE_TABLE_NAME not configured", { eventId })
-    return null
-  }
-
-  logger.debug("Querying LeaseTemplateTable for enrichment", {
+  logger.debug("Querying ISB Templates API for enrichment", {
     eventId,
     templateName,
   })
 
   try {
-    // AC-6.9: Read-only access (GetItem)
-    // AC-6.11: ConsistentRead: true for correctness
-    const command = new GetItemCommand({
-      TableName: tableName,
-      Key: {
-        templateName: { S: templateName },
-      },
-      ConsistentRead: true,
-    })
+    const template = await fetchTemplateFromISB(templateName, eventId)
 
-    const result = await dynamoClient.send(command)
-
-    if (!result.Item) {
-      logger.debug("No template record found", { eventId, templateName })
+    if (!template) {
+      logger.debug("No template record found via ISB API", { eventId, templateName })
       return null
     }
 
-    return unmarshall(result.Item) as LeaseTemplateRecord
+    // Map ISB record to LeaseTemplateRecord
+    return {
+      templateName: template.name,
+      templateDescription: template.description,
+      leaseDurationInHours: template.leaseDurationInHours,
+    }
   } catch (error) {
-    handleDynamoDBError(error, "LeaseTemplateTable", eventId)
+    // Graceful degradation - return null on errors
+    logger.warn("ISB Templates API query failed - continuing with partial data", {
+      eventId,
+      templateName,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    circuitBreaker.recordFailure()
     return null
   }
-}
-
-/**
- * Handle DynamoDB errors consistently
- * AC-6.16, AC-6.17: Classify errors for circuit breaker
- */
-function handleDynamoDBError(error: unknown, tableName: string, eventId: string): never {
-  if (error instanceof Error) {
-    if (error.name === "ProvisionedThroughputExceededException") {
-      circuitBreaker.recordFailure()
-      metrics.addMetric("DynamoDBThrottle", MetricUnit.Count, 1)
-      logger.warn("DynamoDB throttled", { eventId, tableName })
-      throw new RetriableError(`DynamoDB throttled on ${tableName}`, { cause: error })
-    }
-    if (error.name === "ResourceNotFoundException") {
-      logger.error("DynamoDB table not found", { eventId, tableName })
-      throw new PermanentError(`${tableName} not found`)
-    }
-    logger.warn("DynamoDB error", { eventId, tableName, errorName: error.name })
-  }
-  throw new RetriableError(`DynamoDB error on ${tableName}`, {
-    cause: error instanceof Error ? error : undefined,
-  })
 }
 
 // =============================================================================
@@ -481,22 +360,17 @@ export function validateLeaseKeyInputs(
 }
 
 /**
- * N7-1 AC-9: Sleep utility for throttle retry backoff
- */
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/**
- * N7-1: Enhanced lease record fetching with:
- * - AC-1: Composite key query (userEmail PK, uuid SK)
- * - AC-5: EnrichmentQueryLatencyMs metric
- * - AC-7, AC-8: Input validation with type checking
- * - AC-9: 500ms backoff retry for ProvisionedThroughputExceededException
- * - AC-10: Schema fingerprint logging for drift detection
+ * Story 5.1: Lease record fetching via ISB API
  *
- * @param userEmail - Partition key (PK) for LeaseTable
- * @param uuid - Sort key (SK) for LeaseTable
+ * Refactored to use ISB REST API instead of direct DynamoDB access.
+ * Provides same interface for backward compatibility.
+ *
+ * - AC-1: Calls GET /leases/{id} on ISB API
+ * - AC-2: Maps ISB API response to LeaseRecord interface
+ * - AC-4, AC-5, AC-6: Graceful degradation on errors/timeout
+ *
+ * @param userEmail - User's email address
+ * @param uuid - Lease UUID
  * @param eventId - Event ID for logging correlation
  * @returns LeaseRecord or null if not found/validation fails
  */
@@ -505,128 +379,99 @@ export async function fetchLeaseRecord(
   uuid: unknown,
   eventId: string,
 ): Promise<LeaseRecord | null> {
-  // AC-7, AC-8: Validate inputs
+  // AC-7, AC-8: Validate inputs (reusing existing validation)
   const validatedInputs = validateLeaseKeyInputs(userEmail, uuid, eventId)
   if (!validatedInputs) {
     return null
   }
 
   const { userEmail: validEmail, uuid: validUuid } = validatedInputs
-  const tableName = process.env.LEASE_TABLE_NAME
+  const startTime = Date.now()
 
-  if (!tableName) {
-    logger.warn("LEASE_TABLE_NAME not configured", { eventId })
-    metrics.addMetric("EnrichmentConfigMissing", MetricUnit.Count, 1)
+  try {
+    logger.debug("Fetching lease record via ISB API", {
+      eventId,
+      userEmailHash: hashForLog(validEmail),
+      uuid: validUuid,
+    })
+
+    // Story 5.1 AC-1: Use ISB API instead of DynamoDB
+    const isbRecord = await fetchLeaseByKey(validEmail, validUuid, eventId)
+
+    const latencyMs = Date.now() - startTime
+    metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
+
+    if (!isbRecord) {
+      logger.debug("No lease record found via ISB API", {
+        eventId,
+        uuid: validUuid,
+        latencyMs,
+      })
+      metrics.addMetric("LeaseNotFound", MetricUnit.Count, 1)
+      return null
+    }
+
+    // Story 5.1 AC-2: Map ISB API response to LeaseRecord interface
+    const leaseRecord = mapISBRecordToLeaseRecord(isbRecord)
+
+    // Log schema fingerprint for monitoring (reusing existing pattern)
+    const fingerprint = generateSchemaFingerprint(isbRecord as unknown as Record<string, unknown>)
+    const fieldCount = Object.keys(isbRecord).length
+    logger.info("Lease record schema fingerprint", {
+      eventId,
+      fingerprint,
+      keyCount: fieldCount,
+      source: "isb-api",
+    })
+    metrics.addMetric("EnrichmentSchemaFields", MetricUnit.Count, fieldCount)
+
+    // Record success for circuit breaker
+    circuitBreaker.recordSuccess()
+
+    logger.debug("Lease record fetched successfully via ISB API", {
+      eventId,
+      latencyMs,
+      hasStatus: !!leaseRecord.status,
+      hasMaxSpend: leaseRecord.maxSpend !== undefined,
+    })
+
+    return leaseRecord
+  } catch (error) {
+    // Story 5.1 AC-5: Graceful degradation on errors
+    const latencyMs = Date.now() - startTime
+    logger.warn("ISB API lease fetch failed - proceeding without enrichment", {
+      eventId,
+      error: error instanceof Error ? error.message : String(error),
+      latencyMs,
+    })
+    metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
+    metrics.addMetric("ISBAPIError", MetricUnit.Count, 1)
+    circuitBreaker.recordFailure()
     return null
   }
+}
 
-  const dynamoClient = getDynamoDBClient()
-  const startTime = Date.now()
-  let retryCount = 0
-
-  // AC-9: Retry loop with 500ms backoff for throttling
-  while (retryCount <= THROTTLE_MAX_RETRIES) {
-    try {
-      logger.debug("Fetching lease record for enrichment", {
-        eventId,
-        userEmailHash: hashForLog(validEmail),
-        uuid: validUuid,
-        attempt: retryCount + 1,
-      })
-
-      // AC-1: Composite key query with GetItem
-      // AC-6.11: ConsistentRead: true for correctness
-      const command = new GetItemCommand({
-        TableName: tableName,
-        Key: {
-          userEmail: { S: validEmail },
-          uuid: { S: validUuid },
-        },
-        ConsistentRead: true,
-      })
-
-      const result = await dynamoClient.send(command)
-
-      // AC-5: Record query latency metric
-      const latencyMs = Date.now() - startTime
-      metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
-
-      if (!result.Item) {
-        logger.debug("No lease record found for enrichment", {
-          eventId,
-          uuid: validUuid,
-          latencyMs,
-        })
-        metrics.addMetric("LeaseNotFound", MetricUnit.Count, 1)
-        return null
-      }
-
-      const leaseRecord = unmarshall(result.Item) as LeaseRecord
-
-      // AC-10: Generate and log schema fingerprint for drift detection
-      const fingerprint = generateSchemaFingerprint(result.Item)
-      const fieldCount = Object.keys(result.Item).length
-      logger.info("Lease record schema fingerprint", {
-        eventId,
-        fingerprint,
-        keyCount: fieldCount,
-      })
-      metrics.addMetric("EnrichmentSchemaFields", MetricUnit.Count, fieldCount)
-
-      // Record success for circuit breaker
-      circuitBreaker.recordSuccess()
-
-      logger.debug("Lease record fetched successfully", {
-        eventId,
-        latencyMs,
-        hasStatus: !!leaseRecord.status,
-        hasMaxSpend: leaseRecord.maxSpend !== undefined,
-      })
-
-      return leaseRecord
-    } catch (error) {
-      // AC-9: Handle throttle with 500ms backoff retry
-      if (error instanceof ProvisionedThroughputExceededException) {
-        retryCount++
-        if (retryCount <= THROTTLE_MAX_RETRIES) {
-          logger.warn("DynamoDB throttled - retrying with backoff", {
-            eventId,
-            attempt: retryCount,
-            delayMs: THROTTLE_RETRY_DELAY_MS,
-          })
-          metrics.addMetric("EnrichmentThrottleRetry", MetricUnit.Count, 1)
-          await sleep(THROTTLE_RETRY_DELAY_MS)
-          continue
-        }
-
-        // Max retries exceeded
-        logger.warn("DynamoDB throttle retry exhausted - proceeding without enrichment", {
-          eventId,
-          attempts: retryCount,
-        })
-        circuitBreaker.recordFailure()
-        metrics.addMetric("EnrichmentThrottleExhausted", MetricUnit.Count, 1)
-        return null
-      }
-
-      // AC-9: Other errors fail immediately (no retry)
-      const latencyMs = Date.now() - startTime
-      logger.error("DynamoDB query failed", {
-        eventId,
-        error: error instanceof Error ? error.message : String(error),
-        latencyMs,
-      })
-      metrics.addMetric("EnrichmentQueryLatencyMs", MetricUnit.Milliseconds, latencyMs)
-      metrics.addMetric("DynamoDBError", MetricUnit.Count, 1)
-      metrics.addDimension("ErrorType", error instanceof Error ? error.name : "Unknown")
-
-      // For non-throttle errors, let the caller handle via circuit breaker
-      handleDynamoDBError(error, "LeaseTable", eventId)
-    }
+/**
+ * Story 5.1 AC-2: Map ISB API response to LeaseRecord interface
+ *
+ * Ensures field compatibility between ISB API response and existing LeaseRecord interface.
+ *
+ * @param isbRecord - Record from ISB API
+ * @returns LeaseRecord compatible with existing enrichment logic
+ */
+function mapISBRecordToLeaseRecord(isbRecord: ISBLeaseRecord): LeaseRecord {
+  return {
+    userEmail: isbRecord.userEmail,
+    uuid: isbRecord.uuid,
+    status: isbRecord.status,
+    templateName: isbRecord.templateName ?? isbRecord.originalLeaseTemplateName,
+    // Map awsAccountId to accountId for compatibility
+    accountId: isbRecord.accountId ?? isbRecord.awsAccountId,
+    expirationDate: isbRecord.expirationDate,
+    maxSpend: isbRecord.maxSpend,
+    totalCostAccrued: isbRecord.totalCostAccrued,
+    lastModified: isbRecord.lastModified,
   }
-
-  // Should not reach here, but return null for safety
-  return null
 }
 
 // =============================================================================
@@ -826,11 +671,7 @@ function extractLeaseKey(event: ValidatedEvent): { userEmail: string; uuid: stri
  * AC-6.38: 2-second timeout
  * AC-6.39, AC-6.16, AC-6.7: Graceful degradation with partial data
  */
-export async function enrichIfNeeded(
-  event: ValidatedEvent,
-  templateConfig: TemplateConfig,
-  dynamoClient: DynamoDBClient,
-): Promise<EnrichedData> {
+export async function enrichIfNeeded(event: ValidatedEvent, templateConfig: TemplateConfig): Promise<EnrichedData> {
   const eventId = event.eventId
   const startTime = Date.now()
 
@@ -861,12 +702,14 @@ export async function enrichIfNeeded(
     // AC-6.5: Build parallel query promises
     const queryPromises: Promise<void>[] = []
 
-    // Query LeaseTable if needed (AC-6.2)
+    // Query LeaseTable if needed (AC-6.2) - Use ISB API
     if (queries.includes("lease") && leaseKey) {
       queryPromises.push(
-        queryLeaseTable(dynamoClient, leaseKey.userEmail, leaseKey.uuid, eventId)
-          .then((lease) => {
-            if (lease) {
+        fetchLeaseByKey(leaseKey.userEmail, leaseKey.uuid, eventId)
+          .then((isbRecord) => {
+            if (isbRecord) {
+              // Map ISB record to lease record format
+              const lease = mapISBRecordToLeaseRecord(isbRecord)
               // AC-6.12: Include lastModified for debugging
               enrichedData._internalStatus = lease.status
               enrichedData.maxSpend = lease.maxSpend
@@ -881,7 +724,7 @@ export async function enrichIfNeeded(
           })
           .catch((error) => {
             // AC-6.7, AC-6.16: Log warning and continue
-            logger.warn("LeaseTable query failed - continuing with partial data", {
+            logger.warn("ISB API lease query failed - continuing with partial data", {
               eventId,
               error: error instanceof Error ? error.message : String(error),
             })
@@ -889,17 +732,17 @@ export async function enrichIfNeeded(
       )
     }
 
-    // Query SandboxAccountTable if needed (AC-6.3)
+    // Query account via ISB API if needed (AC-6.3)
     if (queries.includes("account") && detail.accountId) {
       queryPromises.push(
-        queryAccountTable(dynamoClient, detail.accountId, eventId)
+        queryAccountTable(detail.accountId, eventId)
           .then((account) => {
             if (account) {
               enrichedData.accountName = account.accountName
             }
           })
           .catch((error) => {
-            logger.warn("SandboxAccountTable query failed - continuing with partial data", {
+            logger.warn("ISB Accounts API query failed - continuing with partial data", {
               eventId,
               error: error instanceof Error ? error.message : String(error),
             })
@@ -907,17 +750,17 @@ export async function enrichIfNeeded(
       )
     }
 
-    // Query LeaseTemplateTable if needed (AC-6.4)
+    // Query template via ISB API if needed (AC-6.4)
     if (queries.includes("leaseTemplate") && enrichedData.templateName) {
       queryPromises.push(
-        queryLeaseTemplateTable(dynamoClient, enrichedData.templateName, eventId)
+        queryLeaseTemplateTable(enrichedData.templateName, eventId)
           .then((template) => {
             if (template) {
               // Template name already set from lease, but we could add description
             }
           })
           .catch((error) => {
-            logger.warn("LeaseTemplateTable query failed - continuing with partial data", {
+            logger.warn("ISB Templates API query failed - continuing with partial data", {
               eventId,
               error: error instanceof Error ? error.message : String(error),
             })

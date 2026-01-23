@@ -2,11 +2,12 @@
  * NDX Notification Handler - Entry Point
  *
  * This Lambda function processes EventBridge events from the Innovation Sandbox (ISB)
- * and routes them to appropriate notification channels:
- * - GOV.UK Notify for user emails
- * - Slack webhooks for ops alerts
+ * and routes them to GOV.UK Notify for user emails.
  *
- * Architecture: "One brain, two mouths" pattern
+ * Note: Slack notifications for ops alerts are handled by AWS Chatbot via
+ * EventBridge → SNS → Chatbot (Story 6.1). This Lambda no longer sends
+ * direct Slack webhooks (removed in Story 6.3).
+ *
  * @see docs/notification-architecture.md
  *
  * Security Controls:
@@ -25,10 +26,10 @@
 
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns"
 import type { EventBridgeEvent, HandlerResponse, NotificationEventType } from "./types"
 import { ALLOWED_SOURCES } from "./types"
 import { SecurityError } from "./errors"
-import { processSlackAlert, isSlackAlertType } from "./slack-alerts"
 import { validateEvent } from "./validation"
 import { validateAllTemplatesOnce } from "./template-validation"
 import { NotifySender } from "./notify-sender"
@@ -44,6 +45,127 @@ import {
 import { fetchLeaseRecord } from "./enrichment"
 import { flattenObject, addKeysParameter } from "./flatten"
 import { validateLeaseStatus, logFieldPresence } from "./lease-status"
+
+// SNS client for publishing Slack notifications
+const snsClient = new SNSClient({})
+
+// =========================================================================
+// Slack Notification Publishing (Story 6.1)
+// =========================================================================
+
+/**
+ * Publish enriched notification to SNS for AWS Chatbot → Slack
+ *
+ * Uses AWS Chatbot custom notification format:
+ * @see https://docs.aws.amazon.com/chatbot/latest/adminguide/custom-notifs.html
+ */
+async function publishSlackNotification(
+  event: EventBridgeEvent,
+  enrichedData: Record<string, string>,
+  eventId: string,
+): Promise<void> {
+  const topicArn = process.env.EVENTS_TOPIC_ARN
+  if (!topicArn) {
+    logger.debug("EVENTS_TOPIC_ARN not configured - skipping Slack notification", { eventId })
+    return
+  }
+
+  const eventType = event["detail-type"]
+  const detail = event.detail as Record<string, unknown>
+
+  // Extract user email from enriched data or event
+  const userEmail =
+    enrichedData.userEmail ||
+    enrichedData.principalEmail ||
+    (detail.userEmail as string) ||
+    (detail.principalEmail as string) ||
+    ""
+
+  // Extract template name from enriched data or event (ISB uses various field names)
+  const templateName =
+    enrichedData.templateName ||
+    enrichedData.leaseTemplateName ||
+    enrichedData.originalLeaseTemplateName ||
+    (detail.templateName as string) ||
+    (detail.leaseTemplateName as string) ||
+    (detail.originalLeaseTemplateName as string) ||
+    ""
+
+  // Extract lease ID
+  const leaseId = (typeof detail.leaseId === "string" ? detail.leaseId : enrichedData.uuid) || ""
+
+  // Extract account ID from enriched data or event
+  const accountId =
+    enrichedData.awsAccountId ||
+    enrichedData.accountId ||
+    (detail.accountId as string) ||
+    (detail.awsAccountId as string) ||
+    ""
+
+  // Build description lines (only include non-empty fields)
+  const descriptionParts: string[] = []
+  if (userEmail) descriptionParts.push(`*User:* ${userEmail}`)
+  if (templateName) descriptionParts.push(`*Template:* ${templateName}`)
+  if (leaseId) descriptionParts.push(`*Lease ID:* ${leaseId}`)
+  if (accountId) descriptionParts.push(`*Account:* ${accountId}`)
+
+  // AWS Chatbot custom notification format
+  const chatbotMessage = {
+    version: "1.0",
+    source: "custom",
+    content: {
+      textType: "client-markdown",
+      title: eventType,
+      description: descriptionParts.join("\n"),
+    },
+    metadata: {
+      eventType,
+      eventId,
+    },
+  }
+
+  // Log field resolution for debugging (INFO level to see in prod)
+  logger.info("Slack notification field resolution", {
+    detailKeys: Object.keys(detail),
+    eventId,
+    enrichedTemplateName: enrichedData.templateName,
+    enrichedLeaseTemplateName: enrichedData.leaseTemplateName,
+    enrichedOriginalLeaseTemplateName: enrichedData.originalLeaseTemplateName,
+    detailTemplateName: detail.templateName,
+    detailLeaseTemplateName: detail.leaseTemplateName,
+    resolvedTemplateName: templateName,
+    enrichedKeys: Object.keys(enrichedData).filter((k) => k.toLowerCase().includes("template")),
+  })
+
+  // Log the full Chatbot message for debugging
+  logger.info("Publishing Slack notification", {
+    eventId,
+    eventType,
+    chatbotMessage,
+  })
+
+  try {
+    await snsClient.send(
+      new PublishCommand({
+        TopicArn: topicArn,
+        Message: JSON.stringify(chatbotMessage),
+      }),
+    )
+
+    logger.info("Slack notification published successfully", {
+      eventId,
+      eventType,
+    })
+    metrics.addMetric("SlackNotificationSent", MetricUnit.Count, 1)
+  } catch (error) {
+    // Log but don't fail - Slack is best-effort
+    logger.warn("Failed to publish Slack notification", {
+      eventId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    })
+    metrics.addMetric("SlackNotificationFailed", MetricUnit.Count, 1)
+  }
+}
 
 // =========================================================================
 // Field Mapping (DynamoDB → GOV.UK Notify Templates)
@@ -218,19 +340,23 @@ export function validateEventSource(event: EventBridgeEvent): void {
 // =========================================================================
 
 /**
- * Determine which notification channel(s) to use based on event type
- * All events now go to Slack; user-facing events also get email (N5)
+ * Determine which notification channel(s) to use based on event type.
+ *
+ * Note: Slack notifications are now handled by AWS Chatbot via EventBridge → SNS.
+ * This function only determines if email notifications should be sent.
+ * Ops-only events (AccountCleanupFailed, AccountQuarantined, AccountDriftDetected)
+ * do NOT trigger email - they are ops alerts only via Chatbot.
  */
-function getNotificationChannels(eventType: NotificationEventType): ("email" | "slack")[] {
-  // Ops events go to Slack only (no user email)
+function getNotificationChannels(eventType: NotificationEventType): "email"[] {
+  // Ops events go to Chatbot only (no user email from this Lambda)
   const opsOnlyEvents: NotificationEventType[] = ["AccountCleanupFailed", "AccountQuarantined", "AccountDriftDetected"]
 
   if (opsOnlyEvents.includes(eventType)) {
-    return ["slack"]
+    return [] // No email for ops-only events
   }
 
-  // All lease lifecycle events go to both Slack (visibility) and email (user notification)
-  return ["email", "slack"]
+  // All lease lifecycle events get email notifications to users
+  return ["email"]
 }
 
 /**
@@ -323,17 +449,8 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
     // Step 3: Determine notification channels
     const channels = getNotificationChannels(eventType)
 
-    // Step 4: Process notifications for each channel
-    // Slack alerts (ops events)
-    if (channels.includes("slack") && isSlackAlertType(eventType)) {
-      const validatedEvent = validateEvent(event)
-
-      await processSlackAlert(validatedEvent as any)
-      logger.info("Slack alert sent successfully", {
-        eventId,
-        eventType: sanitizedEventType,
-      })
-    }
+    // Step 4: Process email notifications
+    // Note: Slack alerts are handled by AWS Chatbot via EventBridge → SNS (Story 6.1)
 
     // Email notifications (user events)
     if (channels.includes("email") && (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType))) {
@@ -519,6 +636,9 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
       if (enrichedData["_enriched"] === "true") {
         metrics.addMetric("EnrichedEmailSent", MetricUnit.Count, 1)
       }
+
+      // Publish enriched Slack notification via SNS → AWS Chatbot
+      await publishSlackNotification(event, mappedEnrichedData, eventId)
     }
 
     logger.info("Event processed successfully", {

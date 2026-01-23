@@ -45,14 +45,22 @@ export interface ISBConfig {
   readonly region: string
 
   /**
-   * DynamoDB table names for data enrichment (Epic N-5)
-   * Used to look up user email, lease details, sandbox account info
+   * Story 5.1: ISB Leases Lambda function name for direct invocation
+   * Used for fetching lease data - bypasses API Gateway authorization
    */
-  readonly dynamoDbTables: {
-    readonly leaseTable: string
-    readonly leaseTemplateTable: string
-    readonly sandboxAccountTable: string
-  }
+  readonly leasesLambdaName?: string
+
+  /**
+   * ISB Accounts Lambda function name for direct invocation
+   * Used for fetching account data - bypasses API Gateway authorization
+   */
+  readonly accountsLambdaName?: string
+
+  /**
+   * ISB Templates Lambda function name for direct invocation
+   * Used for fetching lease template data - bypasses API Gateway authorization
+   */
+  readonly templatesLambdaName?: string
 }
 
 /**
@@ -66,21 +74,19 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
     namespace: "InnovationSandboxCompute",
     accountId: "568672915267",
     region: "us-west-2",
-    dynamoDbTables: {
-      leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
-      leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
-      sandboxAccountTable: "ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV",
-    },
+    // ISB Lambda function names for direct invocation
+    leasesLambdaName: "ISB-LeasesLambdaFunction-ndx",
+    accountsLambdaName: "ISB-AccountsLambdaFunction-ndx",
+    templatesLambdaName: "ISB-LeaseTemplatesLambdaFunction-ndx",
   },
   staging: {
     namespace: "InnovationSandboxCompute",
     accountId: "568672915267",
     region: "us-west-2",
-    dynamoDbTables: {
-      leaseTable: "ndx-try-isb-data-LeaseTable473C6DF2-1RC3238PVASE1",
-      leaseTemplateTable: "ndx-try-isb-data-LeaseTemplateTable5128F8F4-4XYVHP9P7VE8",
-      sandboxAccountTable: "ndx-try-isb-data-SandboxAccountTableEFB9C069-198TPLJI6Z9KV",
-    },
+    // ISB Lambda function names for direct invocation (staging)
+    leasesLambdaName: "ISB-LeasesLambdaFunction-ndx",
+    accountsLambdaName: "ISB-AccountsLambdaFunction-ndx",
+    templatesLambdaName: "ISB-LeaseTemplatesLambdaFunction-ndx",
   },
 }
 
@@ -147,6 +153,59 @@ export const ISB_EVENT_TYPES = [
   "AccountCleanupFailed",
   "AccountDriftDetected",
 ] as const
+
+/**
+ * Story 6.1: All 18 ISB event types for AWS Chatbot integration
+ *
+ * This is the complete list of all ISB EventBridge event types that should
+ * be routed to AWS Chatbot for Slack visibility. Unlike ISB_EVENT_TYPES
+ * (which is filtered for Lambda notification processing), this list includes
+ * ALL events for comprehensive ops monitoring.
+ *
+ * @see _bmad-output/planning-artifacts/prd-ndx-try-enhancements.md - Event Classification Reference
+ */
+export const CHATBOT_EVENT_TYPES = [
+  // Lease lifecycle events (6)
+  "LeaseRequested",
+  "LeaseApproved",
+  "LeaseDenied",
+  "LeaseFrozen",
+  "LeaseUnfrozen",
+  "LeaseTerminated",
+  // Monitoring alert events (5)
+  "LeaseBudgetThresholdAlert",
+  "LeaseDurationThresholdAlert",
+  "LeaseFreezingThresholdAlert",
+  "LeaseBudgetExceeded",
+  "LeaseExpiredAlert",
+  // Operations events (4) - critical events marked
+  "AccountQuarantined", // critical
+  "AccountCleanupFailed", // critical
+  "AccountCleanupSucceeded",
+  "AccountDriftDetected", // critical
+  // Reporting events (2)
+  "GroupCostReportGenerated",
+  "GroupCostReportGeneratedFailure", // critical
+  // Account requests (1)
+  "CleanAccountRequest",
+] as const
+
+/**
+ * Story 6.1: AWS Chatbot Slack configuration
+ *
+ * These are the Slack workspace and channel IDs for AWS Chatbot integration.
+ * The workspace authorization is a one-time manual setup in AWS Console.
+ *
+ * @see _bmad-output/planning-artifacts/prd-ndx-try-enhancements.md - Slack Configuration
+ */
+export const CHATBOT_SLACK_CONFIG = {
+  /** Slack workspace ID (GDS workspace) */
+  workspaceId: "T8GT9416G",
+  /** Slack channel ID for #ndx-sandbox-alerts */
+  channelId: "C0A16HXLM0Q",
+  /** Configuration name for AWS Chatbot */
+  configurationName: "ndx-sandbox-alerts",
+} as const
 
 /**
  * The expected source field value for ISB events

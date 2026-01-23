@@ -1,4 +1,4 @@
-# generated: 2026-01-13
+# generated: 2026-01-21
 # project: ndx
 # tracking_system: file-system
 # story_location: _bmad-output/implementation-artifacts
@@ -32,7 +32,7 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-01-13
+generated: 2026-01-21
 project: ndx
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
@@ -69,3 +69,26 @@ development_status:
   4-3-policy-links-integration: done
   4-4-final-wcag-22-aa-audit: done
   epic-4-retrospective: optional
+
+  # ============================================
+  # NDX:Try Enhancements (prd-ndx-try-enhancements.md)
+  # ============================================
+
+  # Epic 5: Session Transparency
+  epic-5: done
+  5-1-replace-dynamodb-reads-with-isb-api: done
+  5-2-cloudformation-console-button: done
+  epic-5-retrospective: done
+
+  # Epic 6: Operations Notifications
+  epic-6: done
+  6-1-aws-chatbot-integration: done
+  6-2-critical-event-classification: done
+  6-3-remove-slack-webhook-code: done
+  epic-6-retrospective: done
+
+  # Epic 7: Product Discovery & Branding
+  epic-7: done
+  7-1-catalogue-links: done
+  7-2-branding-update: done
+  epic-7-retrospective: done

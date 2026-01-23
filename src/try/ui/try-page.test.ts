@@ -131,7 +131,7 @@ describe("Try Page Component (Story 5.9)", () => {
 
         // Assert
         const bodyText = container.querySelector(".govuk-body")
-        expect(bodyText?.textContent).toContain("Innovation Sandbox account")
+        expect(bodyText?.textContent).toContain("NDX:Try account")
         expect(bodyText?.textContent).toContain("AWS sandbox environments")
       })
 
@@ -300,7 +300,7 @@ describe("Try Page Component (Story 5.9)", () => {
 
       // Assert
       expect(container.innerHTML).toContain("New to Try Before You Buy?")
-      expect(container.innerHTML).toContain("Innovation Sandbox")
+      expect(container.innerHTML).toContain("NDX:Try")
     })
 
     it("should not show first-time guidance when leases exist", () => {

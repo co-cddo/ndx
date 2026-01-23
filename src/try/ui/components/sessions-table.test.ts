@@ -3,6 +3,7 @@
  *
  * Story 7.3: Render sessions table with GOV.UK Design System
  * Story 7.4: Status badge display with color coding
+ * Story 7-1: Catalogue links for template names
  *
  * Tests:
  * - Table rendering with leases
@@ -10,11 +11,18 @@
  * - Status badge colors
  * - Loading and error states
  * - XSS protection
+ * - Catalogue links (Story 7-1)
  *
  * @jest-environment jsdom
  */
 
-import { renderSessionsTable, renderLoadingState, renderErrorState } from "./sessions-table"
+import {
+  renderSessionsTable,
+  renderLoadingState,
+  renderErrorState,
+  getCatalogueUrl,
+  CATALOGUE_SLUGS,
+} from "./sessions-table"
 import { Lease } from "../../api/sessions-service"
 
 // Mock the dependencies
@@ -26,6 +34,11 @@ jest.mock("../../api/sessions-service", () => ({
   ),
   getPortalUrl: jest.fn(
     (lease: { awsAccountId: string }) => `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}`,
+  ),
+  // Story 5.2: CloudFormation console URL via SSO
+  getCfnConsoleUrl: jest.fn(
+    (lease: { awsAccountId: string }, region = "us-east-1") =>
+      `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=ndx_IsbUsersPS&destination=${encodeURIComponent(`https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}`)}`,
   ),
 }))
 
@@ -412,6 +425,94 @@ describe("Sessions Table Component", () => {
     })
   })
 
+  describe("Story 5.2: CloudFormation Button", () => {
+    it("should render CloudFormation button for Active leases", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      expect(html).toContain("Open CloudFormation")
+      expect(html).toContain('data-action="launch-cloudformation"')
+    })
+
+    it("should NOT render CloudFormation button for non-active leases", () => {
+      const html = renderSessionsTable([mockPendingLease])
+
+      expect(html).not.toContain("Open CloudFormation")
+      expect(html).not.toContain('data-action="launch-cloudformation"')
+    })
+
+    it("should NOT render CloudFormation button for expired leases", () => {
+      const html = renderSessionsTable([mockExpiredLease])
+
+      expect(html).not.toContain("Open CloudFormation")
+    })
+
+    it("should include correct CloudFormation URL format via SSO", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      // URL goes through SSO portal with destination parameter
+      expect(html).toContain(".awsapps.com/start/#/console")
+      expect(html).toContain("account_id=")
+      expect(html).toContain("destination=")
+      // CloudFormation URL is URL-encoded in the destination parameter
+      expect(html).toContain("cloudformation")
+    })
+
+    it("should include data attributes for analytics tracking", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      expect(html).toContain('data-action="launch-cloudformation"')
+      expect(html).toContain('data-lease-id="lease-123"')
+      expect(html).toContain('data-lease-template="AWS Lambda Sandbox"')
+      expect(html).toContain('data-budget="50"')
+      expect(html).toContain('data-expires="2025-01-02T00:00:00Z"')
+    })
+
+    it("should include visually hidden text for screen readers", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      // All three buttons should have visually hidden text
+      const matches = html.match(/govuk-visually-hidden.*?\(opens in new tab\)/g)
+      expect(matches).not.toBeNull()
+      expect(matches!.length).toBeGreaterThanOrEqual(3)
+    })
+
+    it("should open in new tab with security attributes", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      // Find the CloudFormation link specifically
+      const cfnLinkMatch = html.match(/<a[^>]*data-action="launch-cloudformation"[^>]*>/s)
+      expect(cfnLinkMatch).not.toBeNull()
+
+      const cfnLink = cfnLinkMatch![0]
+      expect(cfnLink).toContain('target="_blank"')
+      expect(cfnLink).toContain('rel="noopener noreferrer"')
+    })
+
+    it("should use correct GOV.UK button classes", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      // Find the CloudFormation link specifically
+      const cfnLinkMatch = html.match(/<a[^>]*data-action="launch-cloudformation"[^>]*>/s)
+      expect(cfnLinkMatch).not.toBeNull()
+
+      const cfnLink = cfnLinkMatch![0]
+      expect(cfnLink).toContain("govuk-button")
+      expect(cfnLink).toContain("govuk-button--secondary")
+    })
+
+    it("should render CloudFormation button as third button after CLI Credentials", () => {
+      const html = renderSessionsTable([mockActiveLease])
+
+      // Order should be: Launch AWS Console, Get CLI Credentials, Open CloudFormation
+      const consoleIndex = html.indexOf("Launch AWS Console")
+      const cliIndex = html.indexOf("Get CLI Credentials")
+      const cfnIndex = html.indexOf("Open CloudFormation")
+
+      expect(consoleIndex).toBeLessThan(cliIndex)
+      expect(cliIndex).toBeLessThan(cfnIndex)
+    })
+  })
+
   describe("Comments", () => {
     const mockLeaseWithComments: Lease = {
       ...mockActiveLease,
@@ -479,6 +580,211 @@ describe("Sessions Table Component", () => {
       const html = renderSessionsTable([mockLeaseWithComments])
 
       expect(html).toContain('colspan="6"')
+    })
+  })
+
+  describe("Story 7-1: Catalogue Links", () => {
+    describe("getCatalogueUrl", () => {
+      it("should return correct URL for Council Chatbot", () => {
+        expect(getCatalogueUrl("Council Chatbot")).toBe("/catalogue/aws/council-chatbot/")
+      })
+
+      it("should return correct URL for NDX:Try for AWS (empty sandbox)", () => {
+        expect(getCatalogueUrl("NDX:Try for AWS")).toBe("/catalogue/aws/innovation-sandbox-empty/")
+      })
+
+      it("should return correct URL for FOI Redaction", () => {
+        expect(getCatalogueUrl("FOI Redaction")).toBe("/catalogue/aws/foi-redaction/")
+      })
+
+      it("should return correct URL for LocalGov Drupal", () => {
+        expect(getCatalogueUrl("LocalGov Drupal")).toBe("/catalogue/aws/localgov-drupal/")
+      })
+
+      it("should return correct URL for Planning AI", () => {
+        expect(getCatalogueUrl("Planning AI")).toBe("/catalogue/aws/planning-ai/")
+      })
+
+      it("should return correct URL for QuickSight Dashboard", () => {
+        expect(getCatalogueUrl("QuickSight Dashboard")).toBe("/catalogue/aws/quicksight-dashboard/")
+      })
+
+      it("should return correct URL for Smart Car Park", () => {
+        expect(getCatalogueUrl("Smart Car Park")).toBe("/catalogue/aws/smart-car-park/")
+      })
+
+      it("should return correct URL for Text to Speech", () => {
+        expect(getCatalogueUrl("Text to Speech")).toBe("/catalogue/aws/text-to-speech/")
+      })
+
+      it("should return null for unknown template", () => {
+        expect(getCatalogueUrl("Unknown Template")).toBeNull()
+      })
+
+      it("should return null for empty string", () => {
+        expect(getCatalogueUrl("")).toBeNull()
+      })
+
+      it("should return null for whitespace-only string", () => {
+        expect(getCatalogueUrl("   ")).toBeNull()
+      })
+
+      it("should be case-sensitive (API returns exact names)", () => {
+        // Template names must match exactly - case matters
+        expect(getCatalogueUrl("foi redaction")).toBeNull()
+        expect(getCatalogueUrl("FOI REDACTION")).toBeNull()
+        expect(getCatalogueUrl("FOI Redaction")).toBe("/catalogue/aws/foi-redaction/")
+      })
+    })
+
+    describe("CATALOGUE_SLUGS mapping", () => {
+      it("should have exactly 8 templates mapped", () => {
+        expect(Object.keys(CATALOGUE_SLUGS)).toHaveLength(8)
+      })
+
+      it("should have all expected template names", () => {
+        const expectedTemplates = [
+          "Council Chatbot",
+          "NDX:Try for AWS",
+          "FOI Redaction",
+          "LocalGov Drupal",
+          "Planning AI",
+          "QuickSight Dashboard",
+          "Smart Car Park",
+          "Text to Speech",
+        ]
+
+        expectedTemplates.forEach((template) => {
+          expect(CATALOGUE_SLUGS).toHaveProperty(template)
+        })
+      })
+    })
+
+    describe("renderSessionsTable with catalogue links", () => {
+      const mockLeaseWithKnownTemplate: Lease = {
+        leaseId: "lease-foi",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template-foi",
+        leaseTemplateName: "FOI Redaction",
+        status: "Active",
+        createdAt: "2025-01-01T00:00:00Z",
+        expiresAt: "2025-01-02T00:00:00Z",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const mockLeaseWithUnknownTemplate: Lease = {
+        leaseId: "lease-unknown",
+        awsAccountId: "987654321098",
+        leaseTemplateId: "template-unknown",
+        leaseTemplateName: "Custom Internal Template",
+        status: "Active",
+        createdAt: "2025-01-01T00:00:00Z",
+        expiresAt: "2025-01-02T00:00:00Z",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      it("should render template name as link when mapping exists (AC-1, AC-2)", () => {
+        const html = renderSessionsTable([mockLeaseWithKnownTemplate])
+
+        expect(html).toContain(
+          '<a href="/catalogue/aws/foi-redaction/" class="govuk-link" data-action="view-catalogue">',
+        )
+        expect(html).toContain("<strong>FOI Redaction</strong>")
+        expect(html).toContain("</a>")
+      })
+
+      it("should include data-action attribute for analytics tracking", () => {
+        const html = renderSessionsTable([mockLeaseWithKnownTemplate])
+
+        expect(html).toContain('data-action="view-catalogue"')
+      })
+
+      it("should render template name as plain text when no mapping exists (AC-6)", () => {
+        const html = renderSessionsTable([mockLeaseWithUnknownTemplate])
+
+        expect(html).toContain("<strong>Custom Internal Template</strong>")
+        // Should NOT be wrapped in a link
+        expect(html).not.toContain('href="/catalogue/aws/custom-internal-template/')
+        // Should NOT have govuk-link class around the unknown template
+        expect(html).not.toMatch(/<a[^>]*class="govuk-link"[^>]*>.*Custom Internal Template.*<\/a>/s)
+      })
+
+      it("should use govuk-link class for links (AC-7)", () => {
+        const html = renderSessionsTable([mockLeaseWithKnownTemplate])
+
+        // Find the product cell link with govuk-link class
+        const productLinkMatch = html.match(/<a href="\/catalogue\/aws\/[^"]+"\s+class="govuk-link"[^>]*>/s)
+        expect(productLinkMatch).not.toBeNull()
+      })
+
+      it("should not include target=_blank for catalogue links (AC-3)", () => {
+        const html = renderSessionsTable([mockLeaseWithKnownTemplate])
+
+        // Find the catalogue link specifically
+        const catalogueLinkMatch = html.match(/<a href="\/catalogue\/aws\/foi-redaction\/"[^>]*>/s)
+        expect(catalogueLinkMatch).not.toBeNull()
+
+        const catalogueLink = catalogueLinkMatch![0]
+        // Should NOT open in new tab - internal navigation
+        expect(catalogueLink).not.toContain('target="_blank"')
+      })
+
+      it("should render multiple leases with mixed link/plain text correctly", () => {
+        const html = renderSessionsTable([mockLeaseWithKnownTemplate, mockLeaseWithUnknownTemplate])
+
+        // Known template should have link
+        expect(html).toContain('href="/catalogue/aws/foi-redaction/"')
+        // Unknown template should be plain text
+        expect(html).toContain("<strong>Custom Internal Template</strong>")
+      })
+
+      it("should escape HTML in template name even in links (XSS protection)", () => {
+        const xssLease: Lease = {
+          ...mockLeaseWithKnownTemplate,
+          leaseTemplateName: '<script>alert("XSS")</script>',
+        }
+
+        const html = renderSessionsTable([xssLease])
+
+        // Should NOT contain unescaped script tag
+        expect(html).not.toContain('<script>alert("XSS")</script>')
+        // Should contain escaped version
+        expect(html).toContain("&lt;script&gt;")
+        // Should NOT have a link (unknown template)
+        expect(html).not.toContain('href="/catalogue/aws/')
+      })
+
+      it("should render descriptive link text using template name (AC-4)", () => {
+        const html = renderSessionsTable([mockLeaseWithKnownTemplate])
+
+        // Link text should be the template name, not "click here" or similar
+        expect(html).toContain("<strong>FOI Redaction</strong>")
+        expect(html).not.toContain("click here")
+        expect(html).not.toContain("Learn more")
+      })
+
+      it("should render all 8 known templates as links", () => {
+        const allTemplates: Lease[] = Object.keys(CATALOGUE_SLUGS).map((templateName, index) => ({
+          leaseId: `lease-${index}`,
+          awsAccountId: `${100000000000 + index}`,
+          leaseTemplateId: `template-${index}`,
+          leaseTemplateName: templateName,
+          status: "Active" as const,
+          createdAt: "2025-01-01T00:00:00Z",
+          expiresAt: "2025-01-02T00:00:00Z",
+          maxSpend: 50,
+          currentSpend: 0,
+        }))
+
+        const html = renderSessionsTable(allTemplates)
+
+        // All 8 templates should have catalogue links
+        Object.entries(CATALOGUE_SLUGS).forEach(([_name, slug]) => {
+          expect(html).toContain(`href="/catalogue/aws/${slug}/"`)
+        })
+      })
     })
   })
 })

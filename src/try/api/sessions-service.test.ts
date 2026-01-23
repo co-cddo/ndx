@@ -19,6 +19,7 @@ import {
   isLeasePending,
   getSsoUrl,
   getPortalUrl,
+  getCfnConsoleUrl,
   Lease,
   LeaseStatus,
 } from "./sessions-service"
@@ -638,6 +639,76 @@ describe("Sessions Service", () => {
       const url = getPortalUrl(lease)
 
       expect(url).toBe("https://custom.example.com/sso")
+    })
+  })
+
+  describe("getCfnConsoleUrl", () => {
+    it("should return SSO URL with CloudFormation destination for default region (us-east-1)", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getCfnConsoleUrl(lease)
+
+      // Should use SSO portal with account_id, role_name, and destination parameters
+      expect(url).toContain(".awsapps.com/start/#/console")
+      expect(url).toContain("account_id=123456789012")
+      expect(url).toContain("role_name=")
+      expect(url).toContain("destination=")
+      // Destination should be URL-encoded CloudFormation URL
+      expect(url).toContain(
+        encodeURIComponent("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1"),
+      )
+    })
+
+    it("should accept a custom region parameter", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getCfnConsoleUrl(lease, "eu-west-1")
+
+      expect(url).toContain("account_id=123456789012")
+      expect(url).toContain(
+        encodeURIComponent("https://eu-west-1.console.aws.amazon.com/cloudformation/home?region=eu-west-1"),
+      )
+    })
+
+    it("should work with us-west-2 region", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123456789012",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Active",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      const url = getCfnConsoleUrl(lease, "us-west-2")
+
+      expect(url).toContain("account_id=123456789012")
+      expect(url).toContain(
+        encodeURIComponent("https://us-west-2.console.aws.amazon.com/cloudformation/home?region=us-west-2"),
+      )
     })
   })
 })

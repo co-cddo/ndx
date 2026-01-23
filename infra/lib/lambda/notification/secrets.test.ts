@@ -58,9 +58,9 @@ import {
 const SecretsManagerServiceException = MockSecretsManagerServiceException
 
 describe("Secrets Manager Integration", () => {
+  // Note: slackWebhookUrl removed in Story 6.3. Slack visibility now via AWS Chatbot.
   const validSecrets = {
     notifyApiKey: "test-notify-key-xxx-yyy-zzz",
-    slackWebhookUrl: "https://hooks.slack.com/services/T00/B00/xxx",
   }
 
   beforeEach(() => {
@@ -198,45 +198,22 @@ describe("Secrets Manager Integration", () => {
 
     test("throws CriticalError when notifyApiKey is missing", async () => {
       mockSend.mockResolvedValueOnce({
-        SecretString: JSON.stringify({
-          slackWebhookUrl: "https://hooks.slack.com/services/xxx",
-        }),
+        SecretString: JSON.stringify({}),
       })
 
       await expect(getSecrets()).rejects.toThrow(CriticalError)
 
       clearSecretsCache()
       mockSend.mockResolvedValueOnce({
-        SecretString: JSON.stringify({
-          slackWebhookUrl: "https://hooks.slack.com/services/xxx",
-        }),
+        SecretString: JSON.stringify({}),
       })
-      await expect(getSecrets()).rejects.toThrow("missing required fields")
+      await expect(getSecrets()).rejects.toThrow("missing required field")
     })
 
-    test("throws CriticalError when slackWebhookUrl is missing", async () => {
-      mockSend.mockResolvedValueOnce({
-        SecretString: JSON.stringify({
-          notifyApiKey: "test-key",
-        }),
-      })
-
-      await expect(getSecrets()).rejects.toThrow(CriticalError)
-
-      clearSecretsCache()
-      mockSend.mockResolvedValueOnce({
-        SecretString: JSON.stringify({
-          notifyApiKey: "test-key",
-        }),
-      })
-      await expect(getSecrets()).rejects.toThrow("missing required fields")
-    })
-
-    test("throws CriticalError when fields are empty strings", async () => {
+    test("throws CriticalError when notifyApiKey is empty string", async () => {
       mockSend.mockResolvedValueOnce({
         SecretString: JSON.stringify({
           notifyApiKey: "",
-          slackWebhookUrl: "https://hooks.slack.com/services/xxx",
         }),
       })
 

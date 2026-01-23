@@ -20,7 +20,7 @@ import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
-import { trackSessionAccess, trackCliCredentials } from "../analytics"
+import { trackSessionAccess, trackCliCredentials, trackCloudFormationAccess } from "../analytics"
 import "./styles/sessions-table.css"
 
 /**
@@ -140,6 +140,17 @@ export function initTryPage(): (() => void) | undefined {
       // Show instruction alert - link handles navigation after alert is dismissed
       window.alert("On the page that opens, click 'Access keys' to view your CLI credentials.")
     }
+
+    // Story 5.2: Open CloudFormation - track access
+    const cfnLink = target.closest('[data-action="launch-cloudformation"]') as HTMLElement | null
+    if (cfnLink) {
+      trackCloudFormationAccess(
+        cfnLink.dataset.leaseId || "",
+        cfnLink.dataset.leaseTemplate || "",
+        cfnLink.dataset.budget || "",
+        cfnLink.dataset.expires || "",
+      )
+    }
   })
 
   // Return cleanup function for proper teardown
@@ -178,7 +189,7 @@ async function loadAndRenderSessions(): Promise<void> {
 
       <h2 class="govuk-heading-m">Want to try more products?</h2>
       <p class="govuk-body">
-        Browse our catalogue to find products available for evaluation through the Innovation Sandbox programme.
+        Browse our catalogue to find products available for evaluation through the NDX:Try programme.
       </p>
       <a href="/catalogue/tags/try-before-you-buy" class="govuk-link">
         Browse products you can try
@@ -222,7 +233,7 @@ export function renderEmptyState(container: HTMLElement): void {
     container.innerHTML = `
       <h1 class="govuk-heading-l">Sign in to view your try sessions</h1>
       <p class="govuk-body">
-        You need to sign in with your Innovation Sandbox account to request and manage AWS sandbox environments.
+        You need to sign in with your NDX:Try account to request and manage AWS sandbox environments.
       </p>
       <button type="button" class="govuk-button govuk-button--start" data-module="govuk-button" id="try-page-sign-in">
         Sign in
@@ -302,7 +313,7 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
     <h2 class="govuk-heading-m">Want to try more products?</h2>
     <p class="govuk-body">
-      Browse our catalogue to find products available for evaluation through the Innovation Sandbox programme.
+      Browse our catalogue to find products available for evaluation through the NDX:Try programme.
     </p>
     <a href="/catalogue/tags/try-before-you-buy" class="govuk-link">
       Browse products you can try
@@ -325,7 +336,7 @@ function renderFirstTimeGuidance(): string {
     <div class="govuk-inset-text govuk-!-margin-top-6">
       <h3 class="govuk-heading-s">New to Try Before You Buy?</h3>
       <p class="govuk-body">
-        With Innovation Sandbox, you can evaluate AWS products in a secure sandbox environment.
+        With NDX:Try, you can evaluate AWS products in a secure sandbox environment.
         Here's how to get started:
       </p>
       <ol class="govuk-list govuk-list--number">

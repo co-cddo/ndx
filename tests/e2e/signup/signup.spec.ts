@@ -12,7 +12,8 @@ import { test, expect } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 
 test.describe("Signup Feature", () => {
-  test.describe("Story 1.5: Signup Form", () => {
+  // Temporarily skip: signup form replaced with "coming soon" message until Feb 2026
+  test.describe.skip("Story 1.5: Signup Form", () => {
     test("should display signup form with all required fields", async ({ page }) => {
       await page.goto("/signup/")
 
@@ -176,7 +177,8 @@ test.describe("Signup Feature", () => {
       await expect(cookiesLink).toHaveText("Cookies")
     })
 
-    test("signup form privacy link is visible", async ({ page }) => {
+    // Temporarily skip: signup form replaced with "coming soon" message until Feb 2026
+    test.skip("signup form privacy link is visible", async ({ page }) => {
       await page.goto("/signup/")
 
       // Find privacy link above submit button (not the one in footer)

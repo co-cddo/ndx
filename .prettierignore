@@ -4,3 +4,11 @@ docs
 
 # Generated bundles
 src/assets/try.bundle.js
+
+# TypeScript compiled output
+*.d.ts
+infra/lib/**/*.js
+infra/test/**/*.js
+infra/bin/**/*.js
+infra/*.js
+!infra/jest*.js

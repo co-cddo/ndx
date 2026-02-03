@@ -1672,9 +1672,9 @@ describe("buildPersonalisation with Monitoring Events", () => {
 
 describe("formatUKDateLong", () => {
   test("Formats date in long UK format with weekday", () => {
-    // Tuesday, 10 February 2026 at 14:30 UTC
+    // Tuesday, 10 February 2026 at 14:30 UTC (comma after weekday varies by platform)
     const result = formatUKDateLong("2026-02-10T14:30:00Z", "UTC")
-    expect(result).toBe("Tuesday, 10 February 2026 at 14:30")
+    expect(result).toMatch(/Tuesday,? 10 February 2026 at 14:30/)
   })
 
   test("Handles Date object input", () => {
@@ -1687,8 +1687,8 @@ describe("formatUKDateLong", () => {
   test("Defaults to Europe/London timezone", () => {
     // During UK summer time (BST), UTC+1
     const summerDate = formatUKDateLong("2026-07-15T12:00:00Z")
-    // Should be formatted, with day of week and month name (format: "Wednesday, 15 July 2026 at 13:00")
-    expect(summerDate).toMatch(/\w+, \d+ \w+ \d{4} at \d{2}:\d{2}/)
+    // Should be formatted, with day of week and month name (comma after weekday varies by platform)
+    expect(summerDate).toMatch(/\w+,? \d+ \w+ \d{4} at \d{2}:\d{2}/)
   })
 
   test("Does not include seconds", () => {
@@ -1815,10 +1815,10 @@ describe("buildLeaseCostsGeneratedPersonalisation", () => {
 
   test("Formats urlExpiresAt in long UK format with weekday", () => {
     const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
-    // Should contain weekday, day, month name, year, and time (format: "Tuesday, 10 February 2026 at 14:30")
+    // Should contain weekday, day, month name, year, and time (comma after weekday varies by platform)
     expect(result.urlExpiresAt).toContain("2026")
     expect(result.urlExpiresAt).toContain("February")
-    expect(result.urlExpiresAt).toMatch(/\w+, \d+ \w+ \d{4} at \d{2}:\d{2}/)
+    expect(result.urlExpiresAt).toMatch(/\w+,? \d+ \w+ \d{4} at \d{2}:\d{2}/)
   })
 
   test("Uses enriched templateName when provided", () => {

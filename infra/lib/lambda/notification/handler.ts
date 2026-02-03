@@ -39,6 +39,7 @@ import {
   buildPersonalisation,
   isLeaseLifecycleEvent,
   isMonitoringAlertEvent,
+  isBillingEvent,
   formatCurrency,
   formatUKDate,
 } from "./templates"
@@ -453,7 +454,10 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
     // Note: Slack alerts are handled by AWS Chatbot via EventBridge → SNS (Story 6.1)
 
     // Email notifications (user events)
-    if (channels.includes("email") && (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType))) {
+    if (
+      channels.includes("email") &&
+      (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType) || isBillingEvent(eventType))
+    ) {
       const validatedEvent = validateEvent(event)
 
       // Get template configuration
@@ -585,8 +589,19 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
         })
       }
 
-      // Build personalisation from event data (enrichedData passed for reference)
-      const personalisation = buildPersonalisation(validatedEvent)
+      // Build personalisation from event data
+      // For billing events, pass enriched data so templateName can be used (with fallback)
+      // Convert flattened enrichedData to EnrichedData format if we have enrichment
+      const enrichedDataForBuilder =
+        enrichedData["_enriched"] === "true"
+          ? {
+              templateName: enrichedData.templateName || enrichedData.leaseTemplateName || enrichedData.name,
+              maxSpend: enrichedData.maxSpend ? parseFloat(enrichedData.maxSpend) : undefined,
+              enrichedAt: new Date().toISOString(),
+            }
+          : undefined
+
+      const personalisation = buildPersonalisation(validatedEvent, enrichedDataForBuilder)
 
       // N7-4 AC-1: Merge with enriched data (enriched takes precedence)
       // Convert personalisation values to strings for consistency
@@ -635,6 +650,10 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
       metrics.addMetric("EmailSent", MetricUnit.Count, 1)
       if (enrichedData["_enriched"] === "true") {
         metrics.addMetric("EnrichedEmailSent", MetricUnit.Count, 1)
+      }
+      // Billing-specific metric for monitoring billing notification success rate
+      if (isBillingEvent(eventType)) {
+        metrics.addMetric("BillingEmailSent", MetricUnit.Count, 1)
       }
 
       // Publish enriched Slack notification via SNS → AWS Chatbot

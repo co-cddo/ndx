@@ -23,6 +23,7 @@ import {
   LeaseFreezingThresholdAlertDetailSchema,
   LeaseBudgetExceededDetailSchema,
   LeaseExpiredDetailSchema,
+  LeaseCostsGeneratedDetailSchema,
   EVENT_SCHEMAS,
 } from "./validation"
 import { PermanentError } from "./errors"
@@ -206,6 +207,102 @@ describe("AC-2.1: All 10 user notification event type schemas", () => {
       expiredAt: "2025-12-05T10:00:00Z",
     }
     expect(() => LeaseExpiredDetailSchema.parse(detail)).not.toThrow()
+  })
+
+  it("should have LeaseCostsGenerated schema", () => {
+    expect(EVENT_SCHEMAS.LeaseCostsGenerated).toBeDefined()
+  })
+})
+
+// =============================================================================
+// LeaseCostsGenerated Schema Tests (Billing Events)
+// =============================================================================
+
+describe("LeaseCostsGeneratedDetailSchema validation", () => {
+  const validLeaseCostsDetail = {
+    leaseId: validUuid,
+    userEmail: validEmail,
+    accountId: validAccountId,
+    totalCost: 45.67,
+    currency: "USD" as const,
+    startDate: "2026-01-01",
+    endDate: "2026-01-08",
+    csvUrl: "https://example.com/costs.csv",
+    urlExpiresAt: "2026-02-10T14:30:00Z",
+  }
+
+  it("should accept valid LeaseCostsGenerated event", () => {
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(validLeaseCostsDetail)).not.toThrow()
+  })
+
+  it("should accept zero totalCost", () => {
+    const detail = { ...validLeaseCostsDetail, totalCost: 0 }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).not.toThrow()
+  })
+
+  it("should accept negative totalCost (AWS credits/refunds)", () => {
+    const detail = { ...validLeaseCostsDetail, totalCost: -10 }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).not.toThrow()
+  })
+
+  it("should reject missing leaseId", () => {
+    const { leaseId: _leaseId, ...detail } = validLeaseCostsDetail
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid leaseId (not UUID)", () => {
+    const detail = { ...validLeaseCostsDetail, leaseId: "not-a-uuid" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject missing userEmail", () => {
+    const { userEmail: _userEmail, ...detail } = validLeaseCostsDetail
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid userEmail", () => {
+    const detail = { ...validLeaseCostsDetail, userEmail: "not-an-email" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject missing accountId", () => {
+    const { accountId: _accountId, ...detail } = validLeaseCostsDetail
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid accountId (not 12 digits)", () => {
+    const detail = { ...validLeaseCostsDetail, accountId: "12345" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject currency other than USD", () => {
+    const detail = { ...validLeaseCostsDetail, currency: "GBP" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid startDate format", () => {
+    const detail = { ...validLeaseCostsDetail, startDate: "01-01-2026" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid endDate format", () => {
+    const detail = { ...validLeaseCostsDetail, endDate: "2026/01/08" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid csvUrl", () => {
+    const detail = { ...validLeaseCostsDetail, csvUrl: "not-a-url" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject invalid urlExpiresAt (not ISO 8601)", () => {
+    const detail = { ...validLeaseCostsDetail, urlExpiresAt: "Feb 10, 2026" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
+  })
+
+  it("should reject unknown fields (strict mode)", () => {
+    const detail = { ...validLeaseCostsDetail, extraField: "should fail" }
+    expect(() => LeaseCostsGeneratedDetailSchema.parse(detail)).toThrow()
   })
 })
 

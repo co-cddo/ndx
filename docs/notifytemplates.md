@@ -130,9 +130,14 @@ Your NDX:Try AWS Session has now ended and your session has been terminated.
 
 * account ID: ((accountId))
 * reason: ((reason))
-* final cost: ((finalCost))
 
 All resources in your AWS account have been cleaned up as part of our standard process.
+
+# What happens next
+
+You'll receive a separate email within approximately 24 hours with a breakdown of the costs from your session. This short delay is because AWS needs time to gather all the billing information.
+
+Don't worry - this is just for your information. There's no charge to you for using NDX:Try.
 
 # Need another NDX:Try session?
 
@@ -152,6 +157,44 @@ The National Digital Exchange Team, GDS
 ---
 ((linkInstructions))
 ((plainTextLink))
+```
+
+---
+
+# LeaseCostsGenerated
+
+**Subject:** Your NDX:Try session cost breakdown is ready to download
+
+**Body:**
+
+```
+Hi ((userName)),
+
+Your cost breakdown for your ((templateName)) NDX:Try session is now ready to download.
+
+**Important: There is no charge to you.** We're sharing this information to help you understand what these AWS services would cost if you were to use them outside of the NDX:Try environment.
+
+# Your session summary
+
+* template: ((templateName))
+* billing period: ((startDate)) to ((endDate))
+* total cost: ((totalCost)) (AWS bills in US dollars)
+
+# Download your detailed breakdown
+
+Your detailed CSV breakdown is available here:
+((csvUrl))
+
+This link will expire on ((urlExpiresAt)). After this date, the link will no longer work.
+
+The CSV includes a line-by-line breakdown of costs by AWS service, so you can see exactly what resources were used during your session.
+
+**Remember: This is for information only - there is no charge to you for using NDX:Try.**
+
+If you have any questions about your cost breakdown, please email us at ndx@dsit.gov.uk or reach out on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack.
+
+Kind regards,
+The National Digital Exchange Team, GDS
 ```
 
 ---

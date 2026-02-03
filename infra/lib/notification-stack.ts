@@ -169,6 +169,8 @@ export class NdxNotificationStack extends cdk.Stack {
         NOTIFY_TEMPLATE_BUDGET_EXCEEDED: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
         NOTIFY_TEMPLATE_LEASE_EXPIRED: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
         NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
+        // Billing events
+        NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
         // ISB Lambda function names for direct invocation
         // All data is now fetched via ISB APIs instead of direct DynamoDB access
         ...(isbConfig.leasesLambdaName && { ISB_LEASES_LAMBDA_NAME: isbConfig.leasesLambdaName }),

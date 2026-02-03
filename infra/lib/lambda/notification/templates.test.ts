@@ -15,6 +15,7 @@ import {
   RESUME_INSTRUCTIONS,
   LEASE_LIFECYCLE_EVENTS,
   MONITORING_ALERT_EVENTS,
+  BILLING_EVENTS,
   LINK_INSTRUCTIONS,
   DEFAULT_TIMEZONE,
   getTemplateConfig,
@@ -37,11 +38,14 @@ import {
   buildBudgetExceededPersonalisation,
   buildLeaseExpiredPersonalisation,
   buildLeaseFrozenPersonalisation,
+  buildLeaseCostsGeneratedPersonalisation,
   buildPersonalisation,
   isLeaseLifecycleEvent,
   isMonitoringAlertEvent,
+  isBillingEvent,
   formatCurrency,
   formatUKDate,
+  formatUKDateLong,
   formatPercentage,
   getBudgetDisclaimer,
   detectEnrichmentConflict,
@@ -1659,5 +1663,230 @@ describe("buildPersonalisation with Monitoring Events", () => {
     expect(result._internalStatus).toBeUndefined()
     expect(result.status).toBeUndefined()
     expect(Object.values(result)).not.toContain("Active")
+  })
+})
+
+// =============================================================================
+// Billing Events Tests (LeaseCostsGenerated)
+// =============================================================================
+
+describe("formatUKDateLong", () => {
+  test("Formats date in long UK format with weekday", () => {
+    // Tuesday, 10 February 2026 at 14:30 UTC
+    const result = formatUKDateLong("2026-02-10T14:30:00Z", "UTC")
+    expect(result).toBe("Tuesday, 10 February 2026 at 14:30")
+  })
+
+  test("Handles Date object input", () => {
+    const date = new Date("2026-12-25T09:00:00Z")
+    const result = formatUKDateLong(date, "UTC")
+    expect(result).toContain("December 2026")
+    expect(result).toContain("09:00")
+  })
+
+  test("Defaults to Europe/London timezone", () => {
+    // During UK summer time (BST), UTC+1
+    const summerDate = formatUKDateLong("2026-07-15T12:00:00Z")
+    // Should be formatted, with day of week and month name (format: "Wednesday, 15 July 2026 at 13:00")
+    expect(summerDate).toMatch(/\w+, \d+ \w+ \d{4} at \d{2}:\d{2}/)
+  })
+
+  test("Does not include seconds", () => {
+    const result = formatUKDateLong("2026-02-10T14:30:45Z", "UTC")
+    // Should NOT contain :45 seconds
+    expect(result).not.toContain(":45")
+    expect(result).toContain("14:30")
+  })
+})
+
+describe("isBillingEvent", () => {
+  test("Returns true for LeaseCostsGenerated", () => {
+    expect(isBillingEvent("LeaseCostsGenerated")).toBe(true)
+  })
+
+  test("Returns false for lease lifecycle events", () => {
+    expect(isBillingEvent("LeaseRequested")).toBe(false)
+    expect(isBillingEvent("LeaseApproved")).toBe(false)
+    expect(isBillingEvent("LeaseTerminated")).toBe(false)
+  })
+
+  test("Returns false for monitoring alert events", () => {
+    expect(isBillingEvent("LeaseBudgetThresholdAlert")).toBe(false)
+    expect(isBillingEvent("LeaseExpired")).toBe(false)
+  })
+
+  test("BILLING_EVENTS array includes LeaseCostsGenerated", () => {
+    expect(BILLING_EVENTS).toContain("LeaseCostsGenerated")
+  })
+})
+
+describe("LeaseCostsGenerated Template Configuration", () => {
+  test("Template uses NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED env var", () => {
+    expect(NOTIFY_TEMPLATES.LeaseCostsGenerated.templateIdEnvVar).toBe("NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED")
+  })
+
+  test("Template requires userName, templateName, totalCost, startDate, endDate, csvUrl, urlExpiresAt", () => {
+    const config = NOTIFY_TEMPLATES.LeaseCostsGenerated
+    expect(config.requiredFields).toContain("userName")
+    expect(config.requiredFields).toContain("templateName")
+    expect(config.requiredFields).toContain("totalCost")
+    expect(config.requiredFields).toContain("startDate")
+    expect(config.requiredFields).toContain("endDate")
+    expect(config.requiredFields).toContain("csvUrl")
+    expect(config.requiredFields).toContain("urlExpiresAt")
+  })
+
+  test("Template has no optional fields", () => {
+    const config = NOTIFY_TEMPLATES.LeaseCostsGenerated
+    expect(config.optionalFields).toEqual([])
+  })
+
+  test("Template requires lease enrichment for templateName", () => {
+    const config = NOTIFY_TEMPLATES.LeaseCostsGenerated
+    expect(config.enrichmentQueries).toContain("lease")
+  })
+})
+
+describe("buildLeaseCostsGeneratedPersonalisation", () => {
+  const mockLeaseCostsEvent: ValidatedEvent<any> = {
+    eventType: "LeaseCostsGenerated",
+    eventId: "event-123",
+    source: "isb-costs",
+    timestamp: "2026-02-03T12:00:00Z",
+    detail: {
+      leaseId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "test.user@example.gov.uk",
+      accountId: "123456789012",
+      totalCost: 45.67,
+      currency: "USD",
+      startDate: "2026-01-01",
+      endDate: "2026-01-08",
+      csvUrl: "https://example.com/costs.csv",
+      urlExpiresAt: "2026-02-10T14:30:00Z",
+    },
+  }
+
+  test("Includes all required fields", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+
+    expect(result.userName).toBe("test.user")
+    expect(result.totalCost).toBe("$45.67")
+    expect(result.csvUrl).toBe("https://example.com/costs.csv")
+  })
+
+  test("Extracts userName from email", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    expect(result.userName).toBe("test.user")
+  })
+
+  test("Formats totalCost as USD with $ symbol", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    expect(result.totalCost).toBe("$45.67")
+  })
+
+  test("Handles zero totalCost", () => {
+    const event = {
+      ...mockLeaseCostsEvent,
+      detail: { ...mockLeaseCostsEvent.detail, totalCost: 0 },
+    }
+    const result = buildLeaseCostsGeneratedPersonalisation(event)
+    expect(result.totalCost).toBe("$0.00")
+  })
+
+  test("Handles negative totalCost (AWS credits/refunds)", () => {
+    const event = {
+      ...mockLeaseCostsEvent,
+      detail: { ...mockLeaseCostsEvent.detail, totalCost: -15.50 },
+    }
+    const result = buildLeaseCostsGeneratedPersonalisation(event)
+    // formatCurrency handles negative values - shows as -$15.50
+    expect(result.totalCost).toBe("-$15.50")
+  })
+
+  test("Formats startDate in UK date format (DD/MM/YYYY)", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    expect(result.startDate).toBe("01/01/2026")
+  })
+
+  test("Formats endDate in UK date format (DD/MM/YYYY)", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    expect(result.endDate).toBe("08/01/2026")
+  })
+
+  test("Formats urlExpiresAt in long UK format with weekday", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    // Should contain weekday, day, month name, year, and time (format: "Tuesday, 10 February 2026 at 14:30")
+    expect(result.urlExpiresAt).toContain("2026")
+    expect(result.urlExpiresAt).toContain("February")
+    expect(result.urlExpiresAt).toMatch(/\w+, \d+ \w+ \d{4} at \d{2}:\d{2}/)
+  })
+
+  test("Uses enriched templateName when provided", () => {
+    const enrichedData: EnrichedData = {
+      enrichedAt: "2026-02-03T12:00:00Z",
+      templateName: "Machine Learning Sandbox",
+    }
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent, enrichedData)
+    expect(result.templateName).toBe("Machine Learning Sandbox")
+  })
+
+  test("Falls back to default templateName when enrichment is missing", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    expect(result.templateName).toBe("NDX:Try Session")
+  })
+
+  test("Falls back to default templateName when enrichedData has no templateName", () => {
+    const enrichedData: EnrichedData = {
+      enrichedAt: "2026-02-03T12:00:00Z",
+      // No templateName
+    }
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent, enrichedData)
+    expect(result.templateName).toBe("NDX:Try Session")
+  })
+
+  test("Passes through csvUrl directly", () => {
+    const result = buildLeaseCostsGeneratedPersonalisation(mockLeaseCostsEvent)
+    expect(result.csvUrl).toBe("https://example.com/costs.csv")
+  })
+})
+
+describe("buildPersonalisation with LeaseCostsGenerated", () => {
+  const mockLeaseCostsEvent: ValidatedEvent<any> = {
+    eventType: "LeaseCostsGenerated",
+    eventId: "event-123",
+    source: "isb-costs",
+    timestamp: "2026-02-03T12:00:00Z",
+    detail: {
+      leaseId: "550e8400-e29b-41d4-a716-446655440000",
+      userEmail: "test@example.gov.uk",
+      accountId: "123456789012",
+      totalCost: 100,
+      currency: "USD",
+      startDate: "2026-01-01",
+      endDate: "2026-01-08",
+      csvUrl: "https://example.com/costs.csv",
+      urlExpiresAt: "2026-02-10T14:30:00Z",
+    },
+  }
+
+  test("Dispatches LeaseCostsGenerated to correct builder", () => {
+    const result = buildPersonalisation(mockLeaseCostsEvent)
+
+    expect(result.totalCost).toBe("$100.00")
+    expect(result.csvUrl).toBe("https://example.com/costs.csv")
+  })
+
+  test("Uses enriched templateName when provided", () => {
+    const enrichedData: EnrichedData = {
+      enrichedAt: "2026-02-03T12:00:00Z",
+      templateName: "Data Science Sandbox",
+    }
+    const result = buildPersonalisation(mockLeaseCostsEvent, enrichedData)
+    expect(result.templateName).toBe("Data Science Sandbox")
+  })
+
+  test("Falls back to default templateName without enrichment", () => {
+    const result = buildPersonalisation(mockLeaseCostsEvent)
+    expect(result.templateName).toBe("NDX:Try Session")
   })
 })

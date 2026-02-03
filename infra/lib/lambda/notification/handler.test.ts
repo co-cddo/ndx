@@ -78,9 +78,14 @@ describe("NDX Notification Handler", () => {
   }
 
   describe("Source Validation (AC-3.1, AC-3.1.1, AC-3.2)", () => {
-    // Note: ALLOWED_SOURCES = ['InnovationSandbox-ndx'] from types.ts
+    // Note: ALLOWED_SOURCES = ['InnovationSandbox-ndx', 'isb-costs'] from types.ts
     test("accepts valid source: InnovationSandbox-ndx", () => {
       const event = createTestEvent({ source: "InnovationSandbox-ndx" })
+      expect(() => validateEventSource(event)).not.toThrow()
+    })
+
+    test("accepts valid source: isb-costs (for billing events)", () => {
+      const event = createTestEvent({ source: "isb-costs" })
       expect(() => validateEventSource(event)).not.toThrow()
     })
 
@@ -101,7 +106,7 @@ describe("NDX Notification Handler", () => {
         expect(error).toBeInstanceOf(SecurityError)
         const secError = error as SecurityError
         expect(secError.securityContext).toMatchObject({
-          expectedSource: "InnovationSandbox-ndx",
+          expectedSource: "InnovationSandbox-ndx, isb-costs",
           actualSource: "malicious-source",
           eventId: "test-event-id-123",
         })

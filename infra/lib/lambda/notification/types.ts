@@ -117,6 +117,8 @@ export type NotificationEventType =
   | "LeaseFreezingThresholdAlert"
   | "LeaseBudgetExceeded"
   | "LeaseExpired"
+  // Billing events (user notifications)
+  | "LeaseCostsGenerated"
   // Ops events (visible via AWS Chatbot)
   | "AccountCleanupFailed"
   | "AccountQuarantined"
@@ -126,8 +128,9 @@ export type NotificationEventType =
 /**
  * Allowed event sources for security validation
  * ISB uses "InnovationSandbox-ndx" as the source name
+ * isb-costs is used by the costs team for billing events (LeaseCostsGenerated)
  */
-export const ALLOWED_SOURCES = ["InnovationSandbox-ndx"] as const
+export const ALLOWED_SOURCES = ["InnovationSandbox-ndx", "isb-costs"] as const
 export type AllowedSource = (typeof ALLOWED_SOURCES)[number]
 
 /**

@@ -1796,7 +1796,7 @@ describe("buildLeaseCostsGeneratedPersonalisation", () => {
   test("Handles negative totalCost (AWS credits/refunds)", () => {
     const event = {
       ...mockLeaseCostsEvent,
-      detail: { ...mockLeaseCostsEvent.detail, totalCost: -15.50 },
+      detail: { ...mockLeaseCostsEvent.detail, totalCost: -15.5 },
     }
     const result = buildLeaseCostsGeneratedPersonalisation(event)
     // formatCurrency handles negative values - shows as -$15.50

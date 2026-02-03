@@ -32,10 +32,10 @@
     "typescript-eslint": "8.54.0"
   },
   "dependencies": {
-    "@aws-sdk/client-identitystore": "^3.980.0",
-    "@aws-sdk/client-sso-admin": "^3.980.0",
-    "@aws-sdk/client-sts": "^3.980.0",
-    "aws-cdk-lib": "2.236.0",
+    "@aws-sdk/client-identitystore": "^3.981.0",
+    "@aws-sdk/client-sso-admin": "^3.981.0",
+    "@aws-sdk/client-sts": "^3.981.0",
+    "aws-cdk-lib": "2.237.0",
     "constructs": "10.4.5"
   },
   "engines": {

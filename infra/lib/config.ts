@@ -148,6 +148,8 @@ export const ISB_EVENT_TYPES = [
   "LeaseFreezingThresholdAlert",
   "LeaseBudgetExceeded",
   "LeaseExpired",
+  // Billing events (user notifications) - from isb-costs source
+  "LeaseCostsGenerated",
   // Ops events (Slack alerts)
   "AccountQuarantined",
   "AccountCleanupFailed",
@@ -241,6 +243,9 @@ export const NOTIFY_TEMPLATE_IDS = {
   BUDGET_EXCEEDED: "cbe9abe8-1eda-4d06-a5c7-ea9b78863ce2",
   LEASE_EXPIRED: "f25aa223-41f5-45dc-825c-e3fed7f9b794",
   LEASE_FROZEN: "6daa353b-a39d-46c0-b279-907e15b09bc2",
+
+  // Billing events
+  LEASE_COSTS_GENERATED: "d1e29f43-137a-44e7-95b1-58d503365bad",
 } as const
 
 /**
@@ -258,6 +263,7 @@ export const EVENT_TYPE_TO_TEMPLATE_ID: Record<string, string> = {
   LeaseBudgetExceeded: NOTIFY_TEMPLATE_IDS.BUDGET_EXCEEDED,
   LeaseExpired: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
   LeaseFrozen: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
+  LeaseCostsGenerated: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
 }
 
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {

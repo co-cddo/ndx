@@ -38,6 +38,7 @@ import type {
   LeaseExpiredDetail,
   LeaseFrozenDetail,
   LeaseFrozenReason,
+  LeaseCostsGeneratedDetail,
 } from "./validation"
 
 const logger = new Logger({ serviceName: "ndx-notifications" })
@@ -190,6 +191,23 @@ export const NOTIFY_TEMPLATES: Record<string, TemplateConfig> = {
     optionalFields: ["portalLink", "plainTextLink", "linkInstructions"],
     enrichmentQueries: ["lease", "account"],
   },
+
+  // ==========================================================================
+  // Billing Event Templates
+  // ==========================================================================
+
+  /**
+   * LeaseCostsGenerated - billing CSV ready for download
+   *
+   * Sent when a user's NDX:Try session ends and their billing CSV is ready.
+   * Includes download link, cost summary, and reassurance that this is free.
+   */
+  LeaseCostsGenerated: {
+    templateIdEnvVar: "NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED",
+    requiredFields: ["userName", "templateName", "totalCost", "startDate", "endDate", "csvUrl", "urlExpiresAt"],
+    optionalFields: [],
+    enrichmentQueries: ["lease"],
+  },
 }
 
 /**
@@ -213,6 +231,18 @@ export const MONITORING_ALERT_EVENTS: NotificationEventType[] = [
   "LeaseExpired",
   "LeaseFrozen",
 ]
+
+/**
+ * Billing event types - events from isb-costs related to billing/costs
+ */
+export const BILLING_EVENTS: NotificationEventType[] = ["LeaseCostsGenerated"]
+
+/**
+ * Check if an event type is a billing event (from isb-costs)
+ */
+export function isBillingEvent(eventType: NotificationEventType): boolean {
+  return BILLING_EVENTS.includes(eventType)
+}
 
 // =============================================================================
 // Formatting Utilities (AC-5.8, AC-5.9, AC-5.10)
@@ -254,6 +284,29 @@ export function formatUKDate(date: Date | string, timezone: string = DEFAULT_TIM
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hour12: false,
+    timeZone: timezone,
+  })
+}
+
+/**
+ * Format date in long UK format: "Monday, 10 February 2026, 14:30"
+ *
+ * Used for human-friendly display of dates like URL expiry times.
+ * Does not include seconds for cleaner display.
+ *
+ * @example formatUKDateLong('2026-02-10T14:30:00Z', 'Europe/London') => "Tuesday, 10 February 2026, 14:30"
+ */
+export function formatUKDateLong(date: Date | string, timezone: string = DEFAULT_TIMEZONE): string {
+  const dateObj = typeof date === "string" ? new Date(date) : date
+
+  return dateObj.toLocaleString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: false,
     timeZone: timezone,
   })
@@ -1077,6 +1130,59 @@ export function buildLeaseFrozenPersonalisation(
 }
 
 // =============================================================================
+// Billing Event Personalisation Builders
+// =============================================================================
+
+/** Default template name when enrichment fails */
+const DEFAULT_TEMPLATE_NAME = "NDX:Try Session"
+
+/**
+ * Build personalisation for LeaseCostsGenerated event
+ *
+ * Sent when a user's billing CSV is ready for download after their NDX:Try session ends.
+ *
+ * @param event - Validated LeaseCostsGenerated event
+ * @param enrichedData - Optional enrichment data (for templateName lookup)
+ * @returns Personalisation fields for GOV.UK Notify template
+ */
+export function buildLeaseCostsGeneratedPersonalisation(
+  event: ValidatedEvent<LeaseCostsGeneratedDetail>,
+  enrichedData?: EnrichedData,
+): Record<string, string | number> {
+  const { detail } = event
+
+  // Extract user name from email
+  const userName = detail.userEmail.split("@")[0]
+
+  // Use enriched templateName if available, otherwise use fallback
+  // This is the only field we need from enrichment
+  const templateName = enrichedData?.templateName || DEFAULT_TEMPLATE_NAME
+
+  if (!enrichedData?.templateName) {
+    logger.warn("No templateName from enrichment - using fallback", {
+      eventId: event.eventId,
+      fallbackTemplateName: DEFAULT_TEMPLATE_NAME,
+    })
+  }
+
+  const personalisation: Record<string, string | number> = {
+    userName,
+    templateName,
+    // Format totalCost as USD with $ symbol (e.g., "$45.67")
+    totalCost: formatCurrency(detail.totalCost),
+    // Format dates in simple UK format (DD/MM/YYYY)
+    startDate: formatUKDate(detail.startDate + "T00:00:00Z").split(",")[0],
+    endDate: formatUKDate(detail.endDate + "T00:00:00Z").split(",")[0],
+    // Pass through the CSV URL directly (trusted internal service)
+    csvUrl: detail.csvUrl,
+    // Format URL expiry in long human-readable format: "Monday, 10 February 2026, 14:30"
+    urlExpiresAt: formatUKDateLong(detail.urlExpiresAt),
+  }
+
+  return personalisation
+}
+
+// =============================================================================
 // Main Build Function
 // =============================================================================
 
@@ -1142,6 +1248,14 @@ export function buildPersonalisation(
       break
     case "LeaseFrozen":
       personalisation = buildLeaseFrozenPersonalisation(event as ValidatedEvent<LeaseFrozenDetail>, enrichedData)
+      break
+
+    // Billing Events
+    case "LeaseCostsGenerated":
+      personalisation = buildLeaseCostsGeneratedPersonalisation(
+        event as ValidatedEvent<LeaseCostsGeneratedDetail>,
+        enrichedData,
+      )
       break
 
     default:

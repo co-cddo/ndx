@@ -230,6 +230,42 @@ export const GroupCostReportGeneratedFailureDetailSchema = z
   .passthrough()
 
 // =============================================================================
+// Billing Event Schemas
+// =============================================================================
+
+/**
+ * LeaseCostsGenerated event detail schema
+ *
+ * Emitted by isb-costs when a user's billing CSV is ready for download.
+ * This event triggers an email to the user with their cost breakdown.
+ *
+ * Schema fields:
+ * - leaseId: UUID v4 identifying the lease
+ * - userEmail: Email address for notification delivery
+ * - accountId: 12-digit AWS account ID
+ * - totalCost: Total cost in USD (e.g., 45.67)
+ * - currency: Always "USD" (AWS bills in USD)
+ * - startDate: Billing period start (YYYY-MM-DD)
+ * - endDate: Billing period end (YYYY-MM-DD)
+ * - csvUrl: Presigned S3 URL for CSV download (7-day expiry)
+ * - urlExpiresAt: ISO 8601 timestamp when URL expires
+ */
+export const LeaseCostsGeneratedDetailSchema = z
+  .object({
+    leaseId: UuidSchema,
+    userEmail: EmailSchema,
+    accountId: AccountIdSchema,
+    // Allow negative costs for AWS credits/refunds
+    totalCost: z.number(),
+    currency: z.literal("USD"),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "startDate must be YYYY-MM-DD format"),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "endDate must be YYYY-MM-DD format"),
+    csvUrl: z.string().url("csvUrl must be a valid URL"),
+    urlExpiresAt: z.string().datetime({ message: "urlExpiresAt must be ISO 8601 format" }),
+  })
+  .strict()
+
+// =============================================================================
 // Event Schema Registry (AC-2.1, AC-2.10)
 // =============================================================================
 
@@ -249,6 +285,8 @@ export const EVENT_SCHEMAS: Record<NotificationEventType, z.ZodSchema> = {
   LeaseFreezingThresholdAlert: LeaseFreezingThresholdAlertDetailSchema,
   LeaseBudgetExceeded: LeaseBudgetExceededDetailSchema,
   LeaseExpired: LeaseExpiredDetailSchema,
+  // Billing events (1 type) - from isb-costs source
+  LeaseCostsGenerated: LeaseCostsGeneratedDetailSchema,
   // Ops events (4 types)
   AccountCleanupFailed: AccountCleanupFailedDetailSchema,
   AccountQuarantined: AccountQuarantinedDetailSchema,
@@ -384,3 +422,4 @@ export type LeaseBudgetExceededDetail = Record<string, any>
 export type LeaseExpiredDetail = Record<string, any>
 export type LeaseFrozenReason = z.infer<typeof LeaseFrozenReasonSchema>
 export type LeaseTerminatedReason = z.infer<typeof LeaseTerminatedReasonSchema>
+export type LeaseCostsGeneratedDetail = z.infer<typeof LeaseCostsGeneratedDetailSchema>

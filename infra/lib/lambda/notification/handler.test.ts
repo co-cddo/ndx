@@ -39,8 +39,6 @@ jest.mock("@aws-lambda-powertools/metrics", () => {
   }
 })
 
-// Note: Slack webhook code removed in Story 6.3. Slack visibility now via AWS Chatbot.
-
 // Mock validation module
 jest.mock("./validation", () => ({
   validateEvent: jest.fn((event) => ({
@@ -271,4 +269,5 @@ describe("NDX Notification Handler", () => {
   })
 
   // Note: Field Name Mapping tests are in field-mapping.test.ts
+  // Note: Slack notification billing field tests are in slack-notification.test.ts
 })

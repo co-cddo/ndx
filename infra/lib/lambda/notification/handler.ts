@@ -103,12 +103,18 @@ async function publishSlackNotification(
     (detail.awsAccountId as string) ||
     ""
 
+  // Extract billing-specific fields for LeaseCostsGenerated events
+  const totalCost = typeof detail.totalCost === "number" ? detail.totalCost : undefined
+  const csvUrl = typeof detail.csvUrl === "string" ? detail.csvUrl : undefined
+
   // Build description lines (only include non-empty fields)
   const descriptionParts: string[] = []
   if (userEmail) descriptionParts.push(`*User:* ${userEmail}`)
   if (templateName) descriptionParts.push(`*Template:* ${templateName}`)
   if (leaseId) descriptionParts.push(`*Lease ID:* ${leaseId}`)
   if (accountId) descriptionParts.push(`*Account:* ${accountId}`)
+  if (totalCost !== undefined) descriptionParts.push(`*Total Cost:* ${formatCurrency(totalCost)}`)
+  if (csvUrl) descriptionParts.push(`*CSV Download:* <${csvUrl}|download csv>`)
 
   // AWS Chatbot custom notification format
   const chatbotMessage = {

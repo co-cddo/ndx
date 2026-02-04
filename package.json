@@ -36,7 +36,7 @@
   "homepage": "https://github.com/co-cddo/ndx#readme",
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
-    "@axe-core/playwright": "^4.11.0",
+    "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.58.1",
     "@types/jest": "^30.0.0",
     "@x-govuk/govuk-eleventy-plugin": "^8.3.0",

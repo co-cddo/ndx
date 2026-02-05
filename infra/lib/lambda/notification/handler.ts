@@ -46,6 +46,7 @@ import {
 import { fetchLeaseRecord } from "./enrichment"
 import { flattenObject, addKeysParameter } from "./flatten"
 import { validateLeaseStatus, logFieldPresence } from "./lease-status"
+import { buildSlackMessage } from "./slack-message"
 
 // SNS client for publishing Slack notifications
 const snsClient = new SNSClient({})
@@ -60,7 +61,7 @@ const snsClient = new SNSClient({})
  * Uses AWS Chatbot custom notification format:
  * @see https://docs.aws.amazon.com/chatbot/latest/adminguide/custom-notifs.html
  */
-async function publishSlackNotification(
+export async function publishSlackNotification(
   event: EventBridgeEvent,
   enrichedData: Record<string, string>,
   eventId: string,
@@ -74,56 +75,8 @@ async function publishSlackNotification(
   const eventType = event["detail-type"]
   const detail = event.detail as Record<string, unknown>
 
-  // Extract user email from enriched data or event
-  const userEmail =
-    enrichedData.userEmail ||
-    enrichedData.principalEmail ||
-    (detail.userEmail as string) ||
-    (detail.principalEmail as string) ||
-    ""
-
-  // Extract template name from enriched data or event (ISB uses various field names)
-  const templateName =
-    enrichedData.templateName ||
-    enrichedData.leaseTemplateName ||
-    enrichedData.originalLeaseTemplateName ||
-    (detail.templateName as string) ||
-    (detail.leaseTemplateName as string) ||
-    (detail.originalLeaseTemplateName as string) ||
-    ""
-
-  // Extract lease ID
-  const leaseId = (typeof detail.leaseId === "string" ? detail.leaseId : enrichedData.uuid) || ""
-
-  // Extract account ID from enriched data or event
-  const accountId =
-    enrichedData.awsAccountId ||
-    enrichedData.accountId ||
-    (detail.accountId as string) ||
-    (detail.awsAccountId as string) ||
-    ""
-
-  // Build description lines (only include non-empty fields)
-  const descriptionParts: string[] = []
-  if (userEmail) descriptionParts.push(`*User:* ${userEmail}`)
-  if (templateName) descriptionParts.push(`*Template:* ${templateName}`)
-  if (leaseId) descriptionParts.push(`*Lease ID:* ${leaseId}`)
-  if (accountId) descriptionParts.push(`*Account:* ${accountId}`)
-
-  // AWS Chatbot custom notification format
-  const chatbotMessage = {
-    version: "1.0",
-    source: "custom",
-    content: {
-      textType: "client-markdown",
-      title: eventType,
-      description: descriptionParts.join("\n"),
-    },
-    metadata: {
-      eventType,
-      eventId,
-    },
-  }
+  // Build the Slack message using the extracted function
+  const { chatbotMessage } = buildSlackMessage(event, enrichedData, eventId)
 
   // Log field resolution for debugging (INFO level to see in prod)
   logger.info("Slack notification field resolution", {
@@ -134,7 +87,14 @@ async function publishSlackNotification(
     enrichedOriginalLeaseTemplateName: enrichedData.originalLeaseTemplateName,
     detailTemplateName: detail.templateName,
     detailLeaseTemplateName: detail.leaseTemplateName,
-    resolvedTemplateName: templateName,
+    resolvedTemplateName:
+      enrichedData.templateName ||
+      enrichedData.leaseTemplateName ||
+      enrichedData.originalLeaseTemplateName ||
+      (detail.templateName as string) ||
+      (detail.leaseTemplateName as string) ||
+      (detail.originalLeaseTemplateName as string) ||
+      "",
     enrichedKeys: Object.keys(enrichedData).filter((k) => k.toLowerCase().includes("template")),
   })
 

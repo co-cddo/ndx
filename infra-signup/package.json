@@ -18,9 +18,9 @@
     "@eslint/js": "9.39.2",
     "@types/aws-lambda": "8.10.160",
     "@types/jest": "30.0.0",
-    "@types/node": "25.2.0",
-    "aws-cdk": "2.1104.0",
-    "esbuild": "^0.27.2",
+    "@types/node": "25.2.1",
+    "aws-cdk": "2.1105.0",
+    "esbuild": "^0.27.3",
     "eslint": "9.39.2",
     "eslint-plugin-awscdk": "4.1.0",
     "jest": "30.2.0",
@@ -32,9 +32,9 @@
     "typescript-eslint": "8.54.0"
   },
   "dependencies": {
-    "@aws-sdk/client-identitystore": "^3.983.0",
-    "@aws-sdk/client-sso-admin": "^3.983.0",
-    "@aws-sdk/client-sts": "^3.983.0",
+    "@aws-sdk/client-identitystore": "^3.984.0",
+    "@aws-sdk/client-sso-admin": "^3.984.0",
+    "@aws-sdk/client-sts": "^3.984.0",
     "aws-cdk-lib": "2.237.1",
     "constructs": "10.4.5"
   },

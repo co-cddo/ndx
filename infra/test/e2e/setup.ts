@@ -61,7 +61,7 @@ beforeAll(async () => {
       console.error("  3. Or set NOTIFY_SANDBOX_API_KEY environment variable for CI")
     }
 
-    throw new Error(`[E2E Setup] Setup failed: ${errorMessage}`)
+    throw new Error(`[E2E Setup] Setup failed: ${errorMessage}`, { cause: error })
   }
 })
 

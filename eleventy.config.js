@@ -138,6 +138,7 @@ export default function (eleventyConfig) {
           { text: "Privacy", href: "/privacy/" },
           { text: "Cookies", href: "/cookies/" },
           { text: "Accessibility", href: "/accessibility/" },
+          { text: "Acceptable use policy", href: "/acceptable-use-policy/" },
         ],
         text: `Page built from <a href="https://github.com/co-cddo/ndx/commit/${gitRev()}">${gitSHA()}</a> at ${new Date().toISOString()}`,
       },

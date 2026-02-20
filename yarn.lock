@@ -5144,6 +5144,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"katex@npm:^0.16.0":
+  version: 0.16.28
+  resolution: "katex@npm:0.16.28"
+  dependencies:
+    commander: "npm:^8.3.0"
+  bin:
+    katex: cli.js
+  checksum: 10c0/9c6e100ecb10c8e8315ab1d6ae16642b91e05642d821158149be520d629c3b47f30d8475fa8978d2d765a1d8e1bd66ab6afffe3a0409265de520edccab346b3e
+  languageName: node
+  linkType: hard
+
 "katex@npm:^0.16.22":
   version: 0.16.25
   resolution: "katex@npm:0.16.25"
@@ -5555,18 +5566,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mermaid-isomorphic@npm:^3.0.4":
-  version: 3.0.4
-  resolution: "mermaid-isomorphic@npm:3.0.4"
+"mermaid-isomorphic@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "mermaid-isomorphic@npm:3.1.0"
   dependencies:
     "@fortawesome/fontawesome-free": "npm:^6.0.0"
+    katex: "npm:^0.16.0"
     mermaid: "npm:^11.0.0"
   peerDependencies:
     playwright: 1
   peerDependenciesMeta:
     playwright:
       optional: true
-  checksum: 10c0/3eee91a30438f2d60b89af0f040502e98e9ca53ce77b648c9366ac997fd0eca373144b509657243520a4f4216b5c740290af343c2470101d5d9dbe408f24f24b
+  checksum: 10c0/b715d4788422669084622bea8c70717889892d1e4899d1544fe227d97bc0594481a5ade97f87b2e66e4b52cb8d67c4d0e3025c0f8164221f5e0b66a34b2eab24
   languageName: node
   linkType: hard
 
@@ -5825,7 +5837,7 @@ __metadata:
     jest: "npm:^30.2.0"
     jest-environment-jsdom: "npm:^30.2.0"
     lint-staged: "npm:^16.1.5"
-    mermaid-isomorphic: "npm:^3.0.4"
+    mermaid-isomorphic: "npm:^3.1.0"
     prettier: "npm:^3.8.1"
     prettier-plugin-sh: "npm:^0.18.0"
     ts-jest: "npm:^29.4.6"

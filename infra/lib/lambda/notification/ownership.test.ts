@@ -6,7 +6,7 @@
  *
  * Test naming convention: test_n5-3_{ACID}_{scenario}
  *
- * Note: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
+ * Note: All data now fetched via ISB HTTP APIs instead of direct DynamoDB access
  */
 
 import {
@@ -552,6 +552,6 @@ describe("verifyEmailOwnership", () => {
     })
   })
 
-  // Note: Missing configuration test removed - ISB Lambda name validation happens
+  // Note: Missing configuration test removed - ISB API config validation happens
   // at the isb-client.ts level and is tested in isb-client.test.ts
 })

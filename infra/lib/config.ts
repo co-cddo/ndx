@@ -63,6 +63,8 @@ export interface ISBConfig {
  * Note: ISB account IDs are provided by the ISB team.
  * These must be verified before deployment.
  */
+// Note: ISB has a single environment — staging intentionally uses the same
+// API Gateway, account, and secret path as production.
 export const ISB_CONFIG: Record<string, ISBConfig> = {
   prod: {
     namespace: "InnovationSandboxCompute",

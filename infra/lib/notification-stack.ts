@@ -223,7 +223,7 @@ export class NdxNotificationStack extends cdk.Stack {
     // Security: Account-level filtering prevents cross-account event injection.
     // @see docs/notification-architecture.md#ISB-Integration
 
-    // Note: DynamoDB permissions removed - all data now fetched via ISB Lambda APIs
+    // Note: DynamoDB permissions removed - all data now fetched via ISB HTTP APIs
     // (leases, accounts, templates) for better separation of concerns.
 
     // Reference the ISB EventBridge bus (cross-account)

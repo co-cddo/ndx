@@ -14,7 +14,7 @@
  * - AC-3.3: Email mismatch throws SecurityError
  * - AC-3.6: Lease not found throws PermanentError
  *
- * Note: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
+ * Note: All data now fetched via ISB HTTP APIs instead of direct DynamoDB access
  *
  * @see docs/notification-architecture.md#Security-Architecture
  */
@@ -221,7 +221,7 @@ export function generateAuditSignature(eventId: string, verificationResult: bool
 
 /**
  * Query lease via ISB Leases API for ownership verification (AC-3.1)
- * Replaces direct DynamoDB access with ISB Lambda invocation
+ * Replaces direct DynamoDB access with ISB HTTP API call
  */
 async function queryLeaseTable(userEmail: string, uuid: string, eventId: string): Promise<LeaseRecord | null> {
   logger.debug("Querying ISB Leases API", {
@@ -256,7 +256,7 @@ async function queryLeaseTable(userEmail: string, uuid: string, eventId: string)
 
 /**
  * Query account via ISB Accounts API for cross-verification (AC-3.13)
- * Replaces direct DynamoDB access with ISB Lambda invocation
+ * Replaces direct DynamoDB access with ISB HTTP API call
  */
 async function queryAccountTable(accountId: string, eventId: string): Promise<AccountRecord | null> {
   logger.debug("Querying ISB Accounts API for cross-verification", {

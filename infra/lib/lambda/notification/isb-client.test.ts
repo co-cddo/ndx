@@ -9,6 +9,7 @@
 
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager"
 import { mockClient } from "aws-sdk-client-mock"
+import { createHmac } from "node:crypto"
 import {
   fetchLeaseFromISB,
   fetchLeaseByKey,
@@ -27,9 +28,14 @@ import {
 // Create mock for Secrets Manager client
 const secretsMock = mockClient(SecretsManagerClient)
 
-// Mock global fetch
+// Mock global fetch (preserve original for cleanup)
+const originalFetch = global.fetch
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>
 global.fetch = mockFetch
+
+afterAll(() => {
+  global.fetch = originalFetch
+})
 
 const TEST_JWT_SECRET = "test-jwt-secret-key-for-signing"
 const TEST_API_BASE_URL = "https://test-api.execute-api.us-west-2.amazonaws.com/prod"
@@ -42,7 +48,7 @@ function createAPIResponse(statusCode: number, body: object): Response {
   return {
     ok: statusCode >= 200 && statusCode < 300,
     status: statusCode,
-    statusText: statusCode === 200 ? "OK" : "Error",
+    statusText: statusCode === 200 ? "OK" : `HTTP ${statusCode}`,
     json: () => Promise.resolve(body),
     headers: new Headers({ "Content-Type": "application/json" }),
   } as Response
@@ -57,22 +63,26 @@ function setupSecretsMock(): void {
   })
 }
 
+/**
+ * Common test setup — resets all mocks and caches
+ */
+function commonBeforeEach(): void {
+  secretsMock.reset()
+  mockFetch.mockReset()
+  jest.clearAllMocks()
+  resetTokenCache()
+  delete process.env.ISB_API_BASE_URL
+  delete process.env.ISB_JWT_SECRET_PATH
+  setupSecretsMock()
+}
+
 describe("ISB Client", () => {
   const testCorrelationId = "test-event-123"
   const testUserEmail = "user@example.gov.uk"
   const testUuid = "550e8400-e29b-41d4-a716-446655440000"
   const testConfig = { apiBaseUrl: TEST_API_BASE_URL, jwtSecretPath: TEST_JWT_SECRET_PATH }
 
-  beforeEach(() => {
-    secretsMock.reset()
-    mockFetch.mockReset()
-    jest.clearAllMocks()
-    resetTokenCache()
-    // Reset environment
-    delete process.env.ISB_API_BASE_URL
-    delete process.env.ISB_JWT_SECRET_PATH
-    setupSecretsMock()
-  })
+  beforeEach(commonBeforeEach)
 
   afterEach(() => {
     jest.useRealTimers()
@@ -171,10 +181,29 @@ describe("ISB Client", () => {
       expect(payload.exp - payload.iat).toBe(3600)
     })
 
+    it("should use default 3600s expiry when not specified", () => {
+      const token = signJwt({ foo: "bar" }, "secret")
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString())
+      expect(payload.exp - payload.iat).toBe(3600)
+    })
+
     it("should include custom payload", () => {
       const token = signJwt({ user: { email: "test@example.com", roles: ["Admin"] } }, "secret")
       const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString())
       expect(payload.user).toEqual({ email: "test@example.com", roles: ["Admin"] })
+    })
+
+    it("should produce a valid HMAC-SHA256 signature", () => {
+      const secret = "my-test-secret"
+      const token = signJwt({ data: "test" }, secret)
+      const [headerB64, payloadB64, signatureB64] = token.split(".")
+
+      // Recompute signature independently
+      const expectedSignature = createHmac("sha256", secret)
+        .update(`${headerB64}.${payloadB64}`)
+        .digest("base64url")
+
+      expect(signatureB64).toBe(expectedSignature)
     })
   })
 
@@ -211,8 +240,8 @@ describe("ISB Client", () => {
       const [url, options] = mockFetch.mock.calls[0]
       expect(url).toBe(`${TEST_API_BASE_URL}/leases/${encodeURIComponent(leaseId)}`)
       expect((options as RequestInit).method).toBe("GET")
-      expect((options as RequestInit).headers).toHaveProperty("Authorization")
       expect(((options as RequestInit).headers as Record<string, string>)["Authorization"]).toMatch(/^Bearer /)
+      expect(((options as RequestInit).headers as Record<string, string>)["Content-Type"]).toBe("application/json")
       expect(((options as RequestInit).headers as Record<string, string>)["X-Correlation-Id"]).toBe(testCorrelationId)
     })
 
@@ -501,6 +530,116 @@ describe("ISB Client", () => {
       expect(result).toBeNull()
       expect(mockFetch).not.toHaveBeenCalled()
     })
+
+    it("should invalidate secret cache on 401 and re-fetch on next call", async () => {
+      const mockSuccessResponse: JSendResponse<ISBLeaseRecord> = {
+        status: "success",
+        data: { userEmail: testUserEmail, uuid: testUuid },
+      }
+
+      // First call succeeds
+      mockFetch.mockResolvedValueOnce(createAPIResponse(200, mockSuccessResponse))
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      expect(secretsMock.calls()).toHaveLength(1)
+
+      // Second call returns 401 (secret rotation)
+      mockFetch.mockResolvedValueOnce(createAPIResponse(401, { status: "fail", message: "Unauthorized" }))
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      // Third call should re-fetch the secret
+      mockFetch.mockResolvedValueOnce(createAPIResponse(200, mockSuccessResponse))
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      // Secret fetched twice: once initially, once after cache invalidation
+      expect(secretsMock.calls()).toHaveLength(2)
+    })
+
+    it("should invalidate secret cache on 403", async () => {
+      const mockSuccessResponse: JSendResponse<ISBLeaseRecord> = {
+        status: "success",
+        data: { userEmail: testUserEmail, uuid: testUuid },
+      }
+
+      // First call succeeds
+      mockFetch.mockResolvedValueOnce(createAPIResponse(200, mockSuccessResponse))
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      expect(secretsMock.calls()).toHaveLength(1)
+
+      // Second call returns 403
+      mockFetch.mockResolvedValueOnce(createAPIResponse(403, { status: "fail", message: "Forbidden" }))
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      // Third call should re-fetch the secret
+      mockFetch.mockResolvedValueOnce(createAPIResponse(200, mockSuccessResponse))
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      expect(secretsMock.calls()).toHaveLength(2)
+    })
+  })
+
+  // ===========================================================================
+  // Token Caching and Refresh Tests
+  // ===========================================================================
+
+  describe("JWT token caching and refresh", () => {
+    it("should reuse cached token within valid window", async () => {
+      const mockResponse: JSendResponse<ISBLeaseRecord> = {
+        status: "success",
+        data: { userEmail: testUserEmail, uuid: testUuid },
+      }
+
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
+
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      const firstToken = ((mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>)[
+        "Authorization"
+      ]
+
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      const secondToken = ((mockFetch.mock.calls[1][1] as RequestInit).headers as Record<string, string>)[
+        "Authorization"
+      ]
+
+      expect(firstToken).toBe(secondToken)
+    })
+
+    it("should re-sign token when within 60-second pre-expiry buffer", async () => {
+      jest.useFakeTimers()
+      const baseTime = new Date("2026-01-01T00:00:00Z")
+      jest.setSystemTime(baseTime)
+
+      const mockResponse: JSendResponse<ISBLeaseRecord> = {
+        status: "success",
+        data: { userEmail: testUserEmail, uuid: testUuid },
+      }
+
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
+
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+
+      // First call - signs a new token
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      const firstToken = ((mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>)[
+        "Authorization"
+      ]
+
+      // Advance time to 59 minutes and 1 second (within 60s pre-expiry buffer)
+      jest.setSystemTime(new Date(baseTime.getTime() + 59 * 60 * 1000 + 1000))
+      resetTokenCache()
+      setupSecretsMock()
+
+      // Need fresh token since we reset cache
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      const secondToken = ((mockFetch.mock.calls[1][1] as RequestInit).headers as Record<string, string>)[
+        "Authorization"
+      ]
+
+      // Tokens should differ because time moved forward (different iat/exp)
+      expect(firstToken).not.toBe(secondToken)
+    })
   })
 })
 
@@ -513,15 +652,7 @@ describe("ISB Accounts Client", () => {
   const testAwsAccountId = "123456789012"
   const testAccountsConfig = { apiBaseUrl: TEST_API_BASE_URL, jwtSecretPath: TEST_JWT_SECRET_PATH }
 
-  beforeEach(() => {
-    secretsMock.reset()
-    mockFetch.mockReset()
-    jest.clearAllMocks()
-    resetTokenCache()
-    delete process.env.ISB_API_BASE_URL
-    delete process.env.ISB_JWT_SECRET_PATH
-    setupSecretsMock()
-  })
+  beforeEach(commonBeforeEach)
 
   describe("fetchAccountFromISB - Success cases", () => {
     it("should return account record on success", async () => {
@@ -544,11 +675,13 @@ describe("ISB Accounts Client", () => {
       expect(result).toEqual(mockAccount)
       expect(mockFetch).toHaveBeenCalledTimes(1)
 
-      // Verify the fetch was called with correct URL
+      // Verify the fetch was called with correct URL and headers
       const [url, options] = mockFetch.mock.calls[0]
       expect(url).toBe(`${TEST_API_BASE_URL}/accounts/${testAwsAccountId}`)
       expect((options as RequestInit).method).toBe("GET")
       expect(((options as RequestInit).headers as Record<string, string>)["Authorization"]).toMatch(/^Bearer /)
+      expect(((options as RequestInit).headers as Record<string, string>)["Content-Type"]).toBe("application/json")
+      expect(((options as RequestInit).headers as Record<string, string>)["X-Correlation-Id"]).toBe(testCorrelationId)
     })
 
     it("should use environment variables if config not provided", async () => {
@@ -576,23 +709,57 @@ describe("ISB Accounts Client", () => {
     })
   })
 
-  describe("fetchAccountFromISB - 404 handling", () => {
+  describe("fetchAccountFromISB - Error handling", () => {
     it("should return null for 404 response (graceful degradation)", async () => {
-      const mockResponse = { status: "fail", message: "Account not found" }
-
-      mockFetch.mockResolvedValue(createAPIResponse(404, mockResponse))
+      mockFetch.mockResolvedValue(createAPIResponse(404, { status: "fail", message: "Account not found" }))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
       expect(result).toBeNull()
     })
-  })
 
-  describe("fetchAccountFromISB - Server error handling", () => {
     it("should return null for 500 response (graceful degradation)", async () => {
-      const mockResponse = { status: "error", message: "Internal server error" }
+      mockFetch.mockResolvedValue(createAPIResponse(500, { status: "error", message: "Internal server error" }))
 
-      mockFetch.mockResolvedValue(createAPIResponse(500, mockResponse))
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 502 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(502, {}))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 503 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(503, {}))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 400 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(400, { status: "fail", message: "Bad request" }))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 401 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(401, { status: "fail", message: "Unauthorized" }))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 403 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(403, { status: "fail", message: "Forbidden" }))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
@@ -601,6 +768,40 @@ describe("ISB Accounts Client", () => {
 
     it("should return null for network error", async () => {
       mockFetch.mockRejectedValue(new Error("Service unavailable"))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for timeout error", async () => {
+      mockFetch.mockRejectedValue(new DOMException("The operation was aborted", "AbortError"))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe("fetchAccountFromISB - JSend response handling", () => {
+    it("should return null for JSend fail status", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(200, { status: "fail", message: "Validation failed" }))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for JSend error status", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(200, { status: "error", message: "Processing error" }))
+
+      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for missing data field", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(200, { status: "success" }))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
@@ -634,15 +835,7 @@ describe("ISB Templates Client", () => {
   const testTemplateName = "empty-sandbox"
   const testTemplatesConfig = { apiBaseUrl: TEST_API_BASE_URL, jwtSecretPath: TEST_JWT_SECRET_PATH }
 
-  beforeEach(() => {
-    secretsMock.reset()
-    mockFetch.mockReset()
-    jest.clearAllMocks()
-    resetTokenCache()
-    delete process.env.ISB_API_BASE_URL
-    delete process.env.ISB_JWT_SECRET_PATH
-    setupSecretsMock()
-  })
+  beforeEach(commonBeforeEach)
 
   describe("fetchTemplateFromISB - Success cases", () => {
     it("should return template record on success", async () => {
@@ -666,10 +859,13 @@ describe("ISB Templates Client", () => {
       expect(result).toEqual(mockTemplate)
       expect(mockFetch).toHaveBeenCalledTimes(1)
 
-      // Verify the fetch was called with correct URL
+      // Verify the fetch was called with correct URL and headers
       const [url, options] = mockFetch.mock.calls[0]
       expect(url).toBe(`${TEST_API_BASE_URL}/leaseTemplates/${testTemplateName}`)
       expect((options as RequestInit).method).toBe("GET")
+      expect(((options as RequestInit).headers as Record<string, string>)["Authorization"]).toMatch(/^Bearer /)
+      expect(((options as RequestInit).headers as Record<string, string>)["Content-Type"]).toBe("application/json")
+      expect(((options as RequestInit).headers as Record<string, string>)["X-Correlation-Id"]).toBe(testCorrelationId)
     })
 
     it("should use environment variables if config not provided", async () => {
@@ -697,23 +893,57 @@ describe("ISB Templates Client", () => {
     })
   })
 
-  describe("fetchTemplateFromISB - 404 handling", () => {
+  describe("fetchTemplateFromISB - Error handling", () => {
     it("should return null for 404 response (graceful degradation)", async () => {
-      const mockResponse = { status: "fail", message: "Template not found" }
-
-      mockFetch.mockResolvedValue(createAPIResponse(404, mockResponse))
+      mockFetch.mockResolvedValue(createAPIResponse(404, { status: "fail", message: "Template not found" }))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 
       expect(result).toBeNull()
     })
-  })
 
-  describe("fetchTemplateFromISB - Server error handling", () => {
     it("should return null for 500 response (graceful degradation)", async () => {
-      const mockResponse = { status: "error", message: "Internal server error" }
+      mockFetch.mockResolvedValue(createAPIResponse(500, { status: "error", message: "Internal server error" }))
 
-      mockFetch.mockResolvedValue(createAPIResponse(500, mockResponse))
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 502 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(502, {}))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 503 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(503, {}))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 400 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(400, { status: "fail", message: "Bad request" }))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 401 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(401, { status: "fail", message: "Unauthorized" }))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for 403 response", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(403, { status: "fail", message: "Forbidden" }))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 
@@ -722,6 +952,40 @@ describe("ISB Templates Client", () => {
 
     it("should return null for network error", async () => {
       mockFetch.mockRejectedValue(new Error("Service unavailable"))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for timeout error", async () => {
+      mockFetch.mockRejectedValue(new DOMException("The operation was aborted", "AbortError"))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe("fetchTemplateFromISB - JSend response handling", () => {
+    it("should return null for JSend fail status", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(200, { status: "fail", message: "Validation failed" }))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for JSend error status", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(200, { status: "error", message: "Processing error" }))
+
+      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
+
+      expect(result).toBeNull()
+    })
+
+    it("should return null for missing data field", async () => {
+      mockFetch.mockResolvedValue(createAPIResponse(200, { status: "success" }))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 

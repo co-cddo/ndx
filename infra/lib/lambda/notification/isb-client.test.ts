@@ -199,9 +199,7 @@ describe("ISB Client", () => {
       const [headerB64, payloadB64, signatureB64] = token.split(".")
 
       // Recompute signature independently
-      const expectedSignature = createHmac("sha256", secret)
-        .update(`${headerB64}.${payloadB64}`)
-        .digest("base64url")
+      const expectedSignature = createHmac("sha256", secret).update(`${headerB64}.${payloadB64}`).digest("base64url")
 
       expect(signatureB64).toBe(expectedSignature)
     })

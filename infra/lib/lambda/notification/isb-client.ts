@@ -138,9 +138,7 @@ export function signJwt(payload: object, secret: string, expiresInSeconds = 3600
   const fullPayload = { ...payload, iat: now, exp: now + expiresInSeconds }
   const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url")
   const encodedPayload = Buffer.from(JSON.stringify(fullPayload)).toString("base64url")
-  const signature = createHmac("sha256", secret)
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest("base64url")
+  const signature = createHmac("sha256", secret).update(`${encodedHeader}.${encodedPayload}`).digest("base64url")
   return `${encodedHeader}.${encodedPayload}.${signature}`
 }
 
@@ -518,14 +516,9 @@ export async function fetchAccountFromISB(
     return null
   }
 
-  return fetchFromISBEndpoint<ISBAccountRecord>(
-    "/accounts",
+  return fetchFromISBEndpoint<ISBAccountRecord>("/accounts", awsAccountId, correlationId, "ISBAccountsAPI", config, {
     awsAccountId,
-    correlationId,
-    "ISBAccountsAPI",
-    config,
-    { awsAccountId },
-  )
+  })
 }
 
 // =============================================================================

@@ -45,22 +45,16 @@ export interface ISBConfig {
   readonly region: string
 
   /**
-   * Story 5.1: ISB Leases Lambda function name for direct invocation
-   * Used for fetching lease data - bypasses API Gateway authorization
+   * ISB API Gateway base URL for HTTP API calls
+   * e.g. "https://1ewlxhaey6.execute-api.us-west-2.amazonaws.com/prod"
    */
-  readonly leasesLambdaName?: string
+  readonly apiBaseUrl?: string
 
   /**
-   * ISB Accounts Lambda function name for direct invocation
-   * Used for fetching account data - bypasses API Gateway authorization
+   * Secrets Manager path for the ISB JWT signing secret
+   * e.g. "/InnovationSandbox/ndx/Auth/JwtSecret"
    */
-  readonly accountsLambdaName?: string
-
-  /**
-   * ISB Templates Lambda function name for direct invocation
-   * Used for fetching lease template data - bypasses API Gateway authorization
-   */
-  readonly templatesLambdaName?: string
+  readonly jwtSecretPath?: string
 }
 
 /**
@@ -74,19 +68,15 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
     namespace: "InnovationSandboxCompute",
     accountId: "568672915267",
     region: "us-west-2",
-    // ISB Lambda function names for direct invocation
-    leasesLambdaName: "ISB-LeasesLambdaFunction-ndx",
-    accountsLambdaName: "ISB-AccountsLambdaFunction-ndx",
-    templatesLambdaName: "ISB-LeaseTemplatesLambdaFunction-ndx",
+    apiBaseUrl: "https://1ewlxhaey6.execute-api.us-west-2.amazonaws.com/prod",
+    jwtSecretPath: "/InnovationSandbox/ndx/Auth/JwtSecret",
   },
   staging: {
     namespace: "InnovationSandboxCompute",
     accountId: "568672915267",
     region: "us-west-2",
-    // ISB Lambda function names for direct invocation (staging)
-    leasesLambdaName: "ISB-LeasesLambdaFunction-ndx",
-    accountsLambdaName: "ISB-AccountsLambdaFunction-ndx",
-    templatesLambdaName: "ISB-LeaseTemplatesLambdaFunction-ndx",
+    apiBaseUrl: "https://1ewlxhaey6.execute-api.us-west-2.amazonaws.com/prod",
+    jwtSecretPath: "/InnovationSandbox/ndx/Auth/JwtSecret",
   },
 }
 

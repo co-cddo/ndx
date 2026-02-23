@@ -1,5 +1,5 @@
 /**
- * Tests for ISB Lambda Client Module
+ * Tests for ISB API Client Module
  *
  * Story: 5.1 - Replace DynamoDB Reads with ISB API
  * Tests cover: AC-1, AC-4, AC-5, AC-6/NFR4
@@ -7,7 +7,7 @@
  * @see _bmad-output/implementation-artifacts/5-1-replace-dynamodb-reads-with-isb-api.md
  */
 
-import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda"
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager"
 import { mockClient } from "aws-sdk-client-mock"
 import {
   fetchLeaseFromISB,
@@ -16,47 +16,67 @@ import {
   fetchTemplateFromISB,
   constructLeaseId,
   parseLeaseId,
+  resetTokenCache,
+  signJwt,
   ISBLeaseRecord,
   ISBAccountRecord,
   ISBTemplateRecord,
   JSendResponse,
 } from "./isb-client"
 
-// Create mock for Lambda client
-const lambdaMock = mockClient(LambdaClient)
+// Create mock for Secrets Manager client
+const secretsMock = mockClient(SecretsManagerClient)
+
+// Mock global fetch
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>
+global.fetch = mockFetch
+
+const TEST_JWT_SECRET = "test-jwt-secret-key-for-signing"
+const TEST_API_BASE_URL = "https://test-api.execute-api.us-west-2.amazonaws.com/prod"
+const TEST_JWT_SECRET_PATH = "/InnovationSandbox/ndx/Auth/JwtSecret"
+
+/**
+ * Helper to create a mock HTTP response
+ */
+function createAPIResponse(statusCode: number, body: object): Response {
+  return {
+    ok: statusCode >= 200 && statusCode < 300,
+    status: statusCode,
+    statusText: statusCode === 200 ? "OK" : "Error",
+    json: () => Promise.resolve(body),
+    headers: new Headers({ "Content-Type": "application/json" }),
+  } as Response
+}
+
+/**
+ * Setup Secrets Manager mock to return the test JWT secret
+ */
+function setupSecretsMock(): void {
+  secretsMock.on(GetSecretValueCommand).resolves({
+    SecretString: TEST_JWT_SECRET,
+  })
+}
 
 describe("ISB Client", () => {
   const testCorrelationId = "test-event-123"
   const testUserEmail = "user@example.gov.uk"
   const testUuid = "550e8400-e29b-41d4-a716-446655440000"
-  const testFunctionName = "ISB-LeasesLambdaFunction-ndx"
-  const testConfig = { functionName: testFunctionName }
+  const testConfig = { apiBaseUrl: TEST_API_BASE_URL, jwtSecretPath: TEST_JWT_SECRET_PATH }
 
   beforeEach(() => {
-    lambdaMock.reset()
+    secretsMock.reset()
+    mockFetch.mockReset()
     jest.clearAllMocks()
+    resetTokenCache()
     // Reset environment
-    delete process.env.ISB_LEASES_LAMBDA_NAME
+    delete process.env.ISB_API_BASE_URL
+    delete process.env.ISB_JWT_SECRET_PATH
+    setupSecretsMock()
   })
 
   afterEach(() => {
     jest.useRealTimers()
   })
-
-  /**
-   * Helper to create a mock Lambda response payload
-   * Uses 'as any' to bypass TypeScript strict type checking for mock responses
-   */
-  function createLambdaResponse(statusCode: number, body: object) {
-    const apiGatewayResponse = {
-      statusCode,
-      body: JSON.stringify(body),
-      headers: { "Content-Type": "application/json" },
-    }
-    // Cast to any to avoid Uint8ArrayBlobAdapter type issues in tests
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return new Uint8Array(Buffer.from(JSON.stringify(apiGatewayResponse))) as any
-  }
 
   // ===========================================================================
   // Lease ID Construction/Parsing Tests
@@ -127,10 +147,42 @@ describe("ISB Client", () => {
   })
 
   // ===========================================================================
-  // AC-1: Successful ISB Lambda Response Tests
+  // JWT Signing Tests
   // ===========================================================================
 
-  describe("fetchLeaseFromISB - AC-1: Successful Lambda invocation", () => {
+  describe("signJwt", () => {
+    it("should produce a valid three-part JWT", () => {
+      const token = signJwt({ user: { email: "test@example.com" } }, "secret")
+      const parts = token.split(".")
+      expect(parts).toHaveLength(3)
+    })
+
+    it("should include HS256 algorithm in header", () => {
+      const token = signJwt({ foo: "bar" }, "secret")
+      const header = JSON.parse(Buffer.from(token.split(".")[0], "base64url").toString())
+      expect(header).toEqual({ alg: "HS256", typ: "JWT" })
+    })
+
+    it("should include iat and exp claims", () => {
+      const token = signJwt({ foo: "bar" }, "secret", 3600)
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString())
+      expect(payload.iat).toBeDefined()
+      expect(payload.exp).toBeDefined()
+      expect(payload.exp - payload.iat).toBe(3600)
+    })
+
+    it("should include custom payload", () => {
+      const token = signJwt({ user: { email: "test@example.com", roles: ["Admin"] } }, "secret")
+      const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString())
+      expect(payload.user).toEqual({ email: "test@example.com", roles: ["Admin"] })
+    })
+  })
+
+  // ===========================================================================
+  // AC-1: Successful ISB API Response Tests
+  // ===========================================================================
+
+  describe("fetchLeaseFromISB - AC-1: Successful API call", () => {
     it("should return lease record on success", async () => {
       const mockLease: ISBLeaseRecord = {
         userEmail: testUserEmail,
@@ -147,55 +199,48 @@ describe("ISB Client", () => {
         data: mockLease,
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
 
       expect(result).toEqual(mockLease)
-      expect(lambdaMock.calls()).toHaveLength(1)
+      expect(mockFetch).toHaveBeenCalledTimes(1)
 
-      // Verify the Lambda was invoked with correct parameters
-      const call = lambdaMock.calls()[0]
-      const input = call.args[0].input as { FunctionName: string; Payload: Buffer }
-      expect(input.FunctionName).toBe(testFunctionName)
-
-      // Verify the API Gateway event format
-      const payload = JSON.parse(input.Payload.toString())
-      expect(payload.httpMethod).toBe("GET")
-      expect(payload.pathParameters.leaseId).toBe(leaseId)
-      expect(payload.headers["X-Correlation-Id"]).toBe(testCorrelationId)
+      // Verify the fetch was called with correct URL and headers
+      const [url, options] = mockFetch.mock.calls[0]
+      expect(url).toBe(`${TEST_API_BASE_URL}/leases/${encodeURIComponent(leaseId)}`)
+      expect((options as RequestInit).method).toBe("GET")
+      expect((options as RequestInit).headers).toHaveProperty("Authorization")
+      expect(((options as RequestInit).headers as Record<string, string>)["Authorization"]).toMatch(/^Bearer /)
+      expect(((options as RequestInit).headers as Record<string, string>)["X-Correlation-Id"]).toBe(testCorrelationId)
     })
 
-    it("should use environment variable if config not provided", async () => {
-      process.env.ISB_LEASES_LAMBDA_NAME = "env-ISB-LeasesLambdaFunction"
+    it("should use environment variables if config not provided", async () => {
+      process.env.ISB_API_BASE_URL = "https://env-api.example.com/prod"
+      process.env.ISB_JWT_SECRET_PATH = "/test/secret"
 
       const mockResponse: JSendResponse<ISBLeaseRecord> = {
         status: "success",
         data: { userEmail: testUserEmail, uuid: testUuid },
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       await fetchLeaseFromISB(leaseId, testCorrelationId)
 
-      // Verify the Lambda was invoked with the env var function name
-      const call = lambdaMock.calls()[0]
-      const input = call.args[0].input as { FunctionName: string }
-      expect(input.FunctionName).toBe("env-ISB-LeasesLambdaFunction")
+      // Verify the fetch was called with the env var API base URL
+      const [url] = mockFetch.mock.calls[0]
+      expect(url).toContain("https://env-api.example.com/prod/leases/")
     })
 
-    it("should return null if ISB_LEASES_LAMBDA_NAME not configured", async () => {
+    it("should return null if ISB API not configured", async () => {
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 
@@ -207,9 +252,7 @@ describe("ISB Client", () => {
     it("should return null for 404 response (graceful degradation)", async () => {
       const mockResponse = { status: "fail", message: "Lease not found" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(404, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(404, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -219,16 +262,14 @@ describe("ISB Client", () => {
   })
 
   // ===========================================================================
-  // AC-5: 500/Execution Error Tests
+  // AC-5: 500/Network Error Tests
   // ===========================================================================
 
   describe("fetchLeaseFromISB - AC-5: Server error handling", () => {
     it("should return null for 500 response (graceful degradation)", async () => {
       const mockResponse = { status: "error", message: "Internal server error" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(500, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(500, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -237,9 +278,7 @@ describe("ISB Client", () => {
     })
 
     it("should return null for 502 response", async () => {
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(502, {}),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(502, {}))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -248,9 +287,7 @@ describe("ISB Client", () => {
     })
 
     it("should return null for 503 response", async () => {
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(503, {}),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(503, {}))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -258,11 +295,8 @@ describe("ISB Client", () => {
       expect(result).toBeNull()
     })
 
-    it("should return null for Lambda execution error (FunctionError)", async () => {
-      lambdaMock.on(InvokeCommand).resolves({
-        FunctionError: "Unhandled",
-        Payload: new Uint8Array(Buffer.from(JSON.stringify({ errorMessage: "Error in handler" }))) as any,
-      })
+    it("should return null for network error", async () => {
+      mockFetch.mockRejectedValue(new Error("Network error"))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -270,19 +304,8 @@ describe("ISB Client", () => {
       expect(result).toBeNull()
     })
 
-    it("should return null for empty Lambda payload", async () => {
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: undefined,
-      })
-
-      const leaseId = constructLeaseId(testUserEmail, testUuid)
-      const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
-
-      expect(result).toBeNull()
-    })
-
-    it("should return null for Lambda invocation error", async () => {
-      lambdaMock.on(InvokeCommand).rejects(new Error("Service unavailable"))
+    it("should return null for timeout error", async () => {
+      mockFetch.mockRejectedValue(new DOMException("The operation was aborted", "AbortError"))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -302,9 +325,7 @@ describe("ISB Client", () => {
         message: "Validation failed",
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -318,9 +339,7 @@ describe("ISB Client", () => {
         message: "Internal processing error",
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -334,9 +353,7 @@ describe("ISB Client", () => {
         // data field missing
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -362,9 +379,7 @@ describe("ISB Client", () => {
         data: mockLease,
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const result = await fetchLeaseByKey(testUserEmail, testUuid, testCorrelationId, testConfig)
 
@@ -375,28 +390,28 @@ describe("ISB Client", () => {
       const result = await fetchLeaseByKey("", testUuid, testCorrelationId, testConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it("should return null for empty uuid", async () => {
       const result = await fetchLeaseByKey(testUserEmail, "", testCorrelationId, testConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it("should return null for whitespace-only userEmail", async () => {
       const result = await fetchLeaseByKey("   ", testUuid, testCorrelationId, testConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it("should return null for whitespace-only uuid", async () => {
       const result = await fetchLeaseByKey(testUserEmail, "   ", testCorrelationId, testConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 
@@ -408,9 +423,7 @@ describe("ISB Client", () => {
     it("should return null for 400 response", async () => {
       const mockResponse = { status: "fail", message: "Bad request" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(400, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(400, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -421,9 +434,7 @@ describe("ISB Client", () => {
     it("should return null for 401 response", async () => {
       const mockResponse = { status: "fail", message: "Unauthorized" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(401, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(401, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
@@ -434,14 +445,61 @@ describe("ISB Client", () => {
     it("should return null for 403 response", async () => {
       const mockResponse = { status: "fail", message: "Forbidden" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(403, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(403, mockResponse))
 
       const leaseId = constructLeaseId(testUserEmail, testUuid)
       const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
 
       expect(result).toBeNull()
+    })
+  })
+
+  // ===========================================================================
+  // JWT Secret Retrieval Tests
+  // ===========================================================================
+
+  describe("JWT secret retrieval", () => {
+    it("should fetch JWT secret from Secrets Manager on first call", async () => {
+      const mockResponse: JSendResponse<ISBLeaseRecord> = {
+        status: "success",
+        data: { userEmail: testUserEmail, uuid: testUuid },
+      }
+
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
+
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      expect(secretsMock.calls()).toHaveLength(1)
+      const call = secretsMock.calls()[0]
+      expect((call.args[0].input as { SecretId: string }).SecretId).toBe(TEST_JWT_SECRET_PATH)
+    })
+
+    it("should cache JWT secret across calls", async () => {
+      const mockResponse: JSendResponse<ISBLeaseRecord> = {
+        status: "success",
+        data: { userEmail: testUserEmail, uuid: testUuid },
+      }
+
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
+
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+      await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      // Secret should only be fetched once
+      expect(secretsMock.calls()).toHaveLength(1)
+    })
+
+    it("should return null if Secrets Manager fails", async () => {
+      secretsMock.reset()
+      secretsMock.on(GetSecretValueCommand).rejects(new Error("Access denied"))
+
+      const leaseId = constructLeaseId(testUserEmail, testUuid)
+      const result = await fetchLeaseFromISB(leaseId, testCorrelationId, testConfig)
+
+      expect(result).toBeNull()
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 })
@@ -453,27 +511,17 @@ describe("ISB Client", () => {
 describe("ISB Accounts Client", () => {
   const testCorrelationId = "test-event-456"
   const testAwsAccountId = "123456789012"
-  const testAccountsFunctionName = "ISB-AccountsLambdaFunction-ndx"
-  const testAccountsConfig = { functionName: testAccountsFunctionName }
+  const testAccountsConfig = { apiBaseUrl: TEST_API_BASE_URL, jwtSecretPath: TEST_JWT_SECRET_PATH }
 
   beforeEach(() => {
-    lambdaMock.reset()
+    secretsMock.reset()
+    mockFetch.mockReset()
     jest.clearAllMocks()
-    delete process.env.ISB_ACCOUNTS_LAMBDA_NAME
+    resetTokenCache()
+    delete process.env.ISB_API_BASE_URL
+    delete process.env.ISB_JWT_SECRET_PATH
+    setupSecretsMock()
   })
-
-  /**
-   * Helper to create a mock Lambda response payload
-   */
-  function createLambdaResponse(statusCode: number, body: object) {
-    const apiGatewayResponse = {
-      statusCode,
-      body: JSON.stringify(body),
-      headers: { "Content-Type": "application/json" },
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return new Uint8Array(Buffer.from(JSON.stringify(apiGatewayResponse))) as any
-  }
 
   describe("fetchAccountFromISB - Success cases", () => {
     it("should return account record on success", async () => {
@@ -489,50 +537,42 @@ describe("ISB Accounts Client", () => {
         data: mockAccount,
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
       expect(result).toEqual(mockAccount)
-      expect(lambdaMock.calls()).toHaveLength(1)
+      expect(mockFetch).toHaveBeenCalledTimes(1)
 
-      // Verify the Lambda was invoked with correct parameters
-      const call = lambdaMock.calls()[0]
-      const input = call.args[0].input as { FunctionName: string; Payload: Buffer }
-      expect(input.FunctionName).toBe(testAccountsFunctionName)
-
-      // Verify the API Gateway event format
-      const payload = JSON.parse(input.Payload.toString())
-      expect(payload.httpMethod).toBe("GET")
-      expect(payload.pathParameters.awsAccountId).toBe(testAwsAccountId)
+      // Verify the fetch was called with correct URL
+      const [url, options] = mockFetch.mock.calls[0]
+      expect(url).toBe(`${TEST_API_BASE_URL}/accounts/${testAwsAccountId}`)
+      expect((options as RequestInit).method).toBe("GET")
+      expect(((options as RequestInit).headers as Record<string, string>)["Authorization"]).toMatch(/^Bearer /)
     })
 
-    it("should use environment variable if config not provided", async () => {
-      process.env.ISB_ACCOUNTS_LAMBDA_NAME = "env-ISB-AccountsLambdaFunction"
+    it("should use environment variables if config not provided", async () => {
+      process.env.ISB_API_BASE_URL = "https://env-api.example.com/prod"
+      process.env.ISB_JWT_SECRET_PATH = "/test/secret"
 
       const mockResponse: JSendResponse<ISBAccountRecord> = {
         status: "success",
         data: { awsAccountId: testAwsAccountId },
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       await fetchAccountFromISB(testAwsAccountId, testCorrelationId)
 
-      const call = lambdaMock.calls()[0]
-      const input = call.args[0].input as { FunctionName: string }
-      expect(input.FunctionName).toBe("env-ISB-AccountsLambdaFunction")
+      const [url] = mockFetch.mock.calls[0]
+      expect(url).toContain("https://env-api.example.com/prod/accounts/")
     })
 
-    it("should return null if ISB_ACCOUNTS_LAMBDA_NAME not configured", async () => {
+    it("should return null if ISB API not configured", async () => {
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 
@@ -540,9 +580,7 @@ describe("ISB Accounts Client", () => {
     it("should return null for 404 response (graceful degradation)", async () => {
       const mockResponse = { status: "fail", message: "Account not found" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(404, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(404, mockResponse))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
@@ -554,28 +592,15 @@ describe("ISB Accounts Client", () => {
     it("should return null for 500 response (graceful degradation)", async () => {
       const mockResponse = { status: "error", message: "Internal server error" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(500, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(500, mockResponse))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
       expect(result).toBeNull()
     })
 
-    it("should return null for Lambda execution error", async () => {
-      lambdaMock.on(InvokeCommand).resolves({
-        FunctionError: "Unhandled",
-        Payload: new Uint8Array(Buffer.from(JSON.stringify({ errorMessage: "Error" }))) as any,
-      })
-
-      const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
-
-      expect(result).toBeNull()
-    })
-
-    it("should return null for Lambda invocation error", async () => {
-      lambdaMock.on(InvokeCommand).rejects(new Error("Service unavailable"))
+    it("should return null for network error", async () => {
+      mockFetch.mockRejectedValue(new Error("Service unavailable"))
 
       const result = await fetchAccountFromISB(testAwsAccountId, testCorrelationId, testAccountsConfig)
 
@@ -588,14 +613,14 @@ describe("ISB Accounts Client", () => {
       const result = await fetchAccountFromISB("", testCorrelationId, testAccountsConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it("should return null for whitespace-only awsAccountId", async () => {
       const result = await fetchAccountFromISB("   ", testCorrelationId, testAccountsConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 })
@@ -607,27 +632,17 @@ describe("ISB Accounts Client", () => {
 describe("ISB Templates Client", () => {
   const testCorrelationId = "test-event-789"
   const testTemplateName = "empty-sandbox"
-  const testTemplatesFunctionName = "ISB-LeaseTemplatesLambdaFunction-ndx"
-  const testTemplatesConfig = { functionName: testTemplatesFunctionName }
+  const testTemplatesConfig = { apiBaseUrl: TEST_API_BASE_URL, jwtSecretPath: TEST_JWT_SECRET_PATH }
 
   beforeEach(() => {
-    lambdaMock.reset()
+    secretsMock.reset()
+    mockFetch.mockReset()
     jest.clearAllMocks()
-    delete process.env.ISB_TEMPLATES_LAMBDA_NAME
+    resetTokenCache()
+    delete process.env.ISB_API_BASE_URL
+    delete process.env.ISB_JWT_SECRET_PATH
+    setupSecretsMock()
   })
-
-  /**
-   * Helper to create a mock Lambda response payload
-   */
-  function createLambdaResponse(statusCode: number, body: object) {
-    const apiGatewayResponse = {
-      statusCode,
-      body: JSON.stringify(body),
-      headers: { "Content-Type": "application/json" },
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return new Uint8Array(Buffer.from(JSON.stringify(apiGatewayResponse))) as any
-  }
 
   describe("fetchTemplateFromISB - Success cases", () => {
     it("should return template record on success", async () => {
@@ -644,50 +659,41 @@ describe("ISB Templates Client", () => {
         data: mockTemplate,
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 
       expect(result).toEqual(mockTemplate)
-      expect(lambdaMock.calls()).toHaveLength(1)
+      expect(mockFetch).toHaveBeenCalledTimes(1)
 
-      // Verify the Lambda was invoked with correct parameters
-      const call = lambdaMock.calls()[0]
-      const input = call.args[0].input as { FunctionName: string; Payload: Buffer }
-      expect(input.FunctionName).toBe(testTemplatesFunctionName)
-
-      // Verify the API Gateway event format
-      const payload = JSON.parse(input.Payload.toString())
-      expect(payload.httpMethod).toBe("GET")
-      expect(payload.pathParameters.leaseTemplateId).toBe(testTemplateName)
+      // Verify the fetch was called with correct URL
+      const [url, options] = mockFetch.mock.calls[0]
+      expect(url).toBe(`${TEST_API_BASE_URL}/leaseTemplates/${testTemplateName}`)
+      expect((options as RequestInit).method).toBe("GET")
     })
 
-    it("should use environment variable if config not provided", async () => {
-      process.env.ISB_TEMPLATES_LAMBDA_NAME = "env-ISB-TemplatesLambdaFunction"
+    it("should use environment variables if config not provided", async () => {
+      process.env.ISB_API_BASE_URL = "https://env-api.example.com/prod"
+      process.env.ISB_JWT_SECRET_PATH = "/test/secret"
 
       const mockResponse: JSendResponse<ISBTemplateRecord> = {
         status: "success",
         data: { uuid: "test-uuid", name: testTemplateName },
       }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(200, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(200, mockResponse))
 
       await fetchTemplateFromISB(testTemplateName, testCorrelationId)
 
-      const call = lambdaMock.calls()[0]
-      const input = call.args[0].input as { FunctionName: string }
-      expect(input.FunctionName).toBe("env-ISB-TemplatesLambdaFunction")
+      const [url] = mockFetch.mock.calls[0]
+      expect(url).toContain("https://env-api.example.com/prod/leaseTemplates/")
     })
 
-    it("should return null if ISB_TEMPLATES_LAMBDA_NAME not configured", async () => {
+    it("should return null if ISB API not configured", async () => {
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 
@@ -695,9 +701,7 @@ describe("ISB Templates Client", () => {
     it("should return null for 404 response (graceful degradation)", async () => {
       const mockResponse = { status: "fail", message: "Template not found" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(404, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(404, mockResponse))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 
@@ -709,28 +713,15 @@ describe("ISB Templates Client", () => {
     it("should return null for 500 response (graceful degradation)", async () => {
       const mockResponse = { status: "error", message: "Internal server error" }
 
-      lambdaMock.on(InvokeCommand).resolves({
-        Payload: createLambdaResponse(500, mockResponse),
-      })
+      mockFetch.mockResolvedValue(createAPIResponse(500, mockResponse))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 
       expect(result).toBeNull()
     })
 
-    it("should return null for Lambda execution error", async () => {
-      lambdaMock.on(InvokeCommand).resolves({
-        FunctionError: "Unhandled",
-        Payload: new Uint8Array(Buffer.from(JSON.stringify({ errorMessage: "Error" }))) as any,
-      })
-
-      const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
-
-      expect(result).toBeNull()
-    })
-
-    it("should return null for Lambda invocation error", async () => {
-      lambdaMock.on(InvokeCommand).rejects(new Error("Service unavailable"))
+    it("should return null for network error", async () => {
+      mockFetch.mockRejectedValue(new Error("Service unavailable"))
 
       const result = await fetchTemplateFromISB(testTemplateName, testCorrelationId, testTemplatesConfig)
 
@@ -743,14 +734,14 @@ describe("ISB Templates Client", () => {
       const result = await fetchTemplateFromISB("", testCorrelationId, testTemplatesConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it("should return null for whitespace-only templateName", async () => {
       const result = await fetchTemplateFromISB("   ", testCorrelationId, testTemplatesConfig)
 
       expect(result).toBeNull()
-      expect(lambdaMock.calls()).toHaveLength(0)
+      expect(mockFetch).not.toHaveBeenCalled()
     })
   })
 })

@@ -1,8 +1,8 @@
 /**
  * ISB API Client Module for Notification System
  *
- * This module provides Lambda invocation client functionality for fetching lease data
- * from the ISB Leases Lambda directly, bypassing API Gateway authorization.
+ * This module provides HTTP client functionality for fetching data from the
+ * ISB API Gateway with HS256 JWT authentication.
  *
  * Story: 5.1 - Replace DynamoDB Reads with ISB API
  * ACs: 1, 4, 5, 6
@@ -10,6 +10,7 @@
  * Security Controls:
  * - AC-5, AC-6: Graceful degradation on API failures
  * - NFR4: 5-second timeout for API calls
+ * - HS256 JWT signed with shared secret from Secrets Manager
  * - Structured JSON logging with correlation ID
  * - No PII in error logs
  *
@@ -18,12 +19,13 @@
 
 import { Logger } from "@aws-lambda-powertools/logger"
 import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
-import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda"
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager"
+import { createHmac } from "node:crypto"
 
 // =============================================================================
 // Constants
 // =============================================================================
-// Logger, Metrics and Lambda Client
+// Logger, Metrics and Secrets Manager Client
 // =============================================================================
 
 const logger = new Logger({ serviceName: "ndx-notifications" })
@@ -32,7 +34,7 @@ const metrics = new Metrics({
   serviceName: "ndx-notifications",
 })
 
-const lambdaClient = new LambdaClient({})
+const secretsClient = new SecretsManagerClient({})
 
 // =============================================================================
 // Types
@@ -95,12 +97,93 @@ export interface JSendResponse<T> {
 }
 
 /**
- * Configuration for ISB Lambda client
+ * Configuration for ISB API client
  */
 export interface ISBClientConfig {
-  /** Lambda function name for direct invocation */
-  functionName: string
+  /** API Gateway base URL */
+  apiBaseUrl: string
+  /** Secrets Manager path for JWT signing secret */
+  jwtSecretPath?: string
   timeoutMs?: number
+}
+
+// =============================================================================
+// JWT Signing (zero new dependencies — uses Node.js built-in crypto)
+// =============================================================================
+
+/**
+ * Sign a JWT with HS256 algorithm
+ *
+ * @param payload - JWT payload object
+ * @param secret - HMAC-SHA256 signing secret
+ * @param expiresInSeconds - Token TTL (default 3600s / 1 hour)
+ * @returns Signed JWT string
+ */
+export function signJwt(payload: object, secret: string, expiresInSeconds = 3600): string {
+  const header = { alg: "HS256", typ: "JWT" }
+  const now = Math.floor(Date.now() / 1000)
+  const fullPayload = { ...payload, iat: now, exp: now + expiresInSeconds }
+  const encodedHeader = Buffer.from(JSON.stringify(header)).toString("base64url")
+  const encodedPayload = Buffer.from(JSON.stringify(fullPayload)).toString("base64url")
+  const signature = createHmac("sha256", secret)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64url")
+  return `${encodedHeader}.${encodedPayload}.${signature}`
+}
+
+// =============================================================================
+// Token Manager — pre-warm pattern matching secrets.ts
+// =============================================================================
+
+let cachedSecret: string | null = null
+let cachedToken: string | null = null
+let tokenExpiry = 0
+
+/**
+ * Fetch JWT signing secret from Secrets Manager
+ */
+async function fetchJwtSecret(secretPath: string): Promise<string> {
+  const command = new GetSecretValueCommand({ SecretId: secretPath })
+  const response = await secretsClient.send(command)
+  if (!response.SecretString) {
+    throw new Error("JWT secret is empty")
+  }
+  return response.SecretString
+}
+
+/**
+ * Get a valid signed JWT token, re-signing if expired or expiring within 60s
+ *
+ * @param jwtSecretPath - Secrets Manager path for the JWT secret
+ * @returns Signed JWT string
+ */
+async function getISBToken(jwtSecretPath: string): Promise<string> {
+  // Ensure secret is loaded
+  if (!cachedSecret) {
+    cachedSecret = await fetchJwtSecret(jwtSecretPath)
+  }
+
+  // Re-sign if token expired or expiring within 60s
+  const now = Math.floor(Date.now() / 1000)
+  if (!cachedToken || now >= tokenExpiry - 60) {
+    cachedToken = signJwt(
+      { user: { email: "ndx+notifier@dsit.gov.uk", roles: ["Admin"] } },
+      cachedSecret,
+      3600,
+    )
+    tokenExpiry = now + 3600
+  }
+
+  return cachedToken
+}
+
+/**
+ * Reset cached token state (for testing)
+ */
+export function resetTokenCache(): void {
+  cachedSecret = null
+  cachedToken = null
+  tokenExpiry = 0
 }
 
 // =============================================================================
@@ -142,18 +225,37 @@ export function parseLeaseId(leaseId: string): { userEmail: string; uuid: string
 }
 
 /**
- * API Gateway Proxy Response format returned by Lambda
+ * Make an authenticated GET request to ISB API Gateway
+ *
+ * @param url - Full URL to fetch
+ * @param correlationId - Event ID for log correlation
+ * @param jwtSecretPath - Secrets Manager path for JWT secret
+ * @param timeoutMs - Request timeout in milliseconds (default 5000)
+ * @returns Response object or null on error
  */
-interface APIGatewayProxyResult {
-  statusCode: number
-  body: string
-  headers?: Record<string, string>
+async function fetchFromISBAPI(
+  url: string,
+  correlationId: string,
+  jwtSecretPath: string,
+  timeoutMs = 5000,
+): Promise<Response | null> {
+  const token = await getISBToken(jwtSecretPath)
+
+  return fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "X-Correlation-Id": correlationId,
+    },
+    signal: AbortSignal.timeout(timeoutMs),
+  })
 }
 
 /**
- * Fetch lease record from ISB Lambda directly
+ * Fetch lease record from ISB API Gateway
  *
- * AC-1: Invoke ISB Leases Lambda with GET /leases/{id} event
+ * AC-1: Call ISB API with GET /leases/{id}
  * AC-4: Return null for 404 responses (graceful degradation)
  * AC-5: Return null for 500/network errors (graceful degradation)
  * AC-6/NFR4: 5-second timeout
@@ -168,11 +270,14 @@ export async function fetchLeaseFromISB(
   correlationId: string,
   config?: ISBClientConfig,
 ): Promise<ISBLeaseRecord | null> {
-  const functionName = config?.functionName || process.env.ISB_LEASES_LAMBDA_NAME
+  const apiBaseUrl = config?.apiBaseUrl || process.env.ISB_API_BASE_URL
+  const jwtSecretPath = config?.jwtSecretPath || process.env.ISB_JWT_SECRET_PATH
 
-  if (!functionName) {
-    logger.warn("ISB_LEASES_LAMBDA_NAME not configured - skipping ISB enrichment", {
+  if (!apiBaseUrl || !jwtSecretPath) {
+    logger.warn("ISB API not configured - skipping ISB enrichment", {
       correlationId,
+      hasApiBaseUrl: !!apiBaseUrl,
+      hasJwtSecretPath: !!jwtSecretPath,
     })
     metrics.addMetric("ISBClientConfigMissing", MetricUnit.Count, 1)
     return null
@@ -181,98 +286,26 @@ export async function fetchLeaseFromISB(
   const startTime = Date.now()
 
   try {
-    logger.debug("Invoking ISB Leases Lambda", {
+    logger.debug("Calling ISB Leases API", {
       correlationId,
-      functionName,
-      leaseIdPrefix: leaseId.substring(0, 8) + "...", // Don't log full ID (may contain PII)
+      leaseIdPrefix: leaseId.substring(0, 8) + "...",
     })
 
-    // Construct API Gateway proxy event format
-    // The ISB Lambda middleware decodes the JWT and sets request.context.user
-    // JWT is decoded but signature is not verified for direct Lambda invocation
-    const notifierEmail = "ndx+notifier@dsit.gov.uk"
+    const url = `${apiBaseUrl}/leases/${encodeURIComponent(leaseId)}`
+    const response = await fetchFromISBAPI(url, correlationId, jwtSecretPath, config?.timeoutMs)
 
-    // Create JWT matching the format expected by ISB Lambda middleware
-    // Uses HS256 algorithm header (signature not verified for direct invocation)
-    const jwtHeader = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" }))
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-
-    // Payload must have user object with email and roles
-    const jwtPayload = Buffer.from(
-      JSON.stringify({
-        user: {
-          email: notifierEmail,
-          roles: ["Admin"],
-        },
-      }),
-    )
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-
-    // Signature is "directinvoke" - not verified but must be present
-    const jwtToken = `${jwtHeader}.${jwtPayload}.directinvoke`
-
-    const apiGatewayEvent = {
-      httpMethod: "GET",
-      path: `/leases/${leaseId}`,
-      pathParameters: { leaseId },
-      headers: {
-        "X-Correlation-Id": correlationId,
-        Authorization: `Bearer ${jwtToken}`,
-        "Content-Type": "application/json",
-      },
-      requestContext: {
-        httpMethod: "GET",
-        path: `/leases/${leaseId}`,
-        extendedRequestId: `notifier-getlease-${Date.now()}`,
-      },
-      resource: "/leases/{leaseId}",
-      body: null,
-      isBase64Encoded: false,
+    if (!response) {
+      const latencyMs = Date.now() - startTime
+      metrics.addMetric("ISBAPIRequestError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
     }
 
-    const command = new InvokeCommand({
-      FunctionName: functionName,
-      Payload: Buffer.from(JSON.stringify(apiGatewayEvent)),
-    })
-
-    const response = await lambdaClient.send(command)
     const latencyMs = Date.now() - startTime
 
-    // Check for Lambda execution error
-    if (response.FunctionError) {
-      logger.warn("ISB Lambda execution error - proceeding without enrichment", {
-        correlationId,
-        latencyMs,
-        functionError: response.FunctionError,
-      })
-      metrics.addMetric("ISBLambdaExecutionError", MetricUnit.Count, 1)
-      metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    // Parse Lambda response payload
-    if (!response.Payload) {
-      logger.warn("ISB Lambda returned empty payload", {
-        correlationId,
-        latencyMs,
-      })
-      metrics.addMetric("ISBLambdaEmptyResponse", MetricUnit.Count, 1)
-      metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    const payloadString = Buffer.from(response.Payload).toString("utf-8")
-    const apiResponse = JSON.parse(payloadString) as APIGatewayProxyResult
-
     // AC-4: Handle 404 (lease not found) - graceful degradation
-    if (apiResponse.statusCode === 404) {
-      logger.debug("Lease not found in ISB Lambda", {
+    if (response.status === 404) {
+      logger.debug("Lease not found in ISB API", {
         correlationId,
         latencyMs,
         statusCode: 404,
@@ -283,11 +316,11 @@ export async function fetchLeaseFromISB(
     }
 
     // AC-5: Handle 5xx errors - graceful degradation
-    if (apiResponse.statusCode >= 500) {
-      logger.warn("ISB Lambda returned server error - proceeding without enrichment", {
+    if (response.status >= 500) {
+      logger.warn("ISB API returned server error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        statusCode: apiResponse.statusCode,
+        statusCode: response.status,
       })
       metrics.addMetric("ISBAPIServerError", MetricUnit.Count, 1)
       metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
@@ -295,23 +328,23 @@ export async function fetchLeaseFromISB(
     }
 
     // Handle 4xx errors (other than 404)
-    if (apiResponse.statusCode >= 400) {
-      logger.warn("ISB Lambda returned client error - proceeding without enrichment", {
+    if (response.status >= 400) {
+      logger.warn("ISB API returned client error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        statusCode: apiResponse.statusCode,
+        statusCode: response.status,
       })
       metrics.addMetric("ISBAPIClientError", MetricUnit.Count, 1)
       metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
       return null
     }
 
-    // Parse JSend response from body
-    const json = JSON.parse(apiResponse.body) as JSendResponse<ISBLeaseRecord>
+    // Parse JSend response body directly (no Lambda envelope to unwrap)
+    const json = (await response.json()) as JSendResponse<ISBLeaseRecord>
 
     // Validate JSend format
     if (json.status !== "success" || !json.data) {
-      logger.warn("ISB Lambda returned non-success JSend response", {
+      logger.warn("ISB API returned non-success JSend response", {
         correlationId,
         latencyMs,
         jsendStatus: json.status,
@@ -323,7 +356,7 @@ export async function fetchLeaseFromISB(
     }
 
     // Success path
-    logger.debug("Lease fetched successfully from ISB Lambda", {
+    logger.debug("Lease fetched successfully from ISB API", {
       correlationId,
       latencyMs,
       hasStatus: !!json.data.status,
@@ -337,14 +370,14 @@ export async function fetchLeaseFromISB(
   } catch (error) {
     const latencyMs = Date.now() - startTime
 
-    // Handle timeout or invocation errors
-    logger.warn("ISB Lambda invocation error - proceeding without enrichment", {
+    // Handle timeout or network errors
+    logger.warn("ISB API request error - proceeding without enrichment", {
       correlationId,
       latencyMs,
       errorType: error instanceof Error ? error.name : "Unknown",
       errorMessage: error instanceof Error ? error.message : "Unknown error",
     })
-    metrics.addMetric("ISBLambdaInvocationError", MetricUnit.Count, 1)
+    metrics.addMetric("ISBAPIRequestError", MetricUnit.Count, 1)
     metrics.addMetric("ISBAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
     return null
   }
@@ -393,14 +426,14 @@ export async function fetchLeaseByKey(
 // =============================================================================
 
 /**
- * Fetch account record from ISB Accounts Lambda directly
+ * Fetch account record from ISB API Gateway
  *
- * Invokes ISB Accounts Lambda with GET /accounts/{awsAccountId} event.
+ * Calls ISB API with GET /accounts/{awsAccountId}.
  * Returns null for 404 responses or errors (graceful degradation).
  *
  * @param awsAccountId - AWS account ID to look up
  * @param correlationId - Event ID for log correlation
- * @param config - Optional client configuration (function name override)
+ * @param config - Optional client configuration
  * @returns AccountRecord or null if not found/error
  */
 export async function fetchAccountFromISB(
@@ -408,10 +441,11 @@ export async function fetchAccountFromISB(
   correlationId: string,
   config?: ISBClientConfig,
 ): Promise<ISBAccountRecord | null> {
-  const functionName = config?.functionName || process.env.ISB_ACCOUNTS_LAMBDA_NAME
+  const apiBaseUrl = config?.apiBaseUrl || process.env.ISB_API_BASE_URL
+  const jwtSecretPath = config?.jwtSecretPath || process.env.ISB_JWT_SECRET_PATH
 
-  if (!functionName) {
-    logger.warn("ISB_ACCOUNTS_LAMBDA_NAME not configured - skipping account enrichment", {
+  if (!apiBaseUrl || !jwtSecretPath) {
+    logger.warn("ISB API not configured - skipping account enrichment", {
       correlationId,
     })
     metrics.addMetric("ISBClientConfigMissing", MetricUnit.Count, 1)
@@ -430,93 +464,26 @@ export async function fetchAccountFromISB(
   const startTime = Date.now()
 
   try {
-    logger.debug("Invoking ISB Accounts Lambda", {
+    logger.debug("Calling ISB Accounts API", {
       correlationId,
-      functionName,
       awsAccountId,
     })
 
-    // Construct API Gateway proxy event format
-    const notifierEmail = "ndx+notifier@dsit.gov.uk"
+    const url = `${apiBaseUrl}/accounts/${encodeURIComponent(awsAccountId)}`
+    const response = await fetchFromISBAPI(url, correlationId, jwtSecretPath, config?.timeoutMs)
 
-    // Create JWT matching the format expected by ISB Lambda middleware
-    const jwtHeader = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" }))
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-
-    const jwtPayload = Buffer.from(
-      JSON.stringify({
-        user: {
-          email: notifierEmail,
-          roles: ["Admin"],
-        },
-      }),
-    )
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-
-    const jwtToken = `${jwtHeader}.${jwtPayload}.directinvoke`
-
-    const apiGatewayEvent = {
-      httpMethod: "GET",
-      path: `/accounts/${awsAccountId}`,
-      pathParameters: { awsAccountId },
-      headers: {
-        "X-Correlation-Id": correlationId,
-        Authorization: `Bearer ${jwtToken}`,
-        "Content-Type": "application/json",
-      },
-      requestContext: {
-        httpMethod: "GET",
-        path: `/accounts/${awsAccountId}`,
-        extendedRequestId: `notifier-getaccount-${Date.now()}`,
-      },
-      resource: "/accounts/{awsAccountId}",
-      body: null,
-      isBase64Encoded: false,
+    if (!response) {
+      const latencyMs = Date.now() - startTime
+      metrics.addMetric("ISBAccountsAPIRequestError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
     }
 
-    const command = new InvokeCommand({
-      FunctionName: functionName,
-      Payload: Buffer.from(JSON.stringify(apiGatewayEvent)),
-    })
-
-    const response = await lambdaClient.send(command)
     const latencyMs = Date.now() - startTime
 
-    // Check for Lambda execution error
-    if (response.FunctionError) {
-      logger.warn("ISB Accounts Lambda execution error - proceeding without enrichment", {
-        correlationId,
-        latencyMs,
-        functionError: response.FunctionError,
-      })
-      metrics.addMetric("ISBAccountsLambdaExecutionError", MetricUnit.Count, 1)
-      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    // Parse Lambda response payload
-    if (!response.Payload) {
-      logger.warn("ISB Accounts Lambda returned empty payload", {
-        correlationId,
-        latencyMs,
-      })
-      metrics.addMetric("ISBAccountsLambdaEmptyResponse", MetricUnit.Count, 1)
-      metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    const payloadString = Buffer.from(response.Payload).toString("utf-8")
-    const apiResponse = JSON.parse(payloadString) as APIGatewayProxyResult
-
     // Handle 404 (account not found) - graceful degradation
-    if (apiResponse.statusCode === 404) {
-      logger.debug("Account not found in ISB Lambda", {
+    if (response.status === 404) {
+      logger.debug("Account not found in ISB API", {
         correlationId,
         latencyMs,
         statusCode: 404,
@@ -527,11 +494,11 @@ export async function fetchAccountFromISB(
     }
 
     // Handle 5xx errors - graceful degradation
-    if (apiResponse.statusCode >= 500) {
-      logger.warn("ISB Accounts Lambda returned server error - proceeding without enrichment", {
+    if (response.status >= 500) {
+      logger.warn("ISB Accounts API returned server error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        statusCode: apiResponse.statusCode,
+        statusCode: response.status,
       })
       metrics.addMetric("ISBAccountsAPIServerError", MetricUnit.Count, 1)
       metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
@@ -539,23 +506,23 @@ export async function fetchAccountFromISB(
     }
 
     // Handle 4xx errors (other than 404)
-    if (apiResponse.statusCode >= 400) {
-      logger.warn("ISB Accounts Lambda returned client error - proceeding without enrichment", {
+    if (response.status >= 400) {
+      logger.warn("ISB Accounts API returned client error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        statusCode: apiResponse.statusCode,
+        statusCode: response.status,
       })
       metrics.addMetric("ISBAccountsAPIClientError", MetricUnit.Count, 1)
       metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
       return null
     }
 
-    // Parse JSend response from body
-    const json = JSON.parse(apiResponse.body) as JSendResponse<ISBAccountRecord>
+    // Parse JSend response body directly
+    const json = (await response.json()) as JSendResponse<ISBAccountRecord>
 
     // Validate JSend format
     if (json.status !== "success" || !json.data) {
-      logger.warn("ISB Accounts Lambda returned non-success JSend response", {
+      logger.warn("ISB Accounts API returned non-success JSend response", {
         correlationId,
         latencyMs,
         jsendStatus: json.status,
@@ -567,7 +534,7 @@ export async function fetchAccountFromISB(
     }
 
     // Success path
-    logger.debug("Account fetched successfully from ISB Lambda", {
+    logger.debug("Account fetched successfully from ISB API", {
       correlationId,
       latencyMs,
       hasName: !!json.data.name,
@@ -580,14 +547,14 @@ export async function fetchAccountFromISB(
   } catch (error) {
     const latencyMs = Date.now() - startTime
 
-    // Handle timeout or invocation errors
-    logger.warn("ISB Accounts Lambda invocation error - proceeding without enrichment", {
+    // Handle timeout or network errors
+    logger.warn("ISB Accounts API request error - proceeding without enrichment", {
       correlationId,
       latencyMs,
       errorType: error instanceof Error ? error.name : "Unknown",
       errorMessage: error instanceof Error ? error.message : "Unknown error",
     })
-    metrics.addMetric("ISBAccountsLambdaInvocationError", MetricUnit.Count, 1)
+    metrics.addMetric("ISBAccountsAPIRequestError", MetricUnit.Count, 1)
     metrics.addMetric("ISBAccountsAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
     return null
   }
@@ -598,14 +565,14 @@ export async function fetchAccountFromISB(
 // =============================================================================
 
 /**
- * Fetch template record from ISB Templates Lambda directly
+ * Fetch template record from ISB API Gateway
  *
- * Invokes ISB Templates Lambda with GET /leaseTemplates/{templateName} event.
+ * Calls ISB API with GET /leaseTemplates/{templateName}.
  * Returns null for 404 responses or errors (graceful degradation).
  *
  * @param templateName - Template name to look up
  * @param correlationId - Event ID for log correlation
- * @param config - Optional client configuration (function name override)
+ * @param config - Optional client configuration
  * @returns TemplateRecord or null if not found/error
  */
 export async function fetchTemplateFromISB(
@@ -613,10 +580,11 @@ export async function fetchTemplateFromISB(
   correlationId: string,
   config?: ISBClientConfig,
 ): Promise<ISBTemplateRecord | null> {
-  const functionName = config?.functionName || process.env.ISB_TEMPLATES_LAMBDA_NAME
+  const apiBaseUrl = config?.apiBaseUrl || process.env.ISB_API_BASE_URL
+  const jwtSecretPath = config?.jwtSecretPath || process.env.ISB_JWT_SECRET_PATH
 
-  if (!functionName) {
-    logger.warn("ISB_TEMPLATES_LAMBDA_NAME not configured - skipping template enrichment", {
+  if (!apiBaseUrl || !jwtSecretPath) {
+    logger.warn("ISB API not configured - skipping template enrichment", {
       correlationId,
     })
     metrics.addMetric("ISBClientConfigMissing", MetricUnit.Count, 1)
@@ -635,93 +603,26 @@ export async function fetchTemplateFromISB(
   const startTime = Date.now()
 
   try {
-    logger.debug("Invoking ISB Templates Lambda", {
+    logger.debug("Calling ISB Templates API", {
       correlationId,
-      functionName,
       templateName,
     })
 
-    // Construct API Gateway proxy event format
-    const notifierEmail = "ndx+notifier@dsit.gov.uk"
+    const url = `${apiBaseUrl}/leaseTemplates/${encodeURIComponent(templateName)}`
+    const response = await fetchFromISBAPI(url, correlationId, jwtSecretPath, config?.timeoutMs)
 
-    // Create JWT matching the format expected by ISB Lambda middleware
-    const jwtHeader = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" }))
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-
-    const jwtPayload = Buffer.from(
-      JSON.stringify({
-        user: {
-          email: notifierEmail,
-          roles: ["Admin"],
-        },
-      }),
-    )
-      .toString("base64")
-      .replace(/=/g, "")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-
-    const jwtToken = `${jwtHeader}.${jwtPayload}.directinvoke`
-
-    const apiGatewayEvent = {
-      httpMethod: "GET",
-      path: `/leaseTemplates/${templateName}`,
-      pathParameters: { leaseTemplateId: templateName },
-      headers: {
-        "X-Correlation-Id": correlationId,
-        Authorization: `Bearer ${jwtToken}`,
-        "Content-Type": "application/json",
-      },
-      requestContext: {
-        httpMethod: "GET",
-        path: `/leaseTemplates/${templateName}`,
-        extendedRequestId: `notifier-gettemplate-${Date.now()}`,
-      },
-      resource: "/leaseTemplates/{leaseTemplateId}",
-      body: null,
-      isBase64Encoded: false,
+    if (!response) {
+      const latencyMs = Date.now() - startTime
+      metrics.addMetric("ISBTemplatesAPIRequestError", MetricUnit.Count, 1)
+      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
+      return null
     }
 
-    const command = new InvokeCommand({
-      FunctionName: functionName,
-      Payload: Buffer.from(JSON.stringify(apiGatewayEvent)),
-    })
-
-    const response = await lambdaClient.send(command)
     const latencyMs = Date.now() - startTime
 
-    // Check for Lambda execution error
-    if (response.FunctionError) {
-      logger.warn("ISB Templates Lambda execution error - proceeding without enrichment", {
-        correlationId,
-        latencyMs,
-        functionError: response.FunctionError,
-      })
-      metrics.addMetric("ISBTemplatesLambdaExecutionError", MetricUnit.Count, 1)
-      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    // Parse Lambda response payload
-    if (!response.Payload) {
-      logger.warn("ISB Templates Lambda returned empty payload", {
-        correlationId,
-        latencyMs,
-      })
-      metrics.addMetric("ISBTemplatesLambdaEmptyResponse", MetricUnit.Count, 1)
-      metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
-      return null
-    }
-
-    const payloadString = Buffer.from(response.Payload).toString("utf-8")
-    const apiResponse = JSON.parse(payloadString) as APIGatewayProxyResult
-
     // Handle 404 (template not found) - graceful degradation
-    if (apiResponse.statusCode === 404) {
-      logger.debug("Template not found in ISB Lambda", {
+    if (response.status === 404) {
+      logger.debug("Template not found in ISB API", {
         correlationId,
         latencyMs,
         statusCode: 404,
@@ -732,11 +633,11 @@ export async function fetchTemplateFromISB(
     }
 
     // Handle 5xx errors - graceful degradation
-    if (apiResponse.statusCode >= 500) {
-      logger.warn("ISB Templates Lambda returned server error - proceeding without enrichment", {
+    if (response.status >= 500) {
+      logger.warn("ISB Templates API returned server error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        statusCode: apiResponse.statusCode,
+        statusCode: response.status,
       })
       metrics.addMetric("ISBTemplatesAPIServerError", MetricUnit.Count, 1)
       metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
@@ -744,23 +645,23 @@ export async function fetchTemplateFromISB(
     }
 
     // Handle 4xx errors (other than 404)
-    if (apiResponse.statusCode >= 400) {
-      logger.warn("ISB Templates Lambda returned client error - proceeding without enrichment", {
+    if (response.status >= 400) {
+      logger.warn("ISB Templates API returned client error - proceeding without enrichment", {
         correlationId,
         latencyMs,
-        statusCode: apiResponse.statusCode,
+        statusCode: response.status,
       })
       metrics.addMetric("ISBTemplatesAPIClientError", MetricUnit.Count, 1)
       metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
       return null
     }
 
-    // Parse JSend response from body
-    const json = JSON.parse(apiResponse.body) as JSendResponse<ISBTemplateRecord>
+    // Parse JSend response body directly
+    const json = (await response.json()) as JSendResponse<ISBTemplateRecord>
 
     // Validate JSend format
     if (json.status !== "success" || !json.data) {
-      logger.warn("ISB Templates Lambda returned non-success JSend response", {
+      logger.warn("ISB Templates API returned non-success JSend response", {
         correlationId,
         latencyMs,
         jsendStatus: json.status,
@@ -772,7 +673,7 @@ export async function fetchTemplateFromISB(
     }
 
     // Success path
-    logger.debug("Template fetched successfully from ISB Lambda", {
+    logger.debug("Template fetched successfully from ISB API", {
       correlationId,
       latencyMs,
       hasName: !!json.data.name,
@@ -786,14 +687,14 @@ export async function fetchTemplateFromISB(
   } catch (error) {
     const latencyMs = Date.now() - startTime
 
-    // Handle timeout or invocation errors
-    logger.warn("ISB Templates Lambda invocation error - proceeding without enrichment", {
+    // Handle timeout or network errors
+    logger.warn("ISB Templates API request error - proceeding without enrichment", {
       correlationId,
       latencyMs,
       errorType: error instanceof Error ? error.name : "Unknown",
       errorMessage: error instanceof Error ? error.message : "Unknown error",
     })
-    metrics.addMetric("ISBTemplatesLambdaInvocationError", MetricUnit.Count, 1)
+    metrics.addMetric("ISBTemplatesAPIRequestError", MetricUnit.Count, 1)
     metrics.addMetric("ISBTemplatesAPILatencyMs", MetricUnit.Milliseconds, latencyMs)
     return null
   }

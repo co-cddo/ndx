@@ -45,10 +45,7 @@ function getClient(): ReturnType<typeof createISBClient> {
   return _client
 }
 
-export async function fetchLeaseFromISB(
-  leaseId: string,
-  correlationId: string,
-): Promise<ISBLeaseRecord | null> {
+export async function fetchLeaseFromISB(leaseId: string, correlationId: string): Promise<ISBLeaseRecord | null> {
   return getClient().fetchLease(leaseId, correlationId)
 }
 

@@ -146,17 +146,15 @@ beforeEach(() => {
 
   // Set environment variables for SSO URL
   process.env.SSO_START_URL = "https://d-1234567890.awsapps.com/start"
-  // ISB Lambda names (no longer using DynamoDB table names for account/template)
-  process.env.ISB_LEASES_LAMBDA_NAME = "ISB-LeasesLambdaFunction-ndx"
-  process.env.ISB_ACCOUNTS_LAMBDA_NAME = "ISB-AccountsLambdaFunction-ndx"
-  process.env.ISB_TEMPLATES_LAMBDA_NAME = "ISB-LeaseTemplatesLambdaFunction-ndx"
+  // ISB API Gateway configuration
+  process.env.ISB_API_BASE_URL = "https://test-api.execute-api.us-west-2.amazonaws.com/prod"
+  process.env.ISB_JWT_SECRET_PATH = "/InnovationSandbox/ndx/Auth/JwtSecret"
 })
 
 afterEach(() => {
   delete process.env.SSO_START_URL
-  delete process.env.ISB_LEASES_LAMBDA_NAME
-  delete process.env.ISB_ACCOUNTS_LAMBDA_NAME
-  delete process.env.ISB_TEMPLATES_LAMBDA_NAME
+  delete process.env.ISB_API_BASE_URL
+  delete process.env.ISB_JWT_SECRET_PATH
 })
 
 // =========================================================================

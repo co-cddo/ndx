@@ -6,7 +6,7 @@
  *
  * Test naming convention: test_n5-3_{ACID}_{scenario}
  *
- * Note: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
+ * Note: All data now fetched via ISB HTTP APIs instead of direct DynamoDB access
  */
 
 import {
@@ -287,13 +287,13 @@ describe("verifyEmailOwnership", () => {
   beforeEach(() => {
     mockFetchLeaseByKey.mockReset()
     mockFetchAccountFromISB.mockReset()
-    process.env.ISB_LEASES_LAMBDA_NAME = "ISB-LeasesLambdaFunction-ndx"
-    process.env.ISB_ACCOUNTS_LAMBDA_NAME = "ISB-AccountsLambdaFunction-ndx"
+    process.env.ISB_API_BASE_URL = "https://test-api.execute-api.us-west-2.amazonaws.com/prod"
+    process.env.ISB_JWT_SECRET_PATH = "/InnovationSandbox/ndx/Auth/JwtSecret"
   })
 
   afterEach(() => {
-    delete process.env.ISB_LEASES_LAMBDA_NAME
-    delete process.env.ISB_ACCOUNTS_LAMBDA_NAME
+    delete process.env.ISB_API_BASE_URL
+    delete process.env.ISB_JWT_SECRET_PATH
   })
 
   // AC-3.1: Queries ISB Leases API with leaseId key
@@ -552,6 +552,6 @@ describe("verifyEmailOwnership", () => {
     })
   })
 
-  // Note: Missing configuration test removed - ISB Lambda name validation happens
+  // Note: Missing configuration test removed - ISB API config validation happens
   // at the isb-client.ts level and is tested in isb-client.test.ts
 })

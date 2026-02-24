@@ -209,12 +209,12 @@ export function resetCircuitBreaker(): void {
 // ISB API Query Functions
 // =============================================================================
 
-// Story 5.1: All data now fetched via ISB Lambda APIs instead of direct DynamoDB access
+// Story 5.1: All data now fetched via ISB HTTP APIs instead of direct DynamoDB access
 // This improves separation of concerns and reduces cross-service coupling
 
 /**
  * AC-6.3: Query account details via ISB Accounts API
- * Replaces direct DynamoDB access with ISB Lambda invocation
+ * Replaces direct DynamoDB access with ISB HTTP API call
  */
 export async function queryAccountTable(accountId: string, eventId: string): Promise<SandboxAccountRecord | null> {
   logger.debug("Querying ISB Accounts API for enrichment", {
@@ -250,7 +250,7 @@ export async function queryAccountTable(accountId: string, eventId: string): Pro
 
 /**
  * AC-6.4: Query template details via ISB Templates API
- * Replaces direct DynamoDB access with ISB Lambda invocation
+ * Replaces direct DynamoDB access with ISB HTTP API call
  */
 export async function queryLeaseTemplateTable(
   templateName: string,

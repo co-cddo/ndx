@@ -171,11 +171,9 @@ export class NdxNotificationStack extends cdk.Stack {
         NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
         // Billing events
         NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
-        // ISB Lambda function names for direct invocation
-        // All data is now fetched via ISB APIs instead of direct DynamoDB access
-        ...(isbConfig.leasesLambdaName && { ISB_LEASES_LAMBDA_NAME: isbConfig.leasesLambdaName }),
-        ...(isbConfig.accountsLambdaName && { ISB_ACCOUNTS_LAMBDA_NAME: isbConfig.accountsLambdaName }),
-        ...(isbConfig.templatesLambdaName && { ISB_TEMPLATES_LAMBDA_NAME: isbConfig.templatesLambdaName }),
+        // ISB API Gateway configuration for authenticated HTTP calls
+        ...(isbConfig.apiBaseUrl && { ISB_API_BASE_URL: isbConfig.apiBaseUrl }),
+        ...(isbConfig.jwtSecretPath && { ISB_JWT_SECRET_PATH: isbConfig.jwtSecretPath }),
         // Note: EVENTS_TOPIC_ARN is added after topic creation (see below)
         // Temporary: Skip template validation until GOV.UK Notify templates are fixed
         // LeaseTerminated and LeaseBudgetExceeded templates need finalCost/finalSpend fields
@@ -201,35 +199,19 @@ export class NdxNotificationStack extends cdk.Stack {
     )
 
     // =========================================================================
-    // ISB Lambda Invoke Permissions
+    // ISB JWT Secret Permissions
     // =========================================================================
-    // Grant permission to invoke ISB Lambdas directly for enrichment.
-    // This bypasses API Gateway authorization for internal service calls.
-    // All data (leases, accounts, templates) is now fetched via Lambda APIs.
-    const isbLambdaArns: string[] = []
+    // Grant permission to read the ISB JWT signing secret from Secrets Manager.
+    // Used to sign HS256 JWTs for API Gateway authentication.
 
-    if (isbConfig.leasesLambdaName) {
-      isbLambdaArns.push(
-        `arn:aws:lambda:${isbConfig.region}:${isbConfig.accountId}:function:${isbConfig.leasesLambdaName}`,
-      )
-    }
-    if (isbConfig.accountsLambdaName) {
-      isbLambdaArns.push(
-        `arn:aws:lambda:${isbConfig.region}:${isbConfig.accountId}:function:${isbConfig.accountsLambdaName}`,
-      )
-    }
-    if (isbConfig.templatesLambdaName) {
-      isbLambdaArns.push(
-        `arn:aws:lambda:${isbConfig.region}:${isbConfig.accountId}:function:${isbConfig.templatesLambdaName}`,
-      )
-    }
-
-    if (isbLambdaArns.length > 0) {
+    if (isbConfig.jwtSecretPath) {
       this.notificationHandler.addToRolePolicy(
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
-          actions: ["lambda:InvokeFunction"],
-          resources: isbLambdaArns,
+          actions: ["secretsmanager:GetSecretValue"],
+          resources: [
+            `arn:aws:secretsmanager:${isbConfig.region}:${isbConfig.accountId}:secret:${isbConfig.jwtSecretPath}*`,
+          ],
         }),
       )
     }
@@ -241,7 +223,7 @@ export class NdxNotificationStack extends cdk.Stack {
     // Security: Account-level filtering prevents cross-account event injection.
     // @see docs/notification-architecture.md#ISB-Integration
 
-    // Note: DynamoDB permissions removed - all data now fetched via ISB Lambda APIs
+    // Note: DynamoDB permissions removed - all data now fetched via ISB HTTP APIs
     // (leases, accounts, templates) for better separation of concerns.
 
     // Reference the ISB EventBridge bus (cross-account)

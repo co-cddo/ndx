@@ -153,7 +153,6 @@ export class NdxStaticStack extends cdk.Stack {
     // This policy configures security headers including Content-Security-Policy
     // that allows Google Analytics 4 Measurement Protocol requests.
     const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, "NdxSecurityHeadersPolicy", {
-      responseHeadersPolicyName: "NdxSecurityHeadersPolicy",
       comment: "Security headers for NDX static site including GA4 CSP",
       securityHeadersBehavior: {
         contentSecurityPolicy: {

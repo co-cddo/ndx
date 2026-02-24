@@ -516,7 +516,7 @@ function handler(event) {
       "Properties": {
         "ResponseHeadersPolicyConfig": {
           "Comment": "Security headers for NDX static site including GA4 CSP",
-          "Name": "NdxSecurityHeadersPolicy",
+          "Name": "NdxNdxSecurityHeadersPolicy9952ADC3",
           "SecurityHeadersConfig": {
             "ContentSecurityPolicy": {
               "ContentSecurityPolicy": "upgrade-insecure-requests; default-src 'none'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https://www.google-analytics.com; font-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com; manifest-src 'self'; frame-ancestors 'none'; base-uri 'none'",

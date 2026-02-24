@@ -1297,6 +1297,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@co-cddo/isb-client@https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz":
+  version: 1.0.0
+  resolution: "@co-cddo/isb-client@https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz"
+  dependencies:
+    "@aws-sdk/client-secrets-manager": "npm:3.992.0"
+  checksum: 10c0/03c8feb70e522442976a15261cfff458799b439df6048332d7b65c0ce5bc3ae39ec3593f699732e1035355b2de164e59595779a4153ca15da2c84d42193e8e51
+  languageName: node
+  linkType: hard
+
 "@cspotcode/source-map-support@npm:^0.8.0":
   version: 0.8.1
   resolution: "@cspotcode/source-map-support@npm:0.8.1"
@@ -4795,6 +4804,7 @@ __metadata:
     "@aws-sdk/client-sns": "npm:^3.992.0"
     "@aws-sdk/client-sqs": "npm:3.992.0"
     "@aws-sdk/util-dynamodb": "npm:3.992.0"
+    "@co-cddo/isb-client": "https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz"
     "@eslint/js": "npm:10.0.1"
     "@types/aws-lambda": "npm:8.10.160"
     "@types/jest": "npm:30.0.0"

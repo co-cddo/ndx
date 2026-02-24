@@ -55,6 +55,13 @@ export interface ISBConfig {
    * e.g. "/InnovationSandbox/ndx/Auth/JwtSecret"
    */
   readonly jwtSecretPath?: string
+
+  /**
+   * KMS key ARN used to encrypt the ISB JWT signing secret.
+   * Required when the secret is encrypted with a CMK (customer-managed key),
+   * so the notification Lambda's IAM role can call kms:Decrypt.
+   */
+  readonly jwtSecretKmsKeyArn?: string
 }
 
 /**
@@ -72,6 +79,7 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
     region: "us-west-2",
     apiBaseUrl: "https://1ewlxhaey6.execute-api.us-west-2.amazonaws.com/prod",
     jwtSecretPath: "/InnovationSandbox/ndx/Auth/JwtSecret",
+    jwtSecretKmsKeyArn: "arn:aws:kms:us-west-2:568672915267:key/eb91a9da-586e-430d-b642-e27415116b8d",
   },
   staging: {
     namespace: "InnovationSandboxCompute",
@@ -79,6 +87,7 @@ export const ISB_CONFIG: Record<string, ISBConfig> = {
     region: "us-west-2",
     apiBaseUrl: "https://1ewlxhaey6.execute-api.us-west-2.amazonaws.com/prod",
     jwtSecretPath: "/InnovationSandbox/ndx/Auth/JwtSecret",
+    jwtSecretKmsKeyArn: "arn:aws:kms:us-west-2:568672915267:key/eb91a9da-586e-430d-b642-e27415116b8d",
   },
 }
 

@@ -216,6 +216,16 @@ export class NdxNotificationStack extends cdk.Stack {
       )
     }
 
+    if (isbConfig.jwtSecretKmsKeyArn) {
+      this.notificationHandler.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["kms:Decrypt"],
+          resources: [isbConfig.jwtSecretKmsKeyArn],
+        }),
+      )
+    }
+
     // =========================================================================
     // EventBridge Subscription to ISB Event Bus
     // =========================================================================

@@ -6,7 +6,12 @@
  * NDX's service identity and powertools logger.
  */
 import { Logger } from "@aws-lambda-powertools/logger"
-import { createISBClient } from "@co-cddo/isb-client"
+import {
+  createISBClient,
+  type ISBLeaseRecord,
+  type ISBAccountRecord,
+  type ISBTemplateRecord,
+} from "@co-cddo/isb-client"
 
 // Re-export types so enrichment.ts imports are unchanged
 export type {
@@ -22,7 +27,7 @@ export { constructLeaseId, parseLeaseId, signJwt } from "@co-cddo/isb-client"
 
 const logger = new Logger({ serviceName: "ndx-notifications" })
 
-const NDX_SERVICE_IDENTITY = { email: "ndx+notifier@dsit.gov.uk", roles: ["Admin"] } as const
+const NDX_SERVICE_IDENTITY = { email: "ndx+notifier@dsit.gov.uk", roles: ["Admin"] }
 
 let _client: ReturnType<typeof createISBClient> | null = null
 

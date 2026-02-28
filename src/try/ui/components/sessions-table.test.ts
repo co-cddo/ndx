@@ -28,6 +28,7 @@ import { Lease } from "../../api/sessions-service"
 // Mock the dependencies
 jest.mock("../../api/sessions-service", () => ({
   isLeaseActive: jest.fn((lease: { status: string }) => lease.status === "Active"),
+  isLeaseProvisioning: jest.fn((lease: { status: string }) => lease.status === "Provisioning"),
   getSsoUrl: jest.fn(
     (lease: { awsAccountId: string }) =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=test_role`,
@@ -75,6 +76,18 @@ describe("Sessions Table Component", () => {
     ...mockActiveLease,
     leaseId: "lease-999",
     status: "ApprovalDenied",
+  }
+
+  const mockProvisioningLease: Lease = {
+    ...mockActiveLease,
+    leaseId: "lease-prov",
+    status: "Provisioning",
+  }
+
+  const mockProvisioningFailedLease: Lease = {
+    ...mockActiveLease,
+    leaseId: "lease-prov-fail",
+    status: "ProvisioningFailed",
   }
 
   const mockBudgetExceededLease: Lease = {
@@ -173,6 +186,20 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("Denied")
     })
 
+    it("should render Provisioning status with blue badge and 'Setting up' label", () => {
+      const html = renderSessionsTable([mockProvisioningLease])
+
+      expect(html).toContain("govuk-tag--blue")
+      expect(html).toContain("Setting up")
+    })
+
+    it("should render ProvisioningFailed status with red badge and 'Setup failed' label", () => {
+      const html = renderSessionsTable([mockProvisioningFailedLease])
+
+      expect(html).toContain("govuk-tag--red")
+      expect(html).toContain("Setup failed")
+    })
+
     it("should render BudgetExceeded status with red badge", () => {
       const html = renderSessionsTable([mockBudgetExceededLease])
 
@@ -232,6 +259,20 @@ describe("Sessions Table Component", () => {
 
     it("should NOT render Launch button for Expired leases", () => {
       const html = renderSessionsTable([mockExpiredLease])
+
+      expect(html).not.toContain("Launch AWS Console")
+      expect(html).toContain("No actions available")
+    })
+
+    it("should NOT render Launch button for Provisioning leases", () => {
+      const html = renderSessionsTable([mockProvisioningLease])
+
+      expect(html).not.toContain("Launch AWS Console")
+      expect(html).toContain("No actions available")
+    })
+
+    it("should NOT render Launch button for ProvisioningFailed leases", () => {
+      const html = renderSessionsTable([mockProvisioningFailedLease])
 
       expect(html).not.toContain("Launch AWS Console")
       expect(html).toContain("No actions available")
@@ -532,6 +573,34 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("Your lease request has been automatically approved.")
       // Should NOT be in a details element for active leases
       expect(html).not.toMatch(/<details[^>]*>[\s\S]*?Your lease request has been automatically approved/)
+    })
+
+    it("should render comments for Provisioning leases always visible", () => {
+      const mockProvisioningLeaseWithComments: Lease = {
+        ...mockProvisioningLease,
+        comments: "Your request has been received and your environment is being set up.",
+      }
+
+      const html = renderSessionsTable([mockProvisioningLeaseWithComments])
+
+      expect(html).toContain("sessions-table__comments-row")
+      expect(html).toContain("Your request has been received")
+      // Should NOT be in a details element for provisioning leases
+      expect(html).not.toMatch(/<details[^>]*>[\s\S]*?Your request has been received/)
+    })
+
+    it("should render comments for ProvisioningFailed leases in collapsible details", () => {
+      const mockProvisioningFailedLeaseWithComments: Lease = {
+        ...mockProvisioningFailedLease,
+        comments: "Account setup failed. Please contact support.",
+      }
+
+      const html = renderSessionsTable([mockProvisioningFailedLeaseWithComments])
+
+      expect(html).toContain("sessions-table__comments-row")
+      expect(html).toContain("govuk-details")
+      expect(html).toContain("See details")
+      expect(html).toContain("Account setup failed")
     })
 
     it("should render comments for non-active leases in collapsible details", () => {

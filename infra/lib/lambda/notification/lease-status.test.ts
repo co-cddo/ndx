@@ -1,9 +1,11 @@
 /**
  * Unit tests for Lease Status Handling (Story N7-6)
  *
- * Tests validation and field expectations for all 9 lease statuses:
+ * Tests validation and field expectations for all 11 lease statuses:
  * - PendingApproval
  * - ApprovalDenied
+ * - Provisioning
+ * - ProvisioningFailed
  * - Active
  * - Frozen
  * - Expired
@@ -143,14 +145,16 @@ function createLeaseRecord(
 // =============================================================================
 
 describe("Lease Status Constants", () => {
-  it("should have 9 known lease statuses", () => {
-    expect(KNOWN_LEASE_STATUSES).toHaveLength(9)
+  it("should have 11 known lease statuses", () => {
+    expect(KNOWN_LEASE_STATUSES).toHaveLength(11)
   })
 
   it("should include all expected statuses", () => {
     const expectedStatuses = [
       "PendingApproval",
       "ApprovalDenied",
+      "Provisioning",
+      "ProvisioningFailed",
       "Active",
       "Frozen",
       "Expired",
@@ -168,13 +172,14 @@ describe("Lease Status Constants", () => {
   it("should have correct status categories", () => {
     expect(STATUS_CATEGORIES.pending).toEqual(["PendingApproval"])
     expect(STATUS_CATEGORIES.denied).toEqual(["ApprovalDenied"])
-    expect(STATUS_CATEGORIES.monitored).toEqual(["Active", "Frozen"])
+    expect(STATUS_CATEGORIES.monitored).toEqual(["Active", "Frozen", "Provisioning"])
     expect(STATUS_CATEGORIES.terminal).toEqual([
       "Expired",
       "BudgetExceeded",
       "ManuallyTerminated",
       "AccountQuarantined",
       "Ejected",
+      "ProvisioningFailed",
     ])
   })
 })
@@ -277,11 +282,11 @@ describe("getStatusCategory", () => {
     expect(getStatusCategory("ApprovalDenied")).toBe("denied")
   })
 
-  it.each(["Active", "Frozen"])('should return "monitored" for %s', (status) => {
+  it.each(["Active", "Frozen", "Provisioning"])('should return "monitored" for %s', (status) => {
     expect(getStatusCategory(status)).toBe("monitored")
   })
 
-  it.each(["Expired", "BudgetExceeded", "ManuallyTerminated", "AccountQuarantined", "Ejected"])(
+  it.each(["Expired", "BudgetExceeded", "ManuallyTerminated", "AccountQuarantined", "Ejected", "ProvisioningFailed"])(
     'should return "terminal" for %s',
     (status) => {
       expect(getStatusCategory(status)).toBe("terminal")
@@ -337,7 +342,7 @@ describe("getExpectedFieldsForStatus", () => {
     expect(fields).not.toContain("endDate")
   })
 
-  it.each(["Active", "Frozen"])("should return base + monitored fields for %s", (status) => {
+  it.each(["Active", "Frozen", "Provisioning"])("should return base + monitored fields for %s", (status) => {
     const fields = getExpectedFieldsForStatus(status)
 
     // Should have base fields
@@ -357,7 +362,7 @@ describe("getExpectedFieldsForStatus", () => {
     expect(fields).not.toContain("ttl")
   })
 
-  it.each(["Expired", "BudgetExceeded", "ManuallyTerminated", "AccountQuarantined", "Ejected"])(
+  it.each(["Expired", "BudgetExceeded", "ManuallyTerminated", "AccountQuarantined", "Ejected", "ProvisioningFailed"])(
     "should return base + monitored + terminal fields for %s",
     (status) => {
       const fields = getExpectedFieldsForStatus(status)
@@ -692,6 +697,8 @@ describe("All Lease Statuses Unit Test Coverage", () => {
   const allStatuses = [
     "PendingApproval",
     "ApprovalDenied",
+    "Provisioning",
+    "ProvisioningFailed",
     "Active",
     "Frozen",
     "Expired",

@@ -19,12 +19,15 @@ import { Metrics, MetricUnit } from "@aws-lambda-powertools/metrics"
 
 /**
  * Known lease statuses from ISB schema.
- * Statuses: PendingApproval, ApprovalDenied, Active, Frozen, Expired,
- *           BudgetExceeded, ManuallyTerminated, AccountQuarantined, Ejected
+ * Statuses: PendingApproval, ApprovalDenied, Provisioning, ProvisioningFailed,
+ *           Active, Frozen, Expired, BudgetExceeded, ManuallyTerminated,
+ *           AccountQuarantined, Ejected
  */
 export const KNOWN_LEASE_STATUSES = [
   "PendingApproval",
   "ApprovalDenied",
+  "Provisioning",
+  "ProvisioningFailed",
   "Active",
   "Frozen",
   "Expired",
@@ -47,10 +50,17 @@ export const STATUS_CATEGORIES = {
   denied: ["ApprovalDenied"] as const,
 
   /** Statuses that have base + monitored fields */
-  monitored: ["Active", "Frozen"] as const,
+  monitored: ["Active", "Frozen", "Provisioning"] as const,
 
   /** Statuses that have base + monitored + expired fields */
-  terminal: ["Expired", "BudgetExceeded", "ManuallyTerminated", "AccountQuarantined", "Ejected"] as const,
+  terminal: [
+    "Expired",
+    "BudgetExceeded",
+    "ManuallyTerminated",
+    "AccountQuarantined",
+    "Ejected",
+    "ProvisioningFailed",
+  ] as const,
 } as const
 
 /**

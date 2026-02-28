@@ -294,6 +294,63 @@ describe("Try Page Component (Story 5.9)", () => {
       expect(container.innerHTML).toContain("1 pending")
     })
 
+    it("should include Provisioning leases in pending count", () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "Provisioning",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date().toISOString(),
+          maxSpend: 50,
+          currentSpend: 0,
+        },
+        {
+          leaseId: "2",
+          awsAccountId: "123456789013",
+          leaseTemplateId: "template-2",
+          leaseTemplateName: "Test Product 2",
+          status: "PendingApproval",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date().toISOString(),
+          maxSpend: 50,
+          currentSpend: 0,
+        },
+      ]
+
+      // Act
+      renderAuthenticatedState(container, mockLeases as any)
+
+      // Assert - both Provisioning and PendingApproval counted as pending
+      expect(container.innerHTML).toContain("2 pending")
+    })
+
+    it("should not include ProvisioningFailed in pending count", () => {
+      // Arrange
+      const mockLeases = [
+        {
+          leaseId: "1",
+          awsAccountId: "123456789012",
+          leaseTemplateId: "template-1",
+          leaseTemplateName: "Test Product",
+          status: "ProvisioningFailed",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date().toISOString(),
+          maxSpend: 50,
+          currentSpend: 0,
+        },
+      ]
+
+      // Act
+      renderAuthenticatedState(container, mockLeases as any)
+
+      // Assert - ProvisioningFailed is terminal, not counted in pending
+      expect(container.innerHTML).not.toContain("pending")
+    })
+
     it("should show first-time guidance when no leases", () => {
       // Act
       renderAuthenticatedState(container, [])

@@ -17,6 +17,7 @@ import {
   fetchUserLeases,
   isLeaseActive,
   isLeasePending,
+  isLeaseProvisioning,
   getSsoUrl,
   getPortalUrl,
   getCfnConsoleUrl,
@@ -408,6 +409,8 @@ describe("Sessions Service", () => {
       const statusTests: { apiStatus: string; expectedStatus: LeaseStatus }[] = [
         { apiStatus: "PendingApproval", expectedStatus: "PendingApproval" },
         { apiStatus: "ApprovalDenied", expectedStatus: "ApprovalDenied" },
+        { apiStatus: "Provisioning", expectedStatus: "Provisioning" },
+        { apiStatus: "ProvisioningFailed", expectedStatus: "ProvisioningFailed" },
         { apiStatus: "Active", expectedStatus: "Active" },
         { apiStatus: "Frozen", expectedStatus: "Frozen" },
         { apiStatus: "Expired", expectedStatus: "Expired" },
@@ -560,6 +563,44 @@ describe("Sessions Service", () => {
         }
 
         expect(isLeasePending(lease)).toBe(false)
+      })
+    })
+  })
+
+  describe("isLeaseProvisioning", () => {
+    it("should return true for Provisioning status", () => {
+      const lease: Lease = {
+        leaseId: "1",
+        awsAccountId: "123",
+        leaseTemplateId: "template",
+        leaseTemplateName: "Test",
+        status: "Provisioning",
+        createdAt: "2025-01-01",
+        expiresAt: "2025-01-02",
+        maxSpend: 50,
+        currentSpend: 0,
+      }
+
+      expect(isLeaseProvisioning(lease)).toBe(true)
+    })
+
+    it("should return false for non-Provisioning statuses", () => {
+      const statuses: LeaseStatus[] = ["Active", "PendingApproval", "ProvisioningFailed", "Expired"]
+
+      statuses.forEach((status) => {
+        const lease: Lease = {
+          leaseId: "1",
+          awsAccountId: "123",
+          leaseTemplateId: "template",
+          leaseTemplateName: "Test",
+          status,
+          createdAt: "2025-01-01",
+          expiresAt: "2025-01-02",
+          maxSpend: 50,
+          currentSpend: 0,
+        }
+
+        expect(isLeaseProvisioning(lease)).toBe(false)
       })
     })
   })

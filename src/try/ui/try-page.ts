@@ -282,7 +282,7 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
   const hasLeases = leases.length > 0
   const activeCount = leases.filter((l) => l.status === "Active").length
-  const pendingCount = leases.filter((l) => l.status === "PendingApproval").length
+  const pendingCount = leases.filter((l) => l.status === "PendingApproval" || l.status === "Provisioning").length
 
   // Build summary text
   let summaryText = ""

@@ -16,6 +16,7 @@ import {
   Lease,
   LeaseStatus,
   isLeaseActive,
+  isLeaseProvisioning,
   getSsoUrl,
   getPortalUrl,
   getCfnConsoleUrl,
@@ -30,6 +31,8 @@ import { escapeHtml } from "../../utils/html-utils"
 const STATUS_COLORS: Record<LeaseStatus, string> = {
   PendingApproval: "govuk-tag--blue",
   ApprovalDenied: "govuk-tag--red",
+  Provisioning: "govuk-tag--blue",
+  ProvisioningFailed: "govuk-tag--red",
   Active: "govuk-tag--green",
   Frozen: "govuk-tag--yellow",
   Expired: "govuk-tag--grey",
@@ -46,6 +49,8 @@ const STATUS_COLORS: Record<LeaseStatus, string> = {
 const STATUS_LABELS: Record<LeaseStatus, string> = {
   PendingApproval: "Pending approval",
   ApprovalDenied: "Denied",
+  Provisioning: "Setting up",
+  ProvisioningFailed: "Setup failed",
   Active: "Active",
   Frozen: "Frozen",
   Expired: "Completed",
@@ -300,8 +305,8 @@ function renderCommentsRow(lease: Lease, index: number): string {
 
   const formattedComments = formatComments(lease.comments)
 
-  if (isLeaseActive(lease)) {
-    // Always visible for active leases
+  if (isLeaseActive(lease) || isLeaseProvisioning(lease)) {
+    // Always visible for active and provisioning leases
     return `
       <tr class="govuk-table__row sessions-table__comments-row">
         <td colspan="6" class="govuk-table__cell govuk-body-s sessions-table__comments-cell">

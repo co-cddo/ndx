@@ -22,6 +22,8 @@ import { deduplicatedRequest } from "../utils/request-dedup"
 export type LeaseStatus =
   | "PendingApproval"
   | "ApprovalDenied"
+  | "Provisioning"
+  | "ProvisioningFailed"
   | "Active"
   | "Frozen"
   | "Expired"
@@ -223,6 +225,8 @@ export async function fetchUserLeases(): Promise<LeasesResult> {
 const VALID_STATUSES: LeaseStatus[] = [
   "PendingApproval",
   "ApprovalDenied",
+  "Provisioning",
+  "ProvisioningFailed",
   "Active",
   "Frozen",
   "Expired",
@@ -278,6 +282,16 @@ export function isLeaseActive(lease: Lease): boolean {
  */
 export function isLeasePending(lease: Lease): boolean {
   return lease.status === "PendingApproval"
+}
+
+/**
+ * Check if a lease is provisioning (account being set up after approval).
+ *
+ * @param lease - Lease to check
+ * @returns true if lease is provisioning
+ */
+export function isLeaseProvisioning(lease: Lease): boolean {
+  return lease.status === "Provisioning"
 }
 
 /**

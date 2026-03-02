@@ -16,7 +16,7 @@ import { test, expect } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 
 // Page paths - uses baseURL from playwright.config.ts
-const PRODUCT_PAGE = "/catalogue/aws/innovation-sandbox-empty"
+const PRODUCT_PAGE = "/catalogue/aws/aws-empty-sandbox"
 const CATALOGUE_PAGE = "/catalogue"
 const TRY_FILTER_PAGE = "/catalogue/tags/try-before-you-buy"
 const TOKEN_KEY = "isb-jwt"

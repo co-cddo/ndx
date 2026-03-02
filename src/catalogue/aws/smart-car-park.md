@@ -18,6 +18,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "19dcf939-6be8-49b2-a56b-e97238196e09"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/smart-car-park/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/smart-car-park/ -->

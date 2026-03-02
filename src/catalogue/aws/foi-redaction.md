@@ -19,6 +19,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "8a3e8fff-882d-4fc6-a028-3dac1ae8751e"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/foi-redaction/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/foi-redaction/ -->

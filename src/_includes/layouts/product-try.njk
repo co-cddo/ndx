@@ -17,7 +17,7 @@
   {# govukButton already sets data-module="govuk-button" and HTML ignores duplicates #}
   {# Button text is updated dynamically by try-button-text.ts based on auth state #}
   {# and actual lease template duration from API #}
-  <div class="govuk-!-margin-bottom-6">
+  <div class="govuk-button-group govuk-!-margin-bottom-6">
     {{ govukButton({
       text: "Try this now",
       isStartButton: true,
@@ -25,6 +25,17 @@
         "data-try-id": try_id
       }
     }) }}
+    {% if walkthrough_url %}
+    {{ govukButton({
+      html: 'View walkthrough <span class="govuk-visually-hidden">(opens in new tab)</span>',
+      href: walkthrough_url,
+      classes: "govuk-button--secondary",
+      attributes: {
+        "target": "_blank",
+        "rel": "noopener"
+      }
+    }) }}
+    {% endif %}
   </div>
   {% endif %}
 

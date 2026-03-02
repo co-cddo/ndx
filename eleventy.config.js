@@ -111,7 +111,7 @@ export default function (eleventyConfig) {
         tag: {
           text: "Alpha",
         },
-        html: 'This is a new service. Help us improve it and <a class="govuk-link" href="mailto:ndx@dsit.gov.uk">give your feedback by email</a>.',
+        html: 'This is a new service. <a class="govuk-link" href="https://portal.consentkit.com/e1654b62-fff1-4fce-b65c-075ee9db9f00">Take part in user research</a> to help us improve it.',
       },
     },
     stylesheets: ["/assets/styles.css"],

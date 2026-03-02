@@ -21,6 +21,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "cbfadf01-53cb-4a4c-a83e-db4d1a3aa988"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/localgov-drupal/ -->

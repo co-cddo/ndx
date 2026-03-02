@@ -19,6 +19,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "a9acda20-d6f2-4dc1-bd30-5bb593e12718"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/planning-ai/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/planning-ai/ -->

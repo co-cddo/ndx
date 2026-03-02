@@ -17,6 +17,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "e267c960-e0a4-40f8-b3eb-34609afc1f7c"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/ -->

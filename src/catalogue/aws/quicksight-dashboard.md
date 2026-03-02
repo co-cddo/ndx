@@ -16,6 +16,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "d9dd3bd9-8f14-4f45-abfa-6092dfb40c27"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/quicksight-dashboard/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/quicksight-dashboard/ -->

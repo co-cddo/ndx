@@ -17,6 +17,7 @@ tags:
   - try-before-you-buy
 try: true
 try_id: "cf2f0c73-6db4-4af4-afc7-c21f7572f1c6"
+walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/council-chatbot/"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/council-chatbot/ -->

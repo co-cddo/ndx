@@ -102,7 +102,7 @@ After exploring this pre-deployed scenario, use the **Empty Sandbox** to build y
 
 ## Explore more scenarios
 
-- **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
+- **[Empty AWS Sandbox](/catalogue/aws/aws-empty-sandbox/)** - Start fresh with a clean AWS environment
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services
 - **[Smart Car Park](/catalogue/aws/smart-car-park/)** - IoT-based real-time monitoring
 - **[Planning AI](/catalogue/aws/planning-ai/)** - Intelligent document analysis

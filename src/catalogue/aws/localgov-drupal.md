@@ -248,7 +248,7 @@ The platform represents true collaboration: councils share development costs and
 
 ## Explore more scenarios
 
-- **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
+- **[Empty AWS Sandbox](/catalogue/aws/aws-empty-sandbox/)** - Start fresh with a clean AWS environment
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services chatbot
 - **[FOI Redaction](/catalogue/aws/foi-redaction/)** - Automated sensitive data removal
 - **[Planning AI](/catalogue/aws/planning-ai/)** - Intelligent planning application analysis

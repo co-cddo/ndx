@@ -73,7 +73,7 @@ const STATUS_LABELS: Record<LeaseStatus, string> = {
  */
 export const CATALOGUE_SLUGS: Record<string, string> = {
   "Council Chatbot": "council-chatbot",
-  "NDX:Try for AWS": "innovation-sandbox-empty",
+  "Empty AWS Sandbox": "aws-empty-sandbox",
   "FOI Redaction": "foi-redaction",
   "LocalGov Drupal": "localgov-drupal",
   "Planning AI": "planning-ai",

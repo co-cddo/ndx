@@ -658,8 +658,8 @@ describe("Sessions Table Component", () => {
         expect(getCatalogueUrl("Council Chatbot")).toBe("/catalogue/aws/council-chatbot/")
       })
 
-      it("should return correct URL for NDX:Try for AWS (empty sandbox)", () => {
-        expect(getCatalogueUrl("NDX:Try for AWS")).toBe("/catalogue/aws/innovation-sandbox-empty/")
+      it("should return correct URL for Empty AWS Sandbox", () => {
+        expect(getCatalogueUrl("Empty AWS Sandbox")).toBe("/catalogue/aws/aws-empty-sandbox/")
       })
 
       it("should return correct URL for FOI Redaction", () => {
@@ -714,7 +714,7 @@ describe("Sessions Table Component", () => {
       it("should have all expected template names", () => {
         const expectedTemplates = [
           "Council Chatbot",
-          "NDX:Try for AWS",
+          "Empty AWS Sandbox",
           "FOI Redaction",
           "LocalGov Drupal",
           "Planning AI",

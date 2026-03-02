@@ -106,7 +106,7 @@ After exploring this pre-deployed scenario, use the **Empty Sandbox** to build y
 
 ## Explore more scenarios
 
-- **[Empty Sandbox](/catalogue/aws/innovation-sandbox-empty/)** - Start fresh with a clean AWS environment
+- **[Empty AWS Sandbox](/catalogue/aws/aws-empty-sandbox/)** - Start fresh with a clean AWS environment
 - **[QuickSight Dashboard](/catalogue/aws/quicksight-dashboard/)** - Analytics and reporting
 - **[Council Chatbot](/catalogue/aws/council-chatbot/)** - AI-powered resident services
 - **[Text to Speech](/catalogue/aws/text-to-speech/)** - Accessibility audio generation

@@ -20,7 +20,9 @@ describe("NdxStaticStack", () => {
 
   test("CloudFormation template contains expected resource types", () => {
     const resources = template.toJSON().Resources
-    const resourceTypes = new Set(Object.values(resources).map((r: any) => r.Type))
+    const resourceTypes = new Set(
+      Object.values(resources).map((r) => (r as { Type: string }).Type),
+    )
 
     // Validate all expected resource types are present
     const expectedTypes = [

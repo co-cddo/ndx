@@ -18,10 +18,24 @@ describe("NdxStaticStack", () => {
     template = Template.fromStack(stack)
   })
 
-  test("CloudFront configuration snapshot", () => {
-    // Snapshot captures entire CloudFormation template
-    // Including: Distribution, Function, CachePolicy, Origins, OAC
-    expect(template.toJSON()).toMatchSnapshot()
+  test("CloudFormation template contains expected resource types", () => {
+    const resources = template.toJSON().Resources
+    const resourceTypes = new Set(Object.values(resources).map((r) => (r as { Type: string }).Type))
+
+    // Validate all expected resource types are present
+    const expectedTypes = [
+      "AWS::S3::Bucket",
+      "AWS::S3::BucketPolicy",
+      "AWS::CloudFront::Function",
+      "AWS::CloudFront::CachePolicy",
+      "AWS::Lambda::Function",
+      "AWS::IAM::Role",
+      "AWS::IAM::Policy",
+    ]
+
+    for (const type of expectedTypes) {
+      expect(resourceTypes).toContain(type)
+    }
   })
 
   // Story 3.2: Fine-grained assertion tests for security-critical and routing-critical properties

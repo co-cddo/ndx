@@ -668,11 +668,17 @@ body.auth-choice-modal-open {
 }
 
 // Make shield.io badges display inline on a single line
-.app-prose-scope figure:has(img[src*="img.shields.io"]) {
-  display: inline-block;
-  width: auto;
-  margin-bottom: govuk-spacing(1);
-  margin-right: govuk-spacing(1);
+// The remote-images plugin rewrites shield URLs to local paths and
+// markdown-it renders them as <img> inside a <p> with <br> between each,
+// so we target paragraphs that contain only images (no text content).
+.app-prose-scope p:has(> img[alt=""]):not(:has(:not(img, br))) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: govuk-spacing(1);
+
+  br {
+    display: none;
+  }
 
   img {
     outline: none;

@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     groups:
       devcontainers:
         patterns:
@@ -14,6 +16,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       npm-root:
         patterns:
@@ -24,6 +28,8 @@ updates:
     directory: "/infra"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       npm-infra:
         patterns:
@@ -34,6 +40,8 @@ updates:
     directory: "/infra/lib/functions"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       npm-functions:
         patterns:
@@ -44,6 +52,8 @@ updates:
     directory: "/infra-signup"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       npm-infra-signup:
         patterns:
@@ -53,6 +63,8 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
         patterns:

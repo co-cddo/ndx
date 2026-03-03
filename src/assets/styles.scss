@@ -667,6 +667,18 @@ body.auth-choice-modal-open {
   }
 }
 
+// Make shield.io badges display inline on a single line
+.app-prose-scope figure:has(img[src*="img.shields.io"]) {
+  display: inline-block;
+  width: auto;
+  margin-bottom: govuk-spacing(1);
+  margin-right: govuk-spacing(1);
+
+  img {
+    outline: none;
+  }
+}
+
 // govuk-body
 .experimental_header {
   @extend .govuk-body;

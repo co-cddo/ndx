@@ -73,6 +73,12 @@ Deploy your CloudFormation templates, CDK stacks, or Terraform configs against a
 
 If you're evaluating AWS alongside Azure or GCP, use this sandbox to run equivalent workloads and compare the developer experience, pricing, and service capabilities first-hand.
 
+## How this was built
+
+This is an empty sandbox — a clean AWS account with no pre-deployed resources. There's no scenario source code because you start from scratch and build whatever you like.
+
+If you'd like to explore scenarios with source code you can learn from, try one of our [pre-deployed scenarios](/catalogue/tags/try-before-you-buy/).
+
 ## Prefer something ready-made?
 
 If you'd rather explore a working application than start from scratch, try one of our pre-deployed scenarios. Each one comes with real AWS infrastructure already running — just sign in and start exploring:

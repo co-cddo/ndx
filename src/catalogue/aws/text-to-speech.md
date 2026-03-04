@@ -18,6 +18,7 @@ tags:
 try: true
 try_id: "e267c960-e0a4-40f8-b3eb-34609afc1f7c"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/"
+github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/text-to-speech"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/ -->
@@ -28,6 +29,7 @@ walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/te
 ![](https://img.shields.io/badge/access-NDX:Try-purple)
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-Accessibility-orange)
+[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/text-to-speech)
 
 ## About NDX
 
@@ -94,9 +96,11 @@ This scenario lets you evaluate whether automated audio generation could improve
 - Document which voices and settings work best for your content
 - Note any limitations or quality considerations
 
-### Infrastructure as code
+### How this was built
 
-The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
+This scenario is built with open source infrastructure as code. You can view the CloudFormation template, understand how it works, and adapt it for your own needs.
+
+<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/text-to-speech" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
 
 ### Build your own
 

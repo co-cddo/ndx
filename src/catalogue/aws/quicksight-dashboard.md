@@ -17,6 +17,7 @@ tags:
 try: true
 try_id: "d9dd3bd9-8f14-4f45-abfa-6092dfb40c27"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/quicksight-dashboard/"
+github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/quicksight-dashboard"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/quicksight-dashboard/ -->
@@ -27,6 +28,7 @@ walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/qu
 ![](https://img.shields.io/badge/access-NDX:Try-purple)
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-Analytics-orange)
+[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/quicksight-dashboard)
 
 ## About NDX
 
@@ -93,9 +95,11 @@ This scenario lets you evaluate whether cloud-based business intelligence could 
 - Document any insights about capabilities and limitations
 - Note which data sources would be needed for your real use case
 
-### Infrastructure as code
+### How this was built
 
-The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
+This scenario is built with open source infrastructure as code. You can view the CloudFormation template, understand how it works, and adapt it for your own needs.
+
+<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/quicksight-dashboard" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
 
 ### Build your own
 

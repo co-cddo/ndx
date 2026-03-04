@@ -19,6 +19,7 @@ tags:
 try: true
 try_id: "19dcf939-6be8-49b2-a56b-e97238196e09"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/smart-car-park/"
+github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/smart-car-park"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/smart-car-park/ -->
@@ -29,6 +30,7 @@ walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/sm
 ![](https://img.shields.io/badge/access-NDX:Try-purple)
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-IoT-orange)
+[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/smart-car-park)
 
 ## About NDX
 
@@ -97,9 +99,11 @@ This scenario lets you evaluate whether IoT-based parking monitoring could work 
 - Document any insights about data flows and architecture
 - Note which aspects would work for your real parking facilities
 
-### Infrastructure as code
+### How this was built
 
-The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
+This scenario is built with open source infrastructure as code. You can view the CloudFormation template, understand how it works, and adapt it for your own needs.
+
+<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/smart-car-park" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
 
 ### Build your own
 

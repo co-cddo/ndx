@@ -18,6 +18,7 @@ tags:
 try: true
 try_id: "cf2f0c73-6db4-4af4-afc7-c21f7572f1c6"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/council-chatbot/"
+github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/council-chatbot"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/council-chatbot/ -->
@@ -28,6 +29,7 @@ walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/co
 ![](https://img.shields.io/badge/access-NDX:Try-purple)
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-AI-orange)
+[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/council-chatbot)
 
 ## About NDX
 
@@ -95,9 +97,11 @@ This scenario lets you evaluate whether AI-powered chatbots could work for your 
 - Document any insights or findings
 - Download any generated artifacts
 
-### Infrastructure as code
+### How this was built
 
-The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
+This scenario is built with open source infrastructure as code. You can view the CloudFormation template, understand how it works, and adapt it for your own needs.
+
+<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/council-chatbot" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
 
 ### Build your own
 

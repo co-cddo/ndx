@@ -30,7 +30,7 @@
         "themed-omnibox": "off",
         "service-worker": "off",
 
-        "is-crawlable": "off",
+        "is-crawlable": "on",
 
         "tap-targets": "off",
         "target-size": "off",

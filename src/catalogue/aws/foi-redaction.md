@@ -20,6 +20,7 @@ tags:
 try: true
 try_id: "8a3e8fff-882d-4fc6-a028-3dac1ae8751e"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/foi-redaction/"
+github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/foi-redaction"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/foi-redaction/ -->
@@ -30,6 +31,7 @@ walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/fo
 ![](https://img.shields.io/badge/access-NDX:Try-purple)
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-AI-orange)
+[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/foi-redaction)
 
 ## About NDX
 
@@ -97,9 +99,11 @@ This scenario lets you evaluate whether AI-assisted redaction could work for you
 - Document any insights about accuracy and edge cases
 - Download any test outputs
 
-### Infrastructure as code
+### How this was built
 
-The resources in this scenario were deployed using Infrastructure as Code (IaC). When building for production, we strongly recommend using CloudFormation, CDK, or Terraform rather than manual console configuration. This ensures repeatability, version control, and easier compliance.
+This scenario is built with open source infrastructure as code. You can view the CloudFormation template, understand how it works, and adapt it for your own needs.
+
+<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/foi-redaction" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
 
 ### Build your own
 

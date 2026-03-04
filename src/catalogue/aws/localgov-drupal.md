@@ -22,6 +22,7 @@ tags:
 try: true
 try_id: "cbfadf01-53cb-4a4c-a83e-db4d1a3aa988"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/"
+github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/localgov-drupal"
 ---
 
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/localgov-drupal/ -->
@@ -38,6 +39,7 @@ walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs
 ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 ![](https://img.shields.io/badge/category-AI-orange)
 ![](https://img.shields.io/badge/category-CMS-blue)
+[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/localgov-drupal)
 
 ## Overview
 
@@ -244,6 +246,14 @@ Rapid improvements with limited budget:
 Since January 2023, LocalGov Drupal has been governed by the **<a href="https://opendigital.coop/" target="_blank" rel="noopener">Open Digital Cooperative</a>** - a not-for-profit multistakeholder cooperative ensuring long-term sustainability and democratic governance by member councils and suppliers.
 
 The platform represents true collaboration: councils share development costs and benefit from each other's investments. When one council builds a feature, all 56+ councils benefit.
+
+---
+
+### How this was built
+
+This scenario is built with open source infrastructure as code using AWS CDK (Cloud Development Kit) with Docker. You can view the CDK project, Drupal configuration, and Docker setup, and adapt them for your own needs.
+
+<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/localgov-drupal" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
 
 ---
 

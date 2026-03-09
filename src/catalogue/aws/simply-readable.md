@@ -3,7 +3,7 @@ layout: layouts/product-try
 title: Simply Readable
 description: AI-powered document translation and Easy Read conversion, built by Swindon Borough Council for UK local government
 image:
-  src: /assets/catalogue/aws/connect-logo.svg
+  src: /assets/catalogue/aws/simply-readable-logo.svg
   alt: Simply Readable
 eleventyNavigation:
   parent: Catalogue
@@ -52,7 +52,7 @@ github_source: "https://github.com/aws-samples/document-translation"
 Simply Readable brings together **document translation** and **Easy Read conversion** in a single web application. Upload a document, translate it into any of **75 languages** using Amazon Translate, or convert it to **Easy Read format** using Amazon Bedrock — all in minutes, not weeks.
 
 {{ govukWarningText({
-  text: "After requesting your session, the environment takes approximately 25 to 35 minutes to deploy. Once ready, the walkthrough will guide you through logging in and exploring all features.",
+  text: "After requesting your session, the environment will deploy automatically. Once ready, the walkthrough will guide you through logging in and exploring all features.",
   iconFallbackText: "Important"
 }) }}
 
@@ -95,7 +95,7 @@ Simply Readable brings together **document translation** and **Easy Read convers
 Once you select **"Try this now"** above, your session environment will begin deploying automatically.
 
 {{ govukInsetText({
-  html: "<strong>What happens next:</strong><br>1. Your environment deploys (~25 to 35 minutes)<br>2. Follow the walkthrough to log in and explore<br>3. Upload documents and try translation and Easy Read conversion"
+  html: "<strong>What happens next:</strong><br>1. Your environment deploys automatically<br>2. Follow the walkthrough to log in and explore<br>3. Upload documents and try translation and Easy Read conversion"
 }) }}
 
 {{ govukButton({

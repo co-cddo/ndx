@@ -1,0 +1,35 @@
+<svg width="256" height="153" viewBox="0 0 256 153" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document (left) -->
+  <rect x="30" y="18" width="80" height="105" rx="4" fill="#f3f2f1" stroke="#505a5f" stroke-width="2.5"/>
+  <!-- Document lines -->
+  <rect x="44" y="34" width="52" height="5" rx="2" fill="#b1b4b6"/>
+  <rect x="44" y="46" width="44" height="5" rx="2" fill="#b1b4b6"/>
+  <rect x="44" y="58" width="50" height="5" rx="2" fill="#b1b4b6"/>
+  <rect x="44" y="70" width="38" height="5" rx="2" fill="#b1b4b6"/>
+  <rect x="44" y="82" width="48" height="5" rx="2" fill="#b1b4b6"/>
+  <rect x="44" y="94" width="30" height="5" rx="2" fill="#b1b4b6"/>
+
+  <!-- Arrow -->
+  <path d="M120 70 L148 70" stroke="#0b0c0c" stroke-width="3" stroke-linecap="round"/>
+  <path d="M143 63 L152 70 L143 77" stroke="#0b0c0c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Document (right) - transformed/accessible -->
+  <rect x="160" y="18" width="80" height="105" rx="4" fill="#e8f5e9" stroke="#00703c" stroke-width="2.5"/>
+  <!-- Simplified text lines (Easy Read style - shorter, spaced) -->
+  <rect x="174" y="34" width="36" height="6" rx="2" fill="#00703c" opacity="0.6"/>
+  <rect x="174" y="50" width="50" height="6" rx="2" fill="#00703c" opacity="0.6"/>
+  <rect x="174" y="66" width="30" height="6" rx="2" fill="#00703c" opacity="0.6"/>
+  <rect x="174" y="82" width="42" height="6" rx="2" fill="#00703c" opacity="0.6"/>
+  <rect x="174" y="98" width="26" height="6" rx="2" fill="#00703c" opacity="0.6"/>
+
+  <!-- Globe/language indicator (bottom centre) -->
+  <circle cx="136" cy="118" r="18" fill="none" stroke="#1d70b8" stroke-width="2"/>
+  <ellipse cx="136" cy="118" rx="8" ry="18" fill="none" stroke="#1d70b8" stroke-width="1.5"/>
+  <line x1="118" y1="118" x2="154" y2="118" stroke="#1d70b8" stroke-width="1.5"/>
+  <line x1="121" y1="108" x2="151" y2="108" stroke="#1d70b8" stroke-width="1"/>
+  <line x1="121" y1="128" x2="151" y2="128" stroke="#1d70b8" stroke-width="1"/>
+
+  <!-- Accessibility tick on right document -->
+  <circle cx="225" cy="30" r="11" fill="#00703c"/>
+  <path d="M219 30 L223 34 L231 25" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

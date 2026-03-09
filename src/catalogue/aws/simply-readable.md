@@ -12,7 +12,7 @@ tags:
   - Amazon
   - AI
   - Translation
-  - Accessibility
+  - accessibility
   - Easy Read
   - Local Government
   - Open Source
@@ -65,25 +65,25 @@ Simply Readable brings together **document translation** and **Easy Read convers
 
 ### Core Features
 
-| Feature | AWS Service |
-|---|---|
+| Feature                                                                                                                                                      | AWS Service                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-2/" target="_blank" rel="noopener">**Document translation**</a> | <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-3/" target="_blank" rel="noopener">**Easy Read conversion**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
-| **User authentication** | <a href="https://aws.amazon.com/cognito/" target="_blank" rel="noopener">Amazon Cognito</a> |
-| **Real-time updates** | <a href="https://aws.amazon.com/appsync/" target="_blank" rel="noopener">AWS AppSync</a> |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-3/" target="_blank" rel="noopener">**Easy Read conversion**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>     |
+| **User authentication**                                                                                                                                      | <a href="https://aws.amazon.com/cognito/" target="_blank" rel="noopener">Amazon Cognito</a>     |
+| **Real-time updates**                                                                                                                                        | <a href="https://aws.amazon.com/appsync/" target="_blank" rel="noopener">AWS AppSync</a>        |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component | AWS Service |
-|---|---|
+| Component         | AWS Service                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
 | **Orchestration** | <a href="https://aws.amazon.com/step-functions/" target="_blank" rel="noopener">AWS Step Functions</a> |
-| **Compute** | <a href="https://aws.amazon.com/lambda/" target="_blank" rel="noopener">AWS Lambda</a> |
-| **Storage** | <a href="https://aws.amazon.com/s3/" target="_blank" rel="noopener">Amazon S3</a> |
-| **CDN** | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a> |
-| **Database** | <a href="https://aws.amazon.com/dynamodb/" target="_blank" rel="noopener">Amazon DynamoDB</a> |
+| **Compute**       | <a href="https://aws.amazon.com/lambda/" target="_blank" rel="noopener">AWS Lambda</a>                 |
+| **Storage**       | <a href="https://aws.amazon.com/s3/" target="_blank" rel="noopener">Amazon S3</a>                      |
+| **CDN**           | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>      |
+| **Database**      | <a href="https://aws.amazon.com/dynamodb/" target="_blank" rel="noopener">Amazon DynamoDB</a>          |
 
 </div>
 </div>

@@ -39,7 +39,7 @@
     "@aws-sdk/client-sqs": "3.1000.0",
     "@aws-sdk/util-dynamodb": "3.996.1",
     "@co-cddo/isb-client": "https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz",
-    "aws-cdk-lib": "2.240.0",
+    "aws-cdk-lib": "2.241.0",
     "constructs": "10.5.1",
     "isomorphic-dompurify": "3.0.0",
     "notifications-node-client": "8.3.0",

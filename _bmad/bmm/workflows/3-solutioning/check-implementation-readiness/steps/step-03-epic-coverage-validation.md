@@ -1,15 +1,9 @@
 ---
-name: "step-03-epic-coverage-validation"
-description: "Validate that all PRD FRs are covered in epics and stories"
+name: 'step-03-epic-coverage-validation'
+description: 'Validate that all PRD FRs are covered in epics and stories'
 
-# Path Definitions
-workflow_path: "{project-root}/_bmad/bmm/workflows/3-solutioning/implementation-readiness"
-
-# File References
-thisStepFile: "./step-03-epic-coverage-validation.md"
-nextStepFile: "./step-04-ux-alignment.md"
-workflowFile: "{workflow_path}/workflow.md"
-outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
+nextStepFile: './step-04-ux-alignment.md'
+outputFile: '{planning_artifacts}/implementation-readiness-report-{{date}}.md'
 ---
 
 # Step 3: Epic Coverage Validation

@@ -1,10 +1,8 @@
 ---
-name: "step-02-investigate"
-description: "Map technical constraints and anchor points within the codebase"
+name: 'step-02-investigate'
+description: 'Map technical constraints and anchor points within the codebase'
 
-workflow_path: "{project-root}/_bmad/bmm/workflows/bmad-quick-flow/create-tech-spec"
-nextStepFile: "./step-03-generate.md"
-wipFile: "{implementation_artifacts}/tech-spec-wip.md"
+wipFile: '{implementation_artifacts}/tech-spec-wip.md'
 ---
 
 # Step 2: Map Technical Constraints & Anchor Points
@@ -63,6 +61,7 @@ For each file/directory provided:
 - Identify standard project utilities or boilerplate that SHOULD be used.
 - Document this as "Confirmed Clean Slate" - establishing that no legacy constraints exist.
 
+
 c) **Document Technical Context**
 
 Capture and confirm with user:
@@ -88,10 +87,10 @@ If `**/project-context.md` exists and wasn't loaded in Step 1:
 ---
 # ... existing frontmatter ...
 stepsCompleted: [1, 2]
-tech_stack: ["{captured_tech_stack}"]
-files_to_modify: ["{captured_files}"]
-code_patterns: ["{captured_patterns}"]
-test_patterns: ["{captured_test_patterns}"]
+tech_stack: ['{captured_tech_stack}']
+files_to_modify: ['{captured_files}']
+code_patterns: ['{captured_patterns}']
+test_patterns: ['{captured_test_patterns}']
 ---
 ```
 
@@ -114,21 +113,22 @@ Fill in:
 
 ### 4. Present Checkpoint Menu
 
-**Display menu:**
-
-```
-[a] Advanced Elicitation - explore more context
-[c] Continue - proceed to Generate Spec
-[p] Party Mode - bring in other experts
-```
+Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Generate Spec (Step 3 of 4)"
 
 **HALT and wait for user selection.**
 
-#### Menu Handling:
+#### Menu Handling Logic:
 
-- **[a]**: Load and execute `{advanced_elicitation}`, then return here and redisplay menu
-- **[c]**: Verify frontmatter updated with `stepsCompleted: [1, 2]`, then load and execute `{nextStepFile}`
-- **[p]**: Load and execute `{party_mode_exec}`, then return here and redisplay menu
+- IF A: Read fully and follow: `{advanced_elicitation}` with current tech-spec content, process enhanced insights, ask user "Accept improvements? (y/n)", if yes update WIP file then redisplay menu, if no keep original then redisplay menu
+- IF P: Read fully and follow: `{party_mode_exec}` with current tech-spec content, process collaborative insights, ask user "Accept changes? (y/n)", if yes update WIP file then redisplay menu, if no keep original then redisplay menu
+- IF C: Verify frontmatter updated with `stepsCompleted: [1, 2]`, then read fully and follow: `{project-root}/_bmad/bmm/workflows/bmad-quick-flow/quick-spec/steps/step-03-generate.md`
+- IF Any other comments or queries: respond helpfully then redisplay menu
+
+#### EXECUTION RULES:
+
+- ALWAYS halt and wait for user input after presenting menu
+- ONLY proceed to next step when user selects 'C'
+- After A or P execution, return to this menu
 
 ---
 

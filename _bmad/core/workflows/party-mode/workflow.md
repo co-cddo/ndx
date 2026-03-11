@@ -1,6 +1,6 @@
 ---
 name: party-mode
-description: Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations
+description: 'Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations. Use when user requests party mode.'
 ---
 
 # Party Mode Workflow
@@ -115,12 +115,12 @@ Load step: `./steps/step-02-discussion-orchestration.md`
 ```yaml
 ---
 stepsCompleted: [1]
-workflowType: "party-mode"
-user_name: "{{user_name}}"
-date: "{{date}}"
+workflowType: 'party-mode'
+user_name: '{{user_name}}'
+date: '{{date}}'
 agents_loaded: true
 party_active: true
-exit_triggers: ["*exit", "goodbye", "end party", "quit"]
+exit_triggers: ['*exit', 'goodbye', 'end party', 'quit']
 ---
 ```
 
@@ -175,18 +175,6 @@ If conversation naturally concludes:
 
 - Ask user if they'd like to continue or end party mode
 - Exit gracefully when user indicates completion
-
----
-
-## TTS INTEGRATION
-
-Party mode includes Text-to-Speech for each agent response:
-
-**TTS Protocol:**
-
-- Trigger TTS immediately after each agent's text response
-- Use agent's merged voice configuration from manifest
-- Format: `Bash: .claude/hooks/bmad-speak.sh "[Agent Name]" "[Their response]"`
 
 ---
 

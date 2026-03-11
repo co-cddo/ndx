@@ -44,7 +44,7 @@ First, check if the output document already exists:
 
 If the document exists and has frontmatter with `stepsCompleted`:
 
-- **STOP here** and load `./step-01b-continue.md` immediately
+- **STOP here** and load `{project-root}/_bmad/bmm/workflows/2-plan-workflows/create-ux-design/steps/step-01b-continue.md` immediately
 - Do not proceed with any initialization tasks
 - Let step-01b handle the continuation logic
 
@@ -55,16 +55,14 @@ If no document exists or no `stepsCompleted` in frontmatter:
 #### A. Input Document Discovery
 
 Discover and load context documents using smart discovery. Documents can be in the following locations:
+- {planning_artifacts}/**
+- {output_folder}/**
+- {product_knowledge}/**
+- docs/**
 
-- {planning_artifacts}/\*\*
-- {output_folder}/\*\*
-- {product_knowledge}/\*\*
-- docs/\*\*
-
-Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called _foo_/index.md (which indicates sharded content)
+Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called *foo*/index.md (which indicates sharded content)
 
 Try to discover the following:
-
 - Product Brief (`*brief*.md`)
 - Research Documents (`*prd*.md`)
 - Project Documentation (generally multiple documents might be found for this in the `{product_knowledge}` or `docs` folder.)
@@ -112,7 +110,7 @@ Do you have any other documents you'd like me to include, or shall we continue t
 
 ## NEXT STEP:
 
-After user selects [C] to continue, ensure the file `{planning_artifacts}/ux-design-specification.md` has been created and saved, and then load `./step-02-discovery.md` to begin the UX discovery phase.
+After user selects [C] to continue, ensure the file `{planning_artifacts}/ux-design-specification.md` has been created and saved, and then load `{project-root}/_bmad/bmm/workflows/2-plan-workflows/create-ux-design/steps/step-02-discovery.md` to begin the UX discovery phase.
 
 Remember: Do NOT proceed to step-02 until output file has been updated and user explicitly selects [C] to continue!
 

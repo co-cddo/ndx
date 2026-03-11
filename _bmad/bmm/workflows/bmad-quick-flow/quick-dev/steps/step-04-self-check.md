@@ -1,10 +1,8 @@
 ---
-name: "step-04-self-check"
-description: "Self-audit implementation against tasks, tests, AC, and patterns"
+name: 'step-04-self-check'
+description: 'Self-audit implementation against tasks, tests, AC, and patterns'
 
-workflow_path: "{project-root}/_bmad/bmm/workflows/bmad-quick-flow/quick-dev"
-thisStepFile: "./step-04-self-check.md"
-nextStepFile: "./step-05-adversarial-review.md"
+nextStepFile: './step-05-adversarial-review.md'
 ---
 
 # Step 4: Self-Check
@@ -91,7 +89,7 @@ Proceeding to adversarial code review...
 
 ## NEXT STEP
 
-Proceed immediately to `step-05-adversarial-review.md`.
+Proceed immediately to `{project-root}/_bmad/bmm/workflows/bmad-quick-flow/quick-dev/steps/step-05-adversarial-review.md`.
 
 ---
 

@@ -44,7 +44,7 @@ First, check if the output document already exists:
 
 If the document exists and has frontmatter with `stepsCompleted`:
 
-- **STOP here** and load `./step-01b-continue.md` immediately
+- **STOP here** and load `{project-root}/_bmad/bmm/workflows/3-solutioning/create-architecture/steps/step-01b-continue.md` immediately
 - Do not proceed with any initialization tasks
 - Let step-01b handle the continuation logic
 
@@ -55,16 +55,14 @@ If no document exists or no `stepsCompleted` in frontmatter:
 #### A. Input Document Discovery
 
 Discover and load context documents using smart discovery. Documents can be in the following locations:
+- {planning_artifacts}/**
+- {output_folder}/**
+- {product_knowledge}/**
+- docs/**
 
-- {planning_artifacts}/\*\*
-- {output_folder}/\*\*
-- {product_knowledge}/\*\*
-- docs/\*\*
-
-Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called _foo_/index.md (which indicates sharded content)
+Also - when searching - documents can be a single markdown file, or a folder with an index and multiple files. For Example, if searching for `*foo*.md` and not found, also search for a folder called *foo*/index.md (which indicates sharded content)
 
 Try to discover the following:
-
 - Product Brief (`*brief*.md`)
 - Product Requirements Document (`*prd*.md`)
 - UX Design (`*ux-design*.md`) and other
@@ -150,6 +148,6 @@ Ready to begin architectural decision making. Do you have any other documents yo
 
 ## NEXT STEP:
 
-After user selects [C] to continue, only after ensuring all the template output has been created, then load `./step-02-context.md` to analyze the project context and begin architectural decision making.
+After user selects [C] to continue, only after ensuring all the template output has been created, then load `{project-root}/_bmad/bmm/workflows/3-solutioning/create-architecture/steps/step-02-context.md` to analyze the project context and begin architectural decision making.
 
 Remember: Do NOT proceed to step-02 until user explicitly selects [C] from the menu and setup is confirmed!

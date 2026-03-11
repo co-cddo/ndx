@@ -1,22 +1,22 @@
 ---
-name: "step-03-create-stories"
-description: "Generate all epics with their stories following the template structure"
+name: 'step-03-create-stories'
+description: 'Generate all epics with their stories following the template structure'
 
 # Path Definitions
-workflow_path: "{project-root}/_bmad/bmm/workflows/3-solutioning/create-epics-and-stories"
+workflow_path: '{project-root}/_bmad/bmm/workflows/3-solutioning/create-epics-and-stories'
 
 # File References
-thisStepFile: "./step-03-create-stories.md"
-nextStepFile: "./step-04-final-validation.md"
-workflowFile: "{workflow_path}/workflow.md"
-outputFile: "{planning_artifacts}/epics.md"
+thisStepFile: './step-03-create-stories.md'
+nextStepFile: './step-04-final-validation.md'
+workflowFile: '{workflow_path}/workflow.md'
+outputFile: '{planning_artifacts}/epics.md'
 
 # Task References
-advancedElicitationTask: "{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml"
-partyModeWorkflow: "{project-root}/_bmad/core/workflows/party-mode/workflow.md"
+advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'
+partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
 
 # Template References
-epicsTemplate: "{workflow_path}/templates/epics-template.md"
+epicsTemplate: '{workflow_path}/templates/epics-template.md'
 ---
 
 # Step 3: Generate Epics and Stories
@@ -231,9 +231,9 @@ Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Cont
 
 #### Menu Handling Logic:
 
-- IF A: Execute {advancedElicitationTask}
-- IF P: Execute {partyModeWorkflow}
-- IF C: Save content to {outputFile}, update frontmatter, then only then load, read entire file, then execute {nextStepFile}
+- IF A: Read fully and follow: {advancedElicitationTask}
+- IF P: Read fully and follow: {partyModeWorkflow}
+- IF C: Save content to {outputFile}, update frontmatter, then read fully and follow: {nextStepFile}
 - IF Any other comments or queries: help user respond then [Redisplay Menu Options](#7-present-final-menu-options)
 
 #### EXECUTION RULES:
@@ -245,7 +245,7 @@ Display: "**Select an Option:** [A] Advanced Elicitation [P] Party Mode [C] Cont
 
 ## CRITICAL STEP COMPLETION NOTE
 
-ONLY WHEN [C continue option] is selected and [all epics and stories saved to document following the template structure exactly], will you then load and read fully `{nextStepFile}` to execute and begin final validation phase.
+ONLY WHEN [C continue option] is selected and [all epics and stories saved to document following the template structure exactly], will you then read fully and follow: `{nextStepFile}` to begin final validation phase.
 
 ---
 

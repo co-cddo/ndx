@@ -1,9 +1,9 @@
 ---
-name: 'step-01b-continue'
-description: 'Resume the product brief workflow from where it was left off, ensuring smooth continuation'
+name: "step-01b-continue"
+description: "Resume the product brief workflow from where it was left off, ensuring smooth continuation"
 
 # File References
-outputFile: '{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md'
+outputFile: "{planning_artifacts}/product-brief-{{project_name}}-{{date}}.md"
 ---
 
 # Step 1B: Product Brief Continuation

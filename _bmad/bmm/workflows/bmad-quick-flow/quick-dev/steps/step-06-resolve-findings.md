@@ -1,6 +1,6 @@
 ---
-name: 'step-06-resolve-findings'
-description: 'Handle review findings interactively, apply fixes, update tech-spec with final status'
+name: "step-06-resolve-findings"
+description: "Handle review findings interactively, apply fixes, update tech-spec with final status"
 ---
 
 # Step 6: Resolve Findings

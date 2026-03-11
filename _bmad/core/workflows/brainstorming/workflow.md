@@ -1,7 +1,7 @@
 ---
 name: brainstorming
-description: 'Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods. Use when the user says help me brainstorm or help me ideate.'
-context_file: '' # Optional context file path for project-specific guidance
+description: "Facilitate interactive brainstorming sessions using diverse creative techniques and ideation methods. Use when the user says help me brainstorm or help me ideate."
+context_file: "" # Optional context file path for project-specific guidance
 ---
 
 # Brainstorming Session Workflow
@@ -48,6 +48,7 @@ Load config from `{project-root}/_bmad/core/config.yaml` and resolve:
 - `brainstorming_session_output_file` = `{output_folder}/brainstorming/brainstorming-session-{{date}}-{{time}}.md` (evaluated once at workflow start)
 
 All steps MUST reference `{brainstorming_session_output_file}` instead of the full path pattern.
+
 - `context_file` = Optional context file path from workflow invocation for project-specific guidance
 - `advancedElicitationTask` = `{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml`
 

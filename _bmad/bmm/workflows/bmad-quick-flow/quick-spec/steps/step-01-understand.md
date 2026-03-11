@@ -1,9 +1,9 @@
 ---
-name: 'step-01-understand'
-description: 'Analyze the requirement delta between current state and what user wants to build'
+name: "step-01-understand"
+description: "Analyze the requirement delta between current state and what user wants to build"
 
-templateFile: '../tech-spec-template.md'
-wipFile: '{implementation_artifacts}/tech-spec-wip.md'
+templateFile: "../tech-spec-template.md"
+wipFile: "{implementation_artifacts}/tech-spec-wip.md"
 ---
 
 # Step 1: Analyze Requirement Delta
@@ -97,6 +97,7 @@ d) **Build mental model:**
 a) **Now ask clarifying questions - but make them INFORMED by what you found:**
 
 Instead of generic questions like "What's the scope?", ask specific ones like:
+
 - "`AuthService` handles validation in the controller — should the new field follow that pattern or move it to a dedicated validator?"
 - "`NavigationSidebar` component uses local state for the 'collapsed' toggle — should we stick with that or move it to the global store?"
 - "The epics doc mentions X - is this related?"
@@ -130,10 +131,10 @@ a) **Create the tech-spec WIP file:**
 3. Update frontmatter with captured values:
    ```yaml
    ---
-   title: '{title}'
-   slug: '{slug}'
-   created: '{date}'
-   status: 'in-progress'
+   title: "{title}"
+   slug: "{slug}"
+   created: "{date}"
+   status: "in-progress"
    stepsCompleted: [1]
    tech_stack: []
    files_to_modify: []

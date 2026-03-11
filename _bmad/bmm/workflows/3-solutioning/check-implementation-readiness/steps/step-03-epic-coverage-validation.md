@@ -1,9 +1,9 @@
 ---
-name: 'step-03-epic-coverage-validation'
-description: 'Validate that all PRD FRs are covered in epics and stories'
+name: "step-03-epic-coverage-validation"
+description: "Validate that all PRD FRs are covered in epics and stories"
 
-nextStepFile: './step-04-ux-alignment.md'
-outputFile: '{planning_artifacts}/implementation-readiness-report-{{date}}.md'
+nextStepFile: "./step-04-ux-alignment.md"
+outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 ---
 
 # Step 3: Epic Coverage Validation

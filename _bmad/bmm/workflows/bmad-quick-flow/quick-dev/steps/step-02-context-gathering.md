@@ -1,8 +1,8 @@
 ---
-name: 'step-02-context-gathering'
-description: 'Quick context gathering for direct mode - identify files, patterns, dependencies'
+name: "step-02-context-gathering"
+description: "Quick context gathering for direct mode - identify files, patterns, dependencies"
 
-nextStepFile: './step-03-execute.md'
+nextStepFile: "./step-03-execute.md"
 ---
 
 # Step 2: Context Gathering (Direct Mode)

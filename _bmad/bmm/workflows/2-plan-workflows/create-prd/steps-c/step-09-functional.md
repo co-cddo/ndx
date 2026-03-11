@@ -1,14 +1,14 @@
 ---
-name: 'step-09-functional'
-description: 'Synthesize all discovery into comprehensive functional requirements'
+name: "step-09-functional"
+description: "Synthesize all discovery into comprehensive functional requirements"
 
 # File References
-nextStepFile: '{project-root}/_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-10-nonfunctional.md'
-outputFile: '{planning_artifacts}/prd.md'
+nextStepFile: "{project-root}/_bmad/bmm/workflows/2-plan-workflows/create-prd/steps-c/step-10-nonfunctional.md"
+outputFile: "{planning_artifacts}/prd.md"
 
 # Task References
-advancedElicitationTask: '{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml'
-partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
+advancedElicitationTask: "{project-root}/_bmad/core/workflows/advanced-elicitation/workflow.xml"
+partyModeWorkflow: "{project-root}/_bmad/core/workflows/party-mode/workflow.md"
 ---
 
 # Step 9: Functional Requirements Synthesis
@@ -34,7 +34,6 @@ partyModeWorkflow: '{project-root}/_bmad/core/workflows/party-mode/workflow.md'
 - 💾 ONLY save when user chooses C (Continue)
 - 📖 Update output file frontmatter, adding this step name to the end of the list of stepsCompleted
 - 🚫 FORBIDDEN to load next step until C is selected
-
 
 ## CONTEXT BOUNDARIES:
 
@@ -170,6 +169,7 @@ When saving to document, append these Level 2 and Level 3 sections:
 ### 7. Present MENU OPTIONS
 
 Present the functional requirements for review, then display menu:
+
 - Show synthesized functional requirements (using structure from step 6)
 - Emphasize this is the capability contract for all downstream work
 - Highlight that every feature must trace back to these requirements
@@ -181,12 +181,14 @@ Present the functional requirements for review, then display menu:
 Display: "**Select:** [A] Advanced Elicitation [P] Party Mode [C] Continue to Non-Functional Requirements (Step 10 of 11)"
 
 #### Menu Handling Logic:
+
 - IF A: Read fully and follow: {advancedElicitationTask} with the current FR list, process the enhanced capability coverage that comes back, ask user if they accept the additions, if yes update content then redisplay menu, if no keep original content then redisplay menu
 - IF P: Read fully and follow: {partyModeWorkflow} with the current FR list, process the collaborative capability validation and additions, ask user if they accept the changes, if yes update content then redisplay menu, if no keep original content then redisplay menu
 - IF C: Append the final content to {outputFile}, update frontmatter by adding this step name to the end of the stepsCompleted array, then read fully and follow: {nextStepFile}
 - IF Any other: help user respond, then redisplay menu
 
 #### EXECUTION RULES:
+
 - ALWAYS halt and wait for user input after presenting menu
 - ONLY proceed to next step when user selects 'C'
 - After other menu items execution, return to this menu

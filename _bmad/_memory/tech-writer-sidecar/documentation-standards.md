@@ -38,7 +38,7 @@ NEVER document time estimates, durations, level of effort or completion times fo
 - Use fenced blocks with language identifier:
   ````markdown
   ```javascript
-  const example = 'code';
+  const example = "code"
   ```
   ````
 - NOT indented code blocks (ambiguous)

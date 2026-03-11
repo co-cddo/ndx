@@ -1,9 +1,9 @@
 ---
-name: 'step-04-ux-alignment'
-description: 'Check for UX document and validate alignment with PRD and Architecture'
+name: "step-04-ux-alignment"
+description: "Check for UX document and validate alignment with PRD and Architecture"
 
-nextStepFile: './step-05-epic-quality-review.md'
-outputFile: '{planning_artifacts}/implementation-readiness-report-{{date}}.md'
+nextStepFile: "./step-05-epic-quality-review.md"
+outputFile: "{planning_artifacts}/implementation-readiness-report-{{date}}.md"
 ---
 
 # Step 4: UX Alignment

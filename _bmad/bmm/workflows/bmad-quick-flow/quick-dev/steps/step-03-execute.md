@@ -1,8 +1,8 @@
 ---
-name: 'step-03-execute'
-description: 'Execute implementation - iterate through tasks, write code, run tests'
+name: "step-03-execute"
+description: "Execute implementation - iterate through tasks, write code, run tests"
 
-nextStepFile: './step-04-self-check.md'
+nextStepFile: "./step-04-self-check.md"
 ---
 
 # Step 3: Execute Implementation

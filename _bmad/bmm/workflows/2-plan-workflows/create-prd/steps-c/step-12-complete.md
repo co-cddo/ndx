@@ -1,10 +1,10 @@
 ---
-name: 'step-12-complete'
-description: 'Complete the PRD workflow, update status files, and suggest next steps including validation'
+name: "step-12-complete"
+description: "Complete the PRD workflow, update status files, and suggest next steps including validation"
 
 # File References
-outputFile: '{planning_artifacts}/prd.md'
-validationFlow: '../steps-v/step-v-01-discovery.md'
+outputFile: "{planning_artifacts}/prd.md"
+validationFlow: "../steps-v/step-v-01-discovery.md"
 ---
 
 # Step 12: Workflow Completion
@@ -51,6 +51,7 @@ Complete the PRD workflow, update status files, offer validation options, and su
 ### 1. Announce Workflow Completion
 
 Inform user that the PRD is complete and polished:
+
 - Celebrate successful completion of comprehensive PRD
 - Summarize all sections that were created
 - Highlight that document has been polished for flow and coherence
@@ -72,6 +73,7 @@ Offer validation workflows to ensure PRD is ready for implementation:
 **Available Validation Workflows:**
 
 **Option 1: Check Implementation Readiness** (`{checkImplementationReadinessWorkflow}`)
+
 - Validates PRD has all information needed for development
 - Checks epic coverage completeness
 - Reviews UX alignment with requirements
@@ -81,6 +83,7 @@ Offer validation workflows to ensure PRD is ready for implementation:
 **When to use:** Before starting technical architecture or epic breakdown
 
 **Option 2: Skip for Now**
+
 - Proceed directly to next workflows (architecture, UX, epics)
 - Validation can be done later if needed
 - Some teams prefer to validate during architecture reviews

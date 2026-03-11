@@ -1,6 +1,6 @@
 ---
 name: party-mode
-description: 'Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations. Use when user requests party mode.'
+description: "Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations. Use when user requests party mode."
 ---
 
 # Party Mode Workflow
@@ -115,12 +115,12 @@ Load step: `./steps/step-02-discussion-orchestration.md`
 ```yaml
 ---
 stepsCompleted: [1]
-workflowType: 'party-mode'
-user_name: '{{user_name}}'
-date: '{{date}}'
+workflowType: "party-mode"
+user_name: "{{user_name}}"
+date: "{{date}}"
 agents_loaded: true
 party_active: true
-exit_triggers: ['*exit', 'goodbye', 'end party', 'quit']
+exit_triggers: ["*exit", "goodbye", "end party", "quit"]
 ---
 ```
 

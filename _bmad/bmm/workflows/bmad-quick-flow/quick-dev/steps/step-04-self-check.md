@@ -1,8 +1,8 @@
 ---
-name: 'step-04-self-check'
-description: 'Self-audit implementation against tasks, tests, AC, and patterns'
+name: "step-04-self-check"
+description: "Self-audit implementation against tasks, tests, AC, and patterns"
 
-nextStepFile: './step-05-adversarial-review.md'
+nextStepFile: "./step-05-adversarial-review.md"
 ---
 
 # Step 4: Self-Check

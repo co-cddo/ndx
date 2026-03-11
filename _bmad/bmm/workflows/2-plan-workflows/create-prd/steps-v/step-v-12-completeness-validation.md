@@ -1,12 +1,12 @@
 ---
-name: 'step-v-12-completeness-validation'
-description: 'Completeness Check - Final comprehensive completeness check before report generation'
+name: "step-v-12-completeness-validation"
+description: "Completeness Check - Final comprehensive completeness check before report generation"
 
 # File references (ONLY variables used in this step)
-nextStepFile: './step-v-13-report-complete.md'
-prdFile: '{prd_file_path}'
-prdFrontmatter: '{prd_frontmatter}'
-validationReportPath: '{validation_report_path}'
+nextStepFile: "./step-v-13-report-complete.md"
+prdFile: "{prd_file_path}"
+prdFrontmatter: "{prd_frontmatter}"
+validationReportPath: "{validation_report_path}"
 ---
 
 # Step 12: Completeness Validation
@@ -68,11 +68,13 @@ Final comprehensive completeness check - validate no template variables remain, 
 "Perform completeness validation on this PRD - final gate check:
 
 **1. Template Completeness:**
+
 - Scan PRD for any remaining template variables
 - Look for: {variable}, {{variable}}, {placeholder}, [placeholder], etc.
 - List any found with line numbers
 
 **2. Content Completeness:**
+
 - Executive Summary: Has vision statement? ({key content})
 - Success Criteria: All criteria measurable? ({metrics present})
 - Product Scope: In-scope and out-of-scope defined? ({both present})
@@ -83,12 +85,14 @@ Final comprehensive completeness check - validate no template variables remain, 
 For each section: Is required content present? (Yes/No/Partial)
 
 **3. Section-Specific Completeness:**
+
 - Success Criteria: Each has specific measurement method?
 - User Journeys: Cover all user types?
 - Functional Requirements: Cover MVP scope?
 - Non-Functional Requirements: Each has specific criteria?
 
 **4. Frontmatter Completeness:**
+
 - stepsCompleted: Populated?
 - classification: Present (domain, projectType)?
 - inputDocuments: Tracked?
@@ -97,6 +101,7 @@ For each section: Is required content present? (Yes/No/Partial)
 Return completeness matrix with status for each check."
 
 **Graceful degradation (if no Task tool):**
+
 - Manually scan for template variables
 - Manually check each section for required content
 - Manually verify frontmatter fields
@@ -105,10 +110,12 @@ Return completeness matrix with status for each check."
 ### 2. Build Completeness Matrix
 
 **Template Completeness:**
+
 - Template variables found: count
 - List if any found
 
 **Content Completeness by Section:**
+
 - Executive Summary: Complete / Incomplete / Missing
 - Success Criteria: Complete / Incomplete / Missing
 - Product Scope: Complete / Incomplete / Missing
@@ -118,18 +125,21 @@ Return completeness matrix with status for each check."
 - Other sections: [List completeness]
 
 **Section-Specific Completeness:**
+
 - Success criteria measurable: All / Some / None
 - Journeys cover all users: Yes / Partial / No
 - FRs cover MVP scope: Yes / Partial / No
 - NFRs have specific criteria: All / Some / None
 
 **Frontmatter Completeness:**
+
 - stepsCompleted: Present / Missing
 - classification: Present / Missing
 - inputDocuments: Present / Missing
 - date: Present / Missing
 
 **Overall completeness:**
+
 - Sections complete: X/Y
 - Critical gaps: [list if any]
 

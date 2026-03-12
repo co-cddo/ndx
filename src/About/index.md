@@ -9,8 +9,6 @@ eleventyNavigation:
 sectionKey: About
 ---
 
-The National Digital Exchange (NDX) is a digital marketplace designed to transform how the public sector buys technology.
-
 ## Current phase: NDX:Try
 
 NDX is currently offering [NDX:Try](/catalogue/tags/try-before-you-buy/) — a hands-on evaluation programme that lets public sector buyers test products before committing. Each product has its own evaluation period and budget cap, with no obligation to purchase.

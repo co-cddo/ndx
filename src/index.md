@@ -1,7 +1,7 @@
 ---
 homepage: true
 layout: product
-description: <br/>Welcome to the next generation of cloud and data sharing.
+description: Try cloud products for free — secure sandboxes, no commitment.<br/><br/>Currently in Alpha for UK public sector organisations.
 image:
   src: /assets/missionbadge.png
   alt: National Digital Exchange Mission Badge
@@ -22,20 +22,16 @@ By providing turn-key access to commercial industry providers, NDX ensures that 
 
 ---
 
-<div class="govuk-grid-row homepage-grid">
-  <section class="govuk-grid-column-one-half-from-desktop">
+## NDX:Try — free cloud sandboxes
 
-### [Try](/catalogue/tags/try-before-you-buy/)
+NDX:Try provides **free, no-commitment** cloud sandbox environments so you can evaluate products hands-on before making any purchasing decisions. There is no obligation to buy.
 
-Create a secure short-lived cloud environment for learning, experiments and proof of concept or value
+We are starting by offering NDX:Try to **local government** and to users in other public sector organisations who are willing to participate in **user research engagement** to help us shape the service.
 
-  </section>
+<div class="govuk-inset-text">
 
-  <section class="govuk-grid-column-one-half-from-desktop">
+**Local government organisations** can [sign up for self-service access](/signup/) straight away.
 
-### [Optimise](/optimise)
+**Other public sector organisations** — get in touch with the NDX team at [ndx@dsit.gov.uk](mailto:ndx@dsit.gov.uk) to discuss access.
 
-Optimise your existing cloud
-
-  </section>
 </div>

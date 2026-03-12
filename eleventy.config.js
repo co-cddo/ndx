@@ -121,12 +121,20 @@ export default function (eleventyConfig) {
       navigation: [
         { text: "Home", href: "/" },
         { text: "About", href: "/About/" },
-        { text: "Catalogue", href: "/catalogue/tags/try-before-you-buy/" },
         {
-          text: "Try",
-          href: "/try",
+          text: "Catalogue",
+          href: "/catalogue/tags/try-before-you-buy/",
+          attributes: {
+            title: "Products available for hands-on evaluation through NDX:Try",
+          },
         },
-        { text: "Optimise", href: "/optimise/" },
+        {
+          text: "My Try Sessions",
+          href: "/try",
+          attributes: {
+            title: "View and manage your current and previous try sessions",
+          },
+        },
       ],
       slots: {
         end: '<span id="auth-nav" class="app-auth-nav"></span>',

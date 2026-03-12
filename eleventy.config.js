@@ -125,8 +125,7 @@ export default function (eleventyConfig) {
           text: "Catalogue",
           href: "/catalogue/tags/try-before-you-buy/",
           attributes: {
-            title:
-              "Products available for hands-on evaluation through NDX:Try",
+            title: "Products available for hands-on evaluation through NDX:Try",
           },
         },
         {

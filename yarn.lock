@@ -1550,11 +1550,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rollup/plugin-terser@npm:^0.4.4":
-  version: 0.4.4
-  resolution: "@rollup/plugin-terser@npm:0.4.4"
+"@rollup/plugin-terser@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@rollup/plugin-terser@npm:1.0.0"
   dependencies:
-    serialize-javascript: "npm:^6.0.1"
+    serialize-javascript: "npm:^7.0.3"
     smob: "npm:^1.0.0"
     terser: "npm:^5.17.4"
   peerDependencies:
@@ -1562,7 +1562,7 @@ __metadata:
   peerDependenciesMeta:
     rollup:
       optional: true
-  checksum: 10c0/b9cb6c8f02ac1c1344019e9fb854321b74f880efebc41b6bdd84f18331fce0f4a2aadcdb481042245cd3f409b429ac363af71f9efec4a2024731d67d32af36ee
+  checksum: 10c0/08be445cc2e0677132ee06cdebbcd1b6cd3ab22e220fcd89d8a22eaf9ee501a940f425931ac65c65ab113803ad31a895f2575716248609c882c8e562fd6cc2d4
   languageName: node
   linkType: hard
 
@@ -1774,12 +1774,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sindresorhus/slugify@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@sindresorhus/slugify@npm:3.0.0"
+  dependencies:
+    "@sindresorhus/transliterate": "npm:^2.0.0"
+    escape-string-regexp: "npm:^5.0.0"
+  checksum: 10c0/e149fcaf81828f137061646970a8c04a00f4730483ae98c17542fc0edc100ec4ee8958311eb22703f1575d14eeffd216a8f47fd30886a893384e4c3faf9f895b
+  languageName: node
+  linkType: hard
+
 "@sindresorhus/transliterate@npm:^1.0.0":
   version: 1.6.0
   resolution: "@sindresorhus/transliterate@npm:1.6.0"
   dependencies:
     escape-string-regexp: "npm:^5.0.0"
   checksum: 10c0/c5552abd98eb4ab3a8653ccb7addf24e0b6f2aa2a4c420689033f8c9d292abb2222fc08e330adf4055580ac78fe810b7467ed012cdf38f4d64175c42571b8b15
+  languageName: node
+  linkType: hard
+
+"@sindresorhus/transliterate@npm:^2.0.0":
+  version: 2.3.1
+  resolution: "@sindresorhus/transliterate@npm:2.3.1"
+  checksum: 10c0/36f065fb03212dd9815f99ee53f0333488fd59223d7933695a1cd10b869aa7d56db2cf36094bde36319f153abcc5d2cdd74fc6915327d2852a53e56688f11f6e
   languageName: node
   linkType: hard
 
@@ -2378,19 +2395,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@x-govuk/govuk-eleventy-plugin@npm:^8.3.1":
-  version: 8.3.1
-  resolution: "@x-govuk/govuk-eleventy-plugin@npm:8.3.1"
+"@x-govuk/govuk-eleventy-plugin@npm:^9.0.1":
+  version: 9.0.1
+  resolution: "@x-govuk/govuk-eleventy-plugin@npm:9.0.1"
   dependencies:
     "@11ty/eleventy": "npm:^3.0.0"
     "@11ty/eleventy-navigation": "npm:^1.0.0"
     "@11ty/eleventy-plugin-rss": "npm:^2.0.0"
     "@rollup/plugin-commonjs": "npm:^29.0.0"
     "@rollup/plugin-node-resolve": "npm:^16.0.0"
-    "@rollup/plugin-terser": "npm:^0.4.4"
-    "@x-govuk/govuk-prototype-components": "npm:^5.0.0"
+    "@rollup/plugin-terser": "npm:^1.0.0"
+    "@sindresorhus/slugify": "npm:^3.0.0"
+    "@x-govuk/govuk-prototype-components": "npm:^6.0.0"
+    accessible-autocomplete: "npm:^3.0.1"
     deepmerge: "npm:^4.2.2"
-    govuk-frontend: "npm:^5.11.0"
+    govuk-frontend: "npm:^6.0.0"
+    markdown-it: "npm:^14.1.1"
     markdown-it-abbr: "npm:^2.0.0"
     markdown-it-anchor: "npm:^9.0.0"
     markdown-it-attribution: "npm:^0.1.4"
@@ -2398,29 +2418,32 @@ __metadata:
     markdown-it-deflist: "npm:^3.0.0"
     markdown-it-footnote: "npm:^4.0.0"
     markdown-it-github-alerts: "npm:^1.0.0"
-    markdown-it-govuk: "npm:^0.8.0"
+    markdown-it-govuk: "npm:^0.9.0"
     markdown-it-image-figures: "npm:^2.0.0"
     markdown-it-ins: "npm:^4.0.0"
     markdown-it-mark: "npm:^4.0.0"
     markdown-it-sub: "npm:^2.0.0"
     markdown-it-sup: "npm:^2.0.0"
     markdown-it-table-of-contents: "npm:^1.0.0"
+    nunjucks: "npm:^3.2.4"
     rollup: "npm:^4.1.0"
     sass: "npm:^1.45.1"
     smartypants: "npm:^0.2.0"
-  checksum: 10c0/ece3812bc0ea2a7c158974449d809a3f267dbd377ffa0e89038b6a5daf543c13e0cce2e5b5cdb07b6f9ebff1627920eca398e20d41e8c43225761a16fd0f4884
+  checksum: 10c0/1dba0efcc149abeb68c435ca68256f11e862fcfe66e097d9dee1bfcb7ff9730050718ea3ce18d61fe259b3f806e5fb927c35022017c597cd25302a30d9265829
   languageName: node
   linkType: hard
 
-"@x-govuk/govuk-prototype-components@npm:^5.0.0":
-  version: 5.0.2
-  resolution: "@x-govuk/govuk-prototype-components@npm:5.0.2"
+"@x-govuk/govuk-prototype-components@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "@x-govuk/govuk-prototype-components@npm:6.0.0"
   dependencies:
     accessible-autocomplete: "npm:^3.0.0"
     eventslibjs: "npm:^1.2.0"
+    gray-matter: "npm:^4.0.3"
+    nunjucks: "npm:^3.2.4"
   peerDependencies:
-    govuk-frontend: ^5.11.0
-  checksum: 10c0/9785893d40f394581b85678659da45566c2310d719b63f4eed36c0721a14972cf1629e43326ff732add0b3aa70bdaac3dd9ebc1a7319b9ce78493c739c373bd4
+    govuk-frontend: ^6.0.0
+  checksum: 10c0/b06ce8d5642297f12d646f2731fdeb763b05f6e99e0eabd91b3a745848bc3c75aaa792ec9f3b51940c3423c278a5284728cbc7491d2126e27df47af34e87c514
   languageName: node
   linkType: hard
 
@@ -2438,7 +2461,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"accessible-autocomplete@npm:^3.0.0":
+"accessible-autocomplete@npm:^3.0.0, accessible-autocomplete@npm:^3.0.1":
   version: 3.0.1
   resolution: "accessible-autocomplete@npm:3.0.1"
   peerDependencies:
@@ -4177,10 +4200,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"govuk-frontend@npm:^5.11.0":
-  version: 5.13.0
-  resolution: "govuk-frontend@npm:5.13.0"
-  checksum: 10c0/af1c1495c9b543b442709a8131f4455019e07cd9eeea31a4a43b098496047d3468ed3c162d9b246b178c4a3d4214f64b85360bceea95406b188b3d42353593d4
+"govuk-frontend@npm:^6.0.0":
+  version: 6.1.0
+  resolution: "govuk-frontend@npm:6.1.0"
+  checksum: 10c0/543a8c6b1d709ec938e396fa3be923171637ab9b724f03618fa1bdc52023b6aa27fb42932b9e81df3fc134b0473442d42478dbf3e4b18e2bae00dbfe95363e96
   languageName: node
   linkType: hard
 
@@ -5482,12 +5505,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-it-govuk@npm:^0.8.0":
-  version: 0.8.0
-  resolution: "markdown-it-govuk@npm:0.8.0"
+"markdown-it-govuk@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "markdown-it-govuk@npm:0.9.0"
   dependencies:
     highlight.js: "npm:^11.5.0"
-  checksum: 10c0/9e04b28f5991ef5fae03840039d0af6fbc291d0e24c965cd18fb392bb162fdcf3ead46534046d492c330a39c320271190d65912bb2cbac1c68c9b1d910fb0724
+    markdown-it: "npm:^14.0.0"
+  checksum: 10c0/15bc326b408bc9d21072cd34069cc5cdf47d7dabb858ad96a12d63347f5043229f41adaed8fef328e0956dba68d5c82be931cb5489445efb5bf4855243991855
   languageName: node
   linkType: hard
 
@@ -5532,6 +5556,22 @@ __metadata:
   version: 1.1.0
   resolution: "markdown-it-table-of-contents@npm:1.1.0"
   checksum: 10c0/e1f0191ecbf1042b99db14c1251bcdb55fb0bea47433335068c7aa6a71f23b0991cf78bfeb990f3ef7dc9a0f58235c5831cc18aae7f2e11ee634b04a5901c492
+  languageName: node
+  linkType: hard
+
+"markdown-it@npm:^14.0.0, markdown-it@npm:^14.1.1":
+  version: 14.1.1
+  resolution: "markdown-it@npm:14.1.1"
+  dependencies:
+    argparse: "npm:^2.0.1"
+    entities: "npm:^4.4.0"
+    linkify-it: "npm:^5.0.0"
+    mdurl: "npm:^2.0.0"
+    punycode.js: "npm:^2.3.1"
+    uc.micro: "npm:^2.1.0"
+  bin:
+    markdown-it: bin/markdown-it.mjs
+  checksum: 10c0/c67f2a4c8069a307c78d8c15104bbcb15a2c6b17f4c904364ca218ec2eccf76a397eba1ea05f5ac5de72c4b67fcf115d422d22df0bfb86a09b663f55b9478d4f
   languageName: node
   linkType: hard
 
@@ -5844,7 +5884,7 @@ __metadata:
     "@axe-core/playwright": "npm:^4.11.1"
     "@playwright/test": "npm:^1.58.2"
     "@types/jest": "npm:^30.0.0"
-    "@x-govuk/govuk-eleventy-plugin": "npm:^8.3.1"
+    "@x-govuk/govuk-eleventy-plugin": "npm:^9.0.1"
     esbuild: "npm:^0.27.3"
     husky: "npm:^9.1.7"
     jest: "npm:^30.2.0"
@@ -6352,15 +6392,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"randombytes@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "randombytes@npm:2.1.0"
-  dependencies:
-    safe-buffer: "npm:^5.1.0"
-  checksum: 10c0/50395efda7a8c94f5dffab564f9ff89736064d32addf0cc7e8bf5e4166f09f8ded7a0849ca6c2d2a59478f7d90f78f20d8048bca3cdf8be09d8e8a10790388f3
-  languageName: node
-  linkType: hard
-
 "range-parser@npm:^1.2.1":
   version: 1.2.1
   resolution: "range-parser@npm:1.2.1"
@@ -6587,13 +6618,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"safe-buffer@npm:^5.1.0":
-  version: 5.2.1
-  resolution: "safe-buffer@npm:5.2.1"
-  checksum: 10c0/6501914237c0a86e9675d4e51d89ca3c21ffd6a31642efeba25ad65720bce6921c9e7e974e5be91a786b25aa058b5303285d3c15dbabf983a919f5f630d349f3
-  languageName: node
-  linkType: hard
-
 "safer-buffer@npm:>= 2.1.2 < 3.0.0":
   version: 2.1.2
   resolution: "safer-buffer@npm:2.1.2"
@@ -6681,12 +6705,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serialize-javascript@npm:^6.0.1":
-  version: 6.0.2
-  resolution: "serialize-javascript@npm:6.0.2"
-  dependencies:
-    randombytes: "npm:^2.1.0"
-  checksum: 10c0/2dd09ef4b65a1289ba24a788b1423a035581bef60817bea1f01eda8e3bda623f86357665fe7ac1b50f6d4f583f97db9615b3f07b2a2e8cbcb75033965f771dd2
+"serialize-javascript@npm:^7.0.3":
+  version: 7.0.4
+  resolution: "serialize-javascript@npm:7.0.4"
+  checksum: 10c0/f3da6f994c41306fbfabb55eefe280a46da05592939a84b0d95c84e296c92ba9e6a3d86cf7bbd71e7a59e1cfcd8481745910af109bedbd3ed853b444d32f9ee9
   languageName: node
   linkType: hard
 

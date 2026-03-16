@@ -14,6 +14,7 @@ import {
   ListUsersCommand,
   CreateUserCommand,
   CreateGroupMembershipCommand,
+  DeleteUserCommand,
   ConflictException,
   type ListUsersCommandOutput,
   type CreateUserCommandOutput,
@@ -312,16 +313,58 @@ export async function createUser(request: SignupRequest, correlationId: string):
       }),
     )
 
-    // Add user to NDX group
-    await identityClient.send(
-      new CreateGroupMembershipCommand({
-        IdentityStoreId: getIdentityStoreId(),
-        GroupId: getGroupId(),
-        MemberId: {
-          UserId: userId,
-        },
-      }),
-    )
+    // Add user to NDX group — if this fails, roll back user creation
+    // to avoid leaving orphaned users who can't re-register
+    try {
+      await identityClient.send(
+        new CreateGroupMembershipCommand({
+          IdentityStoreId: getIdentityStoreId(),
+          GroupId: getGroupId(),
+          MemberId: {
+            UserId: userId,
+          },
+        }),
+      )
+    } catch (groupError) {
+      console.log(
+        JSON.stringify({
+          level: "ERROR",
+          message: "Failed to add user to group, rolling back user creation",
+          error: groupError instanceof Error ? groupError.message : "Unknown error",
+          domain: request.domain,
+          correlationId,
+        }),
+      )
+
+      try {
+        await identityClient.send(
+          new DeleteUserCommand({
+            IdentityStoreId: getIdentityStoreId(),
+            UserId: userId,
+          }),
+        )
+        console.log(
+          JSON.stringify({
+            level: "INFO",
+            message: "User rolled back successfully after group membership failure",
+            domain: request.domain,
+            correlationId,
+          }),
+        )
+      } catch (rollbackError) {
+        console.log(
+          JSON.stringify({
+            level: "ERROR",
+            message: "Failed to roll back user creation — orphaned user may exist",
+            error: rollbackError instanceof Error ? rollbackError.message : "Unknown error",
+            domain: request.domain,
+            correlationId,
+          }),
+        )
+      }
+
+      throw groupError
+    }
 
     console.log(
       JSON.stringify({

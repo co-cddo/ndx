@@ -11,6 +11,7 @@ import {
   ListUsersCommand,
   CreateUserCommand,
   CreateGroupMembershipCommand,
+  DeleteUserCommand,
   ConflictException,
 } from "@aws-sdk/client-identitystore"
 import { STSClient } from "@aws-sdk/client-sts"
@@ -25,6 +26,7 @@ jest.mock("@aws-sdk/client-identitystore", () => {
     ListUsersCommand: jest.fn(),
     CreateUserCommand: jest.fn(),
     CreateGroupMembershipCommand: jest.fn(),
+    DeleteUserCommand: jest.fn(),
   }
 })
 
@@ -359,6 +361,50 @@ describe("identity-store-service", () => {
         domain: "example.gov.uk",
         correlationId: "test-correlation-id",
       })
+    })
+
+    it("should roll back user creation when group membership fails", async () => {
+      const groupError = new Error("Not authorized to perform identitystore:CreateGroupMembership")
+      mockSend
+        .mockResolvedValueOnce({ UserId: "new-user-id" }) // CreateUserCommand succeeds
+        .mockRejectedValueOnce(groupError) // CreateGroupMembershipCommand fails
+        .mockResolvedValueOnce({}) // DeleteUserCommand succeeds (rollback)
+
+      await expect(createUser(validRequest, "test-correlation-id")).rejects.toThrow(
+        "Not authorized to perform identitystore:CreateGroupMembership",
+      )
+
+      expect(mockSend).toHaveBeenCalledTimes(3)
+      expect(mockSend).toHaveBeenNthCalledWith(1, expect.any(CreateUserCommand))
+      expect(mockSend).toHaveBeenNthCalledWith(2, expect.any(CreateGroupMembershipCommand))
+      expect(mockSend).toHaveBeenNthCalledWith(3, expect.any(DeleteUserCommand))
+
+      // Verify rollback log
+      const rollbackLog = consoleSpy.mock.calls.find((call) => {
+        const data = JSON.parse(call[0])
+        return data.message === "User rolled back successfully after group membership failure"
+      })
+      expect(rollbackLog).toBeDefined()
+    })
+
+    it("should log error when rollback also fails", async () => {
+      const groupError = new Error("Not authorized to perform identitystore:CreateGroupMembership")
+      const rollbackError = new Error("DeleteUser failed")
+      mockSend
+        .mockResolvedValueOnce({ UserId: "new-user-id" }) // CreateUserCommand succeeds
+        .mockRejectedValueOnce(groupError) // CreateGroupMembershipCommand fails
+        .mockRejectedValueOnce(rollbackError) // DeleteUserCommand also fails
+
+      await expect(createUser(validRequest, "test-correlation-id")).rejects.toThrow(
+        "Not authorized to perform identitystore:CreateGroupMembership",
+      )
+
+      // Verify orphaned user warning
+      const orphanLog = consoleSpy.mock.calls.find((call) => {
+        const data = JSON.parse(call[0])
+        return data.message.includes("orphaned user")
+      })
+      expect(orphanLog).toBeDefined()
     })
   })
 

@@ -416,6 +416,13 @@ jobs:
           role-to-assume: arn:aws:iam::955063685555:role/GitHubActions-ISB-InfraDeploy
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Validate required secrets
+        run: |
+          if [ -z "${{ secrets.ISB_NDX_USERS_GROUP_ID }}" ]; then
+            echo "::error::ISB_NDX_USERS_GROUP_ID secret is not set"
+            exit 1
+          fi
+
       - name: Deploy Cross-Account Role
         run: |
           aws cloudformation deploy \

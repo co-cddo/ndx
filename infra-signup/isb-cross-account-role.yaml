@@ -20,6 +20,8 @@ Parameters:
   GroupId:
     Type: String
     Description: NDX Users Group ID in IAM Identity Center
+    MinLength: 1
+    ConstraintDescription: GroupId must not be empty
 
 Resources:
   SignupCrossAccountRole:
@@ -48,6 +50,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - identitystore:CreateUser
+                  - identitystore:DeleteUser
                   - identitystore:ListUsers
                   - identitystore:DescribeUser
                 Resource:

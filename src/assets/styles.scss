@@ -289,9 +289,15 @@ body.aup-modal-open {
   &__footer {
     padding: 0 20px 20px;
     display: flex;
+    flex-wrap: wrap;
     gap: 15px;
 
     .govuk-button {
+      margin-bottom: 0;
+    }
+
+    .govuk-body-s {
+      flex-basis: 100%;
       margin-bottom: 0;
     }
   }

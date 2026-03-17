@@ -193,6 +193,38 @@
   font-style: italic;
 }
 
+/* Subtle countdown animation - gentle opacity pulse */
+.sessions-refresh-countdown {
+  animation: refresh-pulse 10s linear infinite;
+}
+
+@keyframes refresh-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* More prominent animation when sessions are pending approval or setting up */
+.sessions-refresh-countdown--pending {
+  color: #1d70b8; /* GOV.UK blue */
+  font-weight: 700;
+  animation: refresh-pulse-pending 2s ease-in-out infinite;
+}
+
+@keyframes refresh-pulse-pending {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Comments row styling */
 .sessions-table__comments-row {
   background-color: #f3f2f1; /* GOV.UK light grey */

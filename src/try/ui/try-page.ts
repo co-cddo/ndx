@@ -295,9 +295,10 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
   }
 
   // Refresh status - countdown or updating
+  const hasPending = pendingCount > 0
   const refreshStatus = isRefreshing
     ? `<span class="sessions-refresh-indicator" aria-live="polite">Updating...</span>`
-    : `<span class="sessions-refresh-countdown" id="refresh-countdown">Refreshing in ${secondsUntilRefresh}s</span>`
+    : `<span class="sessions-refresh-countdown${hasPending ? " sessions-refresh-countdown--pending" : ""}" id="refresh-countdown">Refreshing in ${secondsUntilRefresh}s</span>`
 
   targetContainer.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>

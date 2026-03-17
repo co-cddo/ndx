@@ -170,6 +170,7 @@ class AuthChoiceModal {
           <button id="${IDS.CREATE_ACCOUNT_BTN}" type="button" class="govuk-button">
             Create account
           </button>
+          <p class="govuk-body-s">When signing in, your username is your email address.</p>
         </div>
       </div>
     `

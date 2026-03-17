@@ -217,7 +217,11 @@ async function handleFormSubmit(event: Event): Promise<void> {
       }
       showErrorSummary([{ fieldId: "", message: response.message }])
     } else {
-      // Success - redirect to success page
+      // Success - notify user before redirecting to login
+      const email = request.email
+      window.alert(
+        `Your account has been created.\n\nYour username is: ${email}\n\nYou'll now be taken to the sign-in page.`,
+      )
       window.location.href = response.redirectUrl ?? "/signup/success"
     }
   } catch {

@@ -86,6 +86,16 @@ permalink: /signup/
     By continuing, you agree to our <a href="/privacy/" class="govuk-link">privacy policy</a>.
   </p>
 
+  <div class="govuk-inset-text">
+    <p class="govuk-body">
+      After creating your account, you'll be taken to a sign-in page.
+      Your username is your email address.
+    </p>
+    <p class="govuk-body">
+      The sign-in page is a temporary step while we work on a more seamless experience.
+    </p>
+  </div>
+
   <!-- Submit button -->
   <button type="submit" class="govuk-button" data-module="govuk-button" id="submit-button">
     Continue

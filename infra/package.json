@@ -14,7 +14,7 @@
     "pre-deploy": "scripts/pre-deploy-check.sh"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudfront": "3.1005.0",
+    "@aws-sdk/client-cloudfront": "3.1006.0",
     "@eslint/js": "10.0.1",
     "@types/aws-lambda": "8.10.161",
     "@types/jest": "30.0.0",
@@ -33,13 +33,13 @@
   "dependencies": {
     "@aws-lambda-powertools/logger": "2.31.0",
     "@aws-lambda-powertools/metrics": "2.31.0",
-    "@aws-sdk/client-dynamodb": "3.1005.0",
-    "@aws-sdk/client-secrets-manager": "3.1005.0",
+    "@aws-sdk/client-dynamodb": "3.1006.0",
+    "@aws-sdk/client-secrets-manager": "3.1006.0",
     "@aws-sdk/client-sns": "^3.1002.0",
-    "@aws-sdk/client-sqs": "3.1005.0",
+    "@aws-sdk/client-sqs": "3.1006.0",
     "@aws-sdk/util-dynamodb": "3.996.2",
     "@co-cddo/isb-client": "https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz",
-    "aws-cdk-lib": "2.241.0",
+    "aws-cdk-lib": "2.242.0",
     "constructs": "10.5.1",
     "isomorphic-dompurify": "3.1.0",
     "notifications-node-client": "8.3.0",

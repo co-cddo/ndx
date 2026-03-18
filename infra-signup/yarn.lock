@@ -2925,9 +2925,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-cdk-lib@npm:2.241.0":
-  version: 2.241.0
-  resolution: "aws-cdk-lib@npm:2.241.0"
+"aws-cdk-lib@npm:2.242.0":
+  version: 2.242.0
+  resolution: "aws-cdk-lib@npm:2.242.0"
   dependencies:
     "@aws-cdk/asset-awscli-v1": "npm:2.2.263"
     "@aws-cdk/asset-node-proxy-agent-v6": "npm:^2.1.1"
@@ -2946,7 +2946,7 @@ __metadata:
     yaml: "npm:1.10.2"
   peerDependencies:
     constructs: ^10.5.0
-  checksum: 10c0/4693bf228f89557fcf8d79efb8a9d0e551bc676cc928501ed457ace5592db186961a40dd6f3b4d6a85f586a71fd6b4c39d4171e782289d033b90f62258ad7840
+  checksum: 10c0/6a7a9dc2b31d333f93b98f35b4ec4963b201792ef9d820c7fd3e693067a24aa427449f043b352ad2c2bda367c48551ba479c958bee0cc7a3d3ca32c6d9ab166f
   languageName: node
   linkType: hard
 
@@ -5206,7 +5206,7 @@ __metadata:
     "@types/jest": "npm:30.0.0"
     "@types/node": "npm:25.4.0"
     aws-cdk: "npm:2.1110.0"
-    aws-cdk-lib: "npm:2.241.0"
+    aws-cdk-lib: "npm:2.242.0"
     constructs: "npm:10.5.1"
     esbuild: "npm:^0.27.3"
     eslint: "npm:10.0.3"

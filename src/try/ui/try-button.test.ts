@@ -170,11 +170,7 @@ describe("Try Button Handler", () => {
       const button = document.querySelector("button") as HTMLButtonElement
       button.click()
 
-      expect(replaceStateSpy).toHaveBeenCalledWith(
-        null,
-        "",
-        expect.stringContaining("showaup=true"),
-      )
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, "", expect.stringContaining("showaup=true"))
       replaceStateSpy.mockRestore()
     })
 
@@ -457,11 +453,7 @@ describe("Try Button Handler", () => {
 
         checkShowAup()
 
-        expect(replaceStateSpy).toHaveBeenCalledWith(
-          null,
-          "",
-          expect.not.stringContaining("showaup"),
-        )
+        expect(replaceStateSpy).toHaveBeenCalledWith(null, "", expect.not.stringContaining("showaup"))
       })
 
       it("should preserve other query params when cleaning URL", () => {

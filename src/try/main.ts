@@ -16,7 +16,7 @@ import { initAll as GOVUKFrontend } from "govuk-frontend"
 
 import { initAuthNav } from "./ui/auth-nav"
 import { initTryPage } from "./ui/try-page"
-import { initTryButton, handleTryButtonClickDelegated } from "./ui/try-button"
+import { initTryButton, handleTryButtonClickDelegated, checkShowAup } from "./ui/try-button"
 import { initTryButtonText } from "./ui/try-button-text"
 import { handleOAuthCallback, parseOAuthError } from "./auth/oauth-flow"
 import { WELCOME_BACK_KEY } from "./constants"
@@ -164,6 +164,9 @@ function init(): void {
 
   // Dynamic try button text based on auth state and lease template duration
   initTryButtonText()
+
+  // Auto-open AUP modal if ?showaup query parameter is present
+  checkShowAup()
 }
 
 // Handle module scripts that may load after DOMContentLoaded has fired

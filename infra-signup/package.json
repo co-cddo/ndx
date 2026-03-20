@@ -18,8 +18,8 @@
     "@eslint/js": "10.0.1",
     "@types/aws-lambda": "8.10.161",
     "@types/jest": "30.0.0",
-    "@types/node": "25.4.0",
-    "aws-cdk": "2.1110.0",
+    "@types/node": "25.5.0",
+    "aws-cdk": "2.1111.0",
     "esbuild": "^0.27.3",
     "eslint": "10.0.3",
     "eslint-plugin-awscdk": "4.2.1",
@@ -37,7 +37,7 @@
     "@aws-sdk/client-sns": "^3.1013.0",
     "@aws-sdk/client-sso-admin": "^3.1005.0",
     "@aws-sdk/client-sts": "^3.1005.0",
-    "aws-cdk-lib": "2.241.0",
+    "aws-cdk-lib": "2.243.0",
     "constructs": "10.5.1"
   },
   "engines": {

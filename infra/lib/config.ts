@@ -155,6 +155,8 @@ export const ISB_EVENT_TYPES = [
   "AccountQuarantined",
   "AccountCleanupFailed",
   "AccountDriftDetected",
+  // Provisioning events (blueprint deployment notifications)
+  "BlueprintDeploymentRequest",
 ] as const
 
 /**
@@ -191,6 +193,8 @@ export const CHATBOT_EVENT_TYPES = [
   "GroupCostReportGeneratedFailure", // critical
   // Account requests (1)
   "CleanAccountRequest",
+  // Provisioning events
+  "BlueprintDeploymentRequest",
 ] as const
 
 /**
@@ -247,6 +251,11 @@ export const NOTIFY_TEMPLATE_IDS = {
 
   // Billing events
   LEASE_COSTS_GENERATED: "d1e29f43-137a-44e7-95b1-58d503365bad",
+
+  // User events
+  USER_CREATED: "f143cda7-e6a6-43a9-96fe-ece92069e8e8",
+  // Provisioning events
+  BLUEPRINT_DEPLOYMENT_REQUEST: "9a66a9b3-3ec4-4e24-add6-5d4f896d161d",
 } as const
 
 /**
@@ -265,6 +274,8 @@ export const EVENT_TYPE_TO_TEMPLATE_ID: Record<string, string> = {
   LeaseExpired: NOTIFY_TEMPLATE_IDS.LEASE_EXPIRED,
   LeaseFrozen: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
   LeaseCostsGenerated: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
+  UserCreated: NOTIFY_TEMPLATE_IDS.USER_CREATED,
+  BlueprintDeploymentRequest: NOTIFY_TEMPLATE_IDS.BLUEPRINT_DEPLOYMENT_REQUEST,
 }
 
 export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {

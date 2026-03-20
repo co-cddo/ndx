@@ -124,13 +124,17 @@ export type NotificationEventType =
   | "AccountQuarantined"
   | "AccountDriftDetected"
   | "GroupCostReportGeneratedFailure"
+  // User events (account creation notifications)
+  | "UserCreated"
+  // Provisioning events (blueprint deployment notifications)
+  | "BlueprintDeploymentRequest"
 
 /**
  * Allowed event sources for security validation
  * ISB uses "InnovationSandbox-ndx" as the source name
  * isb-costs is used by the costs team for billing events (LeaseCostsGenerated)
  */
-export const ALLOWED_SOURCES = ["InnovationSandbox-ndx", "isb-costs"] as const
+export const ALLOWED_SOURCES = ["InnovationSandbox-ndx", "isb-costs", "ndx-signup"] as const
 export type AllowedSource = (typeof ALLOWED_SOURCES)[number]
 
 /**

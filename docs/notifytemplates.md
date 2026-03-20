@@ -433,6 +433,114 @@ The National Digital Exchange Team, GDS
 
 ---
 
+# UserCreated
+
+**Subject:** Welcome to NDX - your account is ready
+
+**Body:**
+
+```
+Hi ((userName)),
+
+Welcome to NDX:Try! Your account has been created and you're ready to get started.
+
+# How to access NDX:Try
+
+1. Browse our [catalogue](https://ndx.digital.cabinet-office.gov.uk/catalogue/tags/try-before-you-buy) to find products available for evaluation.
+2. Select "Try this now" on a product page to request your first sandbox session.
+3. When prompted to sign-in, use your email address as the username.
+
+# What is NDX:Try?
+
+NDX:Try gives you access to pre-configured AWS sandbox environments so you can evaluate products before committing to them. Each sandbox comes with a time limit and spending cap — there's no charge to you.
+
+Once you've requested a session, we'll review it (usually within one working day) and email you when your environment is ready.
+
+If you have any questions, or would like to provide feedback on the NDX:Try service, please email us at ndx@dsit.gov.uk or reach out on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack.
+
+We can't wait to hear what you build with it!
+
+Kind regards,
+The National Digital Exchange Team, GDS
+```
+
+---
+
+# BlueprintDeploymentRequest
+
+**Subject:** Your NDX:Try session is being set up
+
+**Body:**
+
+```
+Hi ((userName)),
+
+Great news - your NDX:Try session request has been approved! We're now setting up your ((templateName)) environment.
+
+# What happens next
+
+This usually takes a few minutes. We'll send you another email as soon as your session is ready to use — you don't need to stay on the page.
+
+# While you wait
+
+You might find it helpful to review the documentation for your product on our [catalogue](https://ndx.digital.cabinet-office.gov.uk/catalogue/tags/try-before-you-buy), or take a look at the [guided walkthrough](https://aws.try.ndx.digital.cabinet-office.gov.uk/) to help you get the most from your session.
+
+If your session hasn't been set up after 30 minutes, or if you have any questions, please email us at ndx@dsit.gov.uk or reach out on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack.
+
+Kind regards,
+The National Digital Exchange Team, GDS
+```
+
+---
+
+# LeaseApproved (Updated)
+
+**Subject:** Great news! Your NDX:Try AWS Session is ready to use
+
+**Template ID:** d09a78f6-e1c3-441f-80a7-3b85529d78e9 (existing — update content only)
+
+**Body:**
+
+```
+Hi ((userName)),
+
+Excellent news - your NDX:Try session is ready to use!
+
+# Your session details
+
+* AWS account ID: ((accountId))
+* budget limit: ((budgetLimit))
+* expires: ((expiryDate))
+
+# How to access your session
+
+1. Go to [NDX:Try sessions page](https://ndx.digital.cabinet-office.gov.uk/try) to find your session.
+2. When prompted to sign-in, use your email address as the username.
+3. Access your session
+
+You might find it helpful to review the documentation for your product on our [catalogue](https://ndx.digital.cabinet-office.gov.uk/catalogue/tags/try-before-you-buy), or take a look at the [guided walkthrough](https://aws.try.ndx.digital.cabinet-office.gov.uk/) to help you get the most from your session.
+
+# Important things to know
+
+* your session will automatically expire on the date shown above
+* all resources will be cleaned up when your session ends, so remember to save any work you need to keep
+
+# Getting the most from your session
+
+We recommend following the [guided walkthrough](https://aws.try.ndx.digital.cabinet-office.gov.uk/) alongside your sandbox environment. It will help you explore the key features and get hands-on experience.
+
+Please note: the AWS environment has security restrictions in place. In some cases, these may be more restrictive than needed for your evaluation. If you find yourself blocked or unable to proceed, please email us at ndx@dsit.gov.uk and we will review the restrictions.
+
+If you have any questions or feedback about the NDX:Try AWS Session service, please email us at ndx@dsit.gov.uk or reach out on the [#national-digital-exchange](https://ukgovernmentdigital.slack.com/archives/C075C8GTP7D) channel on Cross-Government Slack.
+
+Happy experimenting!
+
+Kind regards,
+The National Digital Exchange Team, GDS
+```
+
+---
+
 # Slack Workflow Webhook Setup
 
 Slack workflow webhooks receive notifications for ops alerts. The webhook sends a simple key-value payload that Slack Workflow Builder can use.

@@ -18,6 +18,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda"
 import * as lambdaNodejs from "aws-cdk-lib/aws-lambda-nodejs"
 import * as logs from "aws-cdk-lib/aws-logs"
 import * as sns from "aws-cdk-lib/aws-sns"
+import * as ssm from "aws-cdk-lib/aws-ssm"
 import type { Construct } from "constructs"
 import * as path from "path"
 
@@ -178,6 +179,36 @@ export class SignupStack extends cdk.Stack {
         ...(ssoInstanceArn && { SSO_INSTANCE_ARN: ssoInstanceArn }),
       },
     })
+
+    // Import notification Lambda ARN and events topic ARN from SSM
+    const notificationLambdaArn = ssm.StringParameter.valueForStringParameter(
+      this, "/ndx/notification-handler-arn",
+    )
+    const eventsTopicArn = ssm.StringParameter.valueForStringParameter(
+      this, "/ndx/events-topic-arn",
+    )
+
+    // Add notification env vars to signup Lambda
+    this.signupHandler.addEnvironment("NOTIFICATION_LAMBDA_ARN", notificationLambdaArn)
+    this.signupHandler.addEnvironment("EVENTS_TOPIC_ARN", eventsTopicArn)
+
+    // Grant Lambda invoke permission for notification Lambda
+    this.signupHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["lambda:InvokeFunction"],
+        resources: [notificationLambdaArn],
+      }),
+    )
+
+    // Grant SNS publish permission for Slack alerts
+    this.signupHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["sns:Publish"],
+        resources: [eventsTopicArn],
+      }),
+    )
 
     // =========================================================================
     // Lambda Function URL (Story 1.2 AC#2)

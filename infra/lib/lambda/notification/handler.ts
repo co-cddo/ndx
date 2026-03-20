@@ -40,6 +40,8 @@ import {
   isLeaseLifecycleEvent,
   isMonitoringAlertEvent,
   isBillingEvent,
+  isUserEvent,
+  isProvisioningEvent,
   formatCurrency,
   formatUKDate,
 } from "./templates"
@@ -310,7 +312,12 @@ export function validateEventSource(event: EventBridgeEvent): void {
  */
 function getNotificationChannels(eventType: NotificationEventType): "email"[] {
   // Ops events go to Chatbot only (no user email from this Lambda)
-  const opsOnlyEvents: NotificationEventType[] = ["AccountCleanupFailed", "AccountQuarantined", "AccountDriftDetected"]
+  const opsOnlyEvents: NotificationEventType[] = [
+    "AccountCleanupFailed",
+    "AccountQuarantined",
+    "AccountDriftDetected",
+    "GroupCostReportGeneratedFailure",
+  ]
 
   if (opsOnlyEvents.includes(eventType)) {
     return [] // No email for ops-only events
@@ -416,7 +423,7 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
     // Email notifications (user events)
     if (
       channels.includes("email") &&
-      (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType) || isBillingEvent(eventType))
+      (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType) || isBillingEvent(eventType) || isUserEvent(eventType) || isProvisioningEvent(eventType))
     ) {
       const validatedEvent = validateEvent(event)
 

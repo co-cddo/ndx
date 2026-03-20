@@ -5,10 +5,10 @@ import { test, expect } from "@playwright/test"
  *
  * These tests validate that the homepage correctly extracts JWT tokens from URL
  * query parameters when OAuth redirects to homepage (https://ndx.gov.uk/),
- * stores them in sessionStorage, cleans up the URL, and redirects to the original page.
+ * stores them in localStorage, cleans up the URL, and redirects to the original page.
  *
  * AC #1: Extract JWT token from URL query parameter
- * AC #2: Store token in sessionStorage with key 'isb-jwt'
+ * AC #2: Store token in localStorage with key 'isb-jwt'
  * AC #3: Redirect to return URL after token extraction
  * AC #4: Remove token from browser address bar (URL cleanup)
  * AC #5: Graceful error handling (missing/empty token)
@@ -21,14 +21,15 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
   const RETURN_URL_KEY = "auth-return-to"
 
   test.beforeEach(async ({ page }) => {
-    // Clear sessionStorage before each test
+    // Clear storage before each test
     await page.goto("/")
     await page.evaluate(() => {
       sessionStorage.clear()
+      localStorage.clear()
     })
   })
 
-  test("AC #1 & #2: Extract token from URL and store in sessionStorage", async ({ page }) => {
+  test("AC #1 & #2: Extract token from URL and store in localStorage", async ({ page }) => {
     // Simulate OAuth callback with token in URL (redirects to homepage)
     await page.goto(`/?token=${TEST_TOKEN}`)
 
@@ -38,7 +39,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify token was extracted and stored in sessionStorage
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
 
     expect(storedToken).toBe(TEST_TOKEN)
@@ -95,7 +96,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify token is still present after redirect
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBe(TEST_TOKEN)
   })
@@ -118,7 +119,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify token was stored in sessionStorage
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBe(TEST_TOKEN)
   })
@@ -135,7 +136,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify no token stored
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBeNull()
 
@@ -156,7 +157,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify no token stored (empty token should not be stored)
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBeNull()
   })
@@ -174,7 +175,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify no token stored (whitespace token should not be stored)
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBeNull()
   })
@@ -210,7 +211,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify token stored
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBe(TEST_TOKEN)
   })
@@ -230,7 +231,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
 
     // Verify no token stored (error flow doesn't extract token)
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
     expect(storedToken).toBeNull()
   })
@@ -249,7 +250,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     await page.waitForFunction(() => !window.location.search.includes("token"))
 
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
 
     expect(storedToken).toBe(tokenWithSpecialChars)
@@ -264,7 +265,7 @@ test.describe("OAuth Callback Flow - Token Extraction", () => {
     await page.waitForFunction(() => !window.location.search.includes("token"))
 
     const storedToken = await page.evaluate((key) => {
-      return sessionStorage.getItem(key)
+      return localStorage.getItem(key)
     }, TOKEN_KEY)
 
     expect(storedToken).toBe(TEST_TOKEN)

@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test"
  * Story 5.5: Sign Out Functionality - E2E Tests
  *
  * These tests validate the sign out functionality:
- * - sessionStorage is cleared when logout is called
+ * - localStorage is cleared when logout is called
  * - Token removal persists across page navigations
  * - AuthState pattern works correctly
  *
@@ -13,7 +13,7 @@ import { test, expect } from "@playwright/test"
  * the core logout functionality directly, ensuring the implementation works
  * regardless of deployment state.
  *
- * AC #1: Sign Out Button Click - clears sessionStorage and redirects
+ * AC #1: Sign Out Button Click - clears localStorage and redirects
  * AC #2: UI State Update - navigation shows "Sign in" after sign out
  * AC #4: API Authorization Cleared - subsequent calls don't include auth header
  * AC #5: AuthState Event Notification - subscribers updated
@@ -29,26 +29,26 @@ test.describe("Sign Out Functionality - Core Logic", () => {
     await page.goto("/")
   })
 
-  test("AC #1: Logout clears sessionStorage token", async ({ page }) => {
+  test("AC #1: Logout clears localStorage token", async ({ page }) => {
     // Set authentication token
     await page.evaluate(
       ({ key, token }) => {
-        sessionStorage.setItem(key, token)
+        localStorage.setItem(key, token)
       },
       { key: TOKEN_KEY, token: TEST_TOKEN },
     )
 
     // Verify token exists
-    const tokenBefore = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenBefore = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenBefore).toBe(TEST_TOKEN)
 
     // Call logout (simulates what handleSignOut does)
     await page.evaluate((key) => {
-      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
     }, TOKEN_KEY)
 
     // Verify token is cleared
-    const tokenAfter = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenAfter = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenAfter).toBeNull()
   })
 
@@ -56,37 +56,37 @@ test.describe("Sign Out Functionality - Core Logic", () => {
     // Set token
     await page.evaluate(
       ({ key, token }) => {
-        sessionStorage.setItem(key, token)
+        localStorage.setItem(key, token)
       },
       { key: TOKEN_KEY, token: TEST_TOKEN },
     )
 
     // Verify token exists
-    const tokenBefore = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenBefore = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenBefore).toBe(TEST_TOKEN)
 
     // Clear token (logout)
     await page.evaluate((key) => {
-      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
     }, TOKEN_KEY)
 
     // Navigate to catalogue
     await page.goto("/catalogue/")
 
     // Verify token is still cleared after navigation
-    const tokenAfter = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenAfter = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenAfter).toBeNull()
   })
 
   test("AC #4: API calls without token have no Authorization header", async ({ page }) => {
     // Start without token (unauthenticated)
-    const token = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const token = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(token).toBeNull()
 
     // Verify that fetching without token doesn't add auth header
     // This simulates the API client behavior after sign out
     const hasNoToken = await page.evaluate((key) => {
-      const token = sessionStorage.getItem(key)
+      const token = localStorage.getItem(key)
       // Simulate API client logic: only add header if token exists
       const headers: Record<string, string> = { "Content-Type": "application/json" }
       if (token) {
@@ -102,23 +102,23 @@ test.describe("Sign Out Functionality - Core Logic", () => {
     // Set token
     await page.evaluate(
       ({ key, token }) => {
-        sessionStorage.setItem(key, token)
+        localStorage.setItem(key, token)
       },
       { key: TOKEN_KEY, token: TEST_TOKEN },
     )
 
     // First logout
     await page.evaluate((key) => {
-      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
     }, TOKEN_KEY)
-    const tokenAfterFirst = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenAfterFirst = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenAfterFirst).toBeNull()
 
     // Second logout (should be safe to call again)
     await page.evaluate((key) => {
-      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
     }, TOKEN_KEY)
-    const tokenAfterSecond = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenAfterSecond = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenAfterSecond).toBeNull()
   })
 
@@ -126,34 +126,34 @@ test.describe("Sign Out Functionality - Core Logic", () => {
     // 1. Start authenticated
     await page.evaluate(
       ({ key, token }) => {
-        sessionStorage.setItem(key, token)
+        localStorage.setItem(key, token)
       },
       { key: TOKEN_KEY, token: TEST_TOKEN },
     )
-    const tokenBefore = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenBefore = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenBefore).toBe(TEST_TOKEN)
 
     // 2. Simulate sign out (what handleSignOut does)
     await page.evaluate((key) => {
-      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
     }, TOKEN_KEY)
 
     // 3. Verify token cleared
-    const tokenAfter = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenAfter = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenAfter).toBeNull()
 
     // 4. Navigate to different page
     await page.goto("/catalogue/")
 
     // 5. Verify still unauthenticated
-    const tokenFinal = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenFinal = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenFinal).toBeNull()
 
     // 6. Navigate back home
     await page.goto("/")
 
     // 7. Still unauthenticated
-    const tokenHome = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+    const tokenHome = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(tokenHome).toBeNull()
   })
 })
@@ -173,7 +173,7 @@ test.describe("Sign Out UI Tests", () => {
       // Set token to trigger authenticated state
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -204,7 +204,7 @@ test.describe("Sign Out UI Tests", () => {
 
     // Ensure no token
     await page.evaluate((key) => {
-      sessionStorage.removeItem(key)
+      localStorage.removeItem(key)
     }, TOKEN_KEY)
 
     // Check if #auth-nav exists

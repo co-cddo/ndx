@@ -57,7 +57,7 @@ test.describe("Error Messaging Accessibility - WCAG 3.3", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -157,7 +157,7 @@ test.describe("Error Messaging Accessibility - WCAG 3.3", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -267,7 +267,7 @@ test.describe("Error Messaging Accessibility - WCAG 3.3", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )

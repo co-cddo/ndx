@@ -69,11 +69,11 @@ export interface ISBAPIOptions extends RequestInit {
  * Makes an authenticated API call to the Innovation Sandbox API.
  *
  * Automatically includes Authorization header with Bearer token if JWT exists
- * in sessionStorage. If no token exists, the request proceeds without
+ * in localStorage. If no token exists, the request proceeds without
  * authentication (for public endpoints or pre-auth flows).
  *
  * Story 5.8: Automatically handles 401 responses by:
- * 1. Clearing the invalid token from sessionStorage
+ * 1. Clearing the invalid token from localStorage
  * 2. Redirecting to OAuth login
  * Use `skipAuthRedirect: true` to disable this behavior (e.g., for checkAuthStatus).
  *
@@ -140,19 +140,18 @@ export async function callISBAPI(endpoint: string, options: ISBAPIOptions = {}):
 }
 
 /**
- * Clears JWT token from sessionStorage.
+ * Clears JWT token from localStorage.
  * Used on 401 to remove invalid token before redirect.
  * @internal
  */
 function clearToken(): void {
-  // Guard against SSR environments
-  if (typeof sessionStorage === "undefined") {
+  if (typeof localStorage === "undefined") {
     return
   }
   try {
-    sessionStorage.removeItem(JWT_TOKEN_KEY)
+    localStorage.removeItem(JWT_TOKEN_KEY)
   } catch {
-    // Ignore sessionStorage errors
+    // Ignore localStorage errors
   }
 }
 
@@ -272,26 +271,25 @@ export async function checkAuthStatus(timeout = 5000): Promise<AuthStatusResult>
 }
 
 /**
- * Retrieves JWT token from sessionStorage.
+ * Retrieves JWT token from localStorage.
  *
  * @returns JWT token string or null if not found/unavailable
  * @internal
  */
 function getToken(): string | null {
-  // Guard against SSR environments where sessionStorage is unavailable
-  if (typeof sessionStorage === "undefined") {
+  if (typeof localStorage === "undefined") {
     return null
   }
 
   try {
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY)
+    const token = localStorage.getItem(JWT_TOKEN_KEY)
     // Treat empty string as no token
     if (token === null || token === "") {
       return null
     }
     return token
   } catch {
-    // Handle any sessionStorage access errors (e.g., security restrictions)
+    // Handle any localStorage access errors (e.g., security restrictions)
     return null
   }
 }

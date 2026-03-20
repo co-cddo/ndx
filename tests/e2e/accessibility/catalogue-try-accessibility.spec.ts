@@ -40,7 +40,7 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
     test("Try button activates with Enter key", async ({ page }) => {
       // Set up authenticated state
       await page.goto(PRODUCT_PAGE)
-      await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
+      await page.evaluate(([key, token]) => localStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
       // Wait for DOM ready
       await page.waitForLoadState("domcontentloaded")
@@ -64,7 +64,7 @@ test.describe("Try Button Accessibility (Story 6.11)", () => {
     test("Try button activates with Space key", async ({ page }) => {
       // Set up authenticated state
       await page.goto(PRODUCT_PAGE)
-      await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
+      await page.evaluate(([key, token]) => localStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
       await page.reload()
       // Wait for DOM ready
       await page.waitForLoadState("domcontentloaded")
@@ -91,7 +91,7 @@ test.describe("AUP Modal Accessibility (Story 6.11)", () => {
   test.beforeEach(async ({ page }) => {
     // Set up authenticated state
     await page.goto(PRODUCT_PAGE)
-    await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
+    await page.evaluate(([key, token]) => localStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
     // Wait for DOM ready
     await page.waitForLoadState("domcontentloaded")
@@ -320,7 +320,7 @@ test.describe("Catalogue Try UI - axe-core WCAG Scanning (Story 6.11)", () => {
 
   test("AUP modal has no WCAG AA violations", async ({ page }) => {
     await page.goto(PRODUCT_PAGE)
-    await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
+    await page.evaluate(([key, token]) => localStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
     await page.reload()
     await page.waitForLoadState("domcontentloaded")
     await page.waitForFunction(() => document.documentElement.hasAttribute("data-try-bundle-ready"), { timeout: 10000 })

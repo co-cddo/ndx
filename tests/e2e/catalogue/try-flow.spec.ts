@@ -21,7 +21,7 @@ test.describe("Try Before You Buy - Catalogue Integration", () => {
   test.beforeEach(async ({ page }) => {
     // Set up authenticated state
     await page.goto("/")
-    await page.evaluate(([key, token]) => sessionStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
+    await page.evaluate(([key, token]) => localStorage.setItem(key, token), [TOKEN_KEY, TEST_TOKEN])
   })
 
   test("AC #1: Product page has Try button with correct attributes", async ({ page }) => {
@@ -153,8 +153,8 @@ test.describe("Try Before You Buy - Unauthenticated User (Story 2.1)", () => {
     // Start without token
     await page.goto(PRODUCT_PAGE)
 
-    // Verify no token in sessionStorage
-    const hasToken = await page.evaluate((key) => sessionStorage.getItem(key) !== null, TOKEN_KEY)
+    // Verify no token in localStorage
+    const hasToken = await page.evaluate((key) => localStorage.getItem(key) !== null, TOKEN_KEY)
     expect(hasToken).toBe(false)
 
     // Click try button

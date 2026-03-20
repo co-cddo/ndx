@@ -39,7 +39,7 @@ test.describe("Keyboard Navigation - WCAG 2.1.1", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -71,7 +71,7 @@ test.describe("Keyboard Navigation - WCAG 2.1.1", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -187,7 +187,7 @@ test.describe("Keyboard Navigation - WCAG 2.1.1", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )

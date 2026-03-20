@@ -51,7 +51,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       // Set JWT to simulate authenticated state
       await page.evaluate(
         ([key, token]) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         [TOKEN_KEY, TEST_TOKEN],
       )
@@ -115,7 +115,7 @@ test.describe("Auth UI Accessibility - axe-core Scanning (Story 5.10)", () => {
       // Set JWT to simulate authenticated state
       await page.evaluate(
         ([key, token]) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         [TOKEN_KEY, TEST_TOKEN],
       )

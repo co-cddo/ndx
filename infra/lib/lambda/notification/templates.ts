@@ -1211,9 +1211,7 @@ export function buildLeaseCostsGeneratedPersonalisation(
 /**
  * Build personalisation for UserCreated event
  */
-function buildUserCreatedPersonalisation(
-  event: ValidatedEvent<UserCreatedDetail>,
-): Record<string, string | number> {
+function buildUserCreatedPersonalisation(event: ValidatedEvent<UserCreatedDetail>): Record<string, string | number> {
   const detail = event.detail
   const userName = `${detail.firstName} ${detail.lastName}`
   const ssoUrl = process.env.SSO_PORTAL_URL || "https://d-9267e1e371.awsapps.com/start"

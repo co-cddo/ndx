@@ -181,12 +181,8 @@ export class SignupStack extends cdk.Stack {
     })
 
     // Import notification Lambda ARN and events topic ARN from SSM
-    const notificationLambdaArn = ssm.StringParameter.valueForStringParameter(
-      this, "/ndx/notification-handler-arn",
-    )
-    const eventsTopicArn = ssm.StringParameter.valueForStringParameter(
-      this, "/ndx/events-topic-arn",
-    )
+    const notificationLambdaArn = ssm.StringParameter.valueForStringParameter(this, "/ndx/notification-handler-arn")
+    const eventsTopicArn = ssm.StringParameter.valueForStringParameter(this, "/ndx/events-topic-arn")
 
     // Add notification env vars to signup Lambda
     this.signupHandler.addEnvironment("NOTIFICATION_LAMBDA_ARN", notificationLambdaArn)

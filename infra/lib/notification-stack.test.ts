@@ -280,7 +280,7 @@ describe("NdxNotificationStack", () => {
         }
       }
       const eventPattern = rule.Properties.EventPattern
-      expect(eventPattern["detail-type"]).toHaveLength(14)
+      expect(eventPattern["detail-type"]).toHaveLength(15)
     })
 
     test("rule references ISB event bus (cross-account)", () => {

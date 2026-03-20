@@ -423,7 +423,11 @@ export async function handler(event: EventBridgeEvent): Promise<HandlerResponse>
     // Email notifications (user events)
     if (
       channels.includes("email") &&
-      (isLeaseLifecycleEvent(eventType) || isMonitoringAlertEvent(eventType) || isBillingEvent(eventType) || isUserEvent(eventType) || isProvisioningEvent(eventType))
+      (isLeaseLifecycleEvent(eventType) ||
+        isMonitoringAlertEvent(eventType) ||
+        isBillingEvent(eventType) ||
+        isUserEvent(eventType) ||
+        isProvisioningEvent(eventType))
     ) {
       const validatedEvent = validateEvent(event)
 

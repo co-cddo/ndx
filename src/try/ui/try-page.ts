@@ -21,7 +21,6 @@ import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 import { trackSessionAccess, trackCliCredentials, trackCloudFormationAccess } from "../analytics"
-import { checkAuthStatus } from "../api/api-client"
 import "./styles/sessions-table.css"
 
 /**
@@ -174,22 +173,31 @@ async function loadAndRenderSessions(): Promise<void> {
     ${renderLoadingState()}
   `
 
-  // Fetch user email and sessions in parallel
-  const [authResult, result] = await Promise.all([
-    checkAuthStatus().catch(() => null),
-    fetchUserLeases(),
-  ])
+  // Fetch sessions (includes user email from auth check)
+  const result = await fetchUserLeases()
 
   // Store user email if available (for provisioning hint)
-  if (authResult?.authenticated && authResult.user?.email) {
-    currentState.userEmail = authResult.user.email
+  if (result.userEmail) {
+    currentState.userEmail = result.userEmail
   }
 
   if (result.success && result.leases) {
-    currentState = { loading: false, refreshing: false, error: null, leases: result.leases, userEmail: currentState.userEmail }
+    currentState = {
+      loading: false,
+      refreshing: false,
+      error: null,
+      leases: result.leases,
+      userEmail: currentState.userEmail,
+    }
     renderAuthenticatedState(container, result.leases)
   } else {
-    currentState = { loading: false, refreshing: false, error: result.error || "Unknown error", leases: [], userEmail: currentState.userEmail }
+    currentState = {
+      loading: false,
+      refreshing: false,
+      error: result.error || "Unknown error",
+      leases: [],
+      userEmail: currentState.userEmail,
+    }
     // Render error state with helpful navigation (still allow browsing catalogue)
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
@@ -420,7 +428,13 @@ async function refreshSessions(): Promise<void> {
 
   if (result.success && result.leases) {
     // Update state with fresh data
-    currentState = { loading: false, refreshing: false, error: null, leases: result.leases, userEmail: currentState.userEmail }
+    currentState = {
+      loading: false,
+      refreshing: false,
+      error: null,
+      leases: result.leases,
+      userEmail: currentState.userEmail,
+    }
     // Re-render with fresh data (not refreshing state, so countdown is shown)
     renderAuthenticatedState(container, result.leases, false)
   } else {

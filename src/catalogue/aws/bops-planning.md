@@ -47,7 +47,7 @@ The <a href="https://opendigitalplanning.org/back-office-planning-system-bops" t
 This scenario deploys the complete BOPS system with realistic sample data, so you can experience the full planning application lifecycle as a case officer would use it.
 
 {{ govukWarningText({
-  text: "After requesting your session, the environment takes approximately 25-35 minutes to deploy. Once ready, the walkthrough will guide you through logging in and exploring the system.",
+  text: "After requesting your session, the environment takes approximately 10-15 minutes to deploy. Once ready, the walkthrough will guide you through logging in and exploring the system.",
   iconFallbackText: "Important"
 }) }}
 
@@ -90,7 +90,7 @@ This scenario deploys the complete BOPS system with realistic sample data, so yo
 Once you select **"Try this now"** above, your session environment will begin deploying automatically.
 
 {{ govukInsetText({
-  html: "<strong>What happens next:</strong><br>1. Your environment deploys (~25-35 minutes)<br>2. Follow the walkthrough to log in as a planning officer<br>3. Browse applications, review workflows, and explore the public portal"
+  html: "<strong>What happens next:</strong><br>1. Your environment deploys (~10-15 minutes)<br>2. Follow the walkthrough to log in as a planning officer<br>3. Browse applications, review workflows, and explore the public portal"
 }) }}
 
 {{ govukButton({
@@ -248,7 +248,7 @@ This scenario is built with open source infrastructure as code using AWS CDK (Cl
 - **Did not receive credentials?** Check your spam folder, or wait a few minutes
 - **Cannot access the scenario?** Ensure you're using the correct AWS region (us-east-1)
 - **Login fails?** The password is shown in the CloudFormation Outputs tab — check you're copying it correctly
-- **Environment still deploying?** BOPS takes 25-35 minutes — check the CloudFormation stack status
+- **Environment still deploying?** BOPS takes 10-15 minutes — check the CloudFormation stack status
 
 ## Support
 

@@ -1,6 +1,6 @@
 /**
  * Unit tests for AuthState class
- * Tests authentication state management, event subscription, and sessionStorage integration
+ * Tests authentication state management, event subscription, and localStorage integration
  */
 
 import { authState } from "./auth-provider"
@@ -24,27 +24,27 @@ function createTestJWT(expiresInSeconds = 3600): string {
 
 describe("AuthState", () => {
   beforeEach(() => {
-    // Clear sessionStorage before each test
-    sessionStorage.clear()
+    // Clear localStorage before each test
+    localStorage.clear()
   })
 
   afterEach(() => {
-    // Clean up sessionStorage after each test
-    sessionStorage.clear()
+    // Clean up localStorage after each test
+    localStorage.clear()
   })
 
   describe("isAuthenticated()", () => {
-    it("should return false when no JWT token in sessionStorage", () => {
+    it("should return false when no JWT token in localStorage", () => {
       expect(authState.isAuthenticated()).toBe(false)
     })
 
-    it("should return true when valid JWT token exists in sessionStorage", () => {
-      sessionStorage.setItem("isb-jwt", createTestJWT())
+    it("should return true when valid JWT token exists in localStorage", () => {
+      localStorage.setItem("isb-jwt", createTestJWT())
       expect(authState.isAuthenticated()).toBe(true)
     })
 
     it("should return false when JWT token is empty string", () => {
-      sessionStorage.setItem("isb-jwt", "")
+      localStorage.setItem("isb-jwt", "")
       expect(authState.isAuthenticated()).toBe(false)
     })
   })
@@ -58,7 +58,7 @@ describe("AuthState", () => {
     })
 
     it("should call listener with true when valid token exists", () => {
-      sessionStorage.setItem("isb-jwt", createTestJWT())
+      localStorage.setItem("isb-jwt", createTestJWT())
       const listener = jest.fn()
       authState.subscribe(listener)
       expect(listener).toHaveBeenCalledWith(true)
@@ -83,7 +83,7 @@ describe("AuthState", () => {
       listener.mockClear()
 
       // Add valid token
-      sessionStorage.setItem("isb-jwt", createTestJWT())
+      localStorage.setItem("isb-jwt", createTestJWT())
       authState.notify()
 
       expect(listener).toHaveBeenCalledTimes(1)
@@ -108,10 +108,10 @@ describe("AuthState", () => {
   })
 
   describe("login()", () => {
-    it("should store token in sessionStorage", () => {
+    it("should store token in localStorage", () => {
       const token = createTestJWT()
       authState.login(token)
-      expect(sessionStorage.getItem("isb-jwt")).toBe(token)
+      expect(localStorage.getItem("isb-jwt")).toBe(token)
     })
 
     it("should notify subscribers after login", () => {
@@ -127,14 +127,14 @@ describe("AuthState", () => {
   })
 
   describe("logout()", () => {
-    it("should remove token from sessionStorage", () => {
-      sessionStorage.setItem("isb-jwt", createTestJWT())
+    it("should remove token from localStorage", () => {
+      localStorage.setItem("isb-jwt", createTestJWT())
       authState.logout()
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
     })
 
     it("should notify subscribers after logout", () => {
-      sessionStorage.setItem("isb-jwt", createTestJWT())
+      localStorage.setItem("isb-jwt", createTestJWT())
       const listener = jest.fn()
       authState.subscribe(listener)
       listener.mockClear()
@@ -165,7 +165,7 @@ describe("AuthState", () => {
       const listener = jest.fn()
 
       // Start authenticated with valid token
-      sessionStorage.setItem("isb-jwt", createTestJWT())
+      localStorage.setItem("isb-jwt", createTestJWT())
       authState.subscribe(listener)
       expect(listener).toHaveBeenCalledWith(true)
       listener.mockClear()
@@ -199,23 +199,23 @@ describe("AuthState", () => {
     it("should return false for expired token", () => {
       // Create an already expired token (expired 100 seconds ago)
       const expiredToken = createTestJWT(-100)
-      sessionStorage.setItem("isb-jwt", expiredToken)
+      localStorage.setItem("isb-jwt", expiredToken)
 
       expect(authState.isAuthenticated()).toBe(false)
     })
 
-    it("should clear expired token from sessionStorage", () => {
+    it("should clear expired token from localStorage", () => {
       const expiredToken = createTestJWT(-100)
-      sessionStorage.setItem("isb-jwt", expiredToken)
+      localStorage.setItem("isb-jwt", expiredToken)
 
       authState.isAuthenticated()
 
       // Token should have been removed
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
     })
 
     it("should return false for invalid token format", () => {
-      sessionStorage.setItem("isb-jwt", "invalid-not-a-jwt")
+      localStorage.setItem("isb-jwt", "invalid-not-a-jwt")
 
       expect(authState.isAuthenticated()).toBe(false)
     })
@@ -223,7 +223,7 @@ describe("AuthState", () => {
     it("should return true for token expiring in the future", () => {
       // Token expires in 1 hour
       const validToken = createTestJWT(3600)
-      sessionStorage.setItem("isb-jwt", validToken)
+      localStorage.setItem("isb-jwt", validToken)
 
       expect(authState.isAuthenticated()).toBe(true)
     })
@@ -231,7 +231,7 @@ describe("AuthState", () => {
     it("should consider buffer time when checking expiration", () => {
       // Token expires in 30 seconds (less than 60s buffer)
       const nearExpiredToken = createTestJWT(30)
-      sessionStorage.setItem("isb-jwt", nearExpiredToken)
+      localStorage.setItem("isb-jwt", nearExpiredToken)
 
       // Should be considered expired due to 60s buffer
       expect(authState.isAuthenticated()).toBe(false)

@@ -31,16 +31,16 @@ describe("API Client - callISBAPI", () => {
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QgVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.test"
 
   beforeEach(() => {
-    // Clear mocks and sessionStorage before each test
+    // Clear mocks and localStorage before each test
     mockFetch.mockReset()
     mockFetch.mockResolvedValue(createMockResponse())
-    sessionStorage.clear()
+    localStorage.clear()
   })
 
   describe("AC #1: Authorization Header Injection", () => {
-    it("should add Authorization header when JWT token exists in sessionStorage", async () => {
-      // Arrange: Set token in sessionStorage
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+    it("should add Authorization header when JWT token exists in localStorage", async () => {
+      // Arrange: Set token in localStorage
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
       // Act: Make API call
       await callISBAPI("/api/leases")
@@ -53,7 +53,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should use correct Bearer token format", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
       // Act
       await callISBAPI("/api/test")
@@ -68,7 +68,7 @@ describe("API Client - callISBAPI", () => {
   describe("AC #2: Conditional Header Behavior", () => {
     it("should preserve custom headers alongside Authorization header", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
       const customHeaders = {
         "X-Custom-Header": "custom-value",
         "X-Another-Header": "another-value",
@@ -86,7 +86,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should include default Content-Type header", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
       // Act
       await callISBAPI("/api/test")
@@ -98,7 +98,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should allow custom Content-Type to override default", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
       // Act
       await callISBAPI("/api/test", {
@@ -112,7 +112,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should preserve other fetch options (method, body, etc.)", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
       const requestBody = JSON.stringify({ productId: "123" })
 
       // Act
@@ -131,8 +131,8 @@ describe("API Client - callISBAPI", () => {
 
   describe("AC #3: No Token Behavior", () => {
     it("should NOT add Authorization header when token is missing", async () => {
-      // Arrange: No token in sessionStorage
-      sessionStorage.clear()
+      // Arrange: No token in localStorage
+      localStorage.clear()
 
       // Act
       await callISBAPI("/api/public")
@@ -145,7 +145,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should NOT add Authorization header when token is empty string", async () => {
       // Arrange: Empty string token
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, "")
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, "")
 
       // Act
       await callISBAPI("/api/test")
@@ -157,7 +157,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should not throw error when token is missing", async () => {
       // Arrange
-      sessionStorage.clear()
+      localStorage.clear()
 
       // Act & Assert: Should not throw
       await expect(callISBAPI("/api/test")).resolves.toBeDefined()
@@ -165,7 +165,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should still include Content-Type when unauthenticated", async () => {
       // Arrange
-      sessionStorage.clear()
+      localStorage.clear()
 
       // Act
       await callISBAPI("/api/test")
@@ -202,7 +202,7 @@ describe("API Client - callISBAPI", () => {
   describe("Headers extraction", () => {
     it("should handle Headers object input", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
       const headers = new Headers()
       headers.set("X-Custom", "value")
 
@@ -216,7 +216,7 @@ describe("API Client - callISBAPI", () => {
 
     it("should handle array of header pairs", async () => {
       // Arrange
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
       const headers: [string, string][] = [
         ["X-First", "first-value"],
         ["X-Second", "second-value"],
@@ -236,11 +236,11 @@ describe("API Client - callISBAPI", () => {
 describe("Internal helpers", () => {
   describe("getToken", () => {
     beforeEach(() => {
-      sessionStorage.clear()
+      localStorage.clear()
     })
 
     it("should return token when present", () => {
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, "test-token")
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, "test-token")
       expect(_internal.getToken()).toBe("test-token")
     })
 
@@ -249,7 +249,7 @@ describe("Internal helpers", () => {
     })
 
     it("should return null for empty string token", () => {
-      sessionStorage.setItem(_internal.JWT_TOKEN_KEY, "")
+      localStorage.setItem(_internal.JWT_TOKEN_KEY, "")
       expect(_internal.getToken()).toBeNull()
     })
   })
@@ -294,9 +294,9 @@ describe("API Client - checkAuthStatus", () => {
 
   beforeEach(() => {
     mockFetch.mockReset()
-    sessionStorage.clear()
+    localStorage.clear()
     // Set token for authenticated requests
-    sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+    localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
     // Suppress console.error for cleaner test output
     jest.spyOn(console, "error").mockImplementation(() => {})
   })
@@ -464,9 +464,9 @@ describe("API Client - checkAuthStatus", () => {
   })
 
   describe("Edge cases", () => {
-    it("should work when sessionStorage has no token", async () => {
+    it("should work when localStorage has no token", async () => {
       // Arrange: Clear token
-      sessionStorage.clear()
+      localStorage.clear()
       mockFetch.mockResolvedValueOnce(createMockResponse('{"error": "Unauthorized"}', 401))
 
       // Act
@@ -529,8 +529,8 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
   beforeEach(() => {
     mockFetch.mockReset()
     mockFetch.mockResolvedValue(createMockResponse())
-    sessionStorage.clear()
-    sessionStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
+    localStorage.clear()
+    localStorage.setItem(_internal.JWT_TOKEN_KEY, TEST_TOKEN)
 
     // Set up location href spy using our custom jsdom environment helper
     locationSpy = setupLocationHrefSpy()
@@ -542,7 +542,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
   })
 
   describe("AC #1: Automatic 401 Detection", () => {
-    it("should clear sessionStorage token when 401 received", async () => {
+    it("should clear localStorage token when 401 received", async () => {
       // Arrange
       mockFetch.mockResolvedValueOnce(createMockResponse('{"error": "Unauthorized"}', 401))
 
@@ -554,7 +554,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       }
 
       // Assert: Token should be cleared
-      expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
+      expect(localStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
     })
 
     it("should detect 401 status code", async () => {
@@ -601,7 +601,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
   describe("AC #4: No Infinite Loops", () => {
     it("should clear token before redirect (order verification)", async () => {
       // This test verifies the implementation order by checking the code flow:
-      // 1. Token is cleared first (via sessionStorage.removeItem)
+      // 1. Token is cleared first (via localStorage.removeItem)
       // 2. Then redirect happens (via window.location.href)
       // We verify both happen, and since the code is sequential, clear happens first
 
@@ -617,7 +617,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
 
       // Assert: Both actions happened
       // Token is cleared
-      expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
+      expect(localStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
       // Redirect happened
       expect(locationSpy?.getRedirectUrl()).toBe("/api/auth/login")
       // The implementation clears before redirect (verified by code review)
@@ -635,7 +635,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       }
 
       // Assert: Token cleared before redirect
-      expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
+      expect(localStorage.getItem(_internal.JWT_TOKEN_KEY)).toBeNull()
       expect(locationSpy?.getRedirectUrl()).toBe("/api/auth/login")
     })
   })
@@ -651,7 +651,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
 
       // Assert: Returns response normally
       expect(response).toBe(successResponse)
-      expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN) // Token not cleared
+      expect(localStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN) // Token not cleared
     })
 
     it("should preserve existing behavior for 500 errors", async () => {
@@ -677,7 +677,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       // Assert: Should NOT redirect, should return response
       expect(response.status).toBe(401)
       expect(locationSpy?.getRedirectUrl()).toBe("") // No redirect
-      expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN) // Token not cleared
+      expect(localStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN) // Token not cleared
     })
   })
 
@@ -702,7 +702,7 @@ describe("API Client - 401 Handling (Story 5.8)", () => {
       await checkAuthStatus()
 
       // Assert: Token still present (checkAuthStatus uses skipAuthRedirect)
-      expect(sessionStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN)
+      expect(localStorage.getItem(_internal.JWT_TOKEN_KEY)).toBe(TEST_TOKEN)
     })
   })
 })

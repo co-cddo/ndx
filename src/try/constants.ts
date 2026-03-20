@@ -8,7 +8,8 @@
  */
 
 /**
- * sessionStorage key for JWT token storage.
+ * localStorage key for JWT token storage.
+ * Uses localStorage (not sessionStorage) so the token persists across browser windows/tabs.
  * Used by: api-client.ts, auth-provider.ts, oauth-flow.ts
  * CRITICAL: All modules must use this shared constant.
  */

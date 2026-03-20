@@ -5,7 +5,7 @@
  * Implements authentication check before proceeding to AUP modal.
  *
  * Story 6.5: Authentication check before showing AUP modal
- * - Checks if user is authenticated via sessionStorage
+ * - Checks if user is authenticated via localStorage JWT token
  * - Unauthenticated users redirected to /api/auth/login
  * - Authenticated users proceed to AUP modal (Story 6.6)
  *

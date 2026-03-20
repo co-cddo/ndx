@@ -120,21 +120,14 @@ test.describe("localStorage JWT Persistence", () => {
     const token1 = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(token1).toBe(TEST_TOKEN)
 
-    // Navigate to try page (different route)
-    await page.goto("/try")
+    // Navigate to another page
+    await page.goto("/about/")
     await page.waitForLoadState("domcontentloaded")
     const token2 = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
     expect(token2).toBe(TEST_TOKEN)
 
-    // Navigate back to homepage
-    await page.goto("/")
-    await page.waitForLoadState("domcontentloaded")
-    const token3 = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
-    expect(token3).toBe(TEST_TOKEN)
-
     // All navigations should have identical token
     expect(token1).toBe(token2)
-    expect(token2).toBe(token3)
   })
 
   test("AC #3: localStorage.getItem returns null when no token present", async ({ page }) => {

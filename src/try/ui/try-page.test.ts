@@ -29,6 +29,7 @@ jest.mock("../api/sessions-service", () => ({
   fetchUserLeases: jest.fn(),
   isLeaseActive: jest.fn((lease: { status: string }) => lease.status === "Active"),
   isLeasePending: jest.fn((lease: { status: string }) => lease.status === "PendingApproval"),
+  isLeaseProvisioning: jest.fn((lease: { status: string }) => lease.status === "Provisioning"),
 }))
 
 const mockFetchUserLeases = fetchUserLeases as jest.MockedFunction<typeof fetchUserLeases>

@@ -36,6 +36,7 @@ interface TryPageState {
   refreshing: boolean
   error: string | null
   leases: Lease[]
+  userEmail: string | null
 }
 
 let currentState: TryPageState = {
@@ -43,6 +44,7 @@ let currentState: TryPageState = {
   refreshing: false,
   error: null,
   leases: [],
+  userEmail: null,
 }
 
 let container: HTMLElement | null = null
@@ -164,21 +166,38 @@ async function loadAndRenderSessions(): Promise<void> {
   if (!container) return
 
   // Show loading state
-  currentState = { loading: true, refreshing: false, error: null, leases: [] }
+  currentState = { loading: true, refreshing: false, error: null, leases: [], userEmail: currentState.userEmail }
   container.innerHTML = `
     <h1 class="govuk-heading-l">Your try sessions</h1>
     <p class="govuk-body-l">Manage your AWS sandbox environments</p>
     ${renderLoadingState()}
   `
 
-  // Fetch sessions
+  // Fetch sessions (includes user email from auth check)
   const result = await fetchUserLeases()
 
+  // Store user email if available (for provisioning hint)
+  if (result.userEmail) {
+    currentState.userEmail = result.userEmail
+  }
+
   if (result.success && result.leases) {
-    currentState = { loading: false, refreshing: false, error: null, leases: result.leases }
+    currentState = {
+      loading: false,
+      refreshing: false,
+      error: null,
+      leases: result.leases,
+      userEmail: currentState.userEmail,
+    }
     renderAuthenticatedState(container, result.leases)
   } else {
-    currentState = { loading: false, refreshing: false, error: result.error || "Unknown error", leases: [] }
+    currentState = {
+      loading: false,
+      refreshing: false,
+      error: result.error || "Unknown error",
+      leases: [],
+      userEmail: currentState.userEmail,
+    }
     // Render error state with helpful navigation (still allow browsing catalogue)
     container.innerHTML = `
       <h1 class="govuk-heading-l">Your try sessions</h1>
@@ -308,7 +327,7 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
     ${activeCount > 0 ? renderActiveSessionGuidance() : ""}
 
-    ${renderSessionsTable(leases)}
+    ${renderSessionsTable(leases, currentState.userEmail ?? undefined)}
 
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
 
@@ -409,7 +428,13 @@ async function refreshSessions(): Promise<void> {
 
   if (result.success && result.leases) {
     // Update state with fresh data
-    currentState = { loading: false, refreshing: false, error: null, leases: result.leases }
+    currentState = {
+      loading: false,
+      refreshing: false,
+      error: null,
+      leases: result.leases,
+      userEmail: currentState.userEmail,
+    }
     // Re-render with fresh data (not refreshing state, so countdown is shown)
     renderAuthenticatedState(container, result.leases, false)
   } else {
@@ -502,5 +527,5 @@ export function cleanupTryPage(): void {
 
   // Clear state references
   container = null
-  currentState = { loading: false, refreshing: false, error: null, leases: [] }
+  currentState = { loading: false, refreshing: false, error: null, leases: [], userEmail: null }
 }

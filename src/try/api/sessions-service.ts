@@ -98,6 +98,8 @@ export interface LeasesResult {
   leases?: Lease[]
   /** Error message (only present if failed) */
   error?: string
+  /** Authenticated user's email (for provisioning hint display) */
+  userEmail?: string
 }
 
 /**
@@ -187,6 +189,7 @@ export async function fetchUserLeases(): Promise<LeasesResult> {
       return {
         success: true,
         leases,
+        userEmail: authStatus.user!.email,
       }
     } catch (error) {
       clearTimeout(timeoutId)

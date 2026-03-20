@@ -266,6 +266,41 @@ export const LeaseCostsGeneratedDetailSchema = z
   .strict()
 
 // =============================================================================
+// User Event Schemas
+// =============================================================================
+
+/**
+ * UserCreated event detail schema - permissive
+ * Emitted by signup Lambda and CLI when a new user is created
+ */
+export const UserCreatedDetailSchema = z
+  .object({
+    userEmail: EmailSchema,
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    userId: z.string().optional(),
+  })
+  .passthrough()
+
+// =============================================================================
+// Provisioning Event Schemas
+// =============================================================================
+
+/**
+ * BlueprintDeploymentRequest event detail schema - permissive
+ * Emitted by ISB when a blueprint lease deployment starts
+ */
+export const BlueprintDeploymentRequestDetailSchema = z
+  .object({
+    blueprintId: z.string(),
+    leaseId: z.string(),
+    userEmail: EmailSchema,
+    accountId: z.string(),
+    blueprintName: z.string(),
+  })
+  .passthrough()
+
+// =============================================================================
 // Event Schema Registry (AC-2.1, AC-2.10)
 // =============================================================================
 
@@ -292,6 +327,10 @@ export const EVENT_SCHEMAS: Record<NotificationEventType, z.ZodSchema> = {
   AccountQuarantined: AccountQuarantinedDetailSchema,
   AccountDriftDetected: AccountDriftDetectedDetailSchema,
   GroupCostReportGeneratedFailure: GroupCostReportGeneratedFailureDetailSchema,
+  // User events (1 type)
+  UserCreated: UserCreatedDetailSchema,
+  // Provisioning events (1 type)
+  BlueprintDeploymentRequest: BlueprintDeploymentRequestDetailSchema,
 }
 
 // =============================================================================
@@ -423,3 +462,6 @@ export type LeaseExpiredDetail = Record<string, any>
 export type LeaseFrozenReason = z.infer<typeof LeaseFrozenReasonSchema>
 export type LeaseTerminatedReason = z.infer<typeof LeaseTerminatedReasonSchema>
 export type LeaseCostsGeneratedDetail = z.infer<typeof LeaseCostsGeneratedDetailSchema>
+
+export type UserCreatedDetail = z.infer<typeof UserCreatedDetailSchema>
+export type BlueprintDeploymentRequestDetail = z.infer<typeof BlueprintDeploymentRequestDetailSchema>

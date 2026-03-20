@@ -16,6 +16,8 @@ import {
   LEASE_LIFECYCLE_EVENTS,
   MONITORING_ALERT_EVENTS,
   BILLING_EVENTS,
+  USER_EVENTS,
+  PROVISIONING_EVENTS,
   LINK_INSTRUCTIONS,
   DEFAULT_TIMEZONE,
   getTemplateConfig,
@@ -43,6 +45,8 @@ import {
   isLeaseLifecycleEvent,
   isMonitoringAlertEvent,
   isBillingEvent,
+  isUserEvent,
+  isProvisioningEvent,
   formatCurrency,
   formatUKDate,
   formatUKDateLong,
@@ -1888,5 +1892,191 @@ describe("buildPersonalisation with LeaseCostsGenerated", () => {
   test("Falls back to default templateName without enrichment", () => {
     const result = buildPersonalisation(mockLeaseCostsEvent)
     expect(result.templateName).toBe("NDX:Try Session")
+  })
+})
+
+// =============================================================================
+// UserCreated Template Configuration Tests
+// =============================================================================
+
+describe("UserCreated Template Configuration", () => {
+  test("Template uses NOTIFY_TEMPLATE_USER_CREATED env var", () => {
+    expect(NOTIFY_TEMPLATES.UserCreated.templateIdEnvVar).toBe("NOTIFY_TEMPLATE_USER_CREATED")
+  })
+
+  test("Template requires userName, ssoUrl", () => {
+    const config = NOTIFY_TEMPLATES.UserCreated
+    expect(config.requiredFields).toContain("userName")
+    expect(config.requiredFields).toContain("ssoUrl")
+  })
+
+  test("Template has portalLink, plainTextLink, linkInstructions as optional fields", () => {
+    const config = NOTIFY_TEMPLATES.UserCreated
+    expect(config.optionalFields).toContain("portalLink")
+    expect(config.optionalFields).toContain("plainTextLink")
+    expect(config.optionalFields).toContain("linkInstructions")
+  })
+
+  test("Template has no enrichment queries", () => {
+    const config = NOTIFY_TEMPLATES.UserCreated
+    expect(config.enrichmentQueries).toEqual([])
+  })
+})
+
+// =============================================================================
+// BlueprintDeploymentRequest Template Configuration Tests
+// =============================================================================
+
+describe("BlueprintDeploymentRequest Template Configuration", () => {
+  test("Template uses NOTIFY_TEMPLATE_BLUEPRINT_DEPLOYMENT_REQUEST env var", () => {
+    expect(NOTIFY_TEMPLATES.BlueprintDeploymentRequest.templateIdEnvVar).toBe(
+      "NOTIFY_TEMPLATE_BLUEPRINT_DEPLOYMENT_REQUEST",
+    )
+  })
+
+  test("Template requires userName, templateName", () => {
+    const config = NOTIFY_TEMPLATES.BlueprintDeploymentRequest
+    expect(config.requiredFields).toContain("userName")
+    expect(config.requiredFields).toContain("templateName")
+  })
+
+  test("Template has portalLink, plainTextLink, linkInstructions as optional fields", () => {
+    const config = NOTIFY_TEMPLATES.BlueprintDeploymentRequest
+    expect(config.optionalFields).toContain("portalLink")
+    expect(config.optionalFields).toContain("plainTextLink")
+    expect(config.optionalFields).toContain("linkInstructions")
+  })
+
+  test("Template requires lease enrichment", () => {
+    const config = NOTIFY_TEMPLATES.BlueprintDeploymentRequest
+    expect(config.enrichmentQueries).toContain("lease")
+  })
+})
+
+// =============================================================================
+// isUserEvent Tests
+// =============================================================================
+
+describe("isUserEvent", () => {
+  test("Returns true for UserCreated", () => {
+    expect(isUserEvent("UserCreated")).toBe(true)
+  })
+
+  test("Returns false for lease lifecycle events", () => {
+    expect(isUserEvent("LeaseRequested")).toBe(false)
+    expect(isUserEvent("LeaseApproved")).toBe(false)
+    expect(isUserEvent("LeaseTerminated")).toBe(false)
+  })
+
+  test("Returns false for monitoring alert events", () => {
+    expect(isUserEvent("LeaseBudgetThresholdAlert")).toBe(false)
+    expect(isUserEvent("LeaseExpired")).toBe(false)
+  })
+
+  test("Returns false for billing events", () => {
+    expect(isUserEvent("LeaseCostsGenerated")).toBe(false)
+  })
+
+  test("USER_EVENTS array includes UserCreated", () => {
+    expect(USER_EVENTS).toContain("UserCreated")
+  })
+})
+
+// =============================================================================
+// isProvisioningEvent Tests
+// =============================================================================
+
+describe("isProvisioningEvent", () => {
+  test("Returns true for BlueprintDeploymentRequest", () => {
+    expect(isProvisioningEvent("BlueprintDeploymentRequest")).toBe(true)
+  })
+
+  test("Returns false for lease lifecycle events", () => {
+    expect(isProvisioningEvent("LeaseRequested")).toBe(false)
+    expect(isProvisioningEvent("LeaseApproved")).toBe(false)
+    expect(isProvisioningEvent("LeaseTerminated")).toBe(false)
+  })
+
+  test("Returns false for monitoring alert events", () => {
+    expect(isProvisioningEvent("LeaseBudgetThresholdAlert")).toBe(false)
+    expect(isProvisioningEvent("LeaseExpired")).toBe(false)
+  })
+
+  test("Returns false for billing events", () => {
+    expect(isProvisioningEvent("LeaseCostsGenerated")).toBe(false)
+  })
+
+  test("PROVISIONING_EVENTS array includes BlueprintDeploymentRequest", () => {
+    expect(PROVISIONING_EVENTS).toContain("BlueprintDeploymentRequest")
+  })
+})
+
+// =============================================================================
+// buildPersonalisation with UserCreated and BlueprintDeploymentRequest
+// =============================================================================
+
+describe("buildPersonalisation with UserCreated", () => {
+  const mockUserCreatedEvent: ValidatedEvent<any> = {
+    eventType: "UserCreated",
+    eventId: "event-uc-123",
+    source: "ndx-signup",
+    timestamp: "2026-03-01T10:00:00Z",
+    detail: {
+      userEmail: "jane.smith@example.gov.uk",
+      firstName: "Jane",
+      lastName: "Smith",
+    },
+  }
+
+  test("Dispatches UserCreated to correct builder", () => {
+    const result = buildPersonalisation(mockUserCreatedEvent)
+
+    expect(result.userName).toBe("Jane Smith")
+    expect(result.ssoUrl).toBeDefined()
+  })
+
+  test("Uses SSO_PORTAL_URL env var when set", () => {
+    const origEnv = process.env.SSO_PORTAL_URL
+    process.env.SSO_PORTAL_URL = "https://custom-sso.example.com/start"
+
+    const result = buildPersonalisation(mockUserCreatedEvent)
+
+    expect(result.ssoUrl).toBe("https://custom-sso.example.com/start")
+
+    if (origEnv === undefined) {
+      delete process.env.SSO_PORTAL_URL
+    } else {
+      process.env.SSO_PORTAL_URL = origEnv
+    }
+  })
+})
+
+describe("buildPersonalisation with BlueprintDeploymentRequest", () => {
+  const mockBlueprintEvent: ValidatedEvent<any> = {
+    eventType: "BlueprintDeploymentRequest",
+    eventId: "event-bp-123",
+    source: "InnovationSandbox-ndx",
+    timestamp: "2026-03-01T10:00:00Z",
+    detail: {
+      blueprintId: "bp-456",
+      leaseId: "lease-789",
+      userEmail: "jane.smith@example.gov.uk",
+      accountId: "123456789012",
+      blueprintName: "Council Chatbot",
+    },
+  }
+
+  test("Dispatches BlueprintDeploymentRequest to correct builder", () => {
+    const result = buildPersonalisation(mockBlueprintEvent)
+
+    expect(result.userName).toBeDefined()
+    expect(result.templateName).toBe("Council Chatbot")
+  })
+
+  test("Derives userName from userEmail", () => {
+    const result = buildPersonalisation(mockBlueprintEvent)
+
+    // jane.smith@example.gov.uk -> "Jane Smith" (capitalized)
+    expect(result.userName).toBe("Jane Smith")
   })
 })

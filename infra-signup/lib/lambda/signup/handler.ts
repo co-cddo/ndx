@@ -14,6 +14,8 @@
 
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda"
 import { ConflictException } from "@aws-sdk/client-identitystore"
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda"
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns"
 import { SignupErrorCode, ERROR_MESSAGES, FORBIDDEN_NAME_CHARS, type SignupRequest } from "@ndx/signup-types"
 import { getDomains } from "./domain-service"
 import { checkUserExists, createUser } from "./identity-store-service"
@@ -29,6 +31,10 @@ const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 }
+
+// SDK clients for notification (module-level singletons per Lambda best practice)
+const lambdaClient = new LambdaClient({})
+const snsClient = new SNSClient({})
 
 /**
  * Lambda handler for signup API endpoints.
@@ -363,7 +369,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
 
   // Create user in IAM Identity Center
   try {
-    await createUser(
+    const userId = await createUser(
       {
         ...request,
         email: normalizedEmail,
@@ -379,6 +385,77 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         correlationId,
       }),
     )
+
+    // Fire-and-forget: Send welcome email and Slack alert
+    // Notification failure must never block account creation (AC-3)
+
+    // 1. Async Lambda invoke for welcome email via notification Lambda
+    try {
+      if (process.env.NOTIFICATION_LAMBDA_ARN) {
+        await lambdaClient.send(
+          new InvokeCommand({
+            FunctionName: process.env.NOTIFICATION_LAMBDA_ARN,
+            InvocationType: "Event",
+            Payload: JSON.stringify({
+              "detail-type": "UserCreated",
+              source: "ndx-signup",
+              id: crypto.randomUUID(),
+              time: new Date().toISOString(),
+              account: "568672915267",
+              region: "us-west-2",
+              version: "0",
+              resources: [],
+              detail: {
+                userEmail: normalizedEmail,
+                firstName: request.firstName,
+                lastName: request.lastName,
+                userId,
+              },
+            }),
+          }),
+        )
+      }
+    } catch (notifyError) {
+      console.log(
+        JSON.stringify({
+          level: "WARN",
+          message: "Welcome email notification failed (non-blocking)",
+          error: notifyError instanceof Error ? notifyError.message : "Unknown error",
+          correlationId,
+        }),
+      )
+    }
+
+    // 2. SNS publish for Slack alert via AWS Chatbot
+    try {
+      if (process.env.EVENTS_TOPIC_ARN) {
+        const safeFirstName = request.firstName.replace(/[*_~`>]/g, "")
+        const safeLastName = request.lastName.replace(/[*_~`>]/g, "")
+        await snsClient.send(
+          new PublishCommand({
+            TopicArn: process.env.EVENTS_TOPIC_ARN,
+            Message: JSON.stringify({
+              version: "1.0",
+              source: "custom",
+              content: {
+                textType: "client-markdown",
+                title: "New NDX User Created",
+                description: `*User:* ${safeFirstName} ${safeLastName}\n*Email:* ${normalizedEmail}`,
+              },
+            }),
+          }),
+        )
+      }
+    } catch (slackError) {
+      console.log(
+        JSON.stringify({
+          level: "WARN",
+          message: "Slack notification failed (non-blocking)",
+          error: slackError instanceof Error ? slackError.message : "Unknown error",
+          correlationId,
+        }),
+      )
+    }
 
     return successResponse({ success: true }, correlationId)
   } catch (error) {

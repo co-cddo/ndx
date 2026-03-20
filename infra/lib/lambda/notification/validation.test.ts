@@ -65,7 +65,7 @@ function createTestEvent<T>(detailType: string, detail: T): EventBridgeEvent<T> 
 // AC-2.1: Zod schemas defined for all 10 user notification event types
 // =============================================================================
 
-describe("AC-2.1: All 10 user notification event type schemas", () => {
+describe("AC-2.1: All user notification event type schemas", () => {
   it("should have LeaseRequested schema", () => {
     expect(EVENT_SCHEMAS.LeaseRequested).toBeDefined()
   })
@@ -104,6 +104,14 @@ describe("AC-2.1: All 10 user notification event type schemas", () => {
 
   it("should have LeaseExpired schema", () => {
     expect(EVENT_SCHEMAS.LeaseExpired).toBeDefined()
+  })
+
+  it("should have UserCreated schema", () => {
+    expect(EVENT_SCHEMAS.UserCreated).toBeDefined()
+  })
+
+  it("should have BlueprintDeploymentRequest schema", () => {
+    expect(EVENT_SCHEMAS.BlueprintDeploymentRequest).toBeDefined()
   })
 
   it("should validate valid LeaseRequested event", () => {
@@ -207,6 +215,36 @@ describe("AC-2.1: All 10 user notification event type schemas", () => {
       expiredAt: "2025-12-05T10:00:00Z",
     }
     expect(() => LeaseExpiredDetailSchema.parse(detail)).not.toThrow()
+  })
+
+  it("should validate valid UserCreated event", () => {
+    const detail = {
+      userEmail: validEmail,
+      firstName: "Jane",
+      lastName: "Smith",
+    }
+    const event = createTestEvent("UserCreated", detail)
+
+    const result = validateEvent(event)
+
+    expect(result.eventType).toBe("UserCreated")
+    expect(result.detail).toEqual(detail)
+  })
+
+  it("should validate valid BlueprintDeploymentRequest event", () => {
+    const detail = {
+      blueprintId: "bp-123",
+      leaseId: "lease-456",
+      userEmail: validEmail,
+      accountId: validAccountId,
+      blueprintName: "Council Chatbot",
+    }
+    const event = createTestEvent("BlueprintDeploymentRequest", detail)
+
+    const result = validateEvent(event)
+
+    expect(result.eventType).toBe("BlueprintDeploymentRequest")
+    expect(result.detail).toEqual(detail)
   })
 
   it("should have LeaseCostsGenerated schema", () => {

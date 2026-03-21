@@ -2553,12 +2553,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:25.4.0":
+"@types/node@npm:*":
   version: 25.4.0
   resolution: "@types/node@npm:25.4.0"
   dependencies:
     undici-types: "npm:~7.18.0"
   checksum: 10c0/da81e8b0a3a57964b1b5f85d134bfefc1b923fd67ed41756842348a049d7915b72e8773f5598d6929b9cb8119c2427993c55d364fd93bd572a3450e58b98a60e
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:25.5.0":
+  version: 25.5.0
+  resolution: "@types/node@npm:25.5.0"
+  dependencies:
+    undici-types: "npm:~7.18.0"
+  checksum: 10c0/70c508165b6758c4f88d4f91abca526c3985eee1985503d4c2bd994dbaf588e52ac57e571160f18f117d76e963570ac82bd20e743c18987e82564312b3b62119
   languageName: node
   linkType: hard
 
@@ -3006,9 +3015,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-cdk-lib@npm:2.241.0":
-  version: 2.241.0
-  resolution: "aws-cdk-lib@npm:2.241.0"
+"aws-cdk-lib@npm:2.243.0":
+  version: 2.243.0
+  resolution: "aws-cdk-lib@npm:2.243.0"
   dependencies:
     "@aws-cdk/asset-awscli-v1": "npm:2.2.263"
     "@aws-cdk/asset-node-proxy-agent-v6": "npm:^2.1.1"
@@ -3027,16 +3036,16 @@ __metadata:
     yaml: "npm:1.10.2"
   peerDependencies:
     constructs: ^10.5.0
-  checksum: 10c0/4693bf228f89557fcf8d79efb8a9d0e551bc676cc928501ed457ace5592db186961a40dd6f3b4d6a85f586a71fd6b4c39d4171e782289d033b90f62258ad7840
+  checksum: 10c0/34b25f4d7b8b12bf5a38a40138517ec819e0ab2daa81e6af7f5f78ca79ae1c533ba15e618d458df7037be06bc6279ba66730396e99f07edb3ac9a36a13c94adc
   languageName: node
   linkType: hard
 
-"aws-cdk@npm:2.1110.0":
-  version: 2.1110.0
-  resolution: "aws-cdk@npm:2.1110.0"
+"aws-cdk@npm:2.1111.0":
+  version: 2.1111.0
+  resolution: "aws-cdk@npm:2.1111.0"
   bin:
     cdk: bin/cdk
-  checksum: 10c0/1e924378eaa7fb97949d19c9f2ab2f58dbb6f927b52fc2277387a4e4acf4a403d55a3a2ba17983fa44146a9ae26f8518c40c18d2995bdd39bb009c7fd237aea1
+  checksum: 10c0/7cf579068b19a211a845a5f55676dd335209ec91b3783845d0ed5e72f4fa1fcd3d39cc7f878c82c3628302b05639fccf006b4b956127e169fb9b469e7bf3b3a9
   languageName: node
   linkType: hard
 
@@ -3598,13 +3607,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-awscdk@npm:4.2.1":
-  version: 4.2.1
-  resolution: "eslint-plugin-awscdk@npm:4.2.1"
+"eslint-plugin-awscdk@npm:4.3.0":
+  version: 4.3.0
+  resolution: "eslint-plugin-awscdk@npm:4.3.0"
   peerDependencies:
     eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
     typescript: ">=4.8.4 <6.0.0"
-  checksum: 10c0/601228fa843237492d7cf080f74845f85d3582a387c82ec1fe03080d2aa759987d41b5f7b00752b71f26fd53712b5432a7f4a0bc8bdefd47e6dcf2ea06c1b9b6
+  checksum: 10c0/303e66ff87051f750c2b98ffb011dedcbeb67be70af9b59d56655e2b43d33de43f32bf68c1b958953188b605a5a50fa923296fb1c4cfba4b72e764b519e0d09f
   languageName: node
   linkType: hard
 
@@ -5134,13 +5143,13 @@ __metadata:
     "@eslint/js": "npm:10.0.1"
     "@types/aws-lambda": "npm:8.10.161"
     "@types/jest": "npm:30.0.0"
-    "@types/node": "npm:25.4.0"
-    aws-cdk: "npm:2.1110.0"
-    aws-cdk-lib: "npm:2.241.0"
+    "@types/node": "npm:25.5.0"
+    aws-cdk: "npm:2.1111.0"
+    aws-cdk-lib: "npm:2.243.0"
     constructs: "npm:10.5.1"
     esbuild: "npm:^0.27.3"
     eslint: "npm:10.0.3"
-    eslint-plugin-awscdk: "npm:4.2.1"
+    eslint-plugin-awscdk: "npm:4.3.0"
     jest: "npm:30.3.0"
     prettier: "npm:^3.8.1"
     source-map-support: "npm:^0.5.21"

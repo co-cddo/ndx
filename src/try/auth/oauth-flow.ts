@@ -222,12 +222,12 @@ export function extractTokenFromURL(): boolean {
       return false
     }
 
-    // Store token in sessionStorage
+    // Store token in localStorage (shared across windows/tabs)
     try {
-      sessionStorage.setItem(JWT_TOKEN_KEY, token)
+      localStorage.setItem(JWT_TOKEN_KEY, token)
       return true
     } catch (storageError) {
-      console.warn("[oauth-flow] Failed to store JWT token in sessionStorage:", storageError)
+      console.warn("[oauth-flow] Failed to store JWT token in localStorage:", storageError)
       return false
     }
   } catch (error) {

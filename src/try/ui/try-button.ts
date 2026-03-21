@@ -5,7 +5,7 @@
  * Implements authentication check before proceeding to AUP modal.
  *
  * Story 6.5: Authentication check before showing AUP modal
- * - Checks if user is authenticated via sessionStorage
+ * - Checks if user is authenticated via localStorage JWT token
  * - Unauthenticated users redirected to /api/auth/login
  * - Authenticated users proceed to AUP modal (Story 6.6)
  *
@@ -84,6 +84,11 @@ function processTryButtonClick(button: HTMLElement): void {
 
   // Story 6.5 & 2.1: Check authentication
   if (!authState.isAuthenticated()) {
+    // Add ?showaup=true so the return URL preserves the try intent
+    const params = new URLSearchParams(window.location.search)
+    params.set("showaup", "true")
+    history.replaceState(null, "", window.location.pathname + "?" + params.toString() + window.location.hash)
+
     // Story 2.1: Show auth choice modal instead of direct redirect
     // Modal handles return URL storage internally before redirect
     openAuthChoiceModal()
@@ -92,6 +97,36 @@ function processTryButtonClick(button: HTMLElement): void {
 
   // Story 6.6: User is authenticated, open AUP modal
   openAupModal(tryId, handleLeaseAccept)
+}
+
+/**
+ * Check for ?showaup query parameter and auto-open AUP modal.
+ *
+ * Called on page load. If ?showaup is present:
+ * - Authenticated: finds the try button's data-try-id, opens AUP modal, cleans URL
+ * - Unauthenticated: triggers auth choice modal (param survives in return URL)
+ */
+export function checkShowAup(): void {
+  const params = new URLSearchParams(window.location.search)
+  if (!params.has("showaup")) return
+
+  if (authState.isAuthenticated()) {
+    // Clean URL first (remove ?showaup, preserve other params)
+    const cleanParams = new URLSearchParams(window.location.search)
+    cleanParams.delete("showaup")
+    const search = cleanParams.toString()
+    history.replaceState(null, "", window.location.pathname + (search ? "?" + search : "") + window.location.hash)
+
+    // Find tryId from the try button on this page
+    const tryButton = document.querySelector<HTMLElement>("[data-try-id]")
+    if (tryButton?.dataset.tryId) {
+      openAupModal(tryButton.dataset.tryId, handleLeaseAccept)
+    }
+  } else {
+    // Unauthenticated deep link — trigger auth flow
+    // Don't clean URL; storeReturnURL() will capture it with ?showaup=true
+    openAuthChoiceModal()
+  }
 }
 
 /**

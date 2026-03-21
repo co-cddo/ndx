@@ -9,7 +9,7 @@
  * Uses jsdomReconfigure to properly mock window.location in jsdom v27+ (Jest 30).
  */
 
-import { initTryButton } from "./try-button"
+import { initTryButton, checkShowAup } from "./try-button"
 import { authState } from "../auth/auth-provider"
 import { openAupModal, closeAupModal, aupModal } from "./components/aup-modal"
 import { createLease } from "../api/leases-service"
@@ -157,6 +157,21 @@ describe("Try Button Handler", () => {
       button.click()
 
       expect(mockOpenAuthChoiceModal).toHaveBeenCalled()
+    })
+
+    it("should add ?showaup=true to URL before opening auth choice modal", () => {
+      const replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
+
+      document.body.innerHTML = `
+        <button data-try-id="${TEST_TRY_ID}">Try this now</button>
+      `
+
+      initTryButton()
+      const button = document.querySelector("button") as HTMLButtonElement
+      button.click()
+
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, "", expect.stringContaining("showaup=true"))
+      replaceStateSpy.mockRestore()
     })
 
     it("should not redirect directly to OAuth login", () => {
@@ -390,6 +405,130 @@ describe("Try Button Handler", () => {
         await acceptCallback(TEST_TRY_ID)
 
         expect(mockShowError).toHaveBeenCalledWith("An error occurred. Please try again.")
+      })
+    })
+  })
+
+  describe("checkShowAup", () => {
+    let replaceStateSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      replaceStateSpy.mockRestore()
+    })
+
+    it("should do nothing when ?showaup is not present", () => {
+      setTestURL("https://ndx.gov.uk/catalogue/product/123")
+
+      checkShowAup()
+
+      expect(mockOpenAupModal).not.toHaveBeenCalled()
+      expect(mockOpenAuthChoiceModal).not.toHaveBeenCalled()
+    })
+
+    describe("authenticated user with ?showaup", () => {
+      beforeEach(() => {
+        mockAuthState.isAuthenticated.mockReturnValue(true)
+      })
+
+      it("should open AUP modal with tryId from page button", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+        document.body.innerHTML = `
+          <button data-try-id="${TEST_TRY_ID}">Try this now</button>
+        `
+
+        checkShowAup()
+
+        expect(mockOpenAupModal).toHaveBeenCalledWith(TEST_TRY_ID, expect.any(Function))
+      })
+
+      it("should clean ?showaup from URL", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+        document.body.innerHTML = `
+          <button data-try-id="${TEST_TRY_ID}">Try this now</button>
+        `
+
+        checkShowAup()
+
+        expect(replaceStateSpy).toHaveBeenCalledWith(null, "", expect.not.stringContaining("showaup"))
+      })
+
+      it("should preserve other query params when cleaning URL", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?tag=foo&showaup=true&bar=baz")
+        document.body.innerHTML = `
+          <button data-try-id="${TEST_TRY_ID}">Try this now</button>
+        `
+
+        checkShowAup()
+
+        const calledUrl = replaceStateSpy.mock.calls[0][2] as string
+        expect(calledUrl).toContain("tag=foo")
+        expect(calledUrl).toContain("bar=baz")
+        expect(calledUrl).not.toContain("showaup")
+      })
+
+      it("should work with ?showaup without =true", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup")
+        document.body.innerHTML = `
+          <button data-try-id="${TEST_TRY_ID}">Try this now</button>
+        `
+
+        checkShowAup()
+
+        expect(mockOpenAupModal).toHaveBeenCalledWith(TEST_TRY_ID, expect.any(Function))
+      })
+
+      it("should not open modal when no try button exists on page", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+        document.body.innerHTML = `<p>No try button here</p>`
+
+        checkShowAup()
+
+        expect(mockOpenAupModal).not.toHaveBeenCalled()
+      })
+
+      it("should still clean URL when no try button exists", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+        document.body.innerHTML = `<p>No try button here</p>`
+
+        checkShowAup()
+
+        expect(replaceStateSpy).toHaveBeenCalled()
+        const calledUrl = replaceStateSpy.mock.calls[0][2] as string
+        expect(calledUrl).not.toContain("showaup")
+      })
+    })
+
+    describe("unauthenticated user with ?showaup", () => {
+      beforeEach(() => {
+        mockAuthState.isAuthenticated.mockReturnValue(false)
+      })
+
+      it("should open auth choice modal", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+
+        checkShowAup()
+
+        expect(mockOpenAuthChoiceModal).toHaveBeenCalled()
+      })
+
+      it("should not clean URL (preserved for return URL)", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+
+        checkShowAup()
+
+        expect(replaceStateSpy).not.toHaveBeenCalled()
+      })
+
+      it("should not open AUP modal", () => {
+        setTestURL("https://ndx.gov.uk/catalogue/product/123?showaup=true")
+
+        checkShowAup()
+
+        expect(mockOpenAupModal).not.toHaveBeenCalled()
       })
     })
   })

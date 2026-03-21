@@ -24,7 +24,7 @@ test("Debug: Check if try.bundle.js loads and exports functions", async ({ page 
   await page.waitForLoadState("networkidle")
 
   // Check if token was stored
-  const storedToken = await page.evaluate(() => sessionStorage.getItem("isb-jwt"))
+  const storedToken = await page.evaluate(() => localStorage.getItem("isb-jwt"))
   console.log("=== Token Check ===")
   console.log("Stored token:", storedToken ? `${storedToken.substring(0, 20)}...` : "null")
   console.log("Final page URL:", page.url())

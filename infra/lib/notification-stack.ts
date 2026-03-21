@@ -12,6 +12,7 @@ import * as sqs from "aws-cdk-lib/aws-sqs"
 import { Construct } from "constructs"
 import * as path from "path"
 import { getISBConfig, getISBEventBusArn, ISB_EVENT_TYPES, NOTIFY_TEMPLATE_IDS, CHATBOT_SLACK_CONFIG } from "./config"
+import * as ssm from "aws-cdk-lib/aws-ssm"
 import * as chatbot from "aws-cdk-lib/aws-chatbot"
 
 // Configuration constants
@@ -171,6 +172,12 @@ export class NdxNotificationStack extends cdk.Stack {
         NOTIFY_TEMPLATE_LEASE_FROZEN: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
         // Billing events
         NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
+        // User events
+        NOTIFY_TEMPLATE_USER_CREATED: NOTIFY_TEMPLATE_IDS.USER_CREATED,
+        // Provisioning events
+        NOTIFY_TEMPLATE_BLUEPRINT_DEPLOYMENT_REQUEST: NOTIFY_TEMPLATE_IDS.BLUEPRINT_DEPLOYMENT_REQUEST,
+        // SSO portal URL for welcome email personalisation
+        SSO_PORTAL_URL: "https://d-9267e1e371.awsapps.com/start",
         // ISB API Gateway configuration for authenticated HTTP calls
         ...(isbConfig.apiBaseUrl && { ISB_API_BASE_URL: isbConfig.apiBaseUrl }),
         ...(isbConfig.jwtSecretPath && { ISB_JWT_SECRET_PATH: isbConfig.jwtSecretPath }),
@@ -925,6 +932,20 @@ export class NdxNotificationStack extends cdk.Stack {
     new cdk.CfnOutput(this, "SlackChannelConfigurationArn", {
       value: this.slackChannel.slackChannelConfigurationArn,
       description: "ARN of the AWS Chatbot Slack channel configuration",
+    })
+
+    // Export notification Lambda ARN via SSM Parameter for cross-stack reference
+    new ssm.StringParameter(this, "NotificationLambdaArnParam", {
+      parameterName: "/ndx/notification-handler-arn",
+      stringValue: this.notificationHandler.functionArn,
+      description: "ARN of the NDX notification handler Lambda",
+    })
+
+    // Export events topic ARN via SSM Parameter for cross-stack reference
+    new ssm.StringParameter(this, "EventsTopicArnParam", {
+      parameterName: "/ndx/events-topic-arn",
+      stringValue: this.eventsTopic.topicArn,
+      description: "ARN of the ndx-try-alerts SNS topic",
     })
   }
 }

@@ -466,6 +466,36 @@ describe("Sessions Table Component", () => {
     })
   })
 
+  describe("userEmail parameter", () => {
+    it("should render personalised email message for Provisioning leases when userEmail is provided", () => {
+      const html = renderSessionsTable([mockProvisioningLease], "user@example.gov.uk")
+
+      expect(html).toContain("user@example.gov.uk")
+      expect(html).toContain("email you at")
+    })
+
+    it("should render generic email message for Provisioning leases when userEmail is not provided", () => {
+      const html = renderSessionsTable([mockProvisioningLease])
+
+      expect(html).toContain("email you when your sandbox is ready")
+      expect(html).not.toContain("user@example.gov.uk")
+    })
+
+    it("should escape HTML in userEmail to prevent XSS", () => {
+      const html = renderSessionsTable([mockProvisioningLease], '<script>alert("XSS")</script>')
+
+      expect(html).not.toContain('<script>alert("XSS")</script>')
+      expect(html).toContain("&lt;script&gt;")
+    })
+
+    it("should not affect non-provisioning leases", () => {
+      const html = renderSessionsTable([mockActiveLease], "user@example.gov.uk")
+
+      // Active leases should not show provisioning hint row
+      expect(html).not.toContain("sessions-table__hint-row")
+    })
+  })
+
   describe("Story 5.2: CloudFormation Button", () => {
     it("should render CloudFormation button for Active leases", () => {
       const html = renderSessionsTable([mockActiveLease])

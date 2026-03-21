@@ -39,6 +39,8 @@ import type {
   LeaseFrozenDetail,
   LeaseFrozenReason,
   LeaseCostsGeneratedDetail,
+  UserCreatedDetail,
+  BlueprintDeploymentRequestDetail,
 } from "./validation"
 
 const logger = new Logger({ serviceName: "ndx-notifications" })
@@ -208,6 +210,18 @@ export const NOTIFY_TEMPLATES: Record<string, TemplateConfig> = {
     optionalFields: [],
     enrichmentQueries: ["lease"],
   },
+  UserCreated: {
+    templateIdEnvVar: "NOTIFY_TEMPLATE_USER_CREATED",
+    requiredFields: ["userName", "ssoUrl"],
+    optionalFields: ["portalLink", "plainTextLink", "linkInstructions"],
+    enrichmentQueries: [],
+  },
+  BlueprintDeploymentRequest: {
+    templateIdEnvVar: "NOTIFY_TEMPLATE_BLUEPRINT_DEPLOYMENT_REQUEST",
+    requiredFields: ["userName", "templateName"],
+    optionalFields: ["portalLink", "plainTextLink", "linkInstructions"],
+    enrichmentQueries: ["lease"],
+  },
 }
 
 /**
@@ -237,11 +251,23 @@ export const MONITORING_ALERT_EVENTS: NotificationEventType[] = [
  */
 export const BILLING_EVENTS: NotificationEventType[] = ["LeaseCostsGenerated"]
 
+export const USER_EVENTS: NotificationEventType[] = ["UserCreated"]
+
+export const PROVISIONING_EVENTS: NotificationEventType[] = ["BlueprintDeploymentRequest"]
+
 /**
  * Check if an event type is a billing event (from isb-costs)
  */
 export function isBillingEvent(eventType: NotificationEventType): boolean {
   return BILLING_EVENTS.includes(eventType)
+}
+
+export function isUserEvent(eventType: NotificationEventType): boolean {
+  return USER_EVENTS.includes(eventType)
+}
+
+export function isProvisioningEvent(eventType: NotificationEventType): boolean {
+  return PROVISIONING_EVENTS.includes(eventType)
 }
 
 // =============================================================================
@@ -1182,6 +1208,41 @@ export function buildLeaseCostsGeneratedPersonalisation(
   return personalisation
 }
 
+/**
+ * Build personalisation for UserCreated event
+ */
+function buildUserCreatedPersonalisation(event: ValidatedEvent<UserCreatedDetail>): Record<string, string | number> {
+  const detail = event.detail
+  const userName = `${detail.firstName} ${detail.lastName}`
+  const ssoUrl = process.env.SSO_PORTAL_URL || "https://d-9267e1e371.awsapps.com/start"
+
+  return {
+    userName,
+    ssoUrl,
+  }
+}
+
+/**
+ * Build personalisation for BlueprintDeploymentRequest event
+ */
+function buildBlueprintDeploymentRequestPersonalisation(
+  event: ValidatedEvent<BlueprintDeploymentRequestDetail>,
+): Record<string, string | number> {
+  const detail = event.detail
+  const userName = detail.userEmail
+    .split("@")[0]
+    .replace(/[._-]/g, " ")
+    .trim()
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ")
+
+  return {
+    userName,
+    templateName: detail.blueprintName,
+  }
+}
+
 // =============================================================================
 // Main Build Function
 // =============================================================================
@@ -1255,6 +1316,18 @@ export function buildPersonalisation(
       personalisation = buildLeaseCostsGeneratedPersonalisation(
         event as ValidatedEvent<LeaseCostsGeneratedDetail>,
         enrichedData,
+      )
+      break
+
+    // User Events
+    case "UserCreated":
+      personalisation = buildUserCreatedPersonalisation(event as ValidatedEvent<UserCreatedDetail>)
+      break
+
+    // Provisioning Events
+    case "BlueprintDeploymentRequest":
+      personalisation = buildBlueprintDeploymentRequestPersonalisation(
+        event as ValidatedEvent<BlueprintDeploymentRequestDetail>,
       )
       break
 

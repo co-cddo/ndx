@@ -102,12 +102,12 @@ export function getCatalogueUrl(templateName: string): string | null {
  * @param leases - Array of leases to display
  * @returns HTML string for the table
  */
-export function renderSessionsTable(leases: Lease[]): string {
+export function renderSessionsTable(leases: Lease[], userEmail?: string): string {
   if (leases.length === 0) {
     return renderEmptyTable()
   }
 
-  const rows = leases.map((lease, index) => renderSessionRow(lease, index)).join("")
+  const rows = leases.map((lease, index) => renderSessionRow(lease, index, userEmail)).join("")
 
   return `
     <table class="govuk-table sessions-table">
@@ -137,10 +137,13 @@ export function renderSessionsTable(leases: Lease[]): string {
  * @param lease - Lease data
  * @returns HTML string for the row(s)
  */
-function renderSessionRow(lease: Lease, index: number): string {
+function renderSessionRow(lease: Lease, index: number, userEmail?: string): string {
   const statusClass = STATUS_COLORS[lease.status]
   const expiry = formatExpiry(lease.expiresAt)
-  const budgetDisplay = `$${lease.maxSpend.toFixed(2)} budget`
+  const budgetDisplay =
+    typeof lease.maxSpend === "number" && !isNaN(lease.maxSpend)
+      ? `$${lease.maxSpend.toFixed(2)} budget`
+      : "Budget unknown"
   const actions = renderActions(lease)
   const commentsRow = renderCommentsRow(lease, index)
   // Story 7-1: Render template name as link to catalogue page if mapping exists
@@ -168,6 +171,7 @@ function renderSessionRow(lease: Lease, index: number): string {
       </td>
     </tr>
     ${commentsRow}
+    ${renderProvisioningHint(lease, userEmail)}
   `
 }
 
@@ -258,6 +262,33 @@ function renderActions(lease: Lease): string {
         <span class="govuk-visually-hidden">(opens in new tab)</span>
       </a>
     </div>
+  `
+}
+
+/**
+ * Render inline provisioning hint beneath a lease row.
+ * Shows when lease status is "Provisioning" to let users know
+ * they'll be emailed when ready and can close the page.
+ *
+ * @param lease - Lease data
+ * @param userEmail - Authenticated user's email address
+ * @returns HTML string for hint row, or empty string if not provisioning
+ */
+function renderProvisioningHint(lease: Lease, userEmail?: string): string {
+  if (!isLeaseProvisioning(lease)) return ""
+
+  const emailDisplay = userEmail
+    ? `We'll email you at <strong>${escapeHtml(userEmail)}</strong> when your sandbox is ready`
+    : "We'll email you when your sandbox is ready"
+
+  return `
+    <tr class="govuk-table__row sessions-table__hint-row">
+      <td colspan="6" class="govuk-table__cell">
+        <div class="govuk-inset-text govuk-!-margin-top-0 govuk-!-margin-bottom-0">
+          We're setting up your sandbox. ${emailDisplay} &mdash; you can safely close this page.
+        </div>
+      </td>
+    </tr>
   `
 }
 

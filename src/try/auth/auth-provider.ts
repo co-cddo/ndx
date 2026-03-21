@@ -6,11 +6,12 @@
  * across the application when users sign in or out.
  *
  * Key Design Decisions:
- * - Uses sessionStorage (not localStorage) for JWT token storage (clears on browser close)
+ * - Uses localStorage for JWT token storage (shared across browser windows/tabs)
  * - Token key: 'isb-jwt' (consistent across all Epic 5+ stories via shared constants)
  * - Reactive pattern: subscribers notified immediately when auth state changes
  * - Singleton instance exported for application-wide use
  * - H7: subscribe() returns unsubscribe function for cleanup
+ * - Listens for 'storage' events to sync auth state across browser windows/tabs
  *
  * @module auth-provider
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-024|ADR-024: Authentication State Management}
@@ -69,10 +70,10 @@ class AuthState {
    * Check if user is currently authenticated.
    *
    * Authentication is determined by:
-   * 1. Presence of a JWT token in sessionStorage
+   * 1. Presence of a JWT token in localStorage
    * 2. Token not being expired (checked client-side with 60s buffer)
    *
-   * If token is expired, it is automatically cleared from sessionStorage.
+   * If token is expired, it is automatically cleared from localStorage.
    *
    * @returns {boolean} True if valid, non-expired JWT token exists, false otherwise
    *
@@ -86,22 +87,20 @@ class AuthState {
    * ```
    */
   isAuthenticated(): boolean {
-    // Defensive programming: Check if sessionStorage is available
-    // (some browsers disable in private/incognito mode)
-    if (typeof sessionStorage === "undefined") {
-      console.warn("[AuthState] sessionStorage not available, auth features disabled")
+    if (typeof localStorage === "undefined") {
+      console.warn("[AuthState] localStorage not available, auth features disabled")
       return false
     }
 
-    const token = sessionStorage.getItem(JWT_TOKEN_KEY)
+    const token = localStorage.getItem(JWT_TOKEN_KEY)
     if (!token) {
       return false
     }
 
     // Check if token is expired (with 60s buffer for clock skew)
     if (isJWTExpired(token, 60)) {
-      console.warn("[AuthState] JWT token expired, clearing from sessionStorage")
-      sessionStorage.removeItem(JWT_TOKEN_KEY)
+      console.warn("[AuthState] JWT token expired, clearing from localStorage")
+      localStorage.removeItem(JWT_TOKEN_KEY)
       return false
     }
 
@@ -177,7 +176,7 @@ class AuthState {
   /**
    * Login helper method (for future use in Story 5.3).
    *
-   * Stores JWT token in sessionStorage and notifies all subscribers.
+   * Stores JWT token in localStorage and notifies all subscribers.
    *
    * @param {string} token - JWT token received from OAuth callback
    *
@@ -192,19 +191,19 @@ class AuthState {
    * ```
    */
   login(token: string): void {
-    if (typeof sessionStorage === "undefined") {
-      console.error("[AuthState] Cannot store token - sessionStorage not available")
+    if (typeof localStorage === "undefined") {
+      console.error("[AuthState] Cannot store token - localStorage not available")
       return
     }
 
-    sessionStorage.setItem(JWT_TOKEN_KEY, token)
+    localStorage.setItem(JWT_TOKEN_KEY, token)
     this.notify()
   }
 
   /**
    * Logout helper method (for future use in Story 5.5).
    *
-   * Removes JWT token from sessionStorage and notifies all subscribers.
+   * Removes JWT token from localStorage and notifies all subscribers.
    *
    * @example
    * ```typescript
@@ -217,13 +216,32 @@ class AuthState {
    * ```
    */
   logout(): void {
-    if (typeof sessionStorage === "undefined") {
-      console.warn("[AuthState] sessionStorage not available, cannot clear token")
+    if (typeof localStorage === "undefined") {
+      console.warn("[AuthState] localStorage not available, cannot clear token")
       return
     }
 
-    sessionStorage.removeItem(JWT_TOKEN_KEY)
+    localStorage.removeItem(JWT_TOKEN_KEY)
     this.notify()
+  }
+
+  /**
+   * Start listening for storage events from other windows/tabs.
+   *
+   * When the JWT token is added or removed in localStorage from another tab,
+   * this window's auth state subscribers are notified automatically.
+   * This keeps all open windows in sync (e.g., sign out in one tab signs out all tabs).
+   */
+  listenForCrossTabChanges(): void {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    window.addEventListener("storage", (event: StorageEvent) => {
+      if (event.key === JWT_TOKEN_KEY) {
+        this.notify()
+      }
+    })
   }
 }
 
@@ -246,3 +264,6 @@ class AuthState {
  * ```
  */
 export const authState = new AuthState()
+
+// Automatically listen for cross-tab storage changes
+authState.listenForCrossTabChanges()

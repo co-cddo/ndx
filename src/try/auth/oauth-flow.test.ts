@@ -35,8 +35,9 @@ function setTestURL(url: string): void {
 
 describe("OAuth Flow Utilities", () => {
   beforeEach(() => {
-    // Clear sessionStorage before each test
+    // Clear storage before each test
     sessionStorage.clear()
+    localStorage.clear()
 
     // For jsdom v27+ (Jest 30), we can't replace window.location entirely.
     // Instead, we use JSDOM's testURL config and modify individual properties via impl symbol.
@@ -45,6 +46,7 @@ describe("OAuth Flow Utilities", () => {
 
   afterEach(() => {
     sessionStorage.clear()
+    localStorage.clear()
   })
 
   describe("storeReturnURL", () => {
@@ -296,6 +298,7 @@ describe("OAuth Flow Utilities", () => {
 
     beforeEach(() => {
       sessionStorage.clear()
+      localStorage.clear()
       setTestURL("https://ndx.gov.uk/callback")
     })
 
@@ -304,7 +307,7 @@ describe("OAuth Flow Utilities", () => {
       const result = extractTokenFromURL()
 
       expect(result).toBe(true)
-      expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
+      expect(localStorage.getItem("isb-jwt")).toBe(validJWT)
     })
 
     it("should return false if no token parameter", () => {
@@ -312,7 +315,7 @@ describe("OAuth Flow Utilities", () => {
       const result = extractTokenFromURL()
 
       expect(result).toBe(false)
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
     })
 
     it("should return false if token parameter is empty", () => {
@@ -320,7 +323,7 @@ describe("OAuth Flow Utilities", () => {
       const result = extractTokenFromURL()
 
       expect(result).toBe(false)
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
     })
 
     it("should return false if token parameter is whitespace only", () => {
@@ -328,7 +331,7 @@ describe("OAuth Flow Utilities", () => {
       const result = extractTokenFromURL()
 
       expect(result).toBe(false)
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
     })
 
     it("should handle sessionStorage unavailable", () => {
@@ -350,7 +353,7 @@ describe("OAuth Flow Utilities", () => {
       const result = extractTokenFromURL()
 
       expect(result).toBe(true)
-      expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
+      expect(localStorage.getItem("isb-jwt")).toBe(validJWT)
     })
 
     it("should trim whitespace from token value", () => {
@@ -359,16 +362,16 @@ describe("OAuth Flow Utilities", () => {
 
       expect(result).toBe(true)
       // Note: URLSearchParams doesn't preserve whitespace, but our trim check ensures empty strings are rejected
-      expect(sessionStorage.getItem("isb-jwt")).toBeTruthy()
+      expect(localStorage.getItem("isb-jwt")).toBeTruthy()
     })
 
     it("should overwrite previous token if extractTokenFromURL called multiple times", () => {
-      sessionStorage.setItem("isb-jwt", "old-token")
+      localStorage.setItem("isb-jwt", "old-token")
       setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
 
       extractTokenFromURL()
 
-      expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
+      expect(localStorage.getItem("isb-jwt")).toBe(validJWT)
     })
   })
 
@@ -423,6 +426,7 @@ describe("OAuth Flow Utilities", () => {
     beforeEach(() => {
       jest.useFakeTimers()
       sessionStorage.clear()
+      localStorage.clear()
       setTestURL(`https://ndx.gov.uk/callback?token=${validJWT}`)
       replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
       hrefSpy = setupLocationHrefSpy()
@@ -441,7 +445,7 @@ describe("OAuth Flow Utilities", () => {
       jest.runAllTimers() // Flush the setTimeout redirect
 
       // Token extracted
-      expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
+      expect(localStorage.getItem("isb-jwt")).toBe(validJWT)
 
       // URL cleaned
       expect(replaceStateSpy).toHaveBeenCalled()
@@ -457,7 +461,7 @@ describe("OAuth Flow Utilities", () => {
       handleOAuthCallback()
       jest.runAllTimers() // Flush the setTimeout redirect
 
-      expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
+      expect(localStorage.getItem("isb-jwt")).toBe(validJWT)
       expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })
 
@@ -469,7 +473,7 @@ describe("OAuth Flow Utilities", () => {
       // No timer flush needed - direct redirect when no token
 
       // Token not stored
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
 
       // Return URL cleared
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
@@ -484,7 +488,7 @@ describe("OAuth Flow Utilities", () => {
       handleOAuthCallback()
       // No timer flush needed - direct redirect when empty token
 
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
       expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })
 
@@ -526,6 +530,7 @@ describe("OAuth Flow Utilities", () => {
     beforeEach(() => {
       jest.useFakeTimers()
       sessionStorage.clear()
+      localStorage.clear()
       replaceStateSpy = jest.spyOn(window.history, "replaceState").mockImplementation(() => {})
       hrefSpy = setupLocationHrefSpy()
     })
@@ -553,7 +558,7 @@ describe("OAuth Flow Utilities", () => {
 
       // Verify all steps completed correctly:
       // - Token extracted and stored
-      expect(sessionStorage.getItem("isb-jwt")).toBe(validJWT)
+      expect(localStorage.getItem("isb-jwt")).toBe(validJWT)
       // - URL cleaned up
       expect(replaceStateSpy).toHaveBeenCalledWith({}, expect.any(String), "/callback")
       // - Return URL cleared
@@ -589,7 +594,7 @@ describe("OAuth Flow Utilities", () => {
       handleOAuthCallback()
 
       // Should redirect to home page and clear return URL
-      expect(sessionStorage.getItem("isb-jwt")).toBeNull()
+      expect(localStorage.getItem("isb-jwt")).toBeNull()
       expect(sessionStorage.getItem("auth-return-to")).toBeNull()
       expect(hrefSpy?.getRedirectUrl()).toBe("/")
     })

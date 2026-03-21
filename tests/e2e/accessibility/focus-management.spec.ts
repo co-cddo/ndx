@@ -68,7 +68,7 @@ test.describe("Focus Management - WCAG 2.4.7", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -132,7 +132,7 @@ test.describe("Focus Management - WCAG 2.4.7", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )

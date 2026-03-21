@@ -108,7 +108,7 @@ function renderAuthNav(container: HTMLElement, isAuthenticated: boolean): void {
  * Story 5.5: Sign Out Functionality
  * Behavior:
  * 1. Prevent default link behavior
- * 2. Clear JWT token from sessionStorage via authState.logout()
+ * 2. Clear JWT token from localStorage via authState.logout()
  * 3. Notify AuthState subscribers (updates nav to show "Sign in")
  * 4. Redirect to home page
  *

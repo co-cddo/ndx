@@ -94,7 +94,7 @@ test.describe("Dashboard Accessibility - WCAG 2.2 AA Compliance", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -170,7 +170,7 @@ test.describe("Dashboard Accessibility - WCAG 2.2 AA Compliance", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -220,7 +220,7 @@ test.describe("Dashboard Accessibility - WCAG 2.2 AA Compliance", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -391,7 +391,7 @@ test.describe("Dashboard Accessibility - WCAG 2.2 AA Compliance", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )

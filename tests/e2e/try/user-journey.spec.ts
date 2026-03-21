@@ -84,20 +84,20 @@ test.describe("Try Before You Buy User Journey", () => {
       await expect(signInButton).toBeVisible()
     })
 
-    test("JWT token stored in sessionStorage after authentication", async ({ page }) => {
+    test("JWT token stored in localStorage after authentication", async ({ page }) => {
       await page.goto("/")
 
       // Simulate successful authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
           window.dispatchEvent(new Event("storage"))
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
 
       // Verify token stored
-      const storedToken = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+      const storedToken = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
       expect(storedToken).toBe(TEST_TOKEN)
     })
 
@@ -107,7 +107,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -128,7 +128,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -226,7 +226,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -299,7 +299,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -324,7 +324,7 @@ test.describe("Try Before You Buy User Journey", () => {
 
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -343,13 +343,13 @@ test.describe("Try Before You Buy User Journey", () => {
   })
 
   test.describe("6. Sign Out", () => {
-    test("Sign out clears sessionStorage token", async ({ page }) => {
+    test("Sign out clears localStorage token", async ({ page }) => {
       await page.goto("/")
 
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -358,11 +358,11 @@ test.describe("Try Before You Buy User Journey", () => {
 
       // Simulate sign out
       await page.evaluate((key) => {
-        sessionStorage.removeItem(key)
+        localStorage.removeItem(key)
       }, TOKEN_KEY)
 
       // Verify token cleared
-      const token = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+      const token = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
       expect(token).toBeNull()
     })
 
@@ -372,7 +372,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Simulate authentication
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -385,7 +385,7 @@ test.describe("Try Before You Buy User Journey", () => {
         await signOutButton.click()
 
         // Token should be cleared
-        const token = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+        const token = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
         expect(token).toBeNull()
       }
     })
@@ -398,16 +398,16 @@ test.describe("Try Before You Buy User Journey", () => {
       await expect(page.locator("h1")).toBeVisible()
 
       // Step 2: Simulate authentication by setting token in page context
-      // Note: In Playwright, sessionStorage must be set on EACH page after navigation
+      // Note: In Playwright, localStorage must be set on EACH page after navigation
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
 
       // Verify token was set
-      const tokenAfterSet = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+      const tokenAfterSet = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
       expect(tokenAfterSet).toBe(TEST_TOKEN)
 
       // Step 3: Navigate to dashboard (need to reset token after navigation in Playwright)
@@ -416,7 +416,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Re-set token after navigation (Playwright behavior)
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -424,7 +424,7 @@ test.describe("Try Before You Buy User Journey", () => {
       await expect(page.locator("h1")).toContainText(/sessions/i)
 
       // Step 4: Verify token is accessible on dashboard
-      const tokenOnDashboard = await page.evaluate((key) => sessionStorage.getItem(key), TOKEN_KEY)
+      const tokenOnDashboard = await page.evaluate((key) => localStorage.getItem(key), TOKEN_KEY)
       expect(tokenOnDashboard).toBe(TEST_TOKEN)
 
       // Step 5: Navigate back to catalogue
@@ -433,7 +433,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Re-set token after navigation (Playwright behavior)
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )
@@ -453,7 +453,7 @@ test.describe("Try Before You Buy User Journey", () => {
       // Re-set token for final check
       await page.evaluate(
         ({ key, token }) => {
-          sessionStorage.setItem(key, token)
+          localStorage.setItem(key, token)
         },
         { key: TOKEN_KEY, token: TEST_TOKEN },
       )

@@ -142,7 +142,10 @@ export function validateForm(form: HTMLFormElement): ValidationError[] {
     errors.push({ fieldId: "email-local", message: "Email address contains invalid characters" })
   } else if (emailLocal.includes("@")) {
     // User likely pasted their full email into the local-part field
-    errors.push({ fieldId: "email-local", message: "Do not include the '@' or domain — just enter the part before '@'" })
+    errors.push({
+      fieldId: "email-local",
+      message: "Do not include the '@' or domain — just enter the part before '@'",
+    })
   } else if (EMAIL_PLUS_ALIAS.test(emailLocal)) {
     // Reject + aliases - user would need to sign in with non-aliased email
     errors.push({ fieldId: "email-local", message: "Email address cannot contain a '+' character" })

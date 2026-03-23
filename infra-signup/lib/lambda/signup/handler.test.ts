@@ -321,6 +321,24 @@ describe("handler", () => {
     })
 
     describe("email normalization", () => {
+      it("should reject email with multiple @ characters", async () => {
+        const requestWithDoubleAt = {
+          ...validSignupRequest,
+          email: "jane@det.gov.uk@det.gov.uk",
+        }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithDoubleAt), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(400)
+        expect(JSON.parse(result.body)).toMatchObject({
+          error: SignupErrorCode.INVALID_EMAIL,
+          message: "Email address contains multiple '@' characters",
+        })
+
+        expect(mockCheckUserExists).not.toHaveBeenCalled()
+        expect(mockCreateUser).not.toHaveBeenCalled()
+      })
+
       it("should reject email with + alias character", async () => {
         const requestWithPlusSuffix = {
           ...validSignupRequest,

@@ -172,6 +172,21 @@ describe("signup/main", () => {
       })
     })
 
+    it("should return error for email local part containing @", () => {
+      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
+      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
+      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane@det.gov.uk"
+      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+
+      const errors = validateForm(form)
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toEqual({
+        fieldId: "email-local",
+        message: "Do not include the '@' or domain — just enter the part before '@'",
+      })
+    })
+
     it("should return error for email local part with + alias", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"

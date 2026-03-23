@@ -261,6 +261,23 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
     )
   }
 
+  // Reject emails with multiple @ signs (e.g. user pasted full email into local-part field)
+  if ((request.email.match(/@/g) || []).length > 1) {
+    console.log(
+      JSON.stringify({
+        level: "WARN",
+        message: "Email contains multiple @ characters",
+        correlationId,
+      }),
+    )
+    return errorResponse(
+      400,
+      SignupErrorCode.INVALID_EMAIL,
+      "Email address contains multiple '@' characters",
+      correlationId,
+    )
+  }
+
   // Reject email aliases with + character
   // User would need to sign in with non-aliased email, causing confusion
   if (request.email.includes("+")) {

@@ -268,11 +268,11 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("No actions available")
     })
 
-    it("should NOT render Launch button for Provisioning leases", () => {
+    it("should NOT render Launch button for Provisioning leases but should show End session", () => {
       const html = renderSessionsTable([mockProvisioningLease])
 
       expect(html).not.toContain("Launch AWS Console")
-      expect(html).toContain("No actions available")
+      expect(html).toContain("End session")
     })
 
     it("should NOT render Launch button for ProvisioningFailed leases", () => {

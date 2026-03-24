@@ -109,6 +109,19 @@ export function trackCliCredentials(leaseId: string, leaseTemplate: string, budg
 }
 
 /**
+ * Track session termination (End session).
+ *
+ * @param leaseId - Lease identifier
+ * @param leaseTemplate - Lease template name
+ */
+export function trackSessionTerminate(leaseId: string, leaseTemplate: string): void {
+  trackEvent("session_terminate", {
+    lease_id: leaseId,
+    lease_template: leaseTemplate,
+  })
+}
+
+/**
  * Track CloudFormation console access.
  *
  * Story 5.2: Track when users open the CloudFormation console.

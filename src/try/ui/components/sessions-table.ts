@@ -17,6 +17,7 @@ import {
   LeaseStatus,
   isLeaseActive,
   isLeaseProvisioning,
+  isLeaseTerminable,
   getSsoUrl,
   getPortalUrl,
   getCfnConsoleUrl,
@@ -199,12 +200,37 @@ function renderProductCell(templateName: string): string {
 }
 
 /**
+ * Render the terminate button for a lease.
+ *
+ * @param lease - Lease data
+ * @returns HTML string for terminate button
+ */
+function renderTerminateButton(lease: Lease): string {
+  return `
+      <button
+        type="button"
+        class="govuk-button govuk-button--warning govuk-!-margin-bottom-0"
+        data-module="govuk-button"
+        data-action="terminate-lease"
+        data-lease-id="${escapeHtml(lease.leaseId)}"
+        data-lease-template="${escapeHtml(lease.leaseTemplateName)}"
+      >
+        End session
+      </button>`
+}
+
+/**
  * Render action buttons for a lease.
  *
  * @param lease - Lease data
  * @returns HTML string for actions cell
  */
 function renderActions(lease: Lease): string {
+  // Terminable but not active (Frozen/Provisioning) — show only terminate button
+  if (!isLeaseActive(lease) && isLeaseTerminable(lease)) {
+    return `<div class="sessions-actions">${renderTerminateButton(lease)}</div>`
+  }
+
   if (!isLeaseActive(lease)) {
     return '<span class="govuk-body-s">No actions available</span>'
   }
@@ -250,7 +276,7 @@ function renderActions(lease: Lease): string {
         href="${cfnUrl}"
         target="_blank"
         rel="noopener noreferrer"
-        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+        class="govuk-button govuk-button--secondary govuk-!-margin-bottom-1"
         data-module="govuk-button"
         data-action="launch-cloudformation"
         data-lease-id="${escapeHtml(lease.leaseId)}"
@@ -261,6 +287,7 @@ function renderActions(lease: Lease): string {
         Open CloudFormation
         <span class="govuk-visually-hidden">(opens in new tab)</span>
       </a>
+      ${renderTerminateButton(lease)}
     </div>
   `
 }

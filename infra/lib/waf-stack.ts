@@ -113,6 +113,43 @@ export class WafStack extends cdk.Stack {
             },
           },
         },
+        {
+          name: "terminate-rate-limit-per-ip",
+          priority: 2,
+          action: {
+            block: {
+              customResponse: {
+                responseCode: 429,
+                customResponseBodyKey: "rate-limited-response",
+              },
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "ndx-terminate-rate-limit-rule",
+            sampledRequestsEnabled: true,
+          },
+          statement: {
+            rateBasedStatement: {
+              // Rate limit: 10 requests per 5-minute window (AWS WAF minimum)
+              limit: 10,
+              aggregateKeyType: "IP",
+              scopeDownStatement: {
+                byteMatchStatement: {
+                  fieldToMatch: { uriPath: {} },
+                  positionalConstraint: "STARTS_WITH",
+                  searchString: "/lease-api/",
+                  textTransformations: [
+                    {
+                      priority: 0,
+                      type: "NONE",
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        },
       ],
       customResponseBodies: {
         "rate-limited-response": {

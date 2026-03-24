@@ -310,6 +310,60 @@ export class NdxStaticStack extends cdk.Stack {
       })
     }
 
+    // =========================================================================
+    // Terminate Proxy Lambda Origin Configuration
+    // =========================================================================
+    // Configure CloudFront to route /lease-api/* to the terminate proxy Lambda.
+    // The Lambda is deployed via TerminateProxyStack, this adds the CloudFront routing.
+
+    if (config.terminateLambdaFunctionUrl) {
+      const terminateOriginId = "ndx-terminate-lambda-origin"
+
+      // Add HTTP origin for terminate Lambda Function URL
+      // No OAC — Lambda uses auth type NONE; security is handled by the Lambda
+      // itself (CSRF header, JWT ownership check, WAF rate limiting).
+      // Matches signup Lambda pattern where Custom origin + OAC POST signing fails.
+      const addTerminateOrigin = new cdk.CustomResource(this, "AddTerminateLambdaOrigin", {
+        serviceToken: addOriginProvider.serviceToken,
+        properties: {
+          DistributionId: config.distributionId,
+          OriginId: terminateOriginId,
+          OriginDomainName: config.terminateLambdaFunctionUrl,
+          OriginType: "HTTP",
+        },
+      })
+
+      // Ensure ndx-static-prod origin is added first
+      addTerminateOrigin.node.addDependency(addOriginResource)
+
+      // Add cache behavior for /lease-api/* path
+      const addTerminateCacheBehavior = new cdk.CustomResource(this, "AddTerminateCacheBehavior", {
+        serviceToken: addOriginProvider.serviceToken,
+        properties: {
+          DistributionId: config.distributionId,
+          PathPattern: "/lease-api/*",
+          TargetOriginId: terminateOriginId,
+          // CachingDisabled policy - no caching for API endpoints
+          CachePolicyId: "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+          // AllViewerExceptHostHeader policy for Lambda Function URLs
+          OriginRequestPolicyId: "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+        },
+      })
+
+      // Ensure origin is added before cache behavior
+      addTerminateCacheBehavior.node.addDependency(addTerminateOrigin)
+
+      new cdk.CfnOutput(this, "TerminateLambdaOriginId", {
+        value: terminateOriginId,
+        description: "Origin ID for terminate proxy Lambda Function URL",
+      })
+
+      new cdk.CfnOutput(this, "TerminateApiPath", {
+        value: "/lease-api/*",
+        description: "Path pattern routed to terminate proxy Lambda",
+      })
+    }
+
     // Alternate domain name configuration (e.g., ndx.digital.cabinet-office.gov.uk)
     // Prerequisites:
     // 1. Create ACM certificate in us-east-1 manually (aws acm request-certificate)

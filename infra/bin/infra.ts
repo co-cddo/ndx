@@ -4,6 +4,7 @@ import { NdxStaticStack } from "../lib/ndx-stack"
 import { NdxNotificationStack } from "../lib/notification-stack"
 import { GitHubActionsStack } from "../lib/github-actions-stack"
 import { WafStack } from "../lib/waf-stack"
+import { TerminateProxyStack } from "../lib/terminate-proxy-stack"
 
 const app = new cdk.App()
 
@@ -53,5 +54,12 @@ const wafEnv = {
 new WafStack(app, "NdxWaf", {
   env: wafEnv,
   distributionId: "E3THG4UHYDHVWP",
-  description: "NDX WAF - Rate limiting for signup API (Story 3.2)",
+  description: "NDX WAF - Rate limiting for signup and terminate APIs",
+})
+
+// Terminate Proxy Lambda for self-service lease termination
+new TerminateProxyStack(app, "NdxTerminateProxy", {
+  env,
+  distributionId: "E3THG4UHYDHVWP",
+  description: "NDX Terminate Proxy - self-service lease termination for users",
 })

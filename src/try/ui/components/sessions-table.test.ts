@@ -29,6 +29,10 @@ import { Lease } from "../../api/sessions-service"
 jest.mock("../../api/sessions-service", () => ({
   isLeaseActive: jest.fn((lease: { status: string }) => lease.status === "Active"),
   isLeaseProvisioning: jest.fn((lease: { status: string }) => lease.status === "Provisioning"),
+  isLeaseTerminable: jest.fn(
+    (lease: { status: string }) =>
+      lease.status === "Active" || lease.status === "Frozen" || lease.status === "Provisioning",
+  ),
   getSsoUrl: jest.fn(
     (lease: { awsAccountId: string }) =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=test_role`,
@@ -264,11 +268,11 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("No actions available")
     })
 
-    it("should NOT render Launch button for Provisioning leases", () => {
+    it("should NOT render Launch button for Provisioning leases but should show End session", () => {
       const html = renderSessionsTable([mockProvisioningLease])
 
       expect(html).not.toContain("Launch AWS Console")
-      expect(html).toContain("No actions available")
+      expect(html).toContain("End session")
     })
 
     it("should NOT render Launch button for ProvisioningFailed leases", () => {

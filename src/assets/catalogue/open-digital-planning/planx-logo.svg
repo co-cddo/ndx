@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <rect width="200" height="60" rx="4" fill="#2C2C2C"/>
+  <text x="16" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF">Plan</text>
+  <text x="93" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="700" fill="#FF4444">✕</text>
+</svg>

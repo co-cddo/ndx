@@ -68,28 +68,28 @@ The NDX:Try version replaces the upstream Gemini/Azure dependencies with **AWS-n
 
 ### Core Features
 
-| Feature | AWS Service |
-| --- | --- |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/minute/step-3/" target="_blank" rel="noopener">**Meeting transcription**</a> | <a href="https://aws.amazon.com/transcribe/" target="_blank" rel="noopener">AWS Transcribe</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/minute/step-5/" target="_blank" rel="noopener">**AI minute generation**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> (Nova Pro) |
-| **Speaker identification** | <a href="https://aws.amazon.com/transcribe/" target="_blank" rel="noopener">AWS Transcribe</a> |
-| **Multiple meeting templates** | Cabinet, Planning Committee, General, and more |
-| **AI-assisted editing** | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> |
-| **Word document export** | Built-in |
+| Feature                                                                                                                                              | AWS Service                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/minute/step-3/" target="_blank" rel="noopener">**Meeting transcription**</a> | <a href="https://aws.amazon.com/transcribe/" target="_blank" rel="noopener">AWS Transcribe</a>         |
+| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/minute/step-5/" target="_blank" rel="noopener">**AI minute generation**</a>  | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a> (Nova Pro) |
+| **Speaker identification**                                                                                                                           | <a href="https://aws.amazon.com/transcribe/" target="_blank" rel="noopener">AWS Transcribe</a>         |
+| **Multiple meeting templates**                                                                                                                       | Cabinet, Planning Committee, General, and more                                                         |
+| **AI-assisted editing**                                                                                                                              | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>            |
+| **Word document export**                                                                                                                             | Built-in                                                                                               |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component | AWS Service |
-| --- | --- |
-| **Compute** | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> (3 services) |
-| **Database** | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Amazon Aurora</a> PostgreSQL |
-| **Message queues** | <a href="https://aws.amazon.com/sqs/" target="_blank" rel="noopener">Amazon SQS</a> (4 queues) |
-| **File storage** | <a href="https://aws.amazon.com/s3/" target="_blank" rel="noopener">Amazon S3</a> |
-| **CDN & HTTPS** | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a> |
-| **Service discovery** | <a href="https://aws.amazon.com/cloud-map/" target="_blank" rel="noopener">AWS Cloud Map</a> |
+| Component             | AWS Service                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Compute**           | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> (3 services)    |
+| **Database**          | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Amazon Aurora</a> PostgreSQL |
+| **Message queues**    | <a href="https://aws.amazon.com/sqs/" target="_blank" rel="noopener">Amazon SQS</a> (4 queues)           |
+| **File storage**      | <a href="https://aws.amazon.com/s3/" target="_blank" rel="noopener">Amazon S3</a>                        |
+| **CDN & HTTPS**       | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>        |
+| **Service discovery** | <a href="https://aws.amazon.com/cloud-map/" target="_blank" rel="noopener">AWS Cloud Map</a>             |
 
 </div>
 </div>

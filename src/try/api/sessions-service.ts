@@ -298,6 +298,19 @@ export function isLeaseProvisioning(lease: Lease): boolean {
 }
 
 /**
+ * Check if a lease can be terminated by the user.
+ *
+ * Matches ISB's MonitoredLeaseStatus: Active, Frozen, or Provisioning.
+ * These are the only statuses that the terminate endpoint will accept.
+ *
+ * @param lease - Lease to check
+ * @returns true if the lease can be terminated
+ */
+export function isLeaseTerminable(lease: Lease): boolean {
+  return lease.status === "Active" || lease.status === "Frozen" || lease.status === "Provisioning"
+}
+
+/**
  * Build the SSO console URL for a lease.
  *
  * Story 7.11: Uses centralized config for SSO portal URL and role name.

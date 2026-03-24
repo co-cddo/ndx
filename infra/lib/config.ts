@@ -14,6 +14,9 @@ export interface EnvironmentConfig {
   // Signup Lambda Function URL configuration (Story 1.2)
   // The Lambda is deployed via infra-signup/, this config enables CloudFront routing
   readonly signupLambdaFunctionUrl?: string
+  // Terminate Proxy Lambda Function URL
+  // The Lambda is deployed via TerminateProxyStack, this config enables CloudFront routing
+  readonly terminateLambdaFunctionUrl?: string
 }
 
 /**
@@ -289,6 +292,8 @@ export const ENVIRONMENTS: Record<string, EnvironmentConfig> = {
     certificateArn: "arn:aws:acm:us-east-1:568672915267:certificate/834f73bb-611f-4fbf-9e36-ffd6624548b6",
     // Signup Lambda Function URL (deployed via infra-signup/)
     signupLambdaFunctionUrl: "tytqcupxb7p2ijlcj7rvlhnzwu0nyfaj.lambda-url.us-west-2.on.aws",
+    // Terminate Proxy Lambda Function URL (deployed via NdxTerminateProxy stack)
+    terminateLambdaFunctionUrl: "2ldrcenlgn2ue7vkys7cpxfaze0bxpsl.lambda-url.us-west-2.on.aws",
   },
   test: {
     distributionId: "E3TESTDISTID",

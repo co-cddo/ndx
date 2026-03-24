@@ -36,6 +36,7 @@ export {
   trackSignIn,
   trackSignOut,
   trackSessionAccess,
+  trackSessionTerminate,
   trackCliCredentials,
   trackCloudFormationAccess,
   trackNavClick,

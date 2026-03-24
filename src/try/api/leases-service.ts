@@ -9,7 +9,7 @@
  * @see {@link https://docs/try-before-you-buy-architecture.md#ADR-021|ADR-021: Centralized API Client}
  */
 
-import { callISBAPI } from "./api-client"
+import { callISBAPI, type ISBAPIOptions } from "./api-client"
 import { config } from "../config"
 
 /**
@@ -52,6 +52,23 @@ export interface LeaseCreationResult {
   /** User-friendly error message */
   error?: string
 }
+
+/**
+ * Result from lease termination request.
+ */
+export interface LeaseTerminationResult {
+  /** Whether the request was successful */
+  success: boolean
+  /** Error code for specific handling */
+  errorCode?: "UNAUTHORIZED" | "NOT_FOUND" | "CONFLICT" | "SERVER_ERROR" | "NETWORK_ERROR" | "TIMEOUT" | "RATE_LIMITED"
+  /** User-friendly error message */
+  error?: string
+}
+
+/**
+ * Terminate API endpoint (proxied via NDX terminate Lambda).
+ */
+const TERMINATE_ENDPOINT = "/lease-api/terminate"
 
 /**
  * Known error messages from Innovation Sandbox API.
@@ -267,6 +284,101 @@ export async function createLease(leaseTemplateId: string): Promise<LeaseCreatio
       success: false,
       errorCode: "NETWORK_ERROR",
       error: "Unable to connect to the sandbox service. Please check your connection.",
+    }
+  }
+}
+
+/**
+ * Terminate an active lease.
+ *
+ * POSTs to the NDX terminate proxy Lambda which validates ownership
+ * and forwards the request to the ISB API with admin credentials.
+ *
+ * @param leaseId - The lease ID to terminate
+ * @returns Promise resolving to LeaseTerminationResult
+ */
+export async function terminateLease(leaseId: string): Promise<LeaseTerminationResult> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout)
+
+  try {
+    const response = await callISBAPI(TERMINATE_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({ leaseId }),
+      signal: controller.signal,
+      headers: {
+        "X-NDX-Request": "terminate-session",
+      },
+    } as ISBAPIOptions)
+
+    clearTimeout(timeoutId)
+
+    if (response.ok) {
+      return { success: true }
+    }
+
+    switch (response.status) {
+      case 403:
+        return {
+          success: false,
+          errorCode: "UNAUTHORIZED",
+          error: "You can only end your own sessions.",
+        }
+
+      case 404:
+        return {
+          success: false,
+          errorCode: "NOT_FOUND",
+          error: "This session could not be found.",
+        }
+
+      case 409:
+        return {
+          success: false,
+          errorCode: "CONFLICT",
+          error: "This session has already ended.",
+        }
+
+      case 429:
+        return {
+          success: false,
+          errorCode: "RATE_LIMITED",
+          error: "Too many requests. Please wait a moment and try again.",
+        }
+
+      default:
+        console.error("[leases-service] Terminate unexpected status:", response.status)
+        return {
+          success: false,
+          errorCode: "SERVER_ERROR",
+          error: "Unable to end session. Please try again later.",
+        }
+    }
+  } catch (error) {
+    clearTimeout(timeoutId)
+
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        return {
+          success: false,
+          errorCode: "TIMEOUT",
+          error: "Request timed out. Please try again.",
+        }
+      }
+
+      if (error.message.includes("Unauthorized")) {
+        return {
+          success: false,
+          errorCode: "UNAUTHORIZED",
+          error: "Please sign in to continue.",
+        }
+      }
+    }
+
+    return {
+      success: false,
+      errorCode: "NETWORK_ERROR",
+      error: "Unable to connect. Please check your connection.",
     }
   }
 }

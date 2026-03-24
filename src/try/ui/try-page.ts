@@ -18,9 +18,10 @@
 
 import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
+import { terminateLease } from "../api/leases-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
-import { trackSessionAccess, trackCliCredentials, trackCloudFormationAccess } from "../analytics"
+import { trackSessionAccess, trackSessionTerminate, trackCliCredentials, trackCloudFormationAccess } from "../analytics"
 import "./styles/sessions-table.css"
 
 /**
@@ -153,10 +154,54 @@ export function initTryPage(): (() => void) | undefined {
         cfnLink.dataset.expires || "",
       )
     }
+
+    // End session (terminate lease)
+    const terminateBtn = target.closest('[data-action="terminate-lease"]') as HTMLButtonElement | null
+    if (terminateBtn) {
+      handleTerminateLease(terminateBtn)
+    }
   })
 
   // Return cleanup function for proper teardown
   return cleanupTryPage
+}
+
+/**
+ * Handle terminate lease button click.
+ *
+ * Shows confirmation dialog, calls terminate API, and refreshes sessions.
+ *
+ * @param button - The terminate button element that was clicked
+ */
+async function handleTerminateLease(button: HTMLButtonElement): Promise<void> {
+  const leaseId = button.dataset.leaseId || ""
+  const templateName = button.dataset.leaseTemplate || ""
+
+  const confirmed = window.confirm(
+    `Are you sure you want to end your ${templateName} session? This will immediately remove your access to the AWS sandbox and cannot be undone.`,
+  )
+
+  if (!confirmed) return
+
+  // Disable button to prevent double-clicks
+  button.disabled = true
+  const originalText = button.textContent
+  button.textContent = "Ending session..."
+
+  // Track analytics
+  trackSessionTerminate(leaseId, templateName)
+
+  const result = await terminateLease(leaseId)
+
+  if (result.success) {
+    // Refresh the sessions table to show updated status
+    await loadAndRenderSessions()
+  } else {
+    // Re-enable button and show error
+    button.disabled = false
+    button.textContent = originalText
+    window.alert(result.error || "Unable to end session. Please try again.")
+  }
 }
 
 /**

@@ -29,6 +29,10 @@ import { Lease } from "../../api/sessions-service"
 jest.mock("../../api/sessions-service", () => ({
   isLeaseActive: jest.fn((lease: { status: string }) => lease.status === "Active"),
   isLeaseProvisioning: jest.fn((lease: { status: string }) => lease.status === "Provisioning"),
+  isLeaseTerminable: jest.fn(
+    (lease: { status: string }) =>
+      lease.status === "Active" || lease.status === "Frozen" || lease.status === "Provisioning",
+  ),
   getSsoUrl: jest.fn(
     (lease: { awsAccountId: string }) =>
       `https://test.awsapps.com/start/#/console?account_id=${lease.awsAccountId}&role_name=test_role`,

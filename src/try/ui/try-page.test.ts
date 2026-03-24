@@ -30,6 +30,15 @@ jest.mock("../api/sessions-service", () => ({
   isLeaseActive: jest.fn((lease: { status: string }) => lease.status === "Active"),
   isLeasePending: jest.fn((lease: { status: string }) => lease.status === "PendingApproval"),
   isLeaseProvisioning: jest.fn((lease: { status: string }) => lease.status === "Provisioning"),
+  isLeaseTerminable: jest.fn(
+    (lease: { status: string }) =>
+      lease.status === "Active" || lease.status === "Frozen" || lease.status === "Provisioning",
+  ),
+}))
+
+// Mock the leases-service module
+jest.mock("../api/leases-service", () => ({
+  terminateLease: jest.fn(),
 }))
 
 const mockFetchUserLeases = fetchUserLeases as jest.MockedFunction<typeof fetchUserLeases>

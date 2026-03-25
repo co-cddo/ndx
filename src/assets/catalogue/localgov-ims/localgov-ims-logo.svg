@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" xml:space="preserve">
+  <style>
+    .t { font-family: Arial, Helvetica, sans-serif; fill: #0b0c0c; }
+  </style>
+  <text class="t" x="10" y="52" font-size="48" font-weight="bold">LocalGov</text>
+  <text class="t" x="10" y="105" font-size="52" font-weight="bold" letter-spacing="8">IMS</text>
+  <rect x="310" y="68" width="80" height="42" rx="4" fill="#1d70b8"/>
+  <text x="350" y="96" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">PAY</text>
+</svg>

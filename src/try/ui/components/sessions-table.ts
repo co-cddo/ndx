@@ -101,14 +101,20 @@ export function getCatalogueUrl(templateName: string): string | null {
  * Render the sessions table.
  *
  * @param leases - Array of leases to display
+ * @param userEmail - Authenticated user's email address
+ * @param estimates - Map of template ID to estimated provisioning minutes
  * @returns HTML string for the table
  */
-export function renderSessionsTable(leases: Lease[], userEmail?: string): string {
+export function renderSessionsTable(
+  leases: Lease[],
+  userEmail?: string,
+  estimates?: Map<string, number | null>,
+): string {
   if (leases.length === 0) {
     return renderEmptyTable()
   }
 
-  const rows = leases.map((lease, index) => renderSessionRow(lease, index, userEmail)).join("")
+  const rows = leases.map((lease, index) => renderSessionRow(lease, index, userEmail, estimates)).join("")
 
   return `
     <table class="govuk-table sessions-table">
@@ -138,7 +144,12 @@ export function renderSessionsTable(leases: Lease[], userEmail?: string): string
  * @param lease - Lease data
  * @returns HTML string for the row(s)
  */
-function renderSessionRow(lease: Lease, index: number, userEmail?: string): string {
+function renderSessionRow(
+  lease: Lease,
+  index: number,
+  userEmail?: string,
+  estimates?: Map<string, number | null>,
+): string {
   const statusClass = STATUS_COLORS[lease.status]
   const expiry = formatExpiry(lease.expiresAt)
   const budgetDisplay =
@@ -172,7 +183,7 @@ function renderSessionRow(lease: Lease, index: number, userEmail?: string): stri
       </td>
     </tr>
     ${commentsRow}
-    ${renderProvisioningHint(lease, userEmail)}
+    ${renderProvisioningHint(lease, userEmail, estimates?.get(lease.leaseTemplateId))}
   `
 }
 
@@ -297,26 +308,61 @@ function renderActions(lease: Lease): string {
  * Shows when lease status is "Provisioning" to let users know
  * they'll be emailed when ready and can close the page.
  *
+ * When an estimate is available, shows a countdown based on the
+ * lease creation time plus the estimated provisioning duration.
+ *
  * @param lease - Lease data
  * @param userEmail - Authenticated user's email address
+ * @param estimateMinutes - Estimated provisioning duration in minutes (null if unknown)
  * @returns HTML string for hint row, or empty string if not provisioning
  */
-function renderProvisioningHint(lease: Lease, userEmail?: string): string {
+function renderProvisioningHint(lease: Lease, userEmail?: string, estimateMinutes?: number | null): string {
   if (!isLeaseProvisioning(lease)) return ""
 
   const emailDisplay = userEmail
     ? `We'll email you at <strong>${escapeHtml(userEmail)}</strong> when your sandbox is ready`
     : "We'll email you when your sandbox is ready"
 
+  const estimateDisplay = formatEstimate(lease.createdAt, estimateMinutes)
+
   return `
     <tr class="govuk-table__row sessions-table__hint-row">
       <td colspan="6" class="govuk-table__cell">
         <div class="govuk-inset-text govuk-!-margin-top-0 govuk-!-margin-bottom-0">
-          We're setting up your sandbox. ${emailDisplay} &mdash; you can safely close this page.
+          We're setting up your sandbox.${estimateDisplay} ${emailDisplay} &mdash; you can safely close this page.
         </div>
       </td>
     </tr>
   `
+}
+
+/**
+ * Format the estimate countdown for display.
+ *
+ * @param createdAt - When the lease was created (ISO 8601)
+ * @param estimateMinutes - Estimated provisioning duration in minutes
+ * @returns HTML string with estimate display, or empty string if no estimate
+ */
+function formatEstimate(createdAt: string, estimateMinutes?: number | null): string {
+  if (estimateMinutes === null || estimateMinutes === undefined) return ""
+
+  const createdMs = new Date(createdAt).getTime()
+  if (isNaN(createdMs)) return ""
+
+  const estimatedReadyMs = createdMs + estimateMinutes * 60_000
+  const remainingMs = estimatedReadyMs - Date.now()
+
+  let timeText: string
+  if (remainingMs > 60_000) {
+    const remainingMinutes = Math.ceil(remainingMs / 60_000)
+    timeText = `about ${remainingMinutes} minute${remainingMinutes === 1 ? "" : "s"}`
+  } else if (remainingMs > 0) {
+    timeText = "less than a minute"
+  } else {
+    return " This is taking a little longer than usual."
+  }
+
+  return ` Your sandbox should be ready in ${timeText}.`
 }
 
 /**

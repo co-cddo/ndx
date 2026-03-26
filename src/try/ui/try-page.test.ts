@@ -41,6 +41,11 @@ jest.mock("../api/leases-service", () => ({
   terminateLease: jest.fn(),
 }))
 
+// Mock the estimate-service module
+jest.mock("../api/estimate-service", () => ({
+  fetchDeploymentEstimate: jest.fn().mockResolvedValue({ success: true, estimateMinutes: null }),
+}))
+
 const mockFetchUserLeases = fetchUserLeases as jest.MockedFunction<typeof fetchUserLeases>
 
 describe("Try Page Component (Story 5.9)", () => {

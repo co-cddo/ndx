@@ -19,6 +19,7 @@
 import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { terminateLease } from "../api/leases-service"
+import { fetchDeploymentEstimate } from "../api/estimate-service"
 import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 import { trackSessionAccess, trackSessionTerminate, trackCliCredentials, trackCloudFormationAccess } from "../analytics"
@@ -52,6 +53,8 @@ let container: HTMLElement | null = null
 let refreshTimer: number | null = null
 let countdownTimer: number | null = null
 let secondsUntilRefresh = 10
+/** Cached deployment estimates: templateId → estimated minutes (null = no history) */
+const estimatesCache = new Map<string, number | null>()
 // CRITICAL-3 FIX: Store unsubscribe function for auth state cleanup
 let authUnsubscribe: (() => void) | null = null
 // MEMORY LEAK FIX: Store visibility change handler for cleanup
@@ -234,6 +237,8 @@ async function loadAndRenderSessions(): Promise<void> {
       leases: result.leases,
       userEmail: currentState.userEmail,
     }
+    // Fetch estimates for provisioning leases
+    await fetchEstimatesForLeases(result.leases)
     renderAuthenticatedState(container, result.leases)
   } else {
     currentState = {
@@ -372,7 +377,7 @@ export function renderAuthenticatedState(container: HTMLElement, leases: Lease[]
 
     ${activeCount > 0 ? renderActiveSessionGuidance() : ""}
 
-    ${renderSessionsTable(leases, currentState.userEmail ?? undefined)}
+    ${renderSessionsTable(leases, currentState.userEmail ?? undefined, estimatesCache)}
 
     <hr class="govuk-section-break govuk-section-break--l govuk-section-break--visible">
 
@@ -480,6 +485,8 @@ async function refreshSessions(): Promise<void> {
       leases: result.leases,
       userEmail: currentState.userEmail,
     }
+    // Fetch estimates for provisioning leases
+    await fetchEstimatesForLeases(result.leases)
     // Re-render with fresh data (not refreshing state, so countdown is shown)
     renderAuthenticatedState(container, result.leases, false)
   } else {
@@ -488,6 +495,36 @@ async function refreshSessions(): Promise<void> {
     // Re-render current data to restore countdown
     if (currentState.leases.length > 0) {
       renderAuthenticatedState(container, currentState.leases, false)
+    }
+  }
+}
+
+/**
+ * Fetch deployment estimates for any provisioning leases.
+ *
+ * For each unique template ID among provisioning leases, fetches the
+ * estimated deployment duration and stores it in the estimates cache.
+ * Skips templates that are already cached (estimate-service has its own TTL).
+ *
+ * @param leases - Current leases to check
+ */
+async function fetchEstimatesForLeases(leases: Lease[]): Promise<void> {
+  const provisioningTemplateIds = [
+    ...new Set(leases.filter((l) => l.status === "Provisioning").map((l) => l.leaseTemplateId)),
+  ]
+
+  if (provisioningTemplateIds.length === 0) return
+
+  // Only fetch for template IDs not already in our local cache
+  const toFetch = provisioningTemplateIds.filter((id) => !estimatesCache.has(id))
+
+  if (toFetch.length === 0) return
+
+  const results = await Promise.all(toFetch.map((id) => fetchDeploymentEstimate(id).then((r) => ({ id, result: r }))))
+
+  for (const { id, result } of results) {
+    if (result.success) {
+      estimatesCache.set(id, result.estimateMinutes ?? null)
     }
   }
 }
@@ -573,4 +610,5 @@ export function cleanupTryPage(): void {
   // Clear state references
   container = null
   currentState = { loading: false, refreshing: false, error: null, leases: [], userEmail: null }
+  estimatesCache.clear()
 }

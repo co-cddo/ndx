@@ -890,4 +890,76 @@ describe("Sessions Table Component", () => {
       })
     })
   })
+
+  describe("Deployment estimate in provisioning hint", () => {
+    const provisioningLease: Lease = {
+      leaseId: "lease-est-1",
+      awsAccountId: "111222333444",
+      leaseTemplateId: "template-est",
+      leaseTemplateName: "Test Product",
+      status: "Provisioning",
+      createdAt: new Date(Date.now() - 5 * 60_000).toISOString(), // 5 minutes ago
+      expiresAt: new Date(Date.now() + 24 * 3600_000).toISOString(),
+      maxSpend: 50,
+      currentSpend: 0,
+    }
+
+    it("should show estimate countdown when estimate is available", () => {
+      const estimates = new Map<string, number | null>([["template-est", 15]])
+      const html = renderSessionsTable([provisioningLease], "user@test.gov.uk", estimates)
+
+      // 15 min estimate, 5 min elapsed → ~10 min remaining
+      expect(html).toContain("should be ready in about")
+      expect(html).toContain("minute")
+    })
+
+    it("should show existing message when estimate is null", () => {
+      const estimates = new Map<string, number | null>([["template-est", null]])
+      const html = renderSessionsTable([provisioningLease], "user@test.gov.uk", estimates)
+
+      expect(html).not.toContain("should be ready in")
+      expect(html).toContain("setting up your sandbox")
+    })
+
+    it("should show existing message when no estimates map provided", () => {
+      const html = renderSessionsTable([provisioningLease], "user@test.gov.uk")
+
+      expect(html).not.toContain("should be ready in")
+      expect(html).toContain("setting up your sandbox")
+    })
+
+    it("should show 'taking longer' when estimate is overdue", () => {
+      const overdueLease: Lease = {
+        ...provisioningLease,
+        createdAt: new Date(Date.now() - 30 * 60_000).toISOString(), // 30 minutes ago
+      }
+      const estimates = new Map<string, number | null>([["template-est", 10]]) // estimated 10 min, 30 elapsed
+      const html = renderSessionsTable([overdueLease], "user@test.gov.uk", estimates)
+
+      expect(html).toContain("taking a little longer than usual")
+    })
+
+    it("should show 'less than a minute' when almost ready", () => {
+      const almostReadyLease: Lease = {
+        ...provisioningLease,
+        createdAt: new Date(Date.now() - 14.5 * 60_000).toISOString(), // 14.5 min ago
+      }
+      const estimates = new Map<string, number | null>([["template-est", 15]]) // estimated 15 min
+      const html = renderSessionsTable([almostReadyLease], "user@test.gov.uk", estimates)
+
+      expect(html).toContain("less than a minute")
+    })
+
+    it("should not show estimate for non-provisioning leases", () => {
+      const activeLease: Lease = {
+        ...provisioningLease,
+        status: "Active",
+      }
+      const estimates = new Map<string, number | null>([["template-est", 15]])
+      const html = renderSessionsTable([activeLease], "user@test.gov.uk", estimates)
+
+      expect(html).not.toContain("should be ready in")
+      expect(html).not.toContain("sessions-table__hint-row")
+    })
+  })
 })

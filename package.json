@@ -69,6 +69,6 @@
   "resolutions": {
     "glob": "^11.1.0",
     "js-yaml": "^4.1.1",
-    "brace-expansion": "^2.0.2"
+    "brace-expansion": "^2.0.3"
   }
 }

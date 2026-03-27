@@ -22,6 +22,7 @@ import {
   renderErrorState,
   getCatalogueUrl,
   CATALOGUE_SLUGS,
+  formatCountdown,
 } from "./sessions-table"
 import { Lease } from "../../api/sessions-service"
 
@@ -913,6 +914,23 @@ describe("Sessions Table Component", () => {
       expect(html).toContain("minute")
     })
 
+    it("should show mm:ss countdown in status badge when estimate is available", () => {
+      const estimates = new Map<string, number | null>([["template-est", 15]])
+      const html = renderSessionsTable([provisioningLease], "user@test.gov.uk", estimates)
+
+      // Badge should have data attribute and show "Setting up mm:ss"
+      expect(html).toContain("data-estimate-ready-at=")
+      expect(html).toMatch(/Setting up \d{2}:\d{2}/)
+    })
+
+    it("should not show mm:ss in badge when estimate is null", () => {
+      const estimates = new Map<string, number | null>([["template-est", null]])
+      const html = renderSessionsTable([provisioningLease], "user@test.gov.uk", estimates)
+
+      expect(html).not.toContain("data-estimate-ready-at=")
+      expect(html).toContain(">Setting up<")
+    })
+
     it("should show existing message when estimate is null", () => {
       const estimates = new Map<string, number | null>([["template-est", null]])
       const html = renderSessionsTable([provisioningLease], "user@test.gov.uk", estimates)
@@ -960,6 +978,51 @@ describe("Sessions Table Component", () => {
 
       expect(html).not.toContain("should be ready in")
       expect(html).not.toContain("sessions-table__hint-row")
+    })
+
+    it("should show badge without countdown when overdue", () => {
+      const overdueLease: Lease = {
+        ...provisioningLease,
+        createdAt: new Date(Date.now() - 30 * 60_000).toISOString(),
+      }
+      const estimates = new Map<string, number | null>([["template-est", 10]])
+      const html = renderSessionsTable([overdueLease], "user@test.gov.uk", estimates)
+
+      // Badge should not have data attribute when overdue (countdown is empty)
+      expect(html).toContain(">Setting up <")
+    })
+  })
+
+  describe("formatCountdown", () => {
+    it("should format minutes and seconds with zero-padding", () => {
+      const readyAt = Date.now() + 10 * 60_000 + 5_000 // 10 min 5 sec from now
+      const result = formatCountdown(readyAt)
+
+      expect(result).toMatch(/^10:0[5-6]$/) // allow 1s tolerance
+    })
+
+    it("should return empty string when overdue", () => {
+      const readyAt = Date.now() - 1000
+      expect(formatCountdown(readyAt)).toBe("")
+    })
+
+    it("should handle exactly zero remaining", () => {
+      const readyAt = Date.now()
+      expect(formatCountdown(readyAt)).toBe("")
+    })
+
+    it("should format seconds-only countdown", () => {
+      const readyAt = Date.now() + 30_000 // 30 sec from now
+      const result = formatCountdown(readyAt)
+
+      expect(result).toMatch(/^00:(?:29|30)$/)
+    })
+
+    it("should handle large countdowns", () => {
+      const readyAt = Date.now() + 65 * 60_000 // 65 min from now
+      const result = formatCountdown(readyAt)
+
+      expect(result).toMatch(/^6[45]:/)
     })
   })
 })

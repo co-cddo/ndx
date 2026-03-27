@@ -20,9 +20,7 @@ tags:
   - uk-government
 ---
 
-![](https://img.shields.io/badge/provider-greenbridge-green)
-![](https://img.shields.io/badge/owner-public_sector-blue)
-![](https://img.shields.io/badge/access-NDX_OIDC-green)
+![](https://img.shields.io/badge/provider-greenbridge-green) ![](https://img.shields.io/badge/owner-public_sector-blue) ![](https://img.shields.io/badge/access-NDX_OIDC-green)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

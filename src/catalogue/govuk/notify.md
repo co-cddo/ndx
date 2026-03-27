@@ -17,10 +17,7 @@ tags:
   - low-cost
 ---
 
-![](https://img.shields.io/badge/provider-government-blue)
-![](https://img.shields.io/badge/owner-public_sector-green)
-![](https://img.shields.io/badge/access-government_approved-darkgreen)
-![](https://img.shields.io/badge/procurement-not_required-brightgreen)
+![](https://img.shields.io/badge/provider-government-blue) ![](https://img.shields.io/badge/owner-public_sector-green) ![](https://img.shields.io/badge/access-government_approved-darkgreen) ![](https://img.shields.io/badge/procurement-not_required-brightgreen)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

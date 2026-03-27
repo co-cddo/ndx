@@ -17,10 +17,7 @@ tags:
   - security
 ---
 
-![](https://img.shields.io/badge/provider-figma-purple)
-![](https://img.shields.io/badge/compliance-ISO_27001-green)
-![](https://img.shields.io/badge/security-Cyber_Essentials_Plus-blue)
-![](https://img.shields.io/badge/access-SAML_SSO-orange)
+![](https://img.shields.io/badge/provider-figma-purple) ![](https://img.shields.io/badge/compliance-ISO_27001-green) ![](https://img.shields.io/badge/security-Cyber_Essentials_Plus-blue) ![](https://img.shields.io/badge/access-SAML_SSO-orange)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

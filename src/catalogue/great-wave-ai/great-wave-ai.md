@@ -17,8 +17,7 @@ tags:
   - Agent Orchestration
 ---
 
-![](https://img.shields.io/badge/provider-Great_Wave_AI-purple)
-![](https://img.shields.io/badge/owner-private_sector-orange)
+![](https://img.shields.io/badge/provider-Great_Wave_AI-purple) ![](https://img.shields.io/badge/owner-private_sector-orange)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

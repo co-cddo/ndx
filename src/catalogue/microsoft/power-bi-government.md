@@ -18,10 +18,7 @@ tags:
   - Microsoft
 ---
 
-![](https://img.shields.io/badge/provider-microsoft-blue)
-![](https://img.shields.io/badge/owner-commercial-orange)
-![](https://img.shields.io/badge/access-direct_procurement-green)
-![](https://img.shields.io/badge/government-proven_adoption-brightgreen)
+![](https://img.shields.io/badge/provider-microsoft-blue) ![](https://img.shields.io/badge/owner-commercial-orange) ![](https://img.shields.io/badge/access-direct_procurement-green) ![](https://img.shields.io/badge/government-proven_adoption-brightgreen)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

@@ -22,9 +22,7 @@ tags:
 
 # Salesforce Government Cloud
 
-![](https://img.shields.io/badge/provider-salesforce-blue)
-![](https://img.shields.io/badge/owner-private_sector-orange)
-![](https://img.shields.io/badge/access-NDX_OIDC-green)
+![](https://img.shields.io/badge/provider-salesforce-blue) ![](https://img.shields.io/badge/owner-private_sector-orange) ![](https://img.shields.io/badge/access-NDX_OIDC-green)
 
 {{ govukButton({
   text: "Try Salesforce",

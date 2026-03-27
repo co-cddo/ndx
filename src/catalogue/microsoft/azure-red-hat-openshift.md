@@ -18,8 +18,7 @@ tags:
   - cloud
 ---
 
-![](https://img.shields.io/badge/provider-microsoft-blue)
-![](https://img.shields.io/badge/owner-private_sector-orange)
+![](https://img.shields.io/badge/provider-microsoft-blue) ![](https://img.shields.io/badge/owner-private_sector-orange)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

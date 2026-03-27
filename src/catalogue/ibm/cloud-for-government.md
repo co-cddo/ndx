@@ -15,9 +15,7 @@ tags:
   - AI
 ---
 
-![](https://img.shields.io/badge/provider-ibm-blue)
-![](https://img.shields.io/badge/owner-private_sector-orange)
-![](https://img.shields.io/badge/access-NDX_OIDC-green)
+![](https://img.shields.io/badge/provider-ibm-blue) ![](https://img.shields.io/badge/owner-private_sector-orange) ![](https://img.shields.io/badge/access-NDX_OIDC-green)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

@@ -20,7 +20,7 @@ import { authState } from "../auth/auth-provider"
 import { fetchUserLeases, Lease } from "../api/sessions-service"
 import { terminateLease } from "../api/leases-service"
 import { fetchDeploymentEstimate } from "../api/estimate-service"
-import { renderSessionsTable, renderLoadingState, renderErrorState } from "./components/sessions-table"
+import { renderSessionsTable, renderLoadingState, renderErrorState, formatCountdown } from "./components/sessions-table"
 import { openAuthChoiceModal } from "../../signup/ui/auth-choice-modal"
 import { trackSessionAccess, trackSessionTerminate, trackCliCredentials, trackCloudFormationAccess } from "../analytics"
 import "./styles/sessions-table.css"
@@ -530,6 +530,23 @@ async function fetchEstimatesForLeases(leases: Lease[]): Promise<void> {
 }
 
 /**
+ * Update all provisioning countdown badges in the DOM.
+ *
+ * Finds status tags with a `data-estimate-ready-at` attribute and updates
+ * their text to show the current mm:ss countdown.
+ */
+function updateProvisioningCountdowns(): void {
+  const badges = document.querySelectorAll<HTMLElement>("[data-estimate-ready-at]")
+  for (const badge of badges) {
+    const readyAt = Number(badge.dataset.estimateReadyAt)
+    if (isNaN(readyAt)) continue
+
+    const countdown = formatCountdown(readyAt)
+    badge.textContent = countdown ? `Setting up ${countdown}` : "Setting up"
+  }
+}
+
+/**
  * Start auto-refresh timer for fetching fresh data.
  *
  * Story 7.5: AC requires data to refresh automatically.
@@ -544,13 +561,14 @@ function startAutoRefresh(): void {
   // Reset countdown
   secondsUntilRefresh = 10
 
-  // Update countdown every second
+  // Update countdown every second (both refresh countdown and provisioning badges)
   countdownTimer = window.setInterval(() => {
     secondsUntilRefresh--
     const countdownEl = document.getElementById("refresh-countdown")
     if (countdownEl && secondsUntilRefresh > 0) {
       countdownEl.textContent = `Refreshing in ${secondsUntilRefresh}s`
     }
+    updateProvisioningCountdowns()
   }, 1000)
 
   // Fetch fresh data every 10 seconds

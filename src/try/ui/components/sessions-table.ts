@@ -170,7 +170,7 @@ function renderSessionRow(
         <code class="govuk-!-font-size-16">${escapeHtml(lease.awsAccountId)}</code>
       </td>
       <td class="govuk-table__cell" data-label="Status">
-        <strong class="govuk-tag ${statusClass}">${STATUS_LABELS[lease.status] || lease.status}</strong>
+        ${renderStatusTag(lease, statusClass, estimates?.get(lease.leaseTemplateId))}
       </td>
       <td class="govuk-table__cell" data-label="Expiry" aria-label="Session expires ${expiry}">
         ${expiry}
@@ -185,6 +185,51 @@ function renderSessionRow(
     ${commentsRow}
     ${renderProvisioningHint(lease, userEmail, estimates?.get(lease.leaseTemplateId))}
   `
+}
+
+/**
+ * Render the status tag, including a live countdown for provisioning leases.
+ *
+ * When a provisioning lease has an estimate, the tag shows "Setting up mm:ss"
+ * and includes a data attribute so the countdown can be updated every second.
+ *
+ * @param lease - Lease data
+ * @param statusClass - GOV.UK tag colour class
+ * @param estimateMinutes - Estimated provisioning duration (null if unknown)
+ * @returns HTML string for the status tag
+ */
+function renderStatusTag(lease: Lease, statusClass: string, estimateMinutes?: number | null): string {
+  const label = STATUS_LABELS[lease.status] || lease.status
+
+  if (!isLeaseProvisioning(lease) || estimateMinutes === null || estimateMinutes === undefined) {
+    return `<strong class="govuk-tag ${statusClass}">${label}</strong>`
+  }
+
+  const createdMs = new Date(lease.createdAt).getTime()
+  if (isNaN(createdMs)) {
+    return `<strong class="govuk-tag ${statusClass}">${label}</strong>`
+  }
+
+  const estimatedReadyAt = createdMs + estimateMinutes * 60_000
+  const countdown = formatCountdown(estimatedReadyAt)
+
+  return `<strong class="govuk-tag ${statusClass}" data-estimate-ready-at="${estimatedReadyAt}">${label} ${countdown}</strong>`
+}
+
+/**
+ * Format a countdown string as mm:ss from now until the target timestamp.
+ *
+ * @param readyAtMs - Target timestamp in milliseconds
+ * @returns Formatted countdown string (e.g. "12:05") or empty string if overdue
+ */
+export function formatCountdown(readyAtMs: number): string {
+  const remainingMs = readyAtMs - Date.now()
+  if (remainingMs <= 0) return ""
+
+  const totalSeconds = Math.ceil(remainingMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 }
 
 /**

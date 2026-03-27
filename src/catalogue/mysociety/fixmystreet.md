@@ -66,26 +66,26 @@ This NDX:Try scenario deploys a fully working FixMyStreet instance with **260 se
 
 ### Citizen experience
 
-| Feature | Description |
-| --- | --- |
+| Feature              | Description                                          |
+| -------------------- | ---------------------------------------------------- |
 | **Report a problem** | Pin location on map, select category, describe issue |
-| **Track progress** | Follow reports from submission through to resolution |
-| **View updates** | See council responses and citizen comments |
-| **Browse reports** | Explore all reports in an area with map pins |
-| **Local alerts** | Subscribe to notifications for your area |
+| **Track progress**   | Follow reports from submission through to resolution |
+| **View updates**     | See council responses and citizen comments           |
+| **Browse reports**   | Explore all reports in an area with map pins         |
+| **Local alerts**     | Subscribe to notifications for your area             |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Council tools
 
-| Feature | Description |
-| --- | --- |
-| **Reports dashboard** | Filter by status, category, and location |
-| **Admin panel** | Manage reports, users, and categories |
-| **Report management** | Update status, assign, and respond |
-| **Category configuration** | Customise report categories |
-| **Statistics** | View reporting trends and performance |
+| Feature                    | Description                              |
+| -------------------------- | ---------------------------------------- |
+| **Reports dashboard**      | Filter by status, category, and location |
+| **Admin panel**            | Manage reports, users, and categories    |
+| **Report management**      | Update status, assign, and respond       |
+| **Category configuration** | Customise report categories              |
+| **Statistics**             | View reporting trends and performance    |
 
 </div>
 </div>
@@ -95,26 +95,26 @@ This NDX:Try scenario deploys a fully working FixMyStreet instance with **260 se
 
 ### Infrastructure
 
-| Component | AWS Service |
-| --- | --- |
-| **HTTPS & CDN** | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a> |
+| Component          | AWS Service                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| **HTTPS & CDN**    | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>                   |
 | **Load balancing** | <a href="https://aws.amazon.com/elasticloadbalancing/" target="_blank" rel="noopener">Application Load Balancer</a> |
-| **Compute** | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> (3 containers) |
-| **Database** | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Aurora PostgreSQL</a> with PostGIS |
-| **File storage** | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a> |
+| **Compute**        | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> (3 containers)             |
+| **Database**       | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Aurora PostgreSQL</a> with PostGIS      |
+| **File storage**   | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a>                                 |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Demo data
 
-| Data | Volume |
-| --- | --- |
-| **Reports** | 260 across 5 categories |
-| **Updates** | 150 citizen and council comments |
-| **Users** | 15 citizen reporters |
+| Data           | Volume                                                          |
+| -------------- | --------------------------------------------------------------- |
+| **Reports**    | 260 across 5 categories                                         |
+| **Updates**    | 150 citizen and council comments                                |
+| **Users**      | 15 citizen reporters                                            |
 | **Categories** | Potholes, Street Lighting, Graffiti, Fly-tipping, Broken Paving |
-| **Location** | Camden, London |
+| **Location**   | Camden, London                                                  |
 
 </div>
 </div>

@@ -33,13 +33,7 @@ github_source: "https://github.com/aws-samples/document-translation"
 {% from "govuk/components/warning-text/macro.njk" import govukWarningText %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 
-![](https://img.shields.io/badge/provider-aws-green)
-![](https://img.shields.io/badge/owner-public_sector-blue)
-![](https://img.shields.io/badge/access-NDX:Try-purple)
-![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
-![](https://img.shields.io/badge/category-AI-orange)
-![](https://img.shields.io/badge/category-Accessibility-blue)
-[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/aws-samples/document-translation)
+![](https://img.shields.io/badge/provider-aws-green) ![](https://img.shields.io/badge/owner-public_sector-blue) ![](https://img.shields.io/badge/access-NDX:Try-purple) ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen) ![](https://img.shields.io/badge/category-AI-orange) ![](https://img.shields.io/badge/category-Accessibility-blue) [![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/aws-samples/document-translation)
 
 ## Overview
 

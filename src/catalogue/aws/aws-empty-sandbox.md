@@ -17,10 +17,7 @@ try: true
 try_id: "9813d13d-af90-433d-888f-ec17ad17d714"
 ---
 
-![](https://img.shields.io/badge/provider-aws-green)
-![](https://img.shields.io/badge/owner-public_sector-blue)
-![](https://img.shields.io/badge/access-NDX:Try-purple)
-![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
+![](https://img.shields.io/badge/provider-aws-green) ![](https://img.shields.io/badge/owner-public_sector-blue) ![](https://img.shields.io/badge/access-NDX:Try-purple) ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
 
 ## About NDX
 

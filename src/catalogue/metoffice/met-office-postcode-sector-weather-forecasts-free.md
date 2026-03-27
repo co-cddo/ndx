@@ -17,11 +17,7 @@ tags:
 
 > ==⚠️ Proof of concept only this will be dynamically pulled from Snowflake Marketplace==
 
-![](https://img.shields.io/badge/access-immediate-green)
-![](https://img.shields.io/badge/owner-public_sector-blue)
-![](https://img.shields.io/badge/data_last_updated-30/09/2024_18:30-blue)
-![](https://img.shields.io/badge/metadata_last_updated-30/09/2024_17:30-blue)
-![](https://img.shields.io/badge/access-NDX_OIDC-green)
+![](https://img.shields.io/badge/access-immediate-green) ![](https://img.shields.io/badge/owner-public_sector-blue) ![](https://img.shields.io/badge/data_last_updated-30/09/2024_18:30-blue) ![](https://img.shields.io/badge/metadata_last_updated-30/09/2024_17:30-blue) ![](https://img.shields.io/badge/access-NDX_OIDC-green)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

@@ -18,10 +18,7 @@ tags:
   - enterprise
 ---
 
-![](https://img.shields.io/badge/provider-linkedin-blue)
-![](https://img.shields.io/badge/owner-commercial-orange)
-![](https://img.shields.io/badge/access-direct_procurement-green)
-![](https://img.shields.io/badge/integration-microsoft_365-brightgreen)
+![](https://img.shields.io/badge/provider-linkedin-blue) ![](https://img.shields.io/badge/owner-commercial-orange) ![](https://img.shields.io/badge/access-direct_procurement-green) ![](https://img.shields.io/badge/integration-microsoft_365-brightgreen)
 
 {% from "govuk/components/button/macro.njk" import govukButton %}
 

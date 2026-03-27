@@ -26,12 +26,7 @@ github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloud
 <!-- External URL dependency: https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/foi-redaction/ -->
 <!-- Maintained by: NDX Team | Last verified: 2025-12-05 -->
 
-![](https://img.shields.io/badge/provider-aws-green)
-![](https://img.shields.io/badge/owner-public_sector-blue)
-![](https://img.shields.io/badge/access-NDX:Try-purple)
-![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen)
-![](https://img.shields.io/badge/category-AI-orange)
-[![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/foi-redaction)
+![](https://img.shields.io/badge/provider-aws-green) ![](https://img.shields.io/badge/owner-public_sector-blue) ![](https://img.shields.io/badge/access-NDX:Try-purple) ![](https://img.shields.io/badge/try_before_you_buy-available-brightgreen) ![](https://img.shields.io/badge/category-AI-orange) [![View source on GitHub](https://img.shields.io/badge/source-GitHub-black?logo=github)](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/foi-redaction)
 
 ## About NDX
 

@@ -22,8 +22,7 @@ tags:
 
 # GitLab Dedicated for Government
 
-![](https://img.shields.io/badge/provider-gitlab-green)
-![](https://img.shields.io/badge/owner-private_sector-orange)
+![](https://img.shields.io/badge/provider-gitlab-green) ![](https://img.shields.io/badge/owner-private_sector-orange)
 
 {{ govukButton({
   text: "Try GitLab",

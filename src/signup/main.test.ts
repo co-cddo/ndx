@@ -461,17 +461,17 @@ describe("signup/main", () => {
       expect(select.options).toHaveLength(3)
     })
 
-    it("should sort domains by organisation name", () => {
+    it("should sort domains by domain name", () => {
       const domains: DomainInfo[] = [
-        { domain: "zebra.gov.uk", orgName: "Zebra Council" },
-        { domain: "alpha.gov.uk", orgName: "Alpha Council" },
+        { domain: "rbwm.gov.uk", orgName: "Windsor and Maidenhead Council" },
+        { domain: "cne-siar.gov.uk", orgName: "Western Isles Council" },
       ]
 
       populateDomainDropdown(domains)
 
       const select = document.getElementById("email-domain") as HTMLSelectElement
-      expect(select.options[1].value).toBe("alpha.gov.uk")
-      expect(select.options[2].value).toBe("zebra.gov.uk")
+      expect(select.options[1].value).toBe("cne-siar.gov.uk")
+      expect(select.options[2].value).toBe("rbwm.gov.uk")
     })
 
     it("should format option text as domain - orgName", () => {

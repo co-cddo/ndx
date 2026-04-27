@@ -48,7 +48,7 @@ github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloud
 
 > **Learning Artifact**: This is a pre-deployed demonstration environment for learning and exploration, not a production-ready product.
 
-FixMyStreet is <a href="https://www.mysociety.org/" target="_blank" rel="noopener">mySociety's</a> open-source platform that lets citizens report local problems — potholes, broken streetlights, graffiti, fly-tipping — directly to the council responsible for fixing them. Used by **thousands of UK councils**, it's one of the most successful civic technology platforms in the world.
+FixMyStreet is [mySociety's](https://www.mysociety.org/) open-source platform that lets citizens report local problems — potholes, broken streetlights, graffiti, fly-tipping — directly to the council responsible for fixing them. Used by **thousands of UK councils**, it's one of the most successful civic technology platforms in the world.
 
 This NDX:Try scenario deploys a fully working FixMyStreet instance with **260 seeded demo reports**, **150 citizen updates**, and a **council admin dashboard** — all running on AWS managed infrastructure.
 
@@ -95,13 +95,13 @@ This NDX:Try scenario deploys a fully working FixMyStreet instance with **260 se
 
 ### Infrastructure
 
-| Component          | AWS Service                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| **HTTPS & CDN**    | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>                   |
-| **Load balancing** | <a href="https://aws.amazon.com/elasticloadbalancing/" target="_blank" rel="noopener">Application Load Balancer</a> |
-| **Compute**        | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a> (3 containers)             |
-| **Database**       | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Aurora PostgreSQL</a> with PostGIS      |
-| **File storage**   | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a>                                 |
+| Component          | AWS Service                                                               |
+| ------------------ | ------------------------------------------------------------------------- |
+| **HTTPS & CDN**    | [Amazon CloudFront](https://aws.amazon.com/cloudfront/)                   |
+| **Load balancing** | [Application Load Balancer](https://aws.amazon.com/elasticloadbalancing/) |
+| **Compute**        | [AWS Fargate](https://aws.amazon.com/fargate/) (3 containers)             |
+| **Database**       | [Aurora PostgreSQL](https://aws.amazon.com/rds/aurora/) with PostGIS      |
+| **File storage**   | [Amazon EFS](https://aws.amazon.com/efs/)                                 |
 
 </div>
 <div class="govuk-grid-column-one-half">
@@ -195,7 +195,7 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 ## About FixMyStreet
 
-FixMyStreet was created by <a href="https://www.mysociety.org/" target="_blank" rel="noopener">mySociety</a>, a UK charity that builds digital tools for democracy and civic participation. Launched in 2007, it has become the standard platform for citizen problem reporting across the UK.
+FixMyStreet was created by [mySociety](https://www.mysociety.org/), a UK charity that builds digital tools for democracy and civic participation. Launched in 2007, it has become the standard platform for citizen problem reporting across the UK.
 
 {{ govukInsetText({
   html: "<strong>1 million+ reports</strong> • <strong>Used across the UK</strong> • <strong>Open source since 2007</strong> • <strong>Built by mySociety</strong>"
@@ -244,7 +244,7 @@ FixMyStreet was created by <a href="https://www.mysociety.org/" target="_blank" 
 
 This scenario deploys FixMyStreet using AWS CDK with a custom Docker image extending the official `fixmystreet/fixmystreet:stable` image. The infrastructure includes Aurora PostgreSQL with PostGIS for geospatial data, an nginx sidecar for HTTP routing, and memcached for caching — all orchestrated by AWS Fargate.
 
-<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/fixmystreet" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
+[View the source code on GitHub](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/fixmystreet)
 
 ---
 
@@ -260,7 +260,7 @@ This scenario deploys FixMyStreet using AWS CDK with a custom Docker image exten
 
 ## Learn more
 
-- <a href="https://www.fixmystreet.com/" target="_blank" rel="noopener">FixMyStreet live site</a>
-- <a href="https://fixmystreet.org/" target="_blank" rel="noopener">FixMyStreet Platform documentation</a>
-- <a href="https://github.com/mysociety/fixmystreet" target="_blank" rel="noopener">FixMyStreet source code on GitHub</a>
-- <a href="https://www.mysociety.org/" target="_blank" rel="noopener">mySociety — the charity behind FixMyStreet</a>
+- [FixMyStreet live site](https://www.fixmystreet.com/)
+- [FixMyStreet Platform documentation](https://fixmystreet.org/)
+- [FixMyStreet source code on GitHub](https://github.com/mysociety/fixmystreet)
+- [mySociety — the charity behind FixMyStreet](https://www.mysociety.org/)

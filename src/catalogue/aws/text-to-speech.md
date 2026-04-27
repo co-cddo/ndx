@@ -52,7 +52,7 @@ This sandbox includes a working implementation using:
 
 Before requesting your sandbox, explore the scenario documentation to understand what's deployed and how to interact with it:
 
-<a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/" target="_blank" rel="noopener">View Text to Speech scenario details</a>
+[View Text to Speech scenario details](https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/text-to-speech/)
 
 ## Getting started
 
@@ -95,7 +95,7 @@ This scenario lets you evaluate whether automated audio generation could improve
 
 This scenario is built with open source infrastructure as code. You can view the CloudFormation template, understand how it works, and adapt it for your own needs.
 
-<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/text-to-speech" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
+[View the source code on GitHub](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/text-to-speech)
 
 ### Build your own
 

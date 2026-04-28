@@ -59,25 +59,25 @@ Simply Readable brings together **document translation** and **Easy Read convers
 
 ### Core Features
 
-| Feature                                                                                                                                                      | AWS Service                                                                                     |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-2/" target="_blank" rel="noopener">**Document translation**</a> | <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-3/" target="_blank" rel="noopener">**Easy Read conversion**</a> | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>     |
-| **User authentication**                                                                                                                                      | <a href="https://aws.amazon.com/cognito/" target="_blank" rel="noopener">Amazon Cognito</a>     |
-| **Real-time updates**                                                                                                                                        | <a href="https://aws.amazon.com/appsync/" target="_blank" rel="noopener">AWS AppSync</a>        |
+| Feature                                                                                                            | AWS Service                                           |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| [**Document translation**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-2/) | [Amazon Translate](https://aws.amazon.com/translate/) |
+| [**Easy Read conversion**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/simply-readable/step-3/) | [Amazon Bedrock](https://aws.amazon.com/bedrock/)     |
+| **User authentication**                                                                                            | [Amazon Cognito](https://aws.amazon.com/cognito/)     |
+| **Real-time updates**                                                                                              | [AWS AppSync](https://aws.amazon.com/appsync/)        |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component         | AWS Service                                                                                            |
-| ----------------- | ------------------------------------------------------------------------------------------------------ |
-| **Orchestration** | <a href="https://aws.amazon.com/step-functions/" target="_blank" rel="noopener">AWS Step Functions</a> |
-| **Compute**       | <a href="https://aws.amazon.com/lambda/" target="_blank" rel="noopener">AWS Lambda</a>                 |
-| **Storage**       | <a href="https://aws.amazon.com/s3/" target="_blank" rel="noopener">Amazon S3</a>                      |
-| **CDN**           | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>      |
-| **Database**      | <a href="https://aws.amazon.com/dynamodb/" target="_blank" rel="noopener">Amazon DynamoDB</a>          |
+| Component         | AWS Service                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| **Orchestration** | [AWS Step Functions](https://aws.amazon.com/step-functions/) |
+| **Compute**       | [AWS Lambda](https://aws.amazon.com/lambda/)                 |
+| **Storage**       | [Amazon S3](https://aws.amazon.com/s3/)                      |
+| **CDN**           | [Amazon CloudFront](https://aws.amazon.com/cloudfront/)      |
+| **Database**      | [Amazon DynamoDB](https://aws.amazon.com/dynamodb/)          |
 
 </div>
 </div>
@@ -205,7 +205,7 @@ Simply Readable was created by **Swindon Borough Council** to solve a genuine op
 
 ## Governance
 
-Simply Readable is published as an **<a href="https://github.com/aws-samples/document-translation" target="_blank" rel="noopener">AWS Sample</a>** under the MIT-0 licence, making it free for any organisation to use, modify, and deploy. The original innovation came from Swindon Borough Council, demonstrating what's possible when local government leads on digital transformation.
+Simply Readable is published as an **[AWS Sample](https://github.com/aws-samples/document-translation)** under the MIT-0 licence, making it free for any organisation to use, modify, and deploy. The original innovation came from Swindon Borough Council, demonstrating what's possible when local government leads on digital transformation.
 
 The growing adoption by councils across the UK — from Edinburgh to Southampton — shows the power of councils sharing solutions with each other. When one council solves a problem, every council can benefit.
 
@@ -213,9 +213,9 @@ The growing adoption by councils across the UK — from Edinburgh to Southampton
 
 ### How this was built
 
-This scenario is built on the open source <a href="https://github.com/aws-samples/document-translation" target="_blank" rel="noopener">Document Translation</a> project, originally created by Swindon Borough Council and published as an AWS Sample. The NDX:Try deployment adapts it for the Innovation Sandbox environment using AWS CDK.
+This scenario is built on the open source [Document Translation](https://github.com/aws-samples/document-translation) project, originally created by Swindon Borough Council and published as an AWS Sample. The NDX:Try deployment adapts it for the Innovation Sandbox environment using AWS CDK.
 
-<a href="https://github.com/aws-samples/document-translation" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
+[View the source code on GitHub](https://github.com/aws-samples/document-translation)
 
 ---
 
@@ -231,8 +231,8 @@ This scenario is built on the open source <a href="https://github.com/aws-sample
 
 ## Learn More
 
-- <a href="https://github.com/aws-samples/document-translation" target="_blank" rel="noopener">Document Translation on GitHub (AWS Samples)</a>
-- <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/simply-readable/" target="_blank" rel="noopener">Simply Readable scenario details</a>
+- [Document Translation on GitHub (AWS Samples)](https://github.com/aws-samples/document-translation)
+- [Simply Readable scenario details](https://aws.try.ndx.digital.cabinet-office.gov.uk/scenarios/simply-readable/)
 
 ## Troubleshooting
 

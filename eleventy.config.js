@@ -152,6 +152,50 @@ export default function (eleventyConfig) {
       },
     },
   })
+  // Open external links in a new tab with a visually hidden "(opens in new tab)" suffix.
+  // Why: GOV.UK pattern requires target="_blank" plus accessible warning text on links that escape the site.
+  eleventyConfig.amendLibrary("md", (mdLib) => {
+    const isExternal = (href) => /^(https?:)?\/\//i.test(href)
+
+    const renderToken = (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options)
+    const defaultLinkOpen = mdLib.renderer.rules.link_open || renderToken
+    const defaultLinkClose = mdLib.renderer.rules.link_close || renderToken
+
+    mdLib.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+      const token = tokens[idx]
+      const hrefIndex = token.attrIndex("href")
+      if (hrefIndex >= 0 && isExternal(token.attrs[hrefIndex][1])) {
+        if (token.attrIndex("target") < 0) token.attrPush(["target", "_blank"])
+        if (token.attrIndex("rel") < 0) token.attrPush(["rel", "noopener noreferrer"])
+        token.meta = { ...(token.meta || {}), external: true }
+      }
+      return defaultLinkOpen(tokens, idx, options, env, self)
+    }
+
+    mdLib.renderer.rules.link_close = function (tokens, idx, options, env, self) {
+      let openIdx = idx - 1
+      let depth = 1
+      while (openIdx >= 0 && depth > 0) {
+        if (tokens[openIdx].type === "link_close") depth++
+        else if (tokens[openIdx].type === "link_open") depth--
+        if (depth === 0) break
+        openIdx--
+      }
+      const openToken = openIdx >= 0 ? tokens[openIdx] : null
+      let prefix = ""
+      if (openToken && openToken.meta && openToken.meta.external) {
+        let inner = ""
+        for (let i = openIdx + 1; i < idx; i++) {
+          if (tokens[i].content) inner += tokens[i].content
+        }
+        if (!/opens in (a |a new |new )?(tab|window)/i.test(inner)) {
+          prefix = ' <span class="govuk-visually-hidden">(opens in new tab)</span>'
+        }
+      }
+      return prefix + defaultLinkClose(tokens, idx, options, env, self)
+    }
+  })
+
   eleventyConfig.addPlugin(mermaidTransformPlugin, {
     theme: "default",
   })

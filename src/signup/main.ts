@@ -85,8 +85,8 @@ function populateDomainDropdown(domains: DomainInfo[]): void {
     return
   }
 
-  // Sort by organisation name for easier finding
-  const sortedDomains = [...domains].sort((a, b) => a.orgName.localeCompare(b.orgName))
+  // Sort by domain name for easier finding
+  const sortedDomains = [...domains].sort((a, b) => a.domain.localeCompare(b.domain))
 
   // Add options - format: "domain.gov.uk - Organisation Name"
   for (const domain of sortedDomains) {

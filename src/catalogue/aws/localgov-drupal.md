@@ -59,27 +59,27 @@ LocalGov Drupal with AI showcases how UK councils can transform their content ma
 
 ### AI Content Features
 
-| Feature                                                                                                                                                             | AWS Service                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-4/" target="_blank" rel="noopener">**Content editing**</a>             | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>         |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-5/" target="_blank" rel="noopener">**Plain English conversion**</a>    | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>         |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-6/" target="_blank" rel="noopener">**Alt-text generation**</a>         | <a href="https://aws.amazon.com/rekognition/" target="_blank" rel="noopener">Amazon Rekognition</a> |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-8/" target="_blank" rel="noopener">**Text-to-speech**</a>              | <a href="https://aws.amazon.com/polly/" target="_blank" rel="noopener">Amazon Polly</a>             |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-9/" target="_blank" rel="noopener">**Translation (75+ languages)**</a> | <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a>     |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-7/" target="_blank" rel="noopener">**PDF-to-web conversion**</a>       | <a href="https://aws.amazon.com/textract/" target="_blank" rel="noopener">Amazon Textract</a>       |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-3/" target="_blank" rel="noopener">**Council branding**</a>            | <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>         |
+| Feature                                                                                                                   | AWS Service                                               |
+| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| [**Content editing**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-4/)             | [Amazon Bedrock](https://aws.amazon.com/bedrock/)         |
+| [**Plain English conversion**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-5/)    | [Amazon Bedrock](https://aws.amazon.com/bedrock/)         |
+| [**Alt-text generation**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-6/)         | [Amazon Rekognition](https://aws.amazon.com/rekognition/) |
+| [**Text-to-speech**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-8/)              | [Amazon Polly](https://aws.amazon.com/polly/)             |
+| [**Translation (75+ languages)**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-9/) | [Amazon Translate](https://aws.amazon.com/translate/)     |
+| [**PDF-to-web conversion**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-7/)       | [Amazon Textract](https://aws.amazon.com/textract/)       |
+| [**Council branding**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/localgov-drupal/step-3/)            | [Amazon Bedrock](https://aws.amazon.com/bedrock/)         |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component    | AWS Service                                                                                   |
-| ------------ | --------------------------------------------------------------------------------------------- |
-| **Compute**  | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate</a>      |
-| **Database** | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Amazon Aurora</a> |
-| **Storage**  | <a href="https://aws.amazon.com/efs/" target="_blank" rel="noopener">Amazon EFS</a>           |
-| **CMS**      | <a href="https://www.drupal.org/" target="_blank" rel="noopener">Drupal 10</a>                |
+| Component    | AWS Service                                         |
+| ------------ | --------------------------------------------------- |
+| **Compute**  | [AWS Fargate](https://aws.amazon.com/fargate/)      |
+| **Database** | [Amazon Aurora](https://aws.amazon.com/rds/aurora/) |
+| **Storage**  | [Amazon EFS](https://aws.amazon.com/efs/)           |
+| **CMS**      | [Drupal 10](https://www.drupal.org/)                |
 
 </div>
 </div>
@@ -115,9 +115,9 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 ### Accessibility at Scale
 
-- **Auto alt-text** for images using <a href="https://aws.amazon.com/rekognition/" target="_blank" rel="noopener">Amazon Rekognition</a>
-- **Text-to-speech** via <a href="https://aws.amazon.com/polly/" target="_blank" rel="noopener">Amazon Polly</a> for audio access
-- **PDF conversion** with <a href="https://aws.amazon.com/textract/" target="_blank" rel="noopener">Amazon Textract</a>
+- **Auto alt-text** for images using [Amazon Rekognition](https://aws.amazon.com/rekognition/)
+- **Text-to-speech** via [Amazon Polly](https://aws.amazon.com/polly/) for audio access
+- **PDF conversion** with [Amazon Textract](https://aws.amazon.com/textract/)
 - Helps meet WCAG 2.1 Level AA requirements
 
 </div>
@@ -125,7 +125,7 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 ### Multilingual communities
 
-- **75+ languages** via <a href="https://aws.amazon.com/translate/" target="_blank" rel="noopener">Amazon Translate</a>
+- **75+ languages** via [Amazon Translate](https://aws.amazon.com/translate/)
 - Instant translation without manual costs
 - Consistent service delivery regardless of language
 
@@ -137,7 +137,7 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 ### Content efficiency
 
-- **AI drafting** powered by <a href="https://aws.amazon.com/bedrock/" target="_blank" rel="noopener">Amazon Bedrock</a>
+- **AI drafting** powered by [Amazon Bedrock](https://aws.amazon.com/bedrock/)
 - **Plain English conversion** for accessible communications
 - Reduced time on content creation and review
 
@@ -237,7 +237,7 @@ Rapid improvements with limited budget:
 
 ## Governance
 
-Since January 2023, LocalGov Drupal has been governed by the **<a href="https://opendigital.coop/" target="_blank" rel="noopener">Open Digital Cooperative</a>** - a not-for-profit multistakeholder cooperative ensuring long-term sustainability and democratic governance by member councils and suppliers.
+Since January 2023, LocalGov Drupal has been governed by the **[Open Digital Cooperative](https://opendigital.coop/)** - a not-for-profit multistakeholder cooperative ensuring long-term sustainability and democratic governance by member councils and suppliers.
 
 The platform represents true collaboration: councils share development costs and benefit from each other's investments. When one council builds a feature, all 56+ councils benefit.
 
@@ -247,7 +247,7 @@ The platform represents true collaboration: councils share development costs and
 
 This scenario is built with open source infrastructure as code using AWS CDK (Cloud Development Kit) with Docker. You can view the CDK project, Drupal configuration, and Docker setup, and adapt them for your own needs.
 
-<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/localgov-drupal" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
+[View the source code on GitHub](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/localgov-drupal)
 
 ---
 
@@ -263,6 +263,6 @@ This scenario is built with open source infrastructure as code using AWS CDK (Cl
 
 ## Learn More About LocalGov Drupal
 
-- <a href="https://localgovdrupal.org/" target="_blank" rel="noopener">LocalGov Drupal official website</a>
-- <a href="https://docs.localgovdrupal.org/" target="_blank" rel="noopener">LocalGov Drupal documentation</a>
-- <a href="https://localgovdrupal.org/community/our-councils" target="_blank" rel="noopener">Councils using LocalGov Drupal</a>
+- [LocalGov Drupal official website](https://localgovdrupal.org/)
+- [LocalGov Drupal documentation](https://docs.localgovdrupal.org/)
+- [Councils using LocalGov Drupal](https://localgovdrupal.org/community/our-councils)

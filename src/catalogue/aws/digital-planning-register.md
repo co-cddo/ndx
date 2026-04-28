@@ -42,7 +42,7 @@ github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloud
 
 > **Learning Artifact**: This is a pre-deployed demonstration environment for learning and exploration, not a production-ready product.
 
-The <a href="https://github.com/tpximpact/digital-planning-register" target="_blank" rel="noopener">Digital Planning Register</a> is the open-source public-facing application built by <a href="https://www.tpximpact.com/" target="_blank" rel="noopener">TPXimpact</a> as part of the <a href="https://opendigitalplanning.org/" target="_blank" rel="noopener">Open Digital Planning</a> ecosystem. It gives residents a unified, accessible way to search and view planning applications across councils — connecting to <a href="https://opendigitalplanning.org/back-office-planning-system-bops" target="_blank" rel="noopener">BOPS</a> back-office systems via API.
+The [Digital Planning Register](https://github.com/tpximpact/digital-planning-register) is the open-source public-facing application built by [TPXimpact](https://www.tpximpact.com/) as part of the [Open Digital Planning](https://opendigitalplanning.org/) ecosystem. It gives residents a unified, accessible way to search and view planning applications across councils — connecting to [BOPS](https://opendigitalplanning.org/back-office-planning-system-bops) back-office systems via API.
 
 Currently used by 9 UK councils including Camden, Lambeth, and Southwark.
 
@@ -60,24 +60,24 @@ Currently used by 9 UK councils including Camden, Lambeth, and Southwark.
 
 ### Register Features
 
-| Feature                                                                                                                                                               | What it does                                                |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-2/" target="_blank" rel="noopener">**Council selection**</a>   | Browse and select from configured councils                  |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-3/" target="_blank" rel="noopener">**Application search**</a>  | Search by reference, address, or description with filters   |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-3/" target="_blank" rel="noopener">**Application details**</a> | Maps, progress timeline, documents, comments, and decisions |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-4/" target="_blank" rel="noopener">**AWS architecture**</a>    | Stateless ECS Fargate deployment with CloudFront HTTPS      |
+| Feature                                                                                                                     | What it does                                                |
+| --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [**Council selection**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-2/)   | Browse and select from configured councils                  |
+| [**Application search**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-3/)  | Search by reference, address, or description with filters   |
+| [**Application details**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-3/) | Maps, progress timeline, documents, comments, and decisions |
+| [**AWS architecture**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/digital-planning-register/step-4/)    | Stateless ECS Fargate deployment with CloudFront HTTPS      |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component         | AWS Service                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Compute**       | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate (ECS)</a>                      |
-| **Load Balancer** | <a href="https://aws.amazon.com/elasticloadbalancing/" target="_blank" rel="noopener">Application Load Balancer</a> |
-| **HTTPS**         | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>                   |
-| **Logging**       | <a href="https://aws.amazon.com/cloudwatch/" target="_blank" rel="noopener">Amazon CloudWatch</a>                   |
+| Component         | AWS Service                                                               |
+| ----------------- | ------------------------------------------------------------------------- |
+| **Compute**       | [AWS Fargate (ECS)](https://aws.amazon.com/fargate/)                      |
+| **Load Balancer** | [Application Load Balancer](https://aws.amazon.com/elasticloadbalancing/) |
+| **HTTPS**         | [Amazon CloudFront](https://aws.amazon.com/cloudfront/)                   |
+| **Logging**       | [Amazon CloudWatch](https://aws.amazon.com/cloudwatch/)                   |
 
 </div>
 </div>
@@ -158,10 +158,10 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 ## About the Digital Planning Register
 
-The <a href="https://github.com/tpximpact/digital-planning-register" target="_blank" rel="noopener">Digital Planning Register</a> is built by **<a href="https://www.tpximpact.com/" target="_blank" rel="noopener">TPXimpact</a>** as part of the **<a href="https://opendigitalplanning.org/" target="_blank" rel="noopener">Open Digital Planning (ODP)</a>** ecosystem. It's the public-facing counterpart to <a href="https://opendigitalplanning.org/back-office-planning-system-bops" target="_blank" rel="noopener">BOPS</a>.
+The [Digital Planning Register](https://github.com/tpximpact/digital-planning-register) is built by **[TPXimpact](https://www.tpximpact.com/)** as part of the **[Open Digital Planning (ODP)](https://opendigitalplanning.org/)** ecosystem. It's the public-facing counterpart to [BOPS](https://opendigitalplanning.org/back-office-planning-system-bops).
 
 {{ govukInsetText({
-  html: "<strong>Part of the ODP ecosystem</strong> &bull; <a href='https://opendigitalplanning.org/back-office-planning-system-bops' target='_blank' rel='noopener'>BOPS</a> (back office) &bull; <a href='https://github.com/tpximpact/digital-planning-register' target='_blank' rel='noopener'>Digital Planning Register</a> (public) &bull; <a href='https://opendigitalplanning.org/plan-x' target='_blank' rel='noopener'>PlanX</a> (submissions)"
+  html: "<strong>Part of the ODP ecosystem</strong> &bull; [BOPS](https://opendigitalplanning.org/back-office-planning-system-bops) (back office) &bull; [Digital Planning Register](https://github.com/tpximpact/digital-planning-register) (public) &bull; [PlanX](https://opendigitalplanning.org/plan-x) (submissions)"
 }) }}
 
 <div class="govuk-grid-row">
@@ -218,7 +218,7 @@ The <a href="https://github.com/tpximpact/digital-planning-register" target="_bl
 
 This scenario is built with open source infrastructure as code using AWS CDK (Cloud Development Kit). The Digital Planning Register application is the same Next.js codebase used in production by UK councils.
 
-<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/digital-planning-register" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
+[View the source code on GitHub](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/digital-planning-register)
 
 ---
 
@@ -234,10 +234,10 @@ This scenario is built with open source infrastructure as code using AWS CDK (Cl
 
 ## Learn more
 
-- <a href="https://github.com/tpximpact/digital-planning-register" target="_blank" rel="noopener">Digital Planning Register on GitHub</a>
-- <a href="https://opendigitalplanning.org/" target="_blank" rel="noopener">Open Digital Planning programme</a>
-- <a href="https://opendigitalplanning.org/back-office-planning-system-bops" target="_blank" rel="noopener">BOPS - Back Office Planning System</a>
-- <a href="https://www.tpximpact.com/" target="_blank" rel="noopener">TPXimpact</a>
+- [Digital Planning Register on GitHub](https://github.com/tpximpact/digital-planning-register)
+- [Open Digital Planning programme](https://opendigitalplanning.org/)
+- [BOPS - Back Office Planning System](https://opendigitalplanning.org/back-office-planning-system-bops)
+- [TPXimpact](https://www.tpximpact.com/)
 
 ---
 

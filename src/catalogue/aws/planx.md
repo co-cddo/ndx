@@ -42,7 +42,7 @@ github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloud
 
 > **Learning Artifact**: This is a pre-deployed demonstration environment for learning and exploration, not a production-ready product.
 
-<a href="https://opendigitalplanning.org/plan-x" target="_blank" rel="noopener">PlanX</a> is the open-source digital planning platform developed by <a href="https://www.opensystemslab.io/" target="_blank" rel="noopener">Open Systems Lab</a> as part of the <a href="https://opendigitalplanning.org/" target="_blank" rel="noopener">Open Digital Planning</a> programme. It's used by 18+ UK councils — including Lambeth, Southwark, Camden, and Buckinghamshire — to create citizen-facing digital planning application services.
+[PlanX](https://opendigitalplanning.org/plan-x) is the open-source digital planning platform developed by [Open Systems Lab](https://www.opensystemslab.io/) as part of the [Open Digital Planning](https://opendigitalplanning.org/) programme. It's used by 18+ UK councils — including Lambeth, Southwark, Camden, and Buckinghamshire — to create citizen-facing digital planning application services.
 
 Service designers build planning application flows in a visual drag-and-drop editor. Citizens then use these flows to submit structured, machine-readable planning applications.
 
@@ -60,25 +60,25 @@ Service designers build planning application flows in a visual drag-and-drop edi
 
 ### Planning Features
 
-| Feature                                                                                                                                          | What it does                                                        |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-2/" target="_blank" rel="noopener">**Visual flow editor**</a> | Drag-and-drop nodes to build planning application forms             |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-3/" target="_blank" rel="noopener">**Node types**</a>         | Questions, checklists, text inputs, file uploads, notices, and more |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-4/" target="_blank" rel="noopener">**Live preview**</a>       | See exactly what citizens see as you build                          |
-| <a href="https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-5/" target="_blank" rel="noopener">**GraphQL API**</a>        | Explore planning data through the Hasura console                    |
+| Feature                                                                                                | What it does                                                        |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| [**Visual flow editor**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-2/) | Drag-and-drop nodes to build planning application forms             |
+| [**Node types**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-3/)         | Questions, checklists, text inputs, file uploads, notices, and more |
+| [**Live preview**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-4/)       | See exactly what citizens see as you build                          |
+| [**GraphQL API**](https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/step-5/)        | Explore planning data through the Hasura console                    |
 
 </div>
 <div class="govuk-grid-column-one-half">
 
 ### Infrastructure
 
-| Component         | AWS Service                                                                                                            |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Compute**       | <a href="https://aws.amazon.com/fargate/" target="_blank" rel="noopener">AWS Fargate (ECS)</a> — 4 services            |
-| **Database**      | <a href="https://aws.amazon.com/rds/aurora/" target="_blank" rel="noopener">Amazon Aurora PostgreSQL</a> Serverless v2 |
-| **GraphQL**       | <a href="https://hasura.io/" target="_blank" rel="noopener">Hasura GraphQL Engine</a> with 374 migrations              |
-| **HTTPS**         | <a href="https://aws.amazon.com/cloudfront/" target="_blank" rel="noopener">Amazon CloudFront</a>                      |
-| **Collaboration** | <a href="https://share.github.io/sharedb/" target="_blank" rel="noopener">ShareDB</a> for real-time editing            |
+| Component         | AWS Service                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| **Compute**       | [AWS Fargate (ECS)](https://aws.amazon.com/fargate/) — 4 services            |
+| **Database**      | [Amazon Aurora PostgreSQL](https://aws.amazon.com/rds/aurora/) Serverless v2 |
+| **GraphQL**       | [Hasura GraphQL Engine](https://hasura.io/) with 374 migrations              |
+| **HTTPS**         | [Amazon CloudFront](https://aws.amazon.com/cloudfront/)                      |
+| **Collaboration** | [ShareDB](https://share.github.io/sharedb/) for real-time editing            |
 
 </div>
 </div>
@@ -159,10 +159,10 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 ## About PlanX
 
-<a href="https://opendigitalplanning.org/plan-x" target="_blank" rel="noopener">PlanX</a> is developed by **<a href="https://www.opensystemslab.io/" target="_blank" rel="noopener">Open Systems Lab (OSL)</a>** as part of the **<a href="https://opendigitalplanning.org/" target="_blank" rel="noopener">Open Digital Planning (ODP)</a>** programme.
+[PlanX](https://opendigitalplanning.org/plan-x) is developed by **[Open Systems Lab (OSL)](https://www.opensystemslab.io/)** as part of the **[Open Digital Planning (ODP)](https://opendigitalplanning.org/)** programme.
 
 {{ govukInsetText({
-  html: "<strong>Part of the ODP ecosystem</strong> &bull; <a href='https://opendigitalplanning.org/plan-x' target='_blank' rel='noopener'>PlanX</a> (submissions) &bull; <a href='https://opendigitalplanning.org/back-office-planning-system-bops' target='_blank' rel='noopener'>BOPS</a> (back office) &bull; <a href='https://opendigitalplanning.org/digital-planning-data-and-api' target='_blank' rel='noopener'>Data & API standards</a>"
+  html: "<strong>Part of the ODP ecosystem</strong> &bull; [PlanX](https://opendigitalplanning.org/plan-x) (submissions) &bull; [BOPS](https://opendigitalplanning.org/back-office-planning-system-bops) (back office) &bull; [Data & API standards](https://opendigitalplanning.org/digital-planning-data-and-api)"
 }) }}
 
 <div class="govuk-grid-row">
@@ -219,7 +219,7 @@ Once you select **"Try this now"** above, your session environment will begin de
 
 This scenario is built with open source infrastructure as code using AWS CDK (Cloud Development Kit) with Docker. The PlanX application is the same codebase used in production by UK councils, deployed on ECS Fargate with Aurora PostgreSQL and Hasura GraphQL.
 
-<a href="https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/planx" target="_blank" rel="noopener">View the source code on GitHub <span class="govuk-visually-hidden">(opens in new tab)</span></a>
+[View the source code on GitHub](https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/planx)
 
 ---
 
@@ -234,10 +234,10 @@ This scenario is built with open source infrastructure as code using AWS CDK (Cl
 
 ## Learn more about PlanX
 
-- <a href="https://opendigitalplanning.org/plan-x" target="_blank" rel="noopener">PlanX on Open Digital Planning</a>
-- <a href="https://www.opensystemslab.io/" target="_blank" rel="noopener">Open Systems Lab</a>
-- <a href="https://opendigitalplanning.org/" target="_blank" rel="noopener">Open Digital Planning programme</a>
-- <a href="https://github.com/theopensystemslab/planx-new" target="_blank" rel="noopener">PlanX source code on GitHub</a>
+- [PlanX on Open Digital Planning](https://opendigitalplanning.org/plan-x)
+- [Open Systems Lab](https://www.opensystemslab.io/)
+- [Open Digital Planning programme](https://opendigitalplanning.org/)
+- [PlanX source code on GitHub](https://github.com/theopensystemslab/planx-new)
 
 ---
 

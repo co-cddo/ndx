@@ -18,7 +18,7 @@ tags:
   - Evaluation
   - try-before-you-buy
 try: true
-try_id: "7b1ab260-3bc8-4fa2-98f9-21cb5b86ac77"
+try_id: "566d3448-bdef-4f26-af59-4770aa980e19"
 walkthrough_url: "https://aws.try.ndx.digital.cabinet-office.gov.uk/walkthroughs/planx/"
 github_source: "https://github.com/co-cddo/ndx_try_aws_scenarios/tree/main/cloudformation/scenarios/planx"
 ---

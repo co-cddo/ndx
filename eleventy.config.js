@@ -104,12 +104,12 @@ export default function (eleventyConfig) {
   eleventyConfig.addPlugin(EleventyRenderPlugin)
 
   eleventyConfig.addPlugin(govukEleventyPlugin, {
-    titleSuffix: "ALPHA",
+    titleSuffix: "BETA",
     header: {
       productName: "National Digital Exchange",
       phaseBanner: {
         tag: {
-          text: "Alpha",
+          text: "Beta",
         },
         html: 'This is a new service. <a class="govuk-link" href="https://portal.consentkit.com/e1654b62-fff1-4fce-b65c-075ee9db9f00">Take part in user research</a> to help us improve it.',
       },

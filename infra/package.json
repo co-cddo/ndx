@@ -35,7 +35,7 @@
     "@aws-lambda-powertools/metrics": "2.32.0",
     "@aws-sdk/client-dynamodb": "3.1013.0",
     "@aws-sdk/client-secrets-manager": "3.1013.0",
-    "@aws-sdk/client-sns": "^3.1009.0",
+    "@aws-sdk/client-sns": "3.1013.0",
     "@aws-sdk/client-sqs": "3.1013.0",
     "@aws-sdk/util-dynamodb": "3.996.2",
     "@co-cddo/isb-client": "https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz",
@@ -44,5 +44,9 @@
     "isomorphic-dompurify": "3.13.0",
     "notifications-node-client": "8.4.0",
     "zod": "4.4.3"
+  },
+  "resolutions": {
+    "@aws-sdk/types": "3.973.6",
+    "@smithy/types": "4.13.1"
   }
 }

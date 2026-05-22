@@ -93,9 +93,9 @@ export async function publishSlackNotification(
       enrichedData.templateName ||
       enrichedData.leaseTemplateName ||
       enrichedData.originalLeaseTemplateName ||
-      (detail.templateName as string) ||
-      (detail.leaseTemplateName as string) ||
-      (detail.originalLeaseTemplateName as string) ||
+      (detail.templateName) ||
+      (detail.leaseTemplateName) ||
+      (detail.originalLeaseTemplateName) ||
       "",
     enrichedKeys: Object.keys(enrichedData).filter((k) => k.toLowerCase().includes("template")),
   })

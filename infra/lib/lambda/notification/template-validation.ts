@@ -195,7 +195,7 @@ export async function validateTemplate(
   config: TemplateConfig,
 ): Promise<TemplateValidationResult> {
   // AC-9.1: Fetch template from GOV.UK Notify API
-  const response = (await client.getTemplateById(templateId))
+  const response = await client.getTemplateById(templateId)
   const template = response.data
 
   // AC-9.2: Extract personalisation fields from template body

@@ -18,7 +18,8 @@
     "paths": {
       "@try/*": ["try/*"],
       "@signup/*": ["signup/*"]
-    }
+    },
+    "types": ["jest"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "_site", "**/*.test.ts"]

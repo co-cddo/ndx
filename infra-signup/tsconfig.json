@@ -28,7 +28,8 @@
       "@ndx/signup-types": ["../src/signup/types.ts"]
     },
     "baseUrl": ".",
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["jest", "node", "aws-lambda"]
   },
   "include": ["bin/**/*.ts", "lib/**/*.ts", "../src/signup/types.ts"],
   "exclude": ["node_modules", "dist", "cdk.out", "**/*.d.ts"]

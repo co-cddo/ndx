@@ -59,25 +59,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-cdk/cloud-assembly-api@npm:^2.2.3":
-  version: 2.2.4
-  resolution: "@aws-cdk/cloud-assembly-api@npm:2.2.4"
+"@aws-cdk/cloud-assembly-api@npm:^2.2.4":
+  version: 2.2.5
+  resolution: "@aws-cdk/cloud-assembly-api@npm:2.2.5"
   dependencies:
     jsonschema: "npm:^1.5.0"
     semver: "npm:^7.8.0"
   peerDependencies:
-    "@aws-cdk/cloud-assembly-schema": ">=53.25.0"
-  checksum: 10c0/49ff690c827a1f4795267a9f449d10b2098522f9c55a09d5dc42db93faf9091e7ddef81c37763e2300e4c17d0c0564586fcfc3dad02232fdcdc912d050db7c67
+    "@aws-cdk/cloud-assembly-schema": ">=53.28.0"
+  checksum: 10c0/82b725a9bfbdfb0e6256047450d7df260f1b08b16db2a8759e373aa7bb33dd6f7f67e857804efbb577a619097b2b1b94f3f088506dae6de6fbdaad41043f24b6
   languageName: node
   linkType: hard
 
-"@aws-cdk/cloud-assembly-schema@npm:^53.21.0":
-  version: 53.27.0
-  resolution: "@aws-cdk/cloud-assembly-schema@npm:53.27.0"
+"@aws-cdk/cloud-assembly-schema@npm:^53.25.0":
+  version: 53.28.0
+  resolution: "@aws-cdk/cloud-assembly-schema@npm:53.28.0"
   dependencies:
     jsonschema: "npm:^1.5.0"
     semver: "npm:^7.8.0"
-  checksum: 10c0/862ac533f5a261e24386fd6eff9cd18dca2be8b2799f2b8d3c3d6df57b3eba01bf78bdb265166466d5fafc6cd2d7d065f1cb0fe175c5b84ef41064fd00ae304e
+  checksum: 10c0/9952eb6df8b9c509582976573b3051812fd180592c22bedd964ecca8d701a6f77683c15b5a4b582c69a101834732c4a830ed932c33048bda4f40f7ad5748d095
   languageName: node
   linkType: hard
 
@@ -180,9 +180,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-cloudfront@npm:3.1049.0":
-  version: 3.1049.0
-  resolution: "@aws-sdk/client-cloudfront@npm:3.1049.0"
+"@aws-sdk/client-cloudfront@npm:3.1051.0":
+  version: 3.1051.0
+  resolution: "@aws-sdk/client-cloudfront@npm:3.1051.0"
   dependencies:
     "@aws-crypto/sha256-browser": "npm:5.2.0"
     "@aws-crypto/sha256-js": "npm:5.2.0"
@@ -194,13 +194,13 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.7.2"
     "@smithy/types": "npm:^4.14.1"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/d2982bb0c9a0ec50efbdfed894e44f16523012d4197f031635373dd28b8d206880371c2235ee9b5623daa92e38182b4b616f82553bf54daaf734caefc1d880ce
+  checksum: 10c0/f37d5e961d7a878aa925603a85902bbba12a4d8ae4ee5f9d13474b6e7eb38a4ecfcc88046a768a3ffa97d3f02157f87ee6e5a339775f179fe6f78cd8e7ce99ca
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-dynamodb@npm:3.1049.0":
-  version: 3.1049.0
-  resolution: "@aws-sdk/client-dynamodb@npm:3.1049.0"
+"@aws-sdk/client-dynamodb@npm:3.1051.0":
+  version: 3.1051.0
+  resolution: "@aws-sdk/client-dynamodb@npm:3.1051.0"
   dependencies:
     "@aws-crypto/sha256-browser": "npm:5.2.0"
     "@aws-crypto/sha256-js": "npm:5.2.0"
@@ -214,13 +214,13 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.7.2"
     "@smithy/types": "npm:^4.14.1"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/e8cd3a78aa9441ad1243df3ad2e19c6cd06ed53c0046dd9b30f34643eac2e3e1ff9981c1178b55a34f88556d3f4c4400862361dd5b9454543f4c0ed6d4106adb
+  checksum: 10c0/6b2d0da2ec5fbe9471020936e4480938dbc537ac12cc1c902a28968a31e6c47d8a3681fa43ff9bc8d34808c8b5fc322aaf3337e4fd1a15fde484f879e56a2701
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-secrets-manager@npm:3.1049.0":
-  version: 3.1049.0
-  resolution: "@aws-sdk/client-secrets-manager@npm:3.1049.0"
+"@aws-sdk/client-secrets-manager@npm:3.1051.0":
+  version: 3.1051.0
+  resolution: "@aws-sdk/client-secrets-manager@npm:3.1051.0"
   dependencies:
     "@aws-crypto/sha256-browser": "npm:5.2.0"
     "@aws-crypto/sha256-js": "npm:5.2.0"
@@ -232,7 +232,7 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.7.2"
     "@smithy/types": "npm:^4.14.1"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/b197c8c5fd8f78eb78ab128ef9648065effabe1c47fe3c2075dba9e6d4dc0265590e5d707f76d221eb537506d9c363a160ea21ac807be1eb51125cd784c1492a
+  checksum: 10c0/2c2be605032a4f11ce0ebc529aad0ca9da41e0ccbca25227cdcbc45149643074feb625d81b637f453a598391abfe147e1a37b8d754de9e04d2ef7ddff256d66a
   languageName: node
   linkType: hard
 
@@ -283,9 +283,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-sns@npm:3.1049.0":
-  version: 3.1049.0
-  resolution: "@aws-sdk/client-sns@npm:3.1049.0"
+"@aws-sdk/client-sns@npm:3.1051.0":
+  version: 3.1051.0
+  resolution: "@aws-sdk/client-sns@npm:3.1051.0"
   dependencies:
     "@aws-crypto/sha256-browser": "npm:5.2.0"
     "@aws-crypto/sha256-js": "npm:5.2.0"
@@ -297,13 +297,13 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.7.2"
     "@smithy/types": "npm:^4.14.1"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/8e265302ac53278e6fd7cf8ec1d468fed874865472308168834944cbdb81b3da287e4faafc88f32b83b5415a0b9ce330c894b4efb9e0a3614c6182376b50c72b
+  checksum: 10c0/68ef2f77f1fb4d76b374f3697e22a8be8c04d9d511e0b5d0b001457bdbaed2e1434d56be0603a2f52d5a05d44e44d26d1859bda3a7457aa17b0bcb29b1b0816d
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-sqs@npm:3.1049.0":
-  version: 3.1049.0
-  resolution: "@aws-sdk/client-sqs@npm:3.1049.0"
+"@aws-sdk/client-sqs@npm:3.1051.0":
+  version: 3.1051.0
+  resolution: "@aws-sdk/client-sqs@npm:3.1051.0"
   dependencies:
     "@aws-crypto/sha256-browser": "npm:5.2.0"
     "@aws-crypto/sha256-js": "npm:5.2.0"
@@ -316,7 +316,7 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.7.2"
     "@smithy/types": "npm:^4.14.1"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/9736f68c69a76c064fd4d727f08a7d31a5c989e594846ef928e11c163a9c49a6c0d847e7a0dc2365d759ec7f2eb599d3cc0848c619896393731fb0ae17db75e5
+  checksum: 10c0/7ce2f995f25020560ec4fea4f806a9c0ab7c95838192098fe858683d9934693b0e6c2f224d7ece11cc8810ecb472896903785901cdd87eec7759e301aa61902f
   languageName: node
   linkType: hard
 
@@ -3044,12 +3044,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:25.9.0":
-  version: 25.9.0
-  resolution: "@types/node@npm:25.9.0"
+"@types/node@npm:25.9.1":
+  version: 25.9.1
+  resolution: "@types/node@npm:25.9.1"
   dependencies:
     undici-types: "npm:>=7.24.0 <7.24.7"
-  checksum: 10c0/1845f0ce5471213a4f0c887845c50993968ea863c03bb355282b59bdcc877d009a2785f0f506cfc40b8ce7548a21e33ac826e998be62d42b000bfd9ccdc6c910
+  checksum: 10c0/9a04682842bebbcf21a1779dfeab9aa733d7bd7bbc0a0edb641ab3a9a3d43eac543225acf669c334f458f1956443ebc072bc3c72840c543b8b356cab5c82d456
   languageName: node
   linkType: hard
 
@@ -3575,14 +3575,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-cdk-lib@npm:2.254.0":
-  version: 2.254.0
-  resolution: "aws-cdk-lib@npm:2.254.0"
+"aws-cdk-lib@npm:2.256.1":
+  version: 2.256.1
+  resolution: "aws-cdk-lib@npm:2.256.1"
   dependencies:
     "@aws-cdk/asset-awscli-v1": "npm:2.2.273"
     "@aws-cdk/asset-node-proxy-agent-v6": "npm:^2.1.1"
-    "@aws-cdk/cloud-assembly-api": "npm:^2.2.3"
-    "@aws-cdk/cloud-assembly-schema": "npm:^53.21.0"
+    "@aws-cdk/cloud-assembly-api": "npm:^2.2.4"
+    "@aws-cdk/cloud-assembly-schema": "npm:^53.25.0"
     "@balena/dockerignore": "npm:^1.0.2"
     case: "npm:1.6.3"
     fs-extra: "npm:^11.3.3"
@@ -3596,16 +3596,16 @@ __metadata:
     yaml: "npm:1.10.3"
   peerDependencies:
     constructs: ^10.5.0
-  checksum: 10c0/409b13db9f1e74980daf442ca8d9da946ff2cfd3065acda8645a103c8194a6037e4fd2d818faf1cc793671a542deb3bd4b814237f50db808727a0f888a382cdd
+  checksum: 10c0/ee0b97dba887512829c33771498d97f612135771d0cf3c44624d77ecaedc8846651c2077212a83696597aa05d5d22287d109d590f1b14c2062a88e4f7ad2fb5d
   languageName: node
   linkType: hard
 
-"aws-cdk@npm:2.1122.0":
-  version: 2.1122.0
-  resolution: "aws-cdk@npm:2.1122.0"
+"aws-cdk@npm:2.1124.1":
+  version: 2.1124.1
+  resolution: "aws-cdk@npm:2.1124.1"
   bin:
     cdk: bin/cdk
-  checksum: 10c0/16ff9e9a78055d29c124a4c1ddcec1368b2e056ac9c8e53269f34899f340c79c493fab8d46a6de358e6c224e0175c12fd7e1b08f4a6148f11a126697231c9804
+  checksum: 10c0/2d06fbfacaf61a7eb45c84017ec9b04caa39d3b34bf0a96b26642ded050a3d2566b8b7d6977091fa953fe9f77caea3d3bdd8e65c13e6cd633a51eb96890ed137
   languageName: node
   linkType: hard
 
@@ -5099,19 +5099,19 @@ __metadata:
   dependencies:
     "@aws-lambda-powertools/logger": "npm:2.33.0"
     "@aws-lambda-powertools/metrics": "npm:2.33.0"
-    "@aws-sdk/client-cloudfront": "npm:3.1049.0"
-    "@aws-sdk/client-dynamodb": "npm:3.1049.0"
-    "@aws-sdk/client-secrets-manager": "npm:3.1049.0"
-    "@aws-sdk/client-sns": "npm:3.1049.0"
-    "@aws-sdk/client-sqs": "npm:3.1049.0"
+    "@aws-sdk/client-cloudfront": "npm:3.1051.0"
+    "@aws-sdk/client-dynamodb": "npm:3.1051.0"
+    "@aws-sdk/client-secrets-manager": "npm:3.1051.0"
+    "@aws-sdk/client-sns": "npm:3.1051.0"
+    "@aws-sdk/client-sqs": "npm:3.1051.0"
     "@aws-sdk/util-dynamodb": "npm:3.996.2"
     "@co-cddo/isb-client": "https://github.com/co-cddo/innovation-sandbox-on-aws-client/releases/download/v1.0.0/co-cddo-isb-client-1.0.0.tgz"
     "@eslint/js": "npm:10.0.1"
     "@types/aws-lambda": "npm:8.10.161"
     "@types/jest": "npm:30.0.0"
-    "@types/node": "npm:25.9.0"
-    aws-cdk: "npm:2.1122.0"
-    aws-cdk-lib: "npm:2.254.0"
+    "@types/node": "npm:25.9.1"
+    aws-cdk: "npm:2.1124.1"
+    aws-cdk-lib: "npm:2.256.1"
     aws-sdk-client-mock: "npm:^4.1.0"
     constructs: "npm:10.6.0"
     esbuild: "npm:^0.28.0"

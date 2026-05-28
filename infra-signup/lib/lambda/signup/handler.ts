@@ -472,6 +472,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
             console.log(
               JSON.stringify({
                 level: "WARN",
+                event: "squatting_warn",
                 message: "USER_EXISTS with name mismatch — possible signup squatting",
                 domain: normalizedDomain,
                 correlationId,

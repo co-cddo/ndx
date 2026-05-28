@@ -342,7 +342,9 @@ export async function createUserOnly(request: SignupRequest, correlationId: stri
 
   const { firstName, lastName, email } = request
   // Derive domain server-side from email — used in log lines only.
-  const logDomain = email.includes("@") ? email.split("@")[1] : "unknown"
+  // Coerce malformed `user@` (where split[1] is "") to "unknown" so the log
+  // line never carries an empty `domain` field.
+  const logDomain = (email.includes("@") && email.split("@")[1]) || "unknown"
 
   console.log(
     JSON.stringify({
@@ -492,7 +494,7 @@ async function deleteUserById(userId: string, correlationId: string, domain: str
  */
 export async function createUser(request: SignupRequest, correlationId: string): Promise<string> {
   const { email } = request
-  const logDomain = email.includes("@") ? email.split("@")[1] : "unknown"
+  const logDomain = (email.includes("@") && email.split("@")[1]) || "unknown"
 
   const userId = await createUserOnly(request, correlationId)
 

@@ -1113,7 +1113,7 @@ describe("handler", () => {
 
         const warnLog = consoleSpy.mock.calls
           .map((call) => JSON.parse(call[0]))
-          .find((d) => d.level === "WARN" && d.message.includes("squatting"))
+          .find((d) => d.level === "WARN" && d.event === "squatting_warn")
         expect(warnLog).toBeDefined()
       })
 
@@ -1129,12 +1129,19 @@ describe("handler", () => {
 
         const warnLog = consoleSpy.mock.calls
           .map((call) => JSON.parse(call[0]))
-          .find((d) => d.level === "WARN" && d.message.includes("squatting"))
+          .find((d) => d.level === "WARN" && d.event === "squatting_warn")
         expect(warnLog).toBeUndefined()
       })
     })
 
     describe("timing-floor invariant", () => {
+      // Guard against a sibling suite that called jest.useFakeTimers() and
+      // failed to restore — without this, the setTimeout inside
+      // awaitTimingFloor never resolves and the test hangs / fires early.
+      beforeEach(() => {
+        jest.useRealTimers()
+      })
+
       it("holds responses until TIMING_FLOOR_MS plus 50-150ms jitter has elapsed", async () => {
         // Frozen spec rule: jitter adds 50-150ms ON TOP of the 400ms floor,
         // not absorbed into it. Total elapsed must be >= floor + 50ms.
@@ -1194,31 +1201,110 @@ describe("handler", () => {
     })
 
     describe("silent strip of unknown fields (Zod .strip() semantics)", () => {
-      it("produces the same outcome with or without extra fields", async () => {
-        const baseRequest = {
-          firstName: "Jane",
-          lastName: "Smith",
-          email: "jane@westbury.gov.uk",
-        }
-        const eventBase = createMockEvent("POST", "/signup-api/signup", JSON.stringify(baseRequest), validHeaders)
-        const baseResult = await handler(eventBase)
+      // Spec rule (line 132): a request with extra fields produces identical
+      // logs, Slack alerts, AND Notify payloads to the same request without
+      // the extras. statusCode + body alone aren't enough — mock both
+      // dispatches and diff the recorded call args between the two runs.
+      it("produces identical statusCode/body AND identical Notify/Slack payloads with or without extra fields", async () => {
+        process.env.NOTIFICATION_LAMBDA_ARN = "arn:aws:lambda:us-west-2:000000000000:function:fake"
+        process.env.EVENTS_TOPIC_ARN = "arn:aws:sns:us-west-2:000000000000:fake-topic"
+        const lambdaClientModule = await import("@aws-sdk/client-lambda")
+        const snsClientModule = await import("@aws-sdk/client-sns")
+        const lambdaSend = jest
+          .spyOn(lambdaClientModule.LambdaClient.prototype, "send")
+          .mockImplementation(() => Promise.resolve({ StatusCode: 202 })) as jest.SpyInstance
+        const snsSend = jest
+          .spyOn(snsClientModule.SNSClient.prototype, "send")
+          .mockImplementation(() => Promise.resolve({ MessageId: "m-1" })) as jest.SpyInstance
 
-        const enrichedRequest = {
-          ...baseRequest,
-          domain: "x",
-          secretField: "<!channel>",
-          junk: { nested: "value" },
-        }
-        const eventEnriched = createMockEvent(
-          "POST",
-          "/signup-api/signup",
-          JSON.stringify(enrichedRequest),
-          validHeaders,
-        )
-        const enrichedResult = await handler(eventEnriched)
+        // Capture payloads from the published commands — strip variable fields
+        // (correlation IDs, UUIDs, timestamps) so the diff is meaningful.
+        type SendCall = { input?: unknown }
+        const recordPayloads = (
+          spy: jest.SpyInstance,
+        ): Array<Record<string, unknown>> =>
+          spy.mock.calls.map((call) => {
+            const cmd = call[0] as SendCall
+            const input = cmd?.input as { Payload?: unknown; Message?: string } | undefined
+            // Lambda: Payload is a Uint8Array of JSON; SNS: Message is a JSON string.
+            if (input?.Payload !== undefined) {
+              const text = Buffer.from(input.Payload as Uint8Array).toString("utf-8")
+              return JSON.parse(text) as Record<string, unknown>
+            }
+            if (typeof input?.Message === "string") {
+              return JSON.parse(input.Message) as Record<string, unknown>
+            }
+            return {}
+          })
 
-        expect(baseResult.statusCode).toBe(enrichedResult.statusCode)
-        expect(JSON.parse(baseResult.body)).toEqual(JSON.parse(enrichedResult.body))
+        try {
+          const baseRequest = {
+            firstName: "Jane",
+            lastName: "Smith",
+            email: "jane@westbury.gov.uk",
+          }
+          const eventBase = createMockEvent("POST", "/signup-api/signup", JSON.stringify(baseRequest), validHeaders)
+          const baseResult = await handler(eventBase)
+          const baseLambdaPayloads = recordPayloads(lambdaSend)
+          const baseSnsPayloads = recordPayloads(snsSend)
+          lambdaSend.mockClear()
+          snsSend.mockClear()
+
+          const enrichedRequest = {
+            ...baseRequest,
+            domain: "x",
+            secretField: "<!channel>",
+            junk: { nested: "value" },
+          }
+          const eventEnriched = createMockEvent(
+            "POST",
+            "/signup-api/signup",
+            JSON.stringify(enrichedRequest),
+            validHeaders,
+          )
+          const enrichedResult = await handler(eventEnriched)
+          const enrichedLambdaPayloads = recordPayloads(lambdaSend)
+          const enrichedSnsPayloads = recordPayloads(snsSend)
+
+          // Response is identical.
+          expect(baseResult.statusCode).toBe(enrichedResult.statusCode)
+          expect(JSON.parse(baseResult.body)).toEqual(JSON.parse(enrichedResult.body))
+
+          // Strip per-call identifiers from each payload before comparing.
+          const stripVariableFields = (payload: Record<string, unknown>): Record<string, unknown> => {
+            const clone: Record<string, unknown> = JSON.parse(JSON.stringify(payload))
+            const visit = (obj: unknown): void => {
+              if (!obj || typeof obj !== "object") return
+              const rec = obj as Record<string, unknown>
+              for (const key of Object.keys(rec)) {
+                if (key === "id" || key === "correlationId" || key === "time") {
+                  rec[key] = "<stripped>"
+                }
+                if (typeof rec[key] === "object") visit(rec[key])
+              }
+            }
+            visit(clone)
+            return clone
+          }
+          expect(baseLambdaPayloads.map(stripVariableFields)).toEqual(
+            enrichedLambdaPayloads.map(stripVariableFields),
+          )
+          expect(baseSnsPayloads.map(stripVariableFields)).toEqual(
+            enrichedSnsPayloads.map(stripVariableFields),
+          )
+          // Sanity: extras must never appear in any published payload (raw text scan).
+          for (const payloads of [enrichedLambdaPayloads, enrichedSnsPayloads]) {
+            const serialised = JSON.stringify(payloads)
+            expect(serialised).not.toContain("secretField")
+            expect(serialised).not.toContain("<!channel")
+            expect(serialised).not.toContain("nested")
+          }
+        } finally {
+          lambdaSend.mockRestore()
+          snsSend.mockRestore()
+          delete process.env.NOTIFICATION_LAMBDA_ARN
+          delete process.env.EVENTS_TOPIC_ARN
+        }
       })
     })
   })

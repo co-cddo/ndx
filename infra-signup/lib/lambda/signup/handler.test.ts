@@ -10,15 +10,25 @@
 
 import type { APIGatewayProxyEvent } from "aws-lambda"
 import { ConflictException } from "@aws-sdk/client-identitystore"
-import { handler, successResponse, errorResponse } from "./handler"
+import { handler, successResponse, errorResponse, _internal } from "./handler"
 import * as domainService from "./domain-service"
 import * as identityStoreService from "./identity-store-service"
 import { SignupErrorCode, ERROR_MESSAGES } from "@ndx/signup-types"
 
 // Mock the domain service
 jest.mock("./domain-service")
-// Mock the identity store service
-jest.mock("./identity-store-service")
+// Mock the identity store service. NOTE: when adding new exports to
+// identity-store-service.ts, this manual factory must be updated to keep
+// the mocked surface in sync with the real module.
+jest.mock("./identity-store-service", () => ({
+  checkUserExists: jest.fn(),
+  createUser: jest.fn(),
+  createUserOnly: jest.fn(),
+  addUserToNdxGroup: jest.fn(),
+  getExistingUserNames: jest.fn(),
+  validateConfiguration: jest.fn(),
+  resetClient: jest.fn(),
+}))
 
 /**
  * Create a mock API Gateway event for testing
@@ -246,8 +256,13 @@ describe("handler", () => {
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@westbury.gov.uk",
-      domain: "westbury.gov.uk",
     }
+    const mockCreateUserOnly = identityStoreService.createUserOnly as jest.MockedFunction<
+      typeof identityStoreService.createUserOnly
+    >
+    const mockGetExistingUserNames = identityStoreService.getExistingUserNames as jest.MockedFunction<
+      typeof identityStoreService.getExistingUserNames
+    >
 
     const validHeaders = {
       "Content-Type": "application/json",
@@ -258,20 +273,24 @@ describe("handler", () => {
       mockGetDomains.mockReset()
       mockCheckUserExists.mockReset()
       mockCreateUser.mockReset()
+      mockCreateUserOnly.mockReset()
+      mockGetExistingUserNames.mockReset()
 
       // Default mocks for happy path
       mockGetDomains.mockResolvedValue(sampleDomains)
       mockCheckUserExists.mockResolvedValue(false)
       mockCreateUser.mockResolvedValue("new-user-id")
+      mockCreateUserOnly.mockResolvedValue("new-waitlist-user-id")
+      mockGetExistingUserNames.mockResolvedValue(null)
     })
 
     describe("successful signup", () => {
-      it("should return 200 with success true on valid signup", async () => {
+      it("should return 200 with success true on valid signup (recognised branch)", async () => {
         const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
         const result = await handler(event)
 
         expect(result.statusCode).toBe(200)
-        expect(JSON.parse(result.body)).toEqual({ success: true })
+        expect(JSON.parse(result.body)).toEqual({ success: true, waitlist: false })
       })
 
       it("should include security headers in response", async () => {
@@ -313,7 +332,6 @@ describe("handler", () => {
             firstName: "Jane",
             lastName: "Smith",
             email: "jane.smith@westbury.gov.uk",
-            domain: "westbury.gov.uk",
           }),
           "test-correlation-id-12345",
         )
@@ -588,7 +606,7 @@ describe("handler", () => {
         expect(result.statusCode).toBe(400)
       })
 
-      it("should return 400 when domain is missing", async () => {
+      it("should accept the new request shape without a domain field", async () => {
         const requestWithoutDomain = {
           firstName: "Jane",
           lastName: "Smith",
@@ -597,7 +615,29 @@ describe("handler", () => {
         const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithoutDomain), validHeaders)
         const result = await handler(event)
 
-        expect(result.statusCode).toBe(400)
+        expect(result.statusCode).toBe(200)
+        expect(JSON.parse(result.body)).toEqual({ success: true, waitlist: false })
+      })
+
+      it("should silently strip an extra legacy domain field (no Slack/log trace)", async () => {
+        const requestWithExtras = {
+          firstName: "Jane",
+          lastName: "Smith",
+          email: "jane@westbury.gov.uk",
+          domain: "not-used.example",
+          secretField: "<!channel>",
+        }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithExtras), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(200)
+        // Extra fields must NOT appear in any log
+        consoleSpy.mock.calls.forEach((call) => {
+          const logStr = call[0]
+          expect(logStr).not.toContain("secretField")
+          expect(logStr).not.toContain("<!channel")
+          expect(logStr).not.toContain("not-used.example")
+        })
       })
 
       it("should return 400 INVALID_EMAIL for email with non-ASCII characters", async () => {
@@ -777,11 +817,10 @@ describe("handler", () => {
     })
 
     describe("domain validation", () => {
-      it("should return 403 DOMAIN_NOT_ALLOWED when email domain is not in allowlist", async () => {
+      it("should route to waitlist branch when email domain is NOT in allowlist", async () => {
         const requestWithUnallowedDomain = {
           ...validSignupRequest,
-          email: "jane@notallowed.gov.uk",
-          domain: "notallowed.gov.uk",
+          email: "jane@notallowed.example",
         }
         const event = createMockEvent(
           "POST",
@@ -791,11 +830,34 @@ describe("handler", () => {
         )
         const result = await handler(event)
 
-        expect(result.statusCode).toBe(403)
-        expect(JSON.parse(result.body)).toEqual({
-          error: SignupErrorCode.DOMAIN_NOT_ALLOWED,
-          message: ERROR_MESSAGES[SignupErrorCode.DOMAIN_NOT_ALLOWED],
+        expect(result.statusCode).toBe(200)
+        expect(JSON.parse(result.body)).toEqual({ success: true, waitlist: true })
+
+        // Waitlist branch uses createUserOnly — no group membership
+        expect(mockCreateUserOnly).toHaveBeenCalled()
+        expect(mockCreateUser).not.toHaveBeenCalled()
+      })
+
+      it("should return 5xx SERVER_ERROR when the domain allowlist resolves empty (fail-closed)", async () => {
+        mockGetDomains.mockResolvedValueOnce([])
+
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(500)
+        expect(JSON.parse(result.body)).toMatchObject({
+          error: SignupErrorCode.SERVER_ERROR,
         })
+        // No IDC writes attempted
+        expect(mockCreateUser).not.toHaveBeenCalled()
+        expect(mockCreateUserOnly).not.toHaveBeenCalled()
+
+        // ERROR log emitted
+        const errorLog = consoleSpy.mock.calls.find((call) => {
+          const data = JSON.parse(call[0])
+          return data.level === "ERROR" && data.message.includes("empty array")
+        })
+        expect(errorLog).toBeDefined()
       })
 
       it("should return 503 when domain service fails", async () => {
@@ -918,6 +980,245 @@ describe("handler", () => {
         })
 
         expect(warnLog).toBeDefined()
+      })
+
+      it("should emit signupBranch=recognised in the success INFO log for an allowlisted domain", async () => {
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
+        await handler(event)
+
+        const successLog = consoleSpy.mock.calls
+          .map((call) => JSON.parse(call[0]))
+          .find((d) => d.message === "User created successfully")
+        expect(successLog).toMatchObject({
+          signupBranch: "recognised",
+          signupDomain: "westbury.gov.uk",
+        })
+      })
+
+      it("should emit signupBranch=waitlist in the success INFO log for an unlisted domain", async () => {
+        const event = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify({ ...validSignupRequest, email: "jane@unknown.example" }),
+          validHeaders,
+        )
+        await handler(event)
+
+        const successLog = consoleSpy.mock.calls
+          .map((call) => JSON.parse(call[0]))
+          .find((d) => d.message === "User created successfully")
+        expect(successLog).toMatchObject({
+          signupBranch: "waitlist",
+          signupDomain: "unknown.example",
+        })
+      })
+    })
+
+    describe("forbidden chars in name", () => {
+      it("should reject parens in firstName (Notify ((field)) injection)", async () => {
+        const requestWithParens = {
+          ...validSignupRequest,
+          firstName: "Robert))((evil",
+        }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithParens), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(400)
+        expect(JSON.parse(result.body)).toMatchObject({
+          error: SignupErrorCode.INVALID_EMAIL,
+          message: "Invalid characters in name",
+        })
+      })
+
+      it("should reject parens in lastName", async () => {
+        const requestWithParens = {
+          ...validSignupRequest,
+          lastName: "Smith)",
+        }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(requestWithParens), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(400)
+      })
+    })
+
+    describe("Slack mrkdwn metacharacter stripping", () => {
+      it("strips Slack metachars (* _ ~ ` < >) from firstName, lastName, and email", () => {
+        const { stripSlackMrkdwn } = _internal
+        expect(stripSlackMrkdwn("<!channel")).toBe("!channel")
+        expect(stripSlackMrkdwn(">")).toBe("")
+        // `|` is not stripped (it's a Slack link separator, but only meaningful inside `<...>`)
+        expect(stripSlackMrkdwn("<https://evil|click>@x.com")).toBe("https://evil|click@x.com")
+        expect(stripSlackMrkdwn("*_~`<>")).toBe("")
+      })
+
+      it("does not let Slack metacharacters survive into the SNS publish payload", async () => {
+        process.env.EVENTS_TOPIC_ARN = "arn:aws:sns:us-west-2:000000000000:fake-topic"
+        const snsClientModule = await import("@aws-sdk/client-sns")
+        const snsSend = jest
+          .spyOn(snsClientModule.SNSClient.prototype, "send")
+          .mockImplementation(() => Promise.resolve({ MessageId: "msg-1" })) as jest.SpyInstance
+
+        try {
+          // names containing parens fail validation, so use a clean name and
+          // smuggle Slack metachars via fields that survive validation —
+          // backtick/asterisk/underscore are not in FORBIDDEN_NAME_CHARS.
+          const hostileRequest = {
+            firstName: "*bold_italic`",
+            lastName: "~strike~",
+            email: "user@westbury.gov.uk",
+          }
+          const event = createMockEvent(
+            "POST",
+            "/signup-api/signup",
+            JSON.stringify(hostileRequest),
+            validHeaders,
+          )
+          await handler(event)
+
+          // Collect every SNS publish's Message body. The intentional label
+          // markup ("*User:*", "*Email:*") legitimately contains `*` for
+          // bold; we only need to verify that the *raw user input*
+          // (still containing metachars) does not survive into the payload.
+          const publishedMessages = snsSend.mock.calls
+            .map((call) => call[0] as { input?: { Message?: string } })
+            .map((cmd) => cmd?.input?.Message ?? "")
+          expect(publishedMessages.length).toBeGreaterThan(0)
+          for (const message of publishedMessages) {
+            expect(message).not.toContain(hostileRequest.firstName)
+            expect(message).not.toContain(hostileRequest.lastName)
+            // Stripped versions are what should appear instead.
+            expect(message).toContain("bolditalic")
+            expect(message).toContain("strike")
+          }
+        } finally {
+          snsSend.mockRestore()
+          delete process.env.EVENTS_TOPIC_ARN
+        }
+      })
+    })
+
+    describe("USER_EXISTS squatting detection", () => {
+      it("logs a WARN when supplied name differs from stored IDC user", async () => {
+        mockCheckUserExists.mockResolvedValueOnce(true)
+        mockGetExistingUserNames.mockResolvedValueOnce({
+          givenName: "Alice",
+          familyName: "Different",
+        })
+
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(409)
+
+        const warnLog = consoleSpy.mock.calls
+          .map((call) => JSON.parse(call[0]))
+          .find((d) => d.level === "WARN" && d.message.includes("squatting"))
+        expect(warnLog).toBeDefined()
+      })
+
+      it("does NOT log the squatting WARN when stored name matches", async () => {
+        mockCheckUserExists.mockResolvedValueOnce(true)
+        mockGetExistingUserNames.mockResolvedValueOnce({
+          givenName: "Jane",
+          familyName: "Smith",
+        })
+
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
+        await handler(event)
+
+        const warnLog = consoleSpy.mock.calls
+          .map((call) => JSON.parse(call[0]))
+          .find((d) => d.level === "WARN" && d.message.includes("squatting"))
+        expect(warnLog).toBeUndefined()
+      })
+    })
+
+    describe("timing-floor invariant", () => {
+      it("holds responses until TIMING_FLOOR_MS plus 50-150ms jitter has elapsed", async () => {
+        // Frozen spec rule: jitter adds 50-150ms ON TOP of the 400ms floor,
+        // not absorbed into it. Total elapsed must be >= floor + 50ms.
+        const start = Date.now()
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
+        await handler(event)
+        const elapsed = Date.now() - start
+
+        expect(elapsed).toBeGreaterThanOrEqual(_internal.TIMING_FLOOR_MS + 50)
+      })
+    })
+
+    describe("Notify dispatch failure is non-blocking for the waitlist branch", () => {
+      // The NOTIFY_TEMPLATE_WAITLIST_ADDED placeholder case is exercised by
+      // the notification Lambda's existing missing-env-var path. From the
+      // signup handler's perspective, the dispatch is fire-and-forget via
+      // `InvocationType: "Event"` — even if Notify throws, the signup
+      // handler returns success and the Slack alert still fires.
+      it("returns 200 success + waitlist:true even if the Notify Lambda invoke fails", async () => {
+        process.env.NOTIFICATION_LAMBDA_ARN = "arn:aws:lambda:us-west-2:000000000000:function:fake"
+        process.env.EVENTS_TOPIC_ARN = "arn:aws:sns:us-west-2:000000000000:fake-topic"
+        // Deterministically force the Notify Lambda invoke to reject and
+        // assert the signup handler still returns 200. SNS publishes are
+        // also forced to reject; both dispatches must be non-blocking.
+        const lambdaClientModule = await import("@aws-sdk/client-lambda")
+        const snsClientModule = await import("@aws-sdk/client-sns")
+        const lambdaSend = jest
+          .spyOn(lambdaClientModule.LambdaClient.prototype, "send")
+          .mockImplementation(() => Promise.reject(new Error("simulated notify lambda failure"))) as jest.SpyInstance
+        const snsSend = jest
+          .spyOn(snsClientModule.SNSClient.prototype, "send")
+          .mockImplementation(() => Promise.reject(new Error("simulated SNS failure"))) as jest.SpyInstance
+
+        try {
+          const event = createMockEvent(
+            "POST",
+            "/signup-api/signup",
+            JSON.stringify({ ...validSignupRequest, email: "jane@unknown.example" }),
+            validHeaders,
+          )
+          const result = await handler(event)
+
+          expect(result.statusCode).toBe(200)
+          expect(JSON.parse(result.body)).toEqual({ success: true, waitlist: true })
+          // Confirm the dispatch attempts actually happened so the test
+          // proves non-blocking behaviour and isn't passing because the
+          // dispatches were skipped.
+          expect(lambdaSend).toHaveBeenCalled()
+          expect(snsSend).toHaveBeenCalled()
+        } finally {
+          lambdaSend.mockRestore()
+          snsSend.mockRestore()
+          delete process.env.NOTIFICATION_LAMBDA_ARN
+          delete process.env.EVENTS_TOPIC_ARN
+        }
+      })
+    })
+
+    describe("silent strip of unknown fields (Zod .strip() semantics)", () => {
+      it("produces the same outcome with or without extra fields", async () => {
+        const baseRequest = {
+          firstName: "Jane",
+          lastName: "Smith",
+          email: "jane@westbury.gov.uk",
+        }
+        const eventBase = createMockEvent("POST", "/signup-api/signup", JSON.stringify(baseRequest), validHeaders)
+        const baseResult = await handler(eventBase)
+
+        const enrichedRequest = {
+          ...baseRequest,
+          domain: "x",
+          secretField: "<!channel>",
+          junk: { nested: "value" },
+        }
+        const eventEnriched = createMockEvent(
+          "POST",
+          "/signup-api/signup",
+          JSON.stringify(enrichedRequest),
+          validHeaders,
+        )
+        const enrichedResult = await handler(eventEnriched)
+
+        expect(baseResult.statusCode).toBe(enrichedResult.statusCode)
+        expect(JSON.parse(baseResult.body)).toEqual(JSON.parse(enrichedResult.body))
       })
     })
   })

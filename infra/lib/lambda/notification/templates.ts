@@ -40,6 +40,7 @@ import type {
   LeaseFrozenReason,
   LeaseCostsGeneratedDetail,
   UserCreatedDetail,
+  WaitlistAddedDetail,
   BlueprintDeploymentRequestDetail,
 } from "./validation"
 
@@ -216,6 +217,16 @@ export const NOTIFY_TEMPLATES: Record<string, TemplateConfig> = {
     optionalFields: ["portalLink", "plainTextLink", "linkInstructions"],
     enrichmentQueries: [],
   },
+  /**
+   * WaitlistAdded - sent to users whose email domain is not on the
+   * allowlist. Thank-you + unsubscribe-by-email instructions.
+   */
+  WaitlistAdded: {
+    templateIdEnvVar: "NOTIFY_TEMPLATE_WAITLIST_ADDED",
+    requiredFields: ["userName"],
+    optionalFields: [],
+    enrichmentQueries: [],
+  },
   BlueprintDeploymentRequest: {
     templateIdEnvVar: "NOTIFY_TEMPLATE_BLUEPRINT_DEPLOYMENT_REQUEST",
     requiredFields: ["userName", "templateName"],
@@ -251,7 +262,7 @@ export const MONITORING_ALERT_EVENTS: NotificationEventType[] = [
  */
 export const BILLING_EVENTS: NotificationEventType[] = ["LeaseCostsGenerated"]
 
-export const USER_EVENTS: NotificationEventType[] = ["UserCreated"]
+export const USER_EVENTS: NotificationEventType[] = ["UserCreated", "WaitlistAdded"]
 
 export const PROVISIONING_EVENTS: NotificationEventType[] = ["BlueprintDeploymentRequest"]
 
@@ -1223,6 +1234,23 @@ function buildUserCreatedPersonalisation(event: ValidatedEvent<UserCreatedDetail
 }
 
 /**
+ * Build personalisation for WaitlistAdded event.
+ *
+ * Mirrors the `userName = userEmail.split("@")[0]` pattern used by the
+ * other user-event builders (see `buildLeaseRequestedPersonalisation` etc).
+ */
+function buildWaitlistAddedPersonalisation(
+  event: ValidatedEvent<WaitlistAddedDetail>,
+): Record<string, string | number> {
+  const detail = event.detail
+  const userName = detail.userEmail.split("@")[0]
+
+  return {
+    userName,
+  }
+}
+
+/**
  * Build personalisation for BlueprintDeploymentRequest event
  */
 function buildBlueprintDeploymentRequestPersonalisation(
@@ -1322,6 +1350,9 @@ export function buildPersonalisation(
     // User Events
     case "UserCreated":
       personalisation = buildUserCreatedPersonalisation(event as ValidatedEvent<UserCreatedDetail>)
+      break
+    case "WaitlistAdded":
+      personalisation = buildWaitlistAddedPersonalisation(event as ValidatedEvent<WaitlistAddedDetail>)
       break
 
     // Provisioning Events

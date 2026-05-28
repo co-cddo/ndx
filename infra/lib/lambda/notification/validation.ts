@@ -282,6 +282,21 @@ export const UserCreatedDetailSchema = z
   })
   .passthrough()
 
+/**
+ * WaitlistAdded event detail schema - permissive
+ * Emitted by signup Lambda when a user signs up with an unlisted domain.
+ * Same shape as UserCreatedDetailSchema so existing payload builders only
+ * need the `detail-type` swapped.
+ */
+export const WaitlistAddedDetailSchema = z
+  .object({
+    userEmail: EmailSchema,
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    userId: z.string().optional(),
+  })
+  .passthrough()
+
 // =============================================================================
 // Provisioning Event Schemas
 // =============================================================================
@@ -327,8 +342,9 @@ export const EVENT_SCHEMAS: Record<NotificationEventType, z.ZodSchema> = {
   AccountQuarantined: AccountQuarantinedDetailSchema,
   AccountDriftDetected: AccountDriftDetectedDetailSchema,
   GroupCostReportGeneratedFailure: GroupCostReportGeneratedFailureDetailSchema,
-  // User events (1 type)
+  // User events (2 types)
   UserCreated: UserCreatedDetailSchema,
+  WaitlistAdded: WaitlistAddedDetailSchema,
   // Provisioning events (1 type)
   BlueprintDeploymentRequest: BlueprintDeploymentRequestDetailSchema,
 }
@@ -464,4 +480,5 @@ export type LeaseTerminatedReason = z.infer<typeof LeaseTerminatedReasonSchema>
 export type LeaseCostsGeneratedDetail = z.infer<typeof LeaseCostsGeneratedDetailSchema>
 
 export type UserCreatedDetail = z.infer<typeof UserCreatedDetailSchema>
+export type WaitlistAddedDetail = z.infer<typeof WaitlistAddedDetailSchema>
 export type BlueprintDeploymentRequestDetail = z.infer<typeof BlueprintDeploymentRequestDetailSchema>

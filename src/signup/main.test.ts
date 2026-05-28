@@ -12,48 +12,55 @@ import {
   showInlineError,
   clearErrors,
   setLoadingState,
-  populateDomainDropdown,
+  parseDomainFromEmail,
+  findRecognisedDomain,
+  updateIndicator,
+  _resetForTests,
 } from "./main"
 import type { DomainInfo } from "./types"
-import { isSignupResponse, isApiError, SignupErrorCode } from "./types"
 
-// Note: handleFormSubmit is private - redirect behaviour is tested via api.test.ts
-// Response parsing is tested via type guard tests
+/**
+ * Test helper: render a static HTML fixture into the document body for
+ * the test that follows. The argument is a developer-authored literal,
+ * not user-controlled content — XSS is not in scope for test fixtures.
+ */
+function setFixture(html: string): void {
+  // eslint-disable-next-line no-restricted-properties
+  document.body.innerHTML = html
+}
 
 describe("signup/main", () => {
+  beforeEach(() => {
+    _resetForTests([])
+  })
+
   describe("validateForm", () => {
     let form: HTMLFormElement
 
     beforeEach(() => {
-      document.body.innerHTML = `
+      setFixture(`
         <form id="signup-form">
           <input type="text" name="firstName" id="first-name" value="">
           <input type="text" name="lastName" id="last-name" value="">
-          <input type="text" name="emailLocal" id="email-local" value="">
-          <select name="domain" id="email-domain">
-            <option value="">Select organisation</option>
-            <option value="example.gov.uk">example.gov.uk</option>
-          </select>
+          <input type="email" name="email" id="email" value="">
         </form>
-      `
+      `)
       form = document.getElementById("signup-form") as HTMLFormElement
     })
 
     it("should return errors for empty form", () => {
       const errors = validateForm(form)
 
-      expect(errors).toHaveLength(4)
+      expect(errors).toHaveLength(3)
       expect(errors).toContainEqual({ fieldId: "first-name", message: "Enter your first name" })
       expect(errors).toContainEqual({ fieldId: "last-name", message: "Enter your last name" })
-      expect(errors).toContainEqual({ fieldId: "email-local", message: "Enter your email address" })
-      expect(errors).toContainEqual({ fieldId: "email-domain", message: "Select your organisation" })
+      expect(errors).toContainEqual({ fieldId: "email", message: "Enter your email address" })
     })
 
     it("should return no errors for valid form", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane.smith"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane.smith@example.gov.uk"
 
       const errors = validateForm(form)
 
@@ -63,8 +70,7 @@ describe("signup/main", () => {
     it("should return error for first name exceeding max length", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "A".repeat(101)
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@example.gov.uk"
 
       const errors = validateForm(form)
 
@@ -78,8 +84,7 @@ describe("signup/main", () => {
     it("should return error for last name exceeding max length", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "B".repeat(101)
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@example.gov.uk"
 
       const errors = validateForm(form)
 
@@ -93,8 +98,21 @@ describe("signup/main", () => {
     it("should return error for first name with forbidden characters", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane<script>"
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@example.gov.uk"
+
+      const errors = validateForm(form)
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toEqual({
+        fieldId: "first-name",
+        message: "First name must not contain special characters",
+      })
+    })
+
+    it("should return error for first name containing parens (Notify injection defence)", () => {
+      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Robert))((evil"
+      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@example.gov.uk"
 
       const errors = validateForm(form)
 
@@ -108,8 +126,7 @@ describe("signup/main", () => {
     it("should return error for last name with forbidden characters", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith&Co"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@example.gov.uk"
 
       const errors = validateForm(form)
 
@@ -123,94 +140,204 @@ describe("signup/main", () => {
     it("should trim whitespace from input values", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "  Jane  "
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "  Smith  "
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "  jane.smith  "
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "  jane.smith@example.gov.uk  "
 
       const errors = validateForm(form)
 
       expect(errors).toHaveLength(0)
     })
 
+    it("should return error for malformed email (no @)", () => {
+      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
+      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "not-an-email"
+
+      const errors = validateForm(form)
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toEqual({ fieldId: "email", message: "Enter a valid email address" })
+    })
+
+    it("should return error for email with multiple @", () => {
+      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
+      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@@example.gov.uk"
+
+      const errors = validateForm(form)
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toEqual({ fieldId: "email", message: "Enter a valid email address" })
+    })
+
+    it("should return error for email exceeding max length", () => {
+      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
+      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
+      // 60 chars local-part + 195 char domain = 259 chars total (> 254 cap)
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "a".repeat(60) + "@" + "b".repeat(195) + ".co"
+
+      const errors = validateForm(form)
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toEqual({ fieldId: "email", message: "Email address must be 254 characters or less" })
+    })
+
+    it("should return error for email with + alias", () => {
+      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
+      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane+alias@example.gov.uk"
+
+      const errors = validateForm(form)
+
+      expect(errors).toHaveLength(1)
+      expect(errors[0]).toEqual({ fieldId: "email", message: "Email address cannot contain a '+' character" })
+    })
+
     it("should return multiple errors when multiple fields are invalid", () => {
       ;(form.elements.namedItem("firstName") as HTMLInputElement).value = ""
       ;(form.elements.namedItem("lastName") as HTMLInputElement).value = ""
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+      ;(form.elements.namedItem("email") as HTMLInputElement).value = "jane@example.gov.uk"
 
       const errors = validateForm(form)
 
       expect(errors).toHaveLength(2)
     })
+  })
 
-    it("should return error for email local part exceeding max length", () => {
-      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
-      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "a".repeat(65)
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+  describe("parseDomainFromEmail", () => {
+    it("returns lowercase domain for valid email", () => {
+      expect(parseDomainFromEmail("name@Council.GOV.UK")).toBe("council.gov.uk")
+    })
 
-      const errors = validateForm(form)
+    it("returns null when no @", () => {
+      expect(parseDomainFromEmail("just-text")).toBeNull()
+    })
 
-      expect(errors).toHaveLength(1)
-      expect(errors[0]).toEqual({
-        fieldId: "email-local",
-        message: "Email username must be 64 characters or less",
+    it("returns null when @ is the first char", () => {
+      expect(parseDomainFromEmail("@example.gov.uk")).toBeNull()
+    })
+
+    it("returns null when multiple @ present", () => {
+      expect(parseDomainFromEmail("a@b@c.com")).toBeNull()
+    })
+
+    it("returns null when domain has no dot", () => {
+      expect(parseDomainFromEmail("a@localhost")).toBeNull()
+    })
+
+    it("returns null for empty input", () => {
+      expect(parseDomainFromEmail("")).toBeNull()
+    })
+
+    it("trims whitespace before parsing", () => {
+      expect(parseDomainFromEmail("  a@example.gov.uk  ")).toBe("example.gov.uk")
+    })
+  })
+
+  describe("findRecognisedDomain", () => {
+    it("returns DomainInfo on case-insensitive match", () => {
+      _resetForTests([{ domain: "Westbury.gov.uk", orgName: "Westbury Council" }])
+      expect(findRecognisedDomain("westbury.gov.uk")).toEqual({
+        domain: "Westbury.gov.uk",
+        orgName: "Westbury Council",
       })
     })
 
-    it("should return error for email local part with forbidden characters", () => {
-      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
-      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane<script>"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
-
-      const errors = validateForm(form)
-
-      expect(errors).toHaveLength(1)
-      expect(errors[0]).toEqual({
-        fieldId: "email-local",
-        message: "Email address contains invalid characters",
-      })
+    it("returns undefined when not present", () => {
+      _resetForTests([{ domain: "westbury.gov.uk", orgName: "Westbury Council" }])
+      expect(findRecognisedDomain("other.gov.uk")).toBeUndefined()
     })
 
-    it("should return error for email local part containing @", () => {
-      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
-      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane@det.gov.uk"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+    it("does NOT match subdomain (exact match only)", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+      expect(findRecognisedDomain("dept.council.gov.uk")).toBeUndefined()
+    })
+  })
 
-      const errors = validateForm(form)
-
-      expect(errors).toHaveLength(1)
-      expect(errors[0]).toEqual({
-        fieldId: "email-local",
-        message: "Do not include the '@' or domain — just enter the part before '@'",
-      })
+  describe("updateIndicator", () => {
+    beforeEach(() => {
+      setFixture(`<div id="email-status" role="status" aria-live="polite"></div>`)
     })
 
-    it("should return error for email local part with + alias", () => {
-      ;(form.elements.namedItem("firstName") as HTMLInputElement).value = "Jane"
-      ;(form.elements.namedItem("lastName") as HTMLInputElement).value = "Smith"
-      ;(form.elements.namedItem("emailLocal") as HTMLInputElement).value = "jane+alias"
-      ;(form.elements.namedItem("domain") as HTMLSelectElement).value = "example.gov.uk"
+    it("renders recognised copy with org name when domain is in allowlist", () => {
+      _resetForTests([{ domain: "westbury.gov.uk", orgName: "Westbury Council" }])
 
-      const errors = validateForm(form)
+      updateIndicator("name@westbury.gov.uk")
 
-      expect(errors).toHaveLength(1)
-      expect(errors[0]).toEqual({
-        fieldId: "email-local",
-        message: "Email address cannot contain a '+' character",
-      })
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toContain("Westbury Council")
+      expect(status?.textContent).toContain("registered")
+      expect(status?.querySelector("strong")?.textContent).toBe("Westbury Council")
+      // Tick is decorative (aria-hidden) — copy carries the meaning
+      const tick = status?.querySelector('[aria-hidden="true"]')
+      expect(tick?.textContent).toContain("✓")
+    })
+
+    it("renders waitlist copy when domain is not in allowlist", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@unknown.example")
+
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toContain("unknown.example")
+      expect(status?.textContent).toContain("waitlist")
+    })
+
+    it("leaves the region empty until a parseable domain is typed", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@")
+
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toBe("")
+    })
+
+    it("does not re-render when the parsed domain segment hasn't changed", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@unknown.example")
+      const status = document.getElementById("email-status")
+      const firstP = status?.querySelector("p")
+
+      // Same domain, different local part — should NOT re-render
+      updateIndicator("different@unknown.example")
+      const secondP = status?.querySelector("p")
+
+      expect(secondP).toBe(firstP)
+    })
+
+    it("re-renders when the parsed domain segment changes", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@unknown.example")
+      const status = document.getElementById("email-status")
+      const firstText = status?.textContent
+
+      updateIndicator("name@council.gov.uk")
+      const secondText = status?.textContent
+
+      expect(secondText).not.toBe(firstText)
+      expect(secondText).toContain("Council")
+    })
+
+    it("clears the region when the email becomes unparseable again", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@council.gov.uk")
+      updateIndicator("")
+
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toBe("")
     })
   })
 
   describe("showErrorSummary", () => {
     beforeEach(() => {
-      document.body.innerHTML = `
+      setFixture(`
         <div id="error-summary" hidden tabindex="-1">
           <ul id="error-summary-list"></ul>
         </div>
         <input id="first-name" type="text">
-      `
+      `)
     })
 
     it("should show error summary with errors", () => {
@@ -264,7 +391,7 @@ describe("signup/main", () => {
     })
 
     it("should do nothing if summary element not found", () => {
-      document.body.innerHTML = ""
+      setFixture("")
 
       expect(() => {
         showErrorSummary([{ fieldId: "test", message: "Test" }])
@@ -274,14 +401,14 @@ describe("signup/main", () => {
 
   describe("showInlineError", () => {
     beforeEach(() => {
-      document.body.innerHTML = `
+      setFixture(`
         <div id="first-name-group" class="govuk-form-group">
           <input id="first-name" type="text" class="govuk-input">
           <p id="first-name-error" class="govuk-error-message" hidden>
             <span class="error-text"></span>
           </p>
         </div>
-      `
+      `)
     })
 
     it("should show error message", () => {
@@ -335,7 +462,7 @@ describe("signup/main", () => {
 
   describe("clearErrors", () => {
     beforeEach(() => {
-      document.body.innerHTML = `
+      setFixture(`
         <div id="error-summary">
           <ul id="error-summary-list"><li>Error</li></ul>
         </div>
@@ -343,7 +470,7 @@ describe("signup/main", () => {
           <input id="first-name" type="text" class="govuk-input govuk-input--error" aria-invalid="true" aria-describedby="first-name-error">
           <p class="govuk-error-message">Error message</p>
         </div>
-      `
+      `)
     })
 
     it("should hide error summary", () => {
@@ -397,7 +524,7 @@ describe("signup/main", () => {
     let button: HTMLButtonElement
 
     beforeEach(() => {
-      document.body.innerHTML = `<button type="submit">Continue</button>`
+      setFixture(`<button type="submit">Continue</button>`)
       button = document.querySelector("button") as HTMLButtonElement
     })
 
@@ -439,72 +566,10 @@ describe("signup/main", () => {
     })
   })
 
-  describe("populateDomainDropdown", () => {
-    beforeEach(() => {
-      document.body.innerHTML = `
-        <select id="email-domain">
-          <option value="">Select organisation</option>
-        </select>
-      `
-    })
-
-    it("should add options to select", () => {
-      const domains: DomainInfo[] = [
-        { domain: "example.gov.uk", orgName: "Example Council" },
-        { domain: "test.gov.uk", orgName: "Test Council" },
-      ]
-
-      populateDomainDropdown(domains)
-
-      const select = document.getElementById("email-domain") as HTMLSelectElement
-      // +1 for the default "Select organisation" option
-      expect(select.options).toHaveLength(3)
-    })
-
-    it("should sort domains by domain name", () => {
-      const domains: DomainInfo[] = [
-        { domain: "rbwm.gov.uk", orgName: "Windsor and Maidenhead Council" },
-        { domain: "cne-siar.gov.uk", orgName: "Western Isles Council" },
-      ]
-
-      populateDomainDropdown(domains)
-
-      const select = document.getElementById("email-domain") as HTMLSelectElement
-      expect(select.options[1].value).toBe("cne-siar.gov.uk")
-      expect(select.options[2].value).toBe("rbwm.gov.uk")
-    })
-
-    it("should format option text as domain - orgName", () => {
-      const domains: DomainInfo[] = [{ domain: "example.gov.uk", orgName: "Example Council" }]
-
-      populateDomainDropdown(domains)
-
-      const select = document.getElementById("email-domain") as HTMLSelectElement
-      expect(select.options[1].textContent).toBe("example.gov.uk - Example Council")
-    })
-
-    it("should set option value to domain", () => {
-      const domains: DomainInfo[] = [{ domain: "example.gov.uk", orgName: "Example Council" }]
-
-      populateDomainDropdown(domains)
-
-      const select = document.getElementById("email-domain") as HTMLSelectElement
-      expect(select.options[1].value).toBe("example.gov.uk")
-    })
-
-    it("should handle empty domains array", () => {
-      populateDomainDropdown([])
-
-      const select = document.getElementById("email-domain") as HTMLSelectElement
-      expect(select.options).toHaveLength(1) // Only default option
-    })
-
-    it("should do nothing if select element not found", () => {
-      document.body.innerHTML = ""
-
-      expect(() => {
-        populateDomainDropdown([{ domain: "test.gov.uk", orgName: "Test" }])
-      }).not.toThrow()
+  describe("DomainInfo shape", () => {
+    it("conforms to the shared type", () => {
+      const sample: DomainInfo = { domain: "x.gov.uk", orgName: "X" }
+      expect(sample.domain).toBe("x.gov.uk")
     })
   })
 })

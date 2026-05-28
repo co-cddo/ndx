@@ -13,25 +13,28 @@ import AxeBuilder from "@axe-core/playwright"
 
 test.describe("Signup Feature", () => {
   test.describe("Story 1.5: Signup Form", () => {
-    test("should display signup form with all required fields", async ({ page }) => {
+    test("should display signup form with single email field and recognition indicator", async ({ page }) => {
       await page.goto("/signup/")
 
-      // Verify form elements exist
+      // Verify form elements exist (single email field — no split control)
       await expect(page.locator("#signup-form")).toBeVisible()
       await expect(page.locator("#first-name")).toBeVisible()
       await expect(page.locator("#last-name")).toBeVisible()
-      await expect(page.locator("#email-local")).toBeVisible()
-      await expect(page.locator("#email-domain")).toBeVisible()
+      await expect(page.locator("#email")).toBeVisible()
+      await expect(page.locator("#email-status")).toBeAttached()
       await expect(page.locator("#submit-button")).toBeVisible()
+
+      // No dropdown / split control should be present
+      await expect(page.locator("#email-domain")).toHaveCount(0)
+      await expect(page.locator("#email-local")).toHaveCount(0)
     })
 
-    test("should display unlisted domain help text (Story 1.6 AC3)", async ({ page }) => {
+    test("recognition indicator region is empty until user types a domain", async ({ page }) => {
       await page.goto("/signup/")
+      await page.waitForSelector('[data-signup-bundle-ready="true"]', { timeout: 10000 })
 
-      // Verify unlisted domain help message is visible
-      await expect(page.locator("#domain-help")).toBeVisible()
-      await expect(page.locator("#domain-help")).toContainText("Domain not listed?")
-      await expect(page.locator("#domain-help")).toContainText("ndx@dsit.gov.uk")
+      const status = page.locator("#email-status")
+      await expect(status).toHaveText("")
     })
 
     test("signup form should have no accessibility violations", async ({ page }) => {
@@ -45,6 +48,30 @@ test.describe("Signup Feature", () => {
         .analyze()
 
       // WCAG 2.2 AA requires zero violations
+      expect(accessibilityScanResults.violations).toHaveLength(0)
+    })
+  })
+
+  test.describe("Waitlist success page", () => {
+    test("should display confirmation panel and unsubscribe instructions", async ({ page }) => {
+      await page.goto("/signup/waitlist/")
+
+      await expect(page.locator(".govuk-panel--confirmation")).toBeVisible()
+      await expect(page.locator(".govuk-panel__title")).toHaveText("You're on the waitlist")
+      // Unsubscribe-by-email instructions
+      const removeLink = page.getByRole("link", { name: /ndx@dsit\.gov\.uk/i })
+      await expect(removeLink.first()).toBeVisible()
+      // Privacy notice link in the inset
+      await expect(page.locator('a[href="/privacy/"]').first()).toBeVisible()
+    })
+
+    test("waitlist page should have no accessibility violations", async ({ page }) => {
+      await page.goto("/signup/waitlist/")
+
+      const accessibilityScanResults = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
+        .analyze()
+
       expect(accessibilityScanResults.violations).toHaveLength(0)
     })
   })

@@ -24,7 +24,7 @@
  * should match exactly when displaying to users.
  */
 export enum SignupErrorCode {
-  /** User's email domain is not in the allowlist */
+  /** User's email domain is not in the allowlist (legacy — retained for back-compat; waitlist branch replaces blocking) */
   DOMAIN_NOT_ALLOWED = "DOMAIN_NOT_ALLOWED",
   /** User already has an account (silent redirect to login) */
   USER_EXISTS = "USER_EXISTS",
@@ -60,7 +60,8 @@ export const ERROR_MESSAGES: Record<SignupErrorCode, string> = {
 /**
  * Signup form submission payload.
  *
- * Sent to POST /signup-api/signup
+ * Sent to POST /signup-api/signup. The server derives the organisation
+ * domain from the email address — no separate `domain` field is sent.
  */
 export interface SignupRequest {
   /** User's first name (required, max 100 chars) */
@@ -69,20 +70,23 @@ export interface SignupRequest {
   lastName: string
   /** User's email address (required, max 254 chars) */
   email: string
-  /** User's organisation domain from dropdown (required) */
-  domain: string
 }
 
 /**
  * API success response from signup endpoint.
  *
- * Returned when account creation is successful.
+ * Returned when account creation is successful. The `waitlist` flag
+ * indicates whether the user's email domain was on the allowlist
+ * (`false`, instant access) or whether they were added to the waitlist
+ * (`true`, no NDX group membership).
  */
 export interface SignupResponse {
   /** Always true for success responses */
   success: true
   /** Optional URL to redirect to after signup */
   redirectUrl?: string
+  /** True if user was added to waitlist (unlisted domain); false/absent otherwise */
+  waitlist?: boolean
 }
 
 /**
@@ -180,9 +184,10 @@ export const VALIDATION_CONSTRAINTS = {
 /**
  * Characters that are forbidden in name fields.
  *
- * From project-context.md: reject HTML/script tags, null bytes, control chars
+ * From project-context.md: reject HTML/script tags, null bytes, control chars.
+ * Includes `(` and `)` to prevent GOV.UK Notify `((field))` injection.
  */
-export const FORBIDDEN_NAME_CHARS = /[<>'"&\x00-\x1F\x7F]/
+export const FORBIDDEN_NAME_CHARS = /[<>()'"&\x00-\x1F\x7F]/
 
 /**
  * Check if email local part contains a plus sign (alias).

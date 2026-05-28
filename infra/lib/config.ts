@@ -257,6 +257,7 @@ export const NOTIFY_TEMPLATE_IDS = {
 
   // User events
   USER_CREATED: "f143cda7-e6a6-43a9-96fe-ece92069e8e8",
+  WAITLIST_ADDED: "d67de4ec-843e-4107-8f6c-698ccead8d49",
   // Provisioning events
   BLUEPRINT_DEPLOYMENT_REQUEST: "9a66a9b3-3ec4-4e24-add6-5d4f896d161d",
 } as const
@@ -278,6 +279,7 @@ export const EVENT_TYPE_TO_TEMPLATE_ID: Record<string, string> = {
   LeaseFrozen: NOTIFY_TEMPLATE_IDS.LEASE_FROZEN,
   LeaseCostsGenerated: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
   UserCreated: NOTIFY_TEMPLATE_IDS.USER_CREATED,
+  WaitlistAdded: NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED,
   BlueprintDeploymentRequest: NOTIFY_TEMPLATE_IDS.BLUEPRINT_DEPLOYMENT_REQUEST,
 }
 

@@ -37,6 +37,26 @@ interface ValidationError {
 }
 
 /**
+ * Indicator state for the live domain recognition message.
+ */
+type IndicatorState =
+  | { kind: "empty" }
+  | { kind: "recognised"; domain: string; orgName: string }
+  | { kind: "waitlist"; domain: string }
+
+/** Debounce window for re-running domain parse + indicator update (ms). */
+const INDICATOR_DEBOUNCE_MS = 300
+
+/** Cached domain list — populated on init, used by the live indicator. */
+let cachedDomains: DomainInfo[] = []
+
+/** Last rendered indicator state — used to avoid re-announcing identical content. */
+let lastIndicatorState: IndicatorState = { kind: "empty" }
+
+/** Debounce timer handle for the indicator. */
+let indicatorTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
  * Initialize all Signup feature components.
  *
  * This function is called when the DOM is ready.
@@ -48,12 +68,15 @@ async function init(): Promise<void> {
   // Story 1.5: Initialize signup form
   await initSignupForm()
 
+  // Move focus to the confirmation panel <h1> on success/waitlist pages
+  focusConfirmationHeadingIfPresent()
+
   // Signal that the signup bundle has loaded
   document.documentElement.setAttribute("data-signup-bundle-ready", "true")
 }
 
 /**
- * Initialize the signup form with domain dropdown and event handlers.
+ * Initialize the signup form: load domain cache, wire submit + live indicator.
  */
 async function initSignupForm(): Promise<void> {
   const form = document.getElementById("signup-form") as HTMLFormElement | null
@@ -61,13 +84,26 @@ async function initSignupForm(): Promise<void> {
     return // Not on signup page
   }
 
-  // Load domains for dropdown
+  // Load domain cache for the live indicator. If fetch fails, the indicator
+  // defaults to "waitlist" copy for any typed domain — the server is
+  // authoritative and will still route the submission correctly.
   try {
-    const domains = await fetchDomains()
-    populateDomainDropdown(domains)
+    cachedDomains = await fetchDomains()
   } catch {
-    // Show error if domains fail to load (don't log error object to console)
-    showErrorSummary([{ fieldId: "", message: "Failed to load organisation list. Please refresh the page." }])
+    cachedDomains = []
+  }
+
+  // Wire live indicator (debounced) on the email field
+  const emailField = document.getElementById("email") as HTMLInputElement | null
+  if (emailField) {
+    emailField.addEventListener("input", () => {
+      if (indicatorTimer !== null) {
+        clearTimeout(indicatorTimer)
+      }
+      indicatorTimer = setTimeout(() => {
+        updateIndicator(emailField.value)
+      }, INDICATOR_DEBOUNCE_MS)
+    })
   }
 
   // Set up form submission handler
@@ -75,26 +111,131 @@ async function initSignupForm(): Promise<void> {
 }
 
 /**
- * Populate the domain dropdown with fetched domains.
- *
- * @param domains - Array of domain info objects
+ * Move focus to the confirmation panel's <h1> on `/signup/success` and
+ * `/signup/waitlist`, following the established GDS pattern.
  */
-function populateDomainDropdown(domains: DomainInfo[]): void {
-  const select = document.getElementById("email-domain") as HTMLSelectElement | null
-  if (!select) {
+function focusConfirmationHeadingIfPresent(): void {
+  const heading = document.querySelector(".govuk-panel--confirmation .govuk-panel__title") as HTMLElement | null
+  if (heading) {
+    heading.focus()
+  }
+}
+
+/**
+ * Parse an email's domain segment, returning `null` if the input is not
+ * yet a parseable email (no `@`, no dot after `@`, etc.).
+ *
+ * @param email - Raw email input from the user
+ * @returns The lowercase domain segment if parseable, otherwise `null`
+ */
+export function parseDomainFromEmail(email: string): string | null {
+  const trimmed = email.trim()
+  const atIndex = trimmed.indexOf("@")
+  if (atIndex <= 0 || atIndex !== trimmed.lastIndexOf("@")) {
+    return null
+  }
+  const domain = trimmed.substring(atIndex + 1).toLowerCase()
+  // Reject domains with no dot, leading/trailing dot, or only-dot — the
+  // server's `isWellFormedEmail` would reject them too, so the indicator
+  // must not say "recognised/waitlist" for inputs the server will 400.
+  if (domain.length === 0 || !domain.includes(".") || domain.startsWith(".") || domain.endsWith(".")) {
+    return null
+  }
+  return domain
+}
+
+/**
+ * Look up a parsed domain in the cached allowlist (case-insensitive,
+ * exact match — no sub-domain matching).
+ *
+ * @param domain - Lowercase domain segment
+ * @returns The matching `DomainInfo` if recognised, otherwise `undefined`
+ */
+export function findRecognisedDomain(domain: string): DomainInfo | undefined {
+  return cachedDomains.find((d) => d.domain.toLowerCase() === domain)
+}
+
+/**
+ * Update the live recognition indicator. Only re-renders and re-announces
+ * when the parsed domain segment has changed since the last render.
+ *
+ * @param emailValue - Raw email input value
+ */
+export function updateIndicator(emailValue: string): void {
+  const statusEl = document.getElementById("email-status")
+  if (!statusEl) {
     return
   }
 
-  // Sort by domain name for easier finding
-  const sortedDomains = [...domains].sort((a, b) => a.domain.localeCompare(b.domain))
+  const parsedDomain = parseDomainFromEmail(emailValue)
 
-  // Add options - format: "domain.gov.uk - Organisation Name"
-  for (const domain of sortedDomains) {
-    const option = document.createElement("option")
-    option.value = domain.domain
-    option.textContent = `${domain.domain} - ${domain.orgName}`
-    select.appendChild(option)
+  let nextState: IndicatorState
+  if (parsedDomain === null) {
+    nextState = { kind: "empty" }
+  } else {
+    const match = findRecognisedDomain(parsedDomain)
+    nextState = match
+      ? { kind: "recognised", domain: parsedDomain, orgName: match.orgName }
+      : { kind: "waitlist", domain: parsedDomain }
   }
+
+  if (isSameIndicatorState(lastIndicatorState, nextState)) {
+    return
+  }
+
+  renderIndicator(statusEl, nextState)
+  lastIndicatorState = nextState
+}
+
+/**
+ * Render the indicator content for a given state. Uses textContent / DOM
+ * methods only (never innerHTML with user data) — but builds a small DOM
+ * fragment so the `<strong>` org-name styling survives.
+ */
+function renderIndicator(statusEl: HTMLElement, state: IndicatorState): void {
+  // Clear existing content via removeChild (no innerHTML)
+  while (statusEl.firstChild) {
+    statusEl.removeChild(statusEl.firstChild)
+  }
+
+  if (state.kind === "empty") {
+    return
+  }
+
+  const p = document.createElement("p")
+  p.className = "govuk-hint"
+
+  if (state.kind === "recognised") {
+    const tick = document.createElement("span")
+    tick.setAttribute("aria-hidden", "true")
+    tick.textContent = "✓ "
+    p.appendChild(tick)
+
+    const strong = document.createElement("strong")
+    strong.textContent = state.orgName
+    p.appendChild(strong)
+
+    const tail = document.createTextNode(" is registered. You'll get instant access after signing in.")
+    p.appendChild(tail)
+  } else {
+    p.textContent = `${state.domain} isn't on our list yet. You can still sign up — we'll add you to the waitlist and email when access opens.`
+  }
+
+  statusEl.appendChild(p)
+}
+
+/**
+ * Compare two indicator states for equality (used to suppress redundant
+ * `aria-live` announcements when the parsed domain hasn't changed).
+ */
+function isSameIndicatorState(a: IndicatorState, b: IndicatorState): boolean {
+  if (a.kind !== b.kind) {
+    return false
+  }
+  if (a.kind === "empty" || b.kind === "empty") {
+    return a.kind === b.kind
+  }
+  return a.domain === b.domain
 }
 
 /**
@@ -111,8 +252,7 @@ export function validateForm(form: HTMLFormElement): ValidationError[] {
   // Get form values
   const firstName = (form.elements.namedItem("firstName") as HTMLInputElement | null)?.value.trim() ?? ""
   const lastName = (form.elements.namedItem("lastName") as HTMLInputElement | null)?.value.trim() ?? ""
-  const emailLocal = (form.elements.namedItem("emailLocal") as HTMLInputElement | null)?.value.trim() ?? ""
-  const domain = (form.elements.namedItem("domain") as HTMLSelectElement | null)?.value ?? ""
+  const email = (form.elements.namedItem("email") as HTMLInputElement | null)?.value.trim() ?? ""
 
   // First name validation
   if (!firstName) {
@@ -132,31 +272,41 @@ export function validateForm(form: HTMLFormElement): ValidationError[] {
     errors.push({ fieldId: "last-name", message: "Last name must not contain special characters" })
   }
 
-  // Email local part validation
-  if (!emailLocal) {
-    errors.push({ fieldId: "email-local", message: "Enter your email address" })
-  } else if (emailLocal.length > 64) {
-    // RFC 5321: local-part max 64 chars
-    errors.push({ fieldId: "email-local", message: "Email username must be 64 characters or less" })
-  } else if (FORBIDDEN_NAME_CHARS.test(emailLocal)) {
-    errors.push({ fieldId: "email-local", message: "Email address contains invalid characters" })
-  } else if (emailLocal.includes("@")) {
-    // User likely pasted their full email into the local-part field
-    errors.push({
-      fieldId: "email-local",
-      message: "Do not include the '@' or domain — just enter the part before '@'",
-    })
-  } else if (EMAIL_PLUS_ALIAS.test(emailLocal)) {
-    // Reject + aliases - user would need to sign in with non-aliased email
-    errors.push({ fieldId: "email-local", message: "Email address cannot contain a '+' character" })
-  }
-
-  // Domain validation
-  if (!domain) {
-    errors.push({ fieldId: "email-domain", message: "Select your organisation" })
+  // Email validation (single field)
+  if (!email) {
+    errors.push({ fieldId: "email", message: "Enter your email address" })
+  } else if (email.length > VALIDATION_CONSTRAINTS.EMAIL_MAX_LENGTH) {
+    errors.push({ fieldId: "email", message: "Email address must be 254 characters or less" })
+  } else if (EMAIL_PLUS_ALIAS.test(email)) {
+    errors.push({ fieldId: "email", message: "Email address cannot contain a '+' character" })
+  } else if (!isWellFormedEmail(email)) {
+    errors.push({ fieldId: "email", message: "Enter a valid email address" })
   }
 
   return errors
+}
+
+/**
+ * Lightweight client-side email shape check. Authoritative validation
+ * happens on the server — this only catches obvious typos before submit.
+ */
+function isWellFormedEmail(email: string): boolean {
+  if ((email.match(/@/g) || []).length !== 1) {
+    return false
+  }
+  const [local, domain] = email.split("@")
+  if (!local || !domain) {
+    return false
+  }
+  if (local.length > 64) {
+    return false
+  }
+  // Require at least one dot in the domain segment
+  if (!domain.includes(".") || domain.startsWith(".") || domain.endsWith(".")) {
+    return false
+  }
+  // Restrict to printable ASCII — server will also enforce
+  return /^[\x20-\x7E]+$/.test(email)
 }
 
 /**
@@ -188,14 +338,11 @@ async function handleFormSubmit(event: Event): Promise<void> {
     setLoadingState(submitButton, true)
   }
 
-  // 4. Build request
-  const emailLocal = (form.elements.namedItem("emailLocal") as HTMLInputElement).value.trim()
-  const domain = (form.elements.namedItem("domain") as HTMLSelectElement).value
+  // 4. Build request (single email field — server derives domain)
   const request: SignupRequest = {
     firstName: (form.elements.namedItem("firstName") as HTMLInputElement).value.trim(),
     lastName: (form.elements.namedItem("lastName") as HTMLInputElement).value.trim(),
-    email: `${emailLocal}@${domain}`,
-    domain,
+    email: (form.elements.namedItem("email") as HTMLInputElement).value.trim(),
   }
 
   try {
@@ -223,12 +370,15 @@ async function handleFormSubmit(event: Event): Promise<void> {
       }
       showErrorSummary([{ fieldId: "", message: response.message }])
     } else {
-      // Success - notify user before redirecting to login
-      const email = request.email
-      window.alert(
-        `Your account has been created.\n\nYour username is: ${email}\n\nYou'll now be taken to the sign-in page.`,
-      )
-      window.location.href = response.redirectUrl ?? "/signup/success"
+      // Success — route based on waitlist flag. Server's `redirectUrl` (if
+      // present) wins, otherwise we branch on `waitlist`.
+      if (response.redirectUrl) {
+        window.location.href = response.redirectUrl
+      } else if (response.waitlist === true) {
+        window.location.href = "/signup/waitlist"
+      } else {
+        window.location.href = "/signup/success"
+      }
     }
   } catch {
     // Network or unexpected error
@@ -254,8 +404,10 @@ export function showErrorSummary(errors: ValidationError[]): void {
     return
   }
 
-  // Clear existing errors
-  list.innerHTML = ""
+  // Clear existing errors via removeChild (no innerHTML)
+  while (list.firstChild) {
+    list.removeChild(list.firstChild)
+  }
 
   // Add error links
   for (const error of errors) {
@@ -363,6 +515,19 @@ export function setLoadingState(button: HTMLButtonElement, loading: boolean): vo
   button.textContent = loading ? "Creating account..." : "Continue"
 }
 
+/**
+ * Test-only helpers — reset module-level state between tests.
+ * @internal
+ */
+export function _resetForTests(domains: DomainInfo[] = []): void {
+  cachedDomains = domains
+  lastIndicatorState = { kind: "empty" }
+  if (indicatorTimer !== null) {
+    clearTimeout(indicatorTimer)
+    indicatorTimer = null
+  }
+}
+
 // Handle module scripts that may load after DOMContentLoaded has fired
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => void init())
@@ -370,6 +535,3 @@ if (document.readyState === "loading") {
   // DOM is already ready (interactive or complete)
   void init()
 }
-
-// Export for testing
-export { populateDomainDropdown }

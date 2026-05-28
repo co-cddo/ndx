@@ -76,6 +76,12 @@ describe("FORBIDDEN_NAME_CHARS", () => {
     expect(FORBIDDEN_NAME_CHARS.test("\x7F")).toBe(true) // DEL
   })
 
+  it("should match parentheses (Notify ((field)) injection defence)", () => {
+    expect(FORBIDDEN_NAME_CHARS.test("(")).toBe(true)
+    expect(FORBIDDEN_NAME_CHARS.test(")")).toBe(true)
+    expect(FORBIDDEN_NAME_CHARS.test("Robert))((evil")).toBe(true)
+  })
+
   it("should NOT match valid name characters", () => {
     expect(FORBIDDEN_NAME_CHARS.test("a")).toBe(false)
     expect(FORBIDDEN_NAME_CHARS.test("Z")).toBe(false)
@@ -148,6 +154,14 @@ describe("isSignupResponse", () => {
     expect(isSignupResponse(response)).toBe(true)
   })
 
+  it("should return true for SignupResponse with waitlist flag", () => {
+    const response: SignupResponse = {
+      success: true,
+      waitlist: true,
+    }
+    expect(isSignupResponse(response)).toBe(true)
+  })
+
   it("should return false for null", () => {
     expect(isSignupResponse(null)).toBe(false)
   })
@@ -194,20 +208,27 @@ describe("Redirect URL handling (Story 1.6)", () => {
     expect(error.error).toBe(SignupErrorCode.USER_EXISTS)
     expect(error.redirectUrl).toBe("/login")
   })
+
+  it("should handle waitlist response shape", () => {
+    const response: SignupResponse = {
+      success: true,
+      waitlist: true,
+    }
+    expect(isSignupResponse(response)).toBe(true)
+    expect(response.waitlist).toBe(true)
+  })
 })
 
 describe("Type interfaces compile correctly", () => {
-  it("SignupRequest should have correct structure", () => {
+  it("SignupRequest should have correct structure (no domain field)", () => {
     const request: SignupRequest = {
       firstName: "Sarah",
       lastName: "Chen",
       email: "sarah.chen@westbury.gov.uk",
-      domain: "westbury.gov.uk",
     }
     expect(request.firstName).toBe("Sarah")
     expect(request.lastName).toBe("Chen")
     expect(request.email).toBe("sarah.chen@westbury.gov.uk")
-    expect(request.domain).toBe("westbury.gov.uk")
   })
 
   it("DomainInfo should have correct structure", () => {

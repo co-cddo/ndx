@@ -20,6 +20,7 @@ import { SignupErrorCode, ERROR_MESSAGES, FORBIDDEN_NAME_CHARS, type SignupReque
 import { getDomains } from "./domain-service"
 import { checkUserExists, createUser, createUserOnly, getExistingUserNames } from "./identity-store-service"
 import { normalizeEmail, isEmailDomainAllowed } from "./services"
+import { isBlockedDomain } from "./blocklist"
 
 /**
  * Security headers for all Lambda responses (from project-context.md)
@@ -388,6 +389,31 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
       400,
       SignupErrorCode.INVALID_EMAIL,
       ERROR_MESSAGES[SignupErrorCode.INVALID_EMAIL],
+      correlationId,
+    )
+  }
+
+  // Blocklist check — runs BEFORE the allowlist comparison AND before the
+  // user-existence check, so personal/disposable emails never reach the
+  // USER_EXISTS oracle (shrinking that residual enumeration surface).
+  // Suffix-match policy means `mail.gmail.com` and `e.mailinator.com` are
+  // both blocked even though only the base domains are listed.
+  const blocklistResult = isBlockedDomain(normalizedEmail)
+  if (blocklistResult.blocked) {
+    console.log(
+      JSON.stringify({
+        level: "INFO",
+        message: "Signup rejected — blocked email provider",
+        signupBlocked: blocklistResult.category,
+        domain: normalizedDomain,
+        correlationId,
+      }),
+    )
+    await awaitTimingFloor(startTime)
+    return errorResponse(
+      400,
+      SignupErrorCode.WORK_EMAIL_REQUIRED,
+      ERROR_MESSAGES[SignupErrorCode.WORK_EMAIL_REQUIRED],
       correlationId,
     )
   }

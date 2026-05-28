@@ -50,6 +50,20 @@ test.describe("Signup Feature", () => {
       // WCAG 2.2 AA requires zero violations
       expect(accessibilityScanResults.violations).toHaveLength(0)
     })
+
+    test("indicator shows 'use your public sector work email' for a personal-provider domain", async ({ page }) => {
+      await page.goto("/signup/")
+      await page.waitForSelector('[data-signup-bundle-ready="true"]', { timeout: 10000 })
+
+      const email = page.locator("#email")
+      const status = page.locator("#email-status")
+
+      await email.fill("user@gmail.com")
+      // Indicator update is debounced ~300ms — wait briefly.
+      await expect(status).toContainText("public sector work email", { timeout: 2000 })
+      await expect(status).not.toContainText("waitlist")
+      await expect(status).not.toContainText("registered")
+    })
   })
 
   test.describe("Waitlist success page", () => {

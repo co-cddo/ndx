@@ -24,7 +24,19 @@
  * should match exactly when displaying to users.
  */
 export enum SignupErrorCode {
-  /** User's email domain is not in the allowlist (legacy — retained for back-compat; waitlist branch replaces blocking) */
+  /**
+   * Returned for personal email providers (Gmail, Hotmail, etc.) and
+   * known disposable / temporary email providers. NDX:Try requires a
+   * public sector work email.
+   */
+  WORK_EMAIL_REQUIRED = "WORK_EMAIL_REQUIRED",
+  /**
+   * @deprecated Retained for monitoring/alerting back-compat — no code path
+   * returns this any more (the waitlist branch replaced it for unrecognised
+   * but otherwise valid public-sector domains, and WORK_EMAIL_REQUIRED
+   * replaced it for personal/disposable rejection). Remove once dashboards
+   * no longer key on the literal string.
+   */
   DOMAIN_NOT_ALLOWED = "DOMAIN_NOT_ALLOWED",
   /** User already has an account (silent redirect to login) */
   USER_EXISTS = "USER_EXISTS",
@@ -47,6 +59,8 @@ export enum SignupErrorCode {
  * be used exactly as specified for consistency.
  */
 export const ERROR_MESSAGES: Record<SignupErrorCode, string> = {
+  [SignupErrorCode.WORK_EMAIL_REQUIRED]:
+    "Use your public sector work email address. Personal and disposable email addresses aren't accepted.",
   [SignupErrorCode.DOMAIN_NOT_ALLOWED]:
     "Your organisation isn't registered yet. Contact ndx@dsit.gov.uk to request access.",
   [SignupErrorCode.USER_EXISTS]: "Welcome back! You already have an account.",

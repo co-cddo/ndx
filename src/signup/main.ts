@@ -15,6 +15,7 @@ import { initAll as GOVUKFrontend } from "govuk-frontend"
 
 import { fetchDomains, submitSignup } from "./api"
 import type { DomainInfo, SignupRequest } from "./types"
+import { PERSONAL_EMAIL_DOMAINS } from "./blocklist-data"
 import {
   isApiError,
   SignupErrorCode,
@@ -43,6 +44,7 @@ type IndicatorState =
   | { kind: "empty" }
   | { kind: "recognised"; domain: string; orgName: string }
   | { kind: "waitlist"; domain: string }
+  | { kind: "blocked"; domain: string }
 
 /** Debounce window for re-running domain parse + indicator update (ms). */
 const INDICATOR_DEBOUNCE_MS = 300
@@ -156,6 +158,28 @@ export function findRecognisedDomain(domain: string): DomainInfo | undefined {
 }
 
 /**
+ * Suffix-match the parsed domain against the personal-email-provider list.
+ * The Lambda performs the authoritative check (including the much larger
+ * disposable-email list); this client check exists only so the live
+ * indicator can warn users typing `something@gmail.com` BEFORE they submit
+ * the whole form. Disposable providers will pass this check and be
+ * rejected at submit instead — acceptable for the attacker class.
+ *
+ * @param domain - Lowercase domain segment
+ * @returns `true` if the domain or any parent suffix matches the personal list
+ */
+export function isPersonalDomain(domain: string): boolean {
+  if (PERSONAL_EMAIL_DOMAINS.has(domain)) return true
+  let dotIndex = domain.indexOf(".")
+  while (dotIndex !== -1) {
+    const suffix = domain.substring(dotIndex + 1)
+    if (PERSONAL_EMAIL_DOMAINS.has(suffix)) return true
+    dotIndex = domain.indexOf(".", dotIndex + 1)
+  }
+  return false
+}
+
+/**
  * Update the live recognition indicator. Only re-renders and re-announces
  * when the parsed domain segment has changed since the last render.
  *
@@ -172,6 +196,10 @@ export function updateIndicator(emailValue: string): void {
   let nextState: IndicatorState
   if (parsedDomain === null) {
     nextState = { kind: "empty" }
+  } else if (isPersonalDomain(parsedDomain)) {
+    // Take precedence over allowlist matching — a personal-provider domain
+    // could never legitimately appear in the public-sector allowlist.
+    nextState = { kind: "blocked", domain: parsedDomain }
   } else {
     const match = findRecognisedDomain(parsedDomain)
     nextState = match
@@ -217,6 +245,8 @@ function renderIndicator(statusEl: HTMLElement, state: IndicatorState): void {
 
     const tail = document.createTextNode(" is registered. You'll get instant access after signing in.")
     p.appendChild(tail)
+  } else if (state.kind === "blocked") {
+    p.textContent = "Use your public sector work email address. Personal email addresses aren't accepted."
   } else {
     p.textContent = `${state.domain} isn't on our list yet. You can still sign up — we'll add you to the waitlist and email when access opens.`
   }

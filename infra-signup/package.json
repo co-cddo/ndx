@@ -18,6 +18,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/aws-lambda": "8.10.161",
+    "@types/disposable-email-domains": "^1",
     "@types/jest": "30.0.0",
     "@types/node": "25.8.0",
     "aws-cdk": "2.1122.0",
@@ -39,7 +40,8 @@
     "@aws-sdk/client-sso-admin": "^3.1047.0",
     "@aws-sdk/client-sts": "^3.1047.0",
     "aws-cdk-lib": "2.254.0",
-    "constructs": "10.6.0"
+    "constructs": "10.6.0",
+    "disposable-email-domains": "^1.0.62"
   },
   "engines": {
     "node": ">=20.0.0"

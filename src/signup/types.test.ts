@@ -18,6 +18,7 @@ import type { SignupRequest, SignupResponse, ApiError, DomainInfo } from "./type
 
 describe("SignupErrorCode", () => {
   it("should have all expected error codes", () => {
+    expect(SignupErrorCode.WORK_EMAIL_REQUIRED).toBe("WORK_EMAIL_REQUIRED")
     expect(SignupErrorCode.DOMAIN_NOT_ALLOWED).toBe("DOMAIN_NOT_ALLOWED")
     expect(SignupErrorCode.USER_EXISTS).toBe("USER_EXISTS")
     expect(SignupErrorCode.INVALID_EMAIL).toBe("INVALID_EMAIL")
@@ -47,6 +48,12 @@ describe("ERROR_MESSAGES", () => {
 
   it("should have the exact message for USER_EXISTS", () => {
     expect(ERROR_MESSAGES[SignupErrorCode.USER_EXISTS]).toBe("Welcome back! You already have an account.")
+  })
+
+  it("should have the exact message for WORK_EMAIL_REQUIRED", () => {
+    expect(ERROR_MESSAGES[SignupErrorCode.WORK_EMAIL_REQUIRED]).toBe(
+      "Use your public sector work email address. Personal and disposable email addresses aren't accepted.",
+    )
   })
 })
 

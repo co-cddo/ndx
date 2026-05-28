@@ -1129,6 +1129,91 @@ describe("handler", () => {
       })
     })
 
+    describe("blocklist — personal and disposable email rejection", () => {
+      it("rejects a personal email (gmail.com) with WORK_EMAIL_REQUIRED", async () => {
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@gmail.com" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(400)
+        expect(JSON.parse(result.body)).toEqual({
+          error: SignupErrorCode.WORK_EMAIL_REQUIRED,
+          message: ERROR_MESSAGES[SignupErrorCode.WORK_EMAIL_REQUIRED],
+        })
+
+        const log = consoleSpy.mock.calls
+          .map((call) => JSON.parse(call[0]))
+          .find((d) => d.message === "Signup rejected — blocked email provider")
+        expect(log).toBeDefined()
+        expect(log.signupBlocked).toBe("personal")
+        expect(log.domain).toBe("gmail.com")
+      })
+
+      it("rejects via suffix match — mail.gmail.com", async () => {
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@mail.gmail.com" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(400)
+        expect(JSON.parse(result.body).error).toBe(SignupErrorCode.WORK_EMAIL_REQUIRED)
+      })
+
+      it("rejects a disposable email (mailinator.com) with signupBlocked: disposable", async () => {
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@mailinator.com" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        const result = await handler(event)
+
+        expect(result.statusCode).toBe(400)
+        expect(JSON.parse(result.body).error).toBe(SignupErrorCode.WORK_EMAIL_REQUIRED)
+
+        const log = consoleSpy.mock.calls
+          .map((call) => JSON.parse(call[0]))
+          .find((d) => d.message === "Signup rejected — blocked email provider")
+        expect(log?.signupBlocked).toBe("disposable")
+      })
+
+      it("is case-insensitive — GMAIL.COM still blocked", async () => {
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@GMAIL.COM" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        const result = await handler(event)
+        expect(result.statusCode).toBe(400)
+        expect(JSON.parse(result.body).error).toBe(SignupErrorCode.WORK_EMAIL_REQUIRED)
+      })
+
+      it("regression: a recognised allowlisted domain still succeeds (waitlist:false)", async () => {
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(validSignupRequest), validHeaders)
+        const result = await handler(event)
+        expect(result.statusCode).toBe(200)
+        expect(JSON.parse(result.body)).toEqual({ success: true, waitlist: false })
+      })
+
+      it("regression: an unrecognised non-blocked domain still goes to the waitlist", async () => {
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@unknown.example" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        const result = await handler(event)
+        expect(result.statusCode).toBe(200)
+        expect(JSON.parse(result.body)).toEqual({ success: true, waitlist: true })
+      })
+
+      it("blocked-path still honours the timing floor + jitter (>= TIMING_FLOOR_MS + 50)", async () => {
+        jest.useRealTimers()
+        const start = Date.now()
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@gmail.com" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        await handler(event)
+        const elapsed = Date.now() - start
+        expect(elapsed).toBeGreaterThanOrEqual(_internal.TIMING_FLOOR_MS + 50)
+      })
+
+      it("the blocked path runs BEFORE checkUserExists (squatting/enumeration oracle shrinks)", async () => {
+        mockCheckUserExists.mockClear()
+        const req = { firstName: "Jane", lastName: "Smith", email: "jane@gmail.com" }
+        const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(req), validHeaders)
+        await handler(event)
+        expect(mockCheckUserExists).not.toHaveBeenCalled()
+      })
+    })
+
     describe("timing-floor invariant", () => {
       // Guard against a sibling suite that called jest.useFakeTimers() and
       // failed to restore — without this, the setTimeout inside

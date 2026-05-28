@@ -14,6 +14,7 @@ import {
   setLoadingState,
   parseDomainFromEmail,
   findRecognisedDomain,
+  isPersonalDomain,
   updateIndicator,
   _resetForTests,
 } from "./main"
@@ -327,6 +328,65 @@ describe("signup/main", () => {
 
       const status = document.getElementById("email-status")
       expect(status?.textContent).toBe("")
+    })
+
+    it("renders blocked copy when domain is a personal provider (gmail.com)", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@gmail.com")
+
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toContain("public sector work email")
+      expect(status?.textContent).not.toContain("waitlist")
+      expect(status?.textContent).not.toContain("registered")
+    })
+
+    it("renders blocked copy via suffix match (mail.gmail.com)", () => {
+      _resetForTests([{ domain: "council.gov.uk", orgName: "Council" }])
+
+      updateIndicator("name@mail.gmail.com")
+
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toContain("public sector work email")
+    })
+
+    it("blocked state takes precedence over allowlist match", () => {
+      // Pathological case: a personal-provider domain that also appears in
+      // the allowlist. Blocked must win — the personal-provider check
+      // runs first in updateIndicator.
+      _resetForTests([{ domain: "gmail.com", orgName: "Spoofed" }])
+
+      updateIndicator("name@gmail.com")
+
+      const status = document.getElementById("email-status")
+      expect(status?.textContent).toContain("public sector work email")
+      expect(status?.textContent).not.toContain("Spoofed")
+    })
+  })
+
+  describe("isPersonalDomain", () => {
+    it("matches gmail.com exactly", () => {
+      expect(isPersonalDomain("gmail.com")).toBe(true)
+    })
+
+    it("matches via suffix (mail.gmail.com)", () => {
+      expect(isPersonalDomain("mail.gmail.com")).toBe(true)
+    })
+
+    it("does NOT match a lookalike without a dot before the suffix", () => {
+      expect(isPersonalDomain("gmailservice.com")).toBe(false)
+    })
+
+    it("does NOT match a recognised public-sector domain", () => {
+      expect(isPersonalDomain("westbury.gov.uk")).toBe(false)
+    })
+
+    it("is called with already-lowercased input from updateIndicator (assumption check)", () => {
+      // Caller is responsible for lowercasing; verify the function
+      // treats casing strictly. Tests above pass lowercase; here we
+      // confirm mixed-case input is NOT matched (we'd have a bug if it
+      // were treated case-insensitively at this layer).
+      expect(isPersonalDomain("GMAIL.COM")).toBe(false)
     })
   })
 

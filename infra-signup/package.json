@@ -12,7 +12,8 @@
     "synth": "cdk synth",
     "deploy": "cdk deploy",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "esbuild": "./node_modules/.bin/esbuild"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

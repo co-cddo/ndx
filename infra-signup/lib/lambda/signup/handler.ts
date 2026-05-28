@@ -463,11 +463,9 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         if (existing) {
           const normalizeName = (s: string): string => s.trim().toLowerCase()
           const givenDiffers =
-            existing.givenName !== undefined &&
-            normalizeName(existing.givenName) !== normalizeName(request.firstName)
+            existing.givenName !== undefined && normalizeName(existing.givenName) !== normalizeName(request.firstName)
           const familyDiffers =
-            existing.familyName !== undefined &&
-            normalizeName(existing.familyName) !== normalizeName(request.lastName)
+            existing.familyName !== undefined && normalizeName(existing.familyName) !== normalizeName(request.lastName)
           if (givenDiffers || familyDiffers) {
             console.log(
               JSON.stringify({

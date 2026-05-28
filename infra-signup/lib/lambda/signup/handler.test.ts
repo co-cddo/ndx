@@ -1068,12 +1068,7 @@ describe("handler", () => {
             lastName: "~strike~",
             email: "user@westbury.gov.uk",
           }
-          const event = createMockEvent(
-            "POST",
-            "/signup-api/signup",
-            JSON.stringify(hostileRequest),
-            validHeaders,
-          )
+          const event = createMockEvent("POST", "/signup-api/signup", JSON.stringify(hostileRequest), validHeaders)
           await handler(event)
 
           // Collect every SNS publish's Message body. The intentional label
@@ -1220,9 +1215,7 @@ describe("handler", () => {
         // Capture payloads from the published commands — strip variable fields
         // (correlation IDs, UUIDs, timestamps) so the diff is meaningful.
         type SendCall = { input?: unknown }
-        const recordPayloads = (
-          spy: jest.SpyInstance,
-        ): Array<Record<string, unknown>> =>
+        const recordPayloads = (spy: jest.SpyInstance): Array<Record<string, unknown>> =>
           spy.mock.calls.map((call) => {
             const cmd = call[0] as SendCall
             const input = cmd?.input as { Payload?: unknown; Message?: string } | undefined
@@ -1286,12 +1279,8 @@ describe("handler", () => {
             visit(clone)
             return clone
           }
-          expect(baseLambdaPayloads.map(stripVariableFields)).toEqual(
-            enrichedLambdaPayloads.map(stripVariableFields),
-          )
-          expect(baseSnsPayloads.map(stripVariableFields)).toEqual(
-            enrichedSnsPayloads.map(stripVariableFields),
-          )
+          expect(baseLambdaPayloads.map(stripVariableFields)).toEqual(enrichedLambdaPayloads.map(stripVariableFields))
+          expect(baseSnsPayloads.map(stripVariableFields)).toEqual(enrichedSnsPayloads.map(stripVariableFields))
           // Sanity: extras must never appear in any published payload (raw text scan).
           for (const payloads of [enrichedLambdaPayloads, enrichedSnsPayloads]) {
             const serialised = JSON.stringify(payloads)

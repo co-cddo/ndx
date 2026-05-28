@@ -201,6 +201,51 @@ describe("SignupStack", () => {
     })
   })
 
+  describe("Blocklist regression alarm", () => {
+    it("creates a metric filter that counts blocked signups", () => {
+      template.hasResourceProperties("AWS::Logs::MetricFilter", {
+        MetricTransformations: [
+          {
+            MetricNamespace: "NDX/Signup",
+            MetricName: "BlockedSignupCount",
+            MetricValue: "1",
+          },
+        ],
+      })
+    })
+
+    it("creates a metric filter that counts total signup attempts", () => {
+      template.hasResourceProperties("AWS::Logs::MetricFilter", {
+        MetricTransformations: [
+          {
+            MetricNamespace: "NDX/Signup",
+            MetricName: "AttemptedSignupCount",
+            MetricValue: "1",
+          },
+        ],
+      })
+    })
+
+    it("creates the BlocklistRegressionAlarm wired to the signup alerts SNS topic", () => {
+      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+        AlarmName: "ndx-signup-blocklist-regression",
+        ComparisonOperator: "GreaterThanThreshold",
+        Threshold: 0,
+        TreatMissingData: "notBreaching",
+      })
+    })
+
+    it("the alarm uses a math expression combining BlockedSignupCount and AttemptedSignupCount", () => {
+      // CloudWatch math-expression alarms render as `Metrics: [...]` with one
+      // entry per source metric plus the expression itself. Assert all three
+      // are present rather than coupling to exact expression text.
+      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+        AlarmName: "ndx-signup-blocklist-regression",
+        Metrics: [{ Expression: "MAX([attempted - 5, 0]) - blocked" }, { Id: "attempted" }, { Id: "blocked" }],
+      })
+    })
+  })
+
   describe("Outputs", () => {
     it("should output Lambda function ARN", () => {
       template.hasOutput("SignupHandlerArn", {})

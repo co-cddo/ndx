@@ -11,6 +11,8 @@
 
 import * as cdk from "aws-cdk-lib"
 import * as chatbot from "aws-cdk-lib/aws-chatbot"
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch"
+import * as cloudwatchActions from "aws-cdk-lib/aws-cloudwatch-actions"
 import * as events from "aws-cdk-lib/aws-events"
 import * as targets from "aws-cdk-lib/aws-events-targets"
 import * as iam from "aws-cdk-lib/aws-iam"
@@ -364,6 +366,93 @@ export class SignupStack extends cdk.Stack {
       cdk.Tags.of(slackChannel).add("managedby", "cdk")
       cdk.Tags.of(slackChannel).add("feature", "signup")
     }
+
+    // =========================================================================
+    // CloudWatch metric filters + regression alarm for the blocklist
+    // =========================================================================
+    // Detective control for the personal/disposable email blocklist
+    // (`infra-signup/lib/lambda/signup/blocklist.ts`). The handler emits
+    // `signupBlocked: "personal" | "disposable"` on the structured INFO log
+    // line for each rejected submission. A metric filter counts those log
+    // lines; a paired filter counts total POST /signup-api/signup attempts
+    // (the "Processing signup request" line, which runs after email
+    // normalisation and BEFORE the blocklist check, so total = blocked +
+    // recognised + waitlist).
+    //
+    // The alarm fires when, over a 24-hour window, total signup attempts
+    // exceed a small floor (filters out genuinely quiet days) but blocked
+    // count is zero — the signature of a regression that disabled the
+    // blocklist (typo'd suffix-match, accidental short-circuit, etc.).
+    // Action: existing `signupAlertsTopic` (already wired to Slack via
+    // Chatbot), so the alarm shows up in `#ndx-sandbox-alerts` next to
+    // every other signup event.
+
+    const blockedMetricFilter = new logs.MetricFilter(this, "BlockedSignupMetricFilter", {
+      logGroup: this.signupHandler.logGroup,
+      metricNamespace: "NDX/Signup",
+      metricName: "BlockedSignupCount",
+      filterPattern: logs.FilterPattern.stringValue("$.signupBlocked", "=", "*"),
+      metricValue: "1",
+      defaultValue: 0,
+    })
+
+    const attemptedMetricFilter = new logs.MetricFilter(this, "AttemptedSignupMetricFilter", {
+      logGroup: this.signupHandler.logGroup,
+      metricNamespace: "NDX/Signup",
+      metricName: "AttemptedSignupCount",
+      // Counts the "Processing signup request" INFO log emitted just before
+      // the blocklist check, so this captures every well-formed signup that
+      // got past CSRF / body-size / email validation. Total = blocked +
+      // recognised + waitlist + downstream error.
+      filterPattern: logs.FilterPattern.literal('{ $.message = "Processing signup request" }'),
+      metricValue: "1",
+      defaultValue: 0,
+    })
+
+    const blockedMetric = blockedMetricFilter.metric({
+      statistic: cloudwatch.Stats.SUM,
+      period: cdk.Duration.hours(24),
+    })
+    const attemptedMetric = attemptedMetricFilter.metric({
+      statistic: cloudwatch.Stats.SUM,
+      period: cdk.Duration.hours(24),
+    })
+
+    // Math expression: blockedDeficit = max(0, attempted - 5) - blocked.
+    // When attempted ≤ 5 (a quiet day), the expression collapses to
+    // `0 - blocked ≤ 0` and never breaches. When attempted > 5 AND
+    // blocked == 0, deficit > 0 and the alarm fires. Threshold of 5
+    // chosen to swallow the obvious noise of a slow Tuesday; tune via
+    // CDK context if real traffic patterns demand otherwise.
+    const blockedDeficitExpression = new cloudwatch.MathExpression({
+      expression: "MAX([attempted - 5, 0]) - blocked",
+      usingMetrics: {
+        attempted: attemptedMetric,
+        blocked: blockedMetric,
+      },
+      period: cdk.Duration.hours(24),
+      label: "Signup attempts unprotected by the blocklist (24h)",
+    })
+
+    const blocklistRegressionAlarm = new cloudwatch.Alarm(this, "BlocklistRegressionAlarm", {
+      alarmName: "ndx-signup-blocklist-regression",
+      alarmDescription:
+        "Blocklist appears to have stopped rejecting personal/disposable email signups. " +
+        "Triggered when total signup attempts in the last 24h exceed 5 but zero were blocked. " +
+        "Investigate: blocklist.ts, recent deploys, suffix-match logic.",
+      metric: blockedDeficitExpression,
+      threshold: 0,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    })
+    blocklistRegressionAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.signupAlertsTopic))
+
+    cdk.Tags.of(blocklistRegressionAlarm).add("project", "ndx")
+    cdk.Tags.of(blocklistRegressionAlarm).add("environment", env)
+    cdk.Tags.of(blocklistRegressionAlarm).add("managedby", "cdk")
+    cdk.Tags.of(blocklistRegressionAlarm).add("feature", "signup")
 
     // =========================================================================
     // Outputs

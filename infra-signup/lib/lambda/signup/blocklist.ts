@@ -44,9 +44,7 @@ export const PERSONAL_DOMAINS: ReadonlySet<string> = PERSONAL_EMAIL_DOMAINS
  * shipped by the `disposable-email-domains` package, frozen at module
  * load. Already lowercase in the source package.
  */
-export const DISPOSABLE_DOMAINS: ReadonlySet<string> = new Set(
-  disposableList.map((domain) => domain.toLowerCase()),
-)
+export const DISPOSABLE_DOMAINS: ReadonlySet<string> = new Set(disposableList.map((domain) => domain.toLowerCase()))
 
 if (DISPOSABLE_DOMAINS.size < MIN_DISPOSABLE_LIST_SIZE) {
   throw new Error(

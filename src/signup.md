@@ -8,6 +8,10 @@ permalink: /signup/
 
 <p class="govuk-body">Create an NDX account to try products before you buy.</p>
 
+<p class="govuk-body">
+  NDX:Try is currently open to UK local authorities. Other public sector organisations can join the waitlist.
+</p>
+
 <!-- Error summary (hidden by default, shown by JavaScript on validation errors) -->
 <div class="govuk-error-summary" data-module="govuk-error-summary" id="error-summary" hidden tabindex="-1">
   <div role="alert">
@@ -45,7 +49,7 @@ permalink: /signup/
   <div class="govuk-form-group" id="email-group">
     <label class="govuk-label" for="email">Email address</label>
     <div id="email-hint" class="govuk-hint">
-      Enter your work email address
+      Enter your public sector work email address
     </div>
     <p id="email-error" class="govuk-error-message" hidden>
       <span class="govuk-visually-hidden">Error:</span>

@@ -18,6 +18,7 @@ import type { SignupRequest, SignupResponse, ApiError, DomainInfo } from "./type
 
 describe("SignupErrorCode", () => {
   it("should have all expected error codes", () => {
+    expect(SignupErrorCode.WORK_EMAIL_REQUIRED).toBe("WORK_EMAIL_REQUIRED")
     expect(SignupErrorCode.DOMAIN_NOT_ALLOWED).toBe("DOMAIN_NOT_ALLOWED")
     expect(SignupErrorCode.USER_EXISTS).toBe("USER_EXISTS")
     expect(SignupErrorCode.INVALID_EMAIL).toBe("INVALID_EMAIL")
@@ -48,6 +49,12 @@ describe("ERROR_MESSAGES", () => {
   it("should have the exact message for USER_EXISTS", () => {
     expect(ERROR_MESSAGES[SignupErrorCode.USER_EXISTS]).toBe("Welcome back! You already have an account.")
   })
+
+  it("should have the exact message for WORK_EMAIL_REQUIRED", () => {
+    expect(ERROR_MESSAGES[SignupErrorCode.WORK_EMAIL_REQUIRED]).toBe(
+      "Use your public sector work email address. Personal and disposable email addresses aren't accepted.",
+    )
+  })
 })
 
 describe("VALIDATION_CONSTRAINTS", () => {
@@ -74,6 +81,12 @@ describe("FORBIDDEN_NAME_CHARS", () => {
     expect(FORBIDDEN_NAME_CHARS.test("\x00")).toBe(true) // null byte
     expect(FORBIDDEN_NAME_CHARS.test("\x1F")).toBe(true) // unit separator
     expect(FORBIDDEN_NAME_CHARS.test("\x7F")).toBe(true) // DEL
+  })
+
+  it("should match parentheses (Notify ((field)) injection defence)", () => {
+    expect(FORBIDDEN_NAME_CHARS.test("(")).toBe(true)
+    expect(FORBIDDEN_NAME_CHARS.test(")")).toBe(true)
+    expect(FORBIDDEN_NAME_CHARS.test("Robert))((evil")).toBe(true)
   })
 
   it("should NOT match valid name characters", () => {
@@ -148,6 +161,14 @@ describe("isSignupResponse", () => {
     expect(isSignupResponse(response)).toBe(true)
   })
 
+  it("should return true for SignupResponse with waitlist flag", () => {
+    const response: SignupResponse = {
+      success: true,
+      waitlist: true,
+    }
+    expect(isSignupResponse(response)).toBe(true)
+  })
+
   it("should return false for null", () => {
     expect(isSignupResponse(null)).toBe(false)
   })
@@ -194,20 +215,27 @@ describe("Redirect URL handling (Story 1.6)", () => {
     expect(error.error).toBe(SignupErrorCode.USER_EXISTS)
     expect(error.redirectUrl).toBe("/login")
   })
+
+  it("should handle waitlist response shape", () => {
+    const response: SignupResponse = {
+      success: true,
+      waitlist: true,
+    }
+    expect(isSignupResponse(response)).toBe(true)
+    expect(response.waitlist).toBe(true)
+  })
 })
 
 describe("Type interfaces compile correctly", () => {
-  it("SignupRequest should have correct structure", () => {
+  it("SignupRequest should have correct structure (no domain field)", () => {
     const request: SignupRequest = {
       firstName: "Sarah",
       lastName: "Chen",
       email: "sarah.chen@westbury.gov.uk",
-      domain: "westbury.gov.uk",
     }
     expect(request.firstName).toBe("Sarah")
     expect(request.lastName).toBe("Chen")
     expect(request.email).toBe("sarah.chen@westbury.gov.uk")
-    expect(request.domain).toBe("westbury.gov.uk")
   })
 
   it("DomainInfo should have correct structure", () => {

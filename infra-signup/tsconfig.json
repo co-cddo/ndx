@@ -25,12 +25,13 @@
     "declarationMap": true,
     "resolveJsonModule": true,
     "paths": {
-      "@ndx/signup-types": ["../src/signup/types.ts"]
+      "@ndx/signup-types": ["../src/signup/types.ts"],
+      "@ndx/signup-types/blocklist-data": ["../src/signup/blocklist-data.ts"]
     },
     "baseUrl": ".",
     "typeRoots": ["./node_modules/@types"],
     "types": ["jest", "node", "aws-lambda"]
   },
-  "include": ["bin/**/*.ts", "lib/**/*.ts", "../src/signup/types.ts"],
+  "include": ["bin/**/*.ts", "lib/**/*.ts", "../src/signup/types.ts", "../src/signup/blocklist-data.ts"],
   "exclude": ["node_modules", "dist", "cdk.out", "**/*.d.ts"]
 }

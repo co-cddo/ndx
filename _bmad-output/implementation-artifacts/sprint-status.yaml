@@ -92,3 +92,8 @@ development_status:
   7-1-catalogue-links: done
   7-2-branding-update: done
   epic-7-retrospective: done
+
+  # Standalone tech specs (delivered outside epic structure)
+  tech-spec-billing-csv-download-notification: done
+  tech-spec-add-github-source-links-try-scenarios: done
+  tech-spec-govnotify-account-creation-blueprint-provisioning: done

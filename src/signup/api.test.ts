@@ -94,7 +94,6 @@ describe("signup/api", () => {
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@example.gov.uk",
-      domain: "example.gov.uk",
     }
 
     it("should return success response on successful signup", async () => {

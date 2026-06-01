@@ -18,8 +18,9 @@ import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda"
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns"
 import { SignupErrorCode, ERROR_MESSAGES, FORBIDDEN_NAME_CHARS, type SignupRequest } from "@ndx/signup-types"
 import { getDomains } from "./domain-service"
-import { checkUserExists, createUser } from "./identity-store-service"
+import { checkUserExists, createUser, createUserOnly, getExistingUserNames } from "./identity-store-service"
 import { normalizeEmail, isEmailDomainAllowed } from "./services"
+import { isBlockedDomain } from "./blocklist"
 
 /**
  * Security headers for all Lambda responses (from project-context.md)
@@ -35,6 +36,31 @@ const securityHeaders = {
 // SDK clients for notification (module-level singletons per Lambda best practice)
 const lambdaClient = new LambdaClient({})
 const snsClient = new SNSClient({})
+
+/**
+ * Slack mrkdwn metacharacters that must be stripped from any user-controlled
+ * string before embedding in a Slack alert payload. Includes `<` and `>`
+ * because the `<url|label>` link syntax would otherwise let a submitter
+ * inject arbitrary link targets into `#ndx-sandbox-alerts`.
+ */
+const SLACK_MRKDWN_METACHARS = /[*_~`<>]/g
+
+/**
+ * Strip Slack mrkdwn metacharacters from a string so it's safe to embed in
+ * an alert payload. Removes `*`, `_`, `~`, backtick, `<`, `>`.
+ */
+function stripSlackMrkdwn(input: string): string {
+  return input.replace(SLACK_MRKDWN_METACHARS, "")
+}
+
+/**
+ * Timing-oracle floor for the signup handler. All POST /signup-api/signup
+ * responses are held until at least this many milliseconds have elapsed
+ * since handler entry. Chosen to comfortably exceed the recognised
+ * branch's `CreateUser` + `CreateGroupMembership` worst case in observed
+ * prod telemetry; the existing 50–150ms random jitter is applied on top.
+ */
+const TIMING_FLOOR_MS = 400
 
 /**
  * Lambda handler for signup API endpoints.
@@ -128,11 +154,23 @@ const MAX_EMAIL_LENGTH = 254
 // to ensure frontend and backend validation are consistent
 
 /**
- * Add random delay for timing attack mitigation (50-150ms per project-context.md)
+ * Hold the response until the timing floor has elapsed since handler
+ * entry, then add 50-150ms of random jitter ON TOP of the floor. Combined,
+ * these close both the success-vs-409 oracle and the recognised-vs-waitlist
+ * branch-latency oracle.
+ *
+ * Order matters: jitter is applied AFTER the floor (per frozen spec rule
+ * "jitter adds 50-150ms on top") so total wait = max(handler_elapsed,
+ * TIMING_FLOOR_MS) + jitter, not max(handler_elapsed + jitter,
+ * TIMING_FLOOR_MS).
  */
-async function addTimingDelay(): Promise<void> {
-  const delay = 50 + Math.random() * 100
-  await new Promise((resolve) => setTimeout(resolve, delay))
+async function awaitTimingFloor(startTime: number): Promise<void> {
+  const remaining = TIMING_FLOOR_MS - (Date.now() - startTime)
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining))
+  }
+  const jitter = 50 + Math.random() * 100
+  await new Promise((resolve) => setTimeout(resolve, jitter))
 }
 
 /**
@@ -161,6 +199,30 @@ function parseBodySafe(body: string | null): unknown {
 }
 
 /**
+ * Strip the request body to **only** the known SignupRequest fields. Any
+ * other field (including a legacy `domain`, `__proto__`, or arbitrary
+ * extras) is silently dropped — never logged, never echoed in Slack, never
+ * persisted. Mirrors Zod `.strip()` semantics without pulling Zod into the
+ * signup Lambda's runtime path.
+ *
+ * @returns The whitelisted request shape, or `null` if a required field is
+ *   missing or has the wrong type
+ */
+function pickSignupRequest(raw: unknown): SignupRequest | null {
+  if (typeof raw !== "object" || raw === null) {
+    return null
+  }
+  const obj = raw as Record<string, unknown>
+  const firstName = obj.firstName
+  const lastName = obj.lastName
+  const email = obj.email
+  if (typeof firstName !== "string" || typeof lastName !== "string" || typeof email !== "string") {
+    return null
+  }
+  return { firstName, lastName, email }
+}
+
+/**
  * Handle POST /signup-api/signup requests.
  *
  * Validates request, normalizes email, checks domain allowlist,
@@ -171,8 +233,8 @@ function parseBodySafe(body: string | null): unknown {
  * @returns API Gateway proxy result
  */
 async function handleSignup(event: APIGatewayProxyEvent, correlationId: string): Promise<APIGatewayProxyResult> {
-  // Add timing delay for security (prevents timing attacks)
-  await addTimingDelay()
+  const startTime = Date.now()
+  // Timing floor + jitter applied at exit (see `awaitTimingFloor`).
 
   // Validate request body size (10KB max per project-context.md:269)
   if (event.body && event.body.length > MAX_BODY_SIZE) {
@@ -184,6 +246,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(400, "REQUEST_TOO_LARGE", "Request body too large", correlationId)
   }
 
@@ -198,6 +261,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(
       400,
       SignupErrorCode.INVALID_CONTENT_TYPE,
@@ -216,14 +280,16 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(403, SignupErrorCode.CSRF_INVALID, ERROR_MESSAGES[SignupErrorCode.CSRF_INVALID], correlationId)
   }
 
   // Parse request body with prototype pollution defense
-  let request: SignupRequest
+  let rawParsed: unknown
   try {
-    request = parseBodySafe(event.body) as SignupRequest
+    rawParsed = parseBodySafe(event.body)
   } catch {
+    await awaitTimingFloor(startTime)
     return errorResponse(
       400,
       SignupErrorCode.INVALID_CONTENT_TYPE,
@@ -232,27 +298,28 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
     )
   }
 
-  // Validate required fields
-  if (!request.firstName || !request.lastName || !request.email || !request.domain) {
+  // Whitelist known fields only — silently drops `domain`, `__proto__`,
+  // and any other extras (no log, no Slack, no Notify trace).
+  const request = pickSignupRequest(rawParsed)
+  if (!request) {
+    await awaitTimingFloor(startTime)
     return errorResponse(400, SignupErrorCode.INVALID_EMAIL, "Missing required fields", correlationId)
   }
 
   // Validate name field lengths and content (project-context.md:234)
-  if (
-    typeof request.firstName !== "string" ||
-    typeof request.lastName !== "string" ||
-    request.firstName.length > MAX_NAME_LENGTH ||
-    request.lastName.length > MAX_NAME_LENGTH
-  ) {
+  if (request.firstName.length > MAX_NAME_LENGTH || request.lastName.length > MAX_NAME_LENGTH) {
+    await awaitTimingFloor(startTime)
     return errorResponse(400, SignupErrorCode.INVALID_EMAIL, "Name field too long", correlationId)
   }
 
   if (FORBIDDEN_NAME_CHARS.test(request.firstName) || FORBIDDEN_NAME_CHARS.test(request.lastName)) {
+    await awaitTimingFloor(startTime)
     return errorResponse(400, SignupErrorCode.INVALID_EMAIL, "Invalid characters in name", correlationId)
   }
 
   // Validate email length per RFC 5321 (project-context.md:233)
-  if (typeof request.email !== "string" || request.email.length > MAX_EMAIL_LENGTH) {
+  if (request.email.length > MAX_EMAIL_LENGTH) {
+    await awaitTimingFloor(startTime)
     return errorResponse(
       400,
       SignupErrorCode.INVALID_EMAIL,
@@ -270,6 +337,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(
       400,
       SignupErrorCode.INVALID_EMAIL,
@@ -288,6 +356,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(
       400,
       SignupErrorCode.INVALID_EMAIL,
@@ -296,15 +365,55 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
     )
   }
 
-  // Normalize email (FR16, NFR6)
+  // Normalize email (FR16, NFR6). Trims leading/trailing whitespace, lowers
+  // case, and rejects any non-ASCII codepoint — IDN policy is "reject" per
+  // the frozen spec.
   let normalizedEmail: string
   try {
-    normalizedEmail = normalizeEmail(request.email)
+    normalizedEmail = normalizeEmail(request.email.trim())
   } catch {
+    await awaitTimingFloor(startTime)
     return errorResponse(
       400,
       SignupErrorCode.INVALID_EMAIL,
       ERROR_MESSAGES[SignupErrorCode.INVALID_EMAIL],
+      correlationId,
+    )
+  }
+
+  // Derive the domain server-side — never read it from the request body.
+  const normalizedDomain = normalizedEmail.split("@")[1] ?? ""
+  if (!normalizedDomain) {
+    await awaitTimingFloor(startTime)
+    return errorResponse(
+      400,
+      SignupErrorCode.INVALID_EMAIL,
+      ERROR_MESSAGES[SignupErrorCode.INVALID_EMAIL],
+      correlationId,
+    )
+  }
+
+  // Blocklist check — runs BEFORE the allowlist comparison AND before the
+  // user-existence check, so personal/disposable emails never reach the
+  // USER_EXISTS oracle (shrinking that residual enumeration surface).
+  // Suffix-match policy means `mail.gmail.com` and `e.mailinator.com` are
+  // both blocked even though only the base domains are listed.
+  const blocklistResult = isBlockedDomain(normalizedEmail)
+  if (blocklistResult.blocked) {
+    console.log(
+      JSON.stringify({
+        level: "INFO",
+        message: "Signup rejected — blocked email provider",
+        signupBlocked: blocklistResult.category,
+        domain: normalizedDomain,
+        correlationId,
+      }),
+    )
+    await awaitTimingFloor(startTime)
+    return errorResponse(
+      400,
+      SignupErrorCode.WORK_EMAIL_REQUIRED,
+      ERROR_MESSAGES[SignupErrorCode.WORK_EMAIL_REQUIRED],
       correlationId,
     )
   }
@@ -314,44 +423,50 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
     JSON.stringify({
       level: "INFO",
       message: "Processing signup request",
-      domain: request.domain,
+      domain: normalizedDomain,
       correlationId,
     }),
   )
 
-  // Validate domain against allowlist (FR13)
+  // Compute branch (recognised vs waitlist) from the allowlist. Empty
+  // allowlist fails closed: we'd rather 5xx than silently route everyone to
+  // the waitlist branch (could mask a misconfigured Secrets Manager pull).
+  let isWaitlist: boolean
   try {
     const domains = await getDomains(correlationId)
-    if (!isEmailDomainAllowed(normalizedEmail, domains)) {
+    if (!domains || domains.length === 0) {
       console.log(
         JSON.stringify({
-          level: "WARN",
-          message: "Domain not allowed",
-          domain: request.domain,
+          level: "ERROR",
+          message: "Domain allowlist resolved to empty array — failing closed",
+          domain: normalizedDomain,
           correlationId,
         }),
       )
+      await awaitTimingFloor(startTime)
       return errorResponse(
-        403,
-        SignupErrorCode.DOMAIN_NOT_ALLOWED,
-        ERROR_MESSAGES[SignupErrorCode.DOMAIN_NOT_ALLOWED],
+        500,
+        SignupErrorCode.SERVER_ERROR,
+        ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR],
         correlationId,
       )
     }
+    isWaitlist = !isEmailDomainAllowed(normalizedEmail, domains)
   } catch (error) {
     console.log(
       JSON.stringify({
         level: "ERROR",
         message: "Failed to validate domain",
         error: error instanceof Error ? error.message : "Unknown error",
-        domain: request.domain,
+        domain: normalizedDomain,
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(503, "SERVICE_UNAVAILABLE", "Service temporarily unavailable", correlationId)
   }
 
-  // Check if user already exists
+  // Check if user already exists (both branches)
   try {
     const userExists = await checkUserExists(normalizedEmail, correlationId)
     if (userExists) {
@@ -359,10 +474,52 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         JSON.stringify({
           level: "INFO",
           message: "User already exists",
-          domain: request.domain,
+          domain: normalizedDomain,
           correlationId,
         }),
       )
+
+      // Squatting detection: if the supplied first/last name differs from
+      // what's stored in IDC, warn — same email, different person trying to
+      // register. No behaviour change to the client response. Comparison is
+      // trim+case-insensitive so legacy IDC records with whitespace/casing
+      // drift don't flag every retry as squatting.
+      try {
+        const existing = await getExistingUserNames(normalizedEmail, correlationId)
+        if (existing) {
+          const normalizeName = (s: string): string => s.trim().toLowerCase()
+          const givenDiffers =
+            existing.givenName !== undefined && normalizeName(existing.givenName) !== normalizeName(request.firstName)
+          const familyDiffers =
+            existing.familyName !== undefined && normalizeName(existing.familyName) !== normalizeName(request.lastName)
+          if (givenDiffers || familyDiffers) {
+            console.log(
+              JSON.stringify({
+                level: "WARN",
+                event: "squatting_warn",
+                message: "USER_EXISTS with name mismatch — possible signup squatting",
+                domain: normalizedDomain,
+                correlationId,
+              }),
+            )
+          }
+        }
+      } catch (squattingError) {
+        // Detection is best-effort and must never block the 409 response —
+        // but log so misconfigured IDC permissions don't silently disable
+        // the detection signal.
+        console.log(
+          JSON.stringify({
+            level: "WARN",
+            message: "Squatting detection check failed",
+            error: squattingError instanceof Error ? squattingError.message : "Unknown error",
+            domain: normalizedDomain,
+            correlationId,
+          }),
+        )
+      }
+
+      await awaitTimingFloor(startTime)
       return errorResponse(
         409,
         SignupErrorCode.USER_EXISTS,
@@ -377,36 +534,39 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         level: "ERROR",
         message: "Failed to check user existence",
         error: error instanceof Error ? error.message : "Unknown error",
-        domain: request.domain,
+        domain: normalizedDomain,
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(500, SignupErrorCode.SERVER_ERROR, ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR], correlationId)
   }
 
-  // Create user in IAM Identity Center
+  // Create user — recognised branch adds to NDX group, waitlist branch does not.
   try {
-    const userId = await createUser(
-      {
-        ...request,
-        email: normalizedEmail,
-      },
-      correlationId,
-    )
+    const normalizedRequest: SignupRequest = { ...request, email: normalizedEmail }
+    const userId = isWaitlist
+      ? await createUserOnly(normalizedRequest, correlationId)
+      : await createUser(normalizedRequest, correlationId)
 
     console.log(
       JSON.stringify({
         level: "INFO",
         message: "User created successfully",
-        domain: request.domain,
+        domain: normalizedDomain,
+        signupBranch: isWaitlist ? "waitlist" : "recognised",
+        signupDomain: normalizedDomain,
         correlationId,
       }),
     )
 
-    // Fire-and-forget: Send welcome email and Slack alert
-    // Notification failure must never block account creation (AC-3)
+    // Fire-and-forget: Send Notify email + Slack alert (both branches).
+    // Notification failure must never block account creation (AC-3).
 
-    // 1. Async Lambda invoke for welcome email via notification Lambda
+    const eventDetailType = isWaitlist ? "WaitlistAdded" : "UserCreated"
+    const slackTitle = isWaitlist ? "New NDX Waitlist Signup" : "New NDX User Created"
+
+    // 1. Async Lambda invoke for welcome / waitlist email via notification Lambda
     try {
       if (process.env.NOTIFICATION_LAMBDA_ARN) {
         await lambdaClient.send(
@@ -414,7 +574,7 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
             FunctionName: process.env.NOTIFICATION_LAMBDA_ARN,
             InvocationType: "Event",
             Payload: JSON.stringify({
-              "detail-type": "UserCreated",
+              "detail-type": eventDetailType,
               source: "ndx-signup",
               id: crypto.randomUUID(),
               time: new Date().toISOString(),
@@ -436,18 +596,22 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
       console.log(
         JSON.stringify({
           level: "WARN",
-          message: "Welcome email notification failed (non-blocking)",
+          message: "Notification email invoke failed (non-blocking)",
           error: notifyError instanceof Error ? notifyError.message : "Unknown error",
           correlationId,
         }),
       )
     }
 
-    // 2. SNS publish for Slack alert via AWS Chatbot
+    // 2. SNS publish for Slack alert via AWS Chatbot. Strip Slack mrkdwn
+    //    metacharacters (`* _ ~ \` < >`) from all user-controlled fields,
+    //    including `email`, so a submitter can't inject link syntax into
+    //    `#ndx-sandbox-alerts`.
     try {
       if (process.env.EVENTS_TOPIC_ARN) {
-        const safeFirstName = request.firstName.replace(/[*_~`>]/g, "")
-        const safeLastName = request.lastName.replace(/[*_~`>]/g, "")
+        const safeFirstName = stripSlackMrkdwn(request.firstName)
+        const safeLastName = stripSlackMrkdwn(request.lastName)
+        const safeEmail = stripSlackMrkdwn(normalizedEmail)
         await snsClient.send(
           new PublishCommand({
             TopicArn: process.env.EVENTS_TOPIC_ARN,
@@ -456,8 +620,8 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
               source: "custom",
               content: {
                 textType: "client-markdown",
-                title: "New NDX User Created",
-                description: `*User:* ${safeFirstName} ${safeLastName}\n*Email:* ${normalizedEmail}`,
+                title: slackTitle,
+                description: `*User:* ${safeFirstName} ${safeLastName}\n*Email:* ${safeEmail}`,
               },
             }),
           }),
@@ -474,7 +638,8 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
       )
     }
 
-    return successResponse({ success: true }, correlationId)
+    await awaitTimingFloor(startTime)
+    return successResponse({ success: true, waitlist: isWaitlist }, correlationId)
   } catch (error) {
     // Handle race condition: user created between check and create
     if (error instanceof ConflictException) {
@@ -482,10 +647,11 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         JSON.stringify({
           level: "INFO",
           message: "User already exists (race condition)",
-          domain: request.domain,
+          domain: normalizedDomain,
           correlationId,
         }),
       )
+      await awaitTimingFloor(startTime)
       return errorResponse(
         409,
         SignupErrorCode.USER_EXISTS,
@@ -500,10 +666,11 @@ async function handleSignup(event: APIGatewayProxyEvent, correlationId: string):
         level: "ERROR",
         message: "Failed to create user",
         error: error instanceof Error ? error.message : "Unknown error",
-        domain: request.domain,
+        domain: normalizedDomain,
         correlationId,
       }),
     )
+    await awaitTimingFloor(startTime)
     return errorResponse(500, SignupErrorCode.SERVER_ERROR, ERROR_MESSAGES[SignupErrorCode.SERVER_ERROR], correlationId)
   }
 }
@@ -553,4 +720,14 @@ export function errorResponse(
     },
     body: JSON.stringify({ error, message, ...extra }),
   }
+}
+
+/**
+ * Test-only exports for unit tests of the Slack-mrkdwn-strip and timing
+ * helpers. Internal — do not import from production paths.
+ * @internal
+ */
+export const _internal = {
+  stripSlackMrkdwn,
+  TIMING_FLOOR_MS,
 }

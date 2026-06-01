@@ -5,7 +5,7 @@ permalink: /signup/success/
 ---
 
 <div class="govuk-panel govuk-panel--confirmation">
-  <h1 class="govuk-panel__title">Account created</h1>
+  <h1 class="govuk-panel__title" tabindex="-1">Account created</h1>
   <div class="govuk-panel__body">
     Your account has been created successfully
   </div>

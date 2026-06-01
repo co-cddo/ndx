@@ -8,16 +8,9 @@ permalink: /signup/
 
 <p class="govuk-body">Create an NDX account to try products before you buy.</p>
 
-<div class="govuk-inset-text">
-  <p class="govuk-body">
-    This service is currently only available to local government organisations.
-  </p>
-  <p class="govuk-body">
-    If you work in another area of the UK public sector and would like to use NDX,
-    please email <a href="mailto:ndx@dsit.gov.uk" class="govuk-link">ndx@dsit.gov.uk</a>
-    to register your interest. We'll let you know when the service opens to more organisations.
-  </p>
-</div>
+<p class="govuk-body">
+  NDX:Try is currently open to UK local authorities. Other public sector organisations can join the waitlist.
+</p>
 
 <!-- Error summary (hidden by default, shown by JavaScript on validation errors) -->
 <div class="govuk-error-summary" data-module="govuk-error-summary" id="error-summary" hidden tabindex="-1">
@@ -52,33 +45,18 @@ permalink: /signup/
     <input class="govuk-input" id="last-name" name="lastName" type="text" autocomplete="family-name">
   </div>
 
-  <!-- Email address with split input -->
+  <!-- Email address (single field) -->
   <div class="govuk-form-group" id="email-group">
-    <label class="govuk-label" for="email-local">Email address</label>
+    <label class="govuk-label" for="email">Email address</label>
     <div id="email-hint" class="govuk-hint">
-      Enter your work email address
+      Enter your public sector work email address
     </div>
-    <p id="email-local-error" class="govuk-error-message" hidden>
+    <p id="email-error" class="govuk-error-message" hidden>
       <span class="govuk-visually-hidden">Error:</span>
       <span class="error-text"></span>
     </p>
-    <p id="email-domain-error" class="govuk-error-message" hidden>
-      <span class="govuk-visually-hidden">Error:</span>
-      <span class="error-text"></span>
-    </p>
-    <div class="ndx-email-input">
-      <input class="govuk-input ndx-email-input__local" id="email-local" name="emailLocal" type="text" aria-describedby="email-hint">
-      <span class="ndx-email-input__at" aria-hidden="true">@</span>
-      <select class="govuk-select ndx-email-input__domain" id="email-domain" name="domain" aria-label="Organisation domain">
-        <option value="">Select your organisation</option>
-        <!-- Options populated by JavaScript -->
-      </select>
-    </div>
-  </div>
-
-  <!-- Domain not listed help text -->
-  <div class="govuk-inset-text" id="domain-help">
-    Domain not listed? <a href="mailto:ndx@dsit.gov.uk" class="govuk-link">Contact ndx@dsit.gov.uk</a> to request access.
+    <input class="govuk-input" id="email" name="email" type="email" autocomplete="email" aria-describedby="email-hint email-status">
+    <div id="email-status" role="status" aria-live="polite" class="govuk-hint"></div>
   </div>
 
   <!-- Privacy policy link -->

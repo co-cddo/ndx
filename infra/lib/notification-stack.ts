@@ -103,6 +103,21 @@ export class NdxNotificationStack extends cdk.Stack {
     // Read environment context for multi-environment support
     const env = (this.node.tryGetContext("env") as string | undefined) || "prod"
 
+    // Synth-time assertion: fail fast if WaitlistAdded template ID is still
+    // the placeholder when deploying to prod. Mirrors the pattern in
+    // infra/lib/waf-stack.ts:53. Non-prod environments are exempt.
+    // Cast through string to defeat the literal-type narrowing — once the
+    // template ID is set, TS narrows the field to its literal value and the
+    // comparison provably can't be true; the cast preserves the runtime
+    // guard for the case where a future edit reverts the ID to "".
+    if (env === "prod" && (NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED as string) === "") {
+      throw new Error(
+        "NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED is empty — set the GOV.UK Notify " +
+          "template ID in infra/lib/config.ts before deploying to prod. " +
+          "Waitlisted users would otherwise silently miss their confirmation email.",
+      )
+    }
+
     // Get ISB configuration for the current environment (moved earlier for use in Lambda env)
     const isbConfig = getISBConfig(env)
     const isbEventBusArn = getISBEventBusArn(isbConfig)
@@ -174,6 +189,7 @@ export class NdxNotificationStack extends cdk.Stack {
         NOTIFY_TEMPLATE_LEASE_COSTS_GENERATED: NOTIFY_TEMPLATE_IDS.LEASE_COSTS_GENERATED,
         // User events
         NOTIFY_TEMPLATE_USER_CREATED: NOTIFY_TEMPLATE_IDS.USER_CREATED,
+        NOTIFY_TEMPLATE_WAITLIST_ADDED: NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED,
         // Provisioning events
         NOTIFY_TEMPLATE_BLUEPRINT_DEPLOYMENT_REQUEST: NOTIFY_TEMPLATE_IDS.BLUEPRINT_DEPLOYMENT_REQUEST,
         // SSO portal URL for welcome email personalisation

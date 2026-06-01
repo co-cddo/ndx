@@ -11,7 +11,8 @@
     "cdk": "cdk",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "pre-deploy": "scripts/pre-deploy-check.sh"
+    "pre-deploy": "scripts/pre-deploy-check.sh",
+    "esbuild": "./node_modules/.bin/esbuild"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "3.1049.0",

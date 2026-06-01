@@ -110,6 +110,10 @@ describe("AC-2.1: All user notification event type schemas", () => {
     expect(EVENT_SCHEMAS.UserCreated).toBeDefined()
   })
 
+  it("should have WaitlistAdded schema", () => {
+    expect(EVENT_SCHEMAS.WaitlistAdded).toBeDefined()
+  })
+
   it("should have BlueprintDeploymentRequest schema", () => {
     expect(EVENT_SCHEMAS.BlueprintDeploymentRequest).toBeDefined()
   })
@@ -228,6 +232,20 @@ describe("AC-2.1: All user notification event type schemas", () => {
     const result = validateEvent(event)
 
     expect(result.eventType).toBe("UserCreated")
+    expect(result.detail).toEqual(detail)
+  })
+
+  it("should validate valid WaitlistAdded event", () => {
+    const detail = {
+      userEmail: validEmail,
+      firstName: "Jane",
+      lastName: "Smith",
+    }
+    const event = createTestEvent("WaitlistAdded", detail)
+
+    const result = validateEvent(event)
+
+    expect(result.eventType).toBe("WaitlistAdded")
     expect(result.detail).toEqual(detail)
   })
 

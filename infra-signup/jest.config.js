@@ -8,5 +8,6 @@ module.exports = {
   },
   moduleNameMapper: {
     "^@ndx/signup-types$": "<rootDir>/../src/signup/types.ts",
+    "^@ndx/signup-types/blocklist-data$": "<rootDir>/../src/signup/blocklist-data.ts",
   },
 }

@@ -15,7 +15,16 @@ import {
   ConflictException,
 } from "@aws-sdk/client-identitystore"
 import { STSClient } from "@aws-sdk/client-sts"
-import { checkUserExists, createUser, validateConfiguration, resetClient } from "./identity-store-service"
+import {
+  checkUserExists,
+  createUser,
+  createUserOnly,
+  addUserToNdxGroup,
+  getExistingUserNames,
+  validateConfiguration,
+  resetClient,
+} from "./identity-store-service"
+import type { SignupRequest } from "@ndx/signup-types"
 
 // Mock the AWS SDK - but keep ConflictException as real class for instanceof checks
 jest.mock("@aws-sdk/client-identitystore", () => {
@@ -27,6 +36,7 @@ jest.mock("@aws-sdk/client-identitystore", () => {
     CreateUserCommand: jest.fn(),
     CreateGroupMembershipCommand: jest.fn(),
     DeleteUserCommand: jest.fn(),
+    DescribeUserCommand: jest.fn(),
   }
 })
 
@@ -206,7 +216,6 @@ describe("identity-store-service", () => {
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@example.gov.uk",
-      domain: "example.gov.uk",
     }
 
     it("should create user and add to group on success", async () => {
@@ -405,6 +414,114 @@ describe("identity-store-service", () => {
         return data.message.includes("orphaned user")
       })
       expect(orphanLog).toBeDefined()
+    })
+  })
+
+  describe("createUserOnly (waitlist branch)", () => {
+    const validRequest = {
+      firstName: "Jane",
+      lastName: "Smith",
+      email: "jane@unknown.example",
+    }
+
+    it("creates the user and does NOT add to group", async () => {
+      mockSend.mockResolvedValueOnce({ UserId: "wl-user-id" })
+
+      const result = await createUserOnly(validRequest, "test-id")
+
+      expect(result).toBe("wl-user-id")
+      expect(mockSend).toHaveBeenCalledTimes(1)
+      expect(mockSend).toHaveBeenCalledWith(expect.any(CreateUserCommand))
+    })
+
+    it("rethrows ConflictException when user already exists", async () => {
+      const conflictError = new ConflictException({ message: "exists", $metadata: {} })
+      mockSend.mockRejectedValueOnce(conflictError)
+
+      await expect(createUserOnly(validRequest, "test-id")).rejects.toThrow(ConflictException)
+    })
+  })
+
+  describe("addUserToNdxGroup", () => {
+    it("calls CreateGroupMembershipCommand with the given userId and stores domain in the log only", async () => {
+      mockSend.mockResolvedValueOnce({ MembershipId: "m-id" })
+
+      await addUserToNdxGroup("u-123", "corr-id", "westbury.gov.uk")
+
+      expect(CreateGroupMembershipCommand).toHaveBeenCalledWith({
+        IdentityStoreId: "d-test-store-id",
+        GroupId: "test-group-id",
+        MemberId: { UserId: "u-123" },
+      })
+
+      // The domain parameter is structured-log-only, not in the SDK call
+      const infoLog = consoleSpy.mock.calls
+        .map((call) => JSON.parse(call[0]))
+        .find((d) => d.message === "User created, adding to group")
+      expect(infoLog).toMatchObject({ domain: "westbury.gov.uk" })
+    })
+  })
+
+  describe("getExistingUserNames", () => {
+    it("returns null when no matching user is found", async () => {
+      mockSend.mockResolvedValueOnce({ Users: [] })
+
+      const result = await getExistingUserNames("nobody@example.gov.uk", "corr-id")
+
+      expect(result).toBeNull()
+    })
+
+    it("returns the stored GivenName/FamilyName when user is found", async () => {
+      mockSend
+        .mockResolvedValueOnce({ Users: [{ UserId: "u-1" }] })
+        .mockResolvedValueOnce({ Name: { GivenName: "Alice", FamilyName: "Stored" } })
+
+      const result = await getExistingUserNames("a@example.gov.uk", "corr-id")
+
+      expect(result).toEqual({ givenName: "Alice", familyName: "Stored" })
+    })
+
+    it("returns null (non-blocking) on SDK error", async () => {
+      mockSend.mockRejectedValueOnce(new Error("boom"))
+
+      const result = await getExistingUserNames("a@example.gov.uk", "corr-id")
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe("createUser (orchestrator) derives domain server-side", () => {
+    it("logs the domain derived from the email, not echoed from the request", async () => {
+      mockSend.mockResolvedValueOnce({ UserId: "u-id" }).mockResolvedValueOnce({ MembershipId: "m-id" })
+
+      await createUser({ firstName: "Jane", lastName: "Smith", email: "jane@Council.GOV.UK" }, "corr-id")
+
+      const groupLog = consoleSpy.mock.calls
+        .map((call) => JSON.parse(call[0]))
+        .find((d) => d.message === "User created, adding to group")
+      expect(groupLog?.domain).toBe("Council.GOV.UK")
+    })
+
+    it("ignores any extra `domain` field smuggled onto the request — addUserToNdxGroup receives the email-derived value", async () => {
+      mockSend.mockResolvedValueOnce({ UserId: "u-id" }).mockResolvedValueOnce({ MembershipId: "m-id" })
+
+      // SignupRequest no longer has a `domain` field; cast asserts that even
+      // if a caller stuffed one in via `as any`, the orchestrator still
+      // derives the log domain from email.
+      const smuggled = {
+        firstName: "Jane",
+        lastName: "Smith",
+        email: "jane@real.example",
+        domain: "evil-attacker.example",
+      } as unknown as SignupRequest
+
+      await createUser(smuggled, "corr-id")
+
+      const groupLog = consoleSpy.mock.calls
+        .map((call) => JSON.parse(call[0]))
+        .find((d) => d.message === "User created, adding to group")
+      expect(groupLog?.domain).toBe("real.example")
+      expect(groupLog?.domain).not.toBe("evil-attacker.example")
     })
   })
 

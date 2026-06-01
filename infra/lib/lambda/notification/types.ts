@@ -126,6 +126,7 @@ export type NotificationEventType =
   | "GroupCostReportGeneratedFailure"
   // User events (account creation notifications)
   | "UserCreated"
+  | "WaitlistAdded"
   // Provisioning events (blueprint deployment notifications)
   | "BlueprintDeploymentRequest"
 

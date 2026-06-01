@@ -2015,6 +2015,59 @@ describe("isProvisioningEvent", () => {
 // buildPersonalisation with UserCreated and BlueprintDeploymentRequest
 // =============================================================================
 
+describe("WaitlistAdded Template Configuration", () => {
+  test("Template uses NOTIFY_TEMPLATE_WAITLIST_ADDED env var", () => {
+    expect(NOTIFY_TEMPLATES.WaitlistAdded.templateIdEnvVar).toBe("NOTIFY_TEMPLATE_WAITLIST_ADDED")
+  })
+
+  test("Template requires only userName", () => {
+    const config = NOTIFY_TEMPLATES.WaitlistAdded
+    expect(config.requiredFields).toEqual(["userName"])
+  })
+
+  test("Template has no optional fields", () => {
+    const config = NOTIFY_TEMPLATES.WaitlistAdded
+    expect(config.optionalFields).toEqual([])
+  })
+
+  test("Template has no enrichment queries", () => {
+    const config = NOTIFY_TEMPLATES.WaitlistAdded
+    expect(config.enrichmentQueries).toEqual([])
+  })
+
+  test("isUserEvent returns true for WaitlistAdded", () => {
+    expect(isUserEvent("WaitlistAdded")).toBe(true)
+  })
+
+  test("USER_EVENTS array includes WaitlistAdded", () => {
+    expect(USER_EVENTS).toContain("WaitlistAdded")
+  })
+})
+
+describe("buildPersonalisation with WaitlistAdded", () => {
+  const mockWaitlistEvent: ValidatedEvent<any> = {
+    eventType: "WaitlistAdded",
+    eventId: "event-wl-123",
+    source: "ndx-signup",
+    timestamp: "2026-03-01T10:00:00Z",
+    detail: {
+      userEmail: "jane.smith@unknown.example",
+      firstName: "Jane",
+      lastName: "Smith",
+    },
+  }
+
+  test("Builds personalisation with userName derived from email local-part", () => {
+    const result = buildPersonalisation(mockWaitlistEvent)
+    expect(result.userName).toBe("jane.smith")
+  })
+
+  test("Does not include ssoUrl (waitlist users don't sign in yet)", () => {
+    const result = buildPersonalisation(mockWaitlistEvent)
+    expect(result.ssoUrl).toBeUndefined()
+  })
+})
+
 describe("buildPersonalisation with UserCreated", () => {
   const mockUserCreatedEvent: ValidatedEvent<any> = {
     eventType: "UserCreated",

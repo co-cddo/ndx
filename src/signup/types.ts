@@ -24,7 +24,19 @@
  * should match exactly when displaying to users.
  */
 export enum SignupErrorCode {
-  /** User's email domain is not in the allowlist */
+  /**
+   * Returned for personal email providers (Gmail, Hotmail, etc.) and
+   * known disposable / temporary email providers. NDX:Try requires a
+   * public sector work email.
+   */
+  WORK_EMAIL_REQUIRED = "WORK_EMAIL_REQUIRED",
+  /**
+   * @deprecated Retained for monitoring/alerting back-compat — no code path
+   * returns this any more (the waitlist branch replaced it for unrecognised
+   * but otherwise valid public-sector domains, and WORK_EMAIL_REQUIRED
+   * replaced it for personal/disposable rejection). Remove once dashboards
+   * no longer key on the literal string.
+   */
   DOMAIN_NOT_ALLOWED = "DOMAIN_NOT_ALLOWED",
   /** User already has an account (silent redirect to login) */
   USER_EXISTS = "USER_EXISTS",
@@ -47,6 +59,8 @@ export enum SignupErrorCode {
  * be used exactly as specified for consistency.
  */
 export const ERROR_MESSAGES: Record<SignupErrorCode, string> = {
+  [SignupErrorCode.WORK_EMAIL_REQUIRED]:
+    "Use your public sector work email address. Personal and disposable email addresses aren't accepted.",
   [SignupErrorCode.DOMAIN_NOT_ALLOWED]:
     "Your organisation isn't registered yet. Contact ndx@dsit.gov.uk to request access.",
   [SignupErrorCode.USER_EXISTS]: "Welcome back! You already have an account.",
@@ -60,7 +74,8 @@ export const ERROR_MESSAGES: Record<SignupErrorCode, string> = {
 /**
  * Signup form submission payload.
  *
- * Sent to POST /signup-api/signup
+ * Sent to POST /signup-api/signup. The server derives the organisation
+ * domain from the email address — no separate `domain` field is sent.
  */
 export interface SignupRequest {
   /** User's first name (required, max 100 chars) */
@@ -69,20 +84,23 @@ export interface SignupRequest {
   lastName: string
   /** User's email address (required, max 254 chars) */
   email: string
-  /** User's organisation domain from dropdown (required) */
-  domain: string
 }
 
 /**
  * API success response from signup endpoint.
  *
- * Returned when account creation is successful.
+ * Returned when account creation is successful. The `waitlist` flag
+ * indicates whether the user's email domain was on the allowlist
+ * (`false`, instant access) or whether they were added to the waitlist
+ * (`true`, no NDX group membership).
  */
 export interface SignupResponse {
   /** Always true for success responses */
   success: true
   /** Optional URL to redirect to after signup */
   redirectUrl?: string
+  /** True if user was added to waitlist (unlisted domain); false/absent otherwise */
+  waitlist?: boolean
 }
 
 /**
@@ -180,9 +198,10 @@ export const VALIDATION_CONSTRAINTS = {
 /**
  * Characters that are forbidden in name fields.
  *
- * From project-context.md: reject HTML/script tags, null bytes, control chars
+ * From project-context.md: reject HTML/script tags, null bytes, control chars.
+ * Includes `(` and `)` to prevent GOV.UK Notify `((field))` injection.
  */
-export const FORBIDDEN_NAME_CHARS = /[<>'"&\x00-\x1F\x7F]/
+export const FORBIDDEN_NAME_CHARS = /[<>()'"&\x00-\x1F\x7F]/
 
 /**
  * Check if email local part contains a plus sign (alias).

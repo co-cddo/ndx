@@ -2,6 +2,9 @@
 _bmad-output
 docs
 
+# Husky-managed auto-generated hook helpers (untracked, regenerated on install)
+.husky/_/
+
 # Generated bundles
 src/assets/try.bundle.js
 

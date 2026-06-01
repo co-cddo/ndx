@@ -16,6 +16,7 @@ import {
   CreateGroupMembershipCommand,
   DeleteUserCommand,
   ConflictException,
+  DescribeUserCommand,
   type ListUsersCommandOutput,
   type CreateUserCommandOutput,
 } from "@aws-sdk/client-identitystore"
@@ -247,31 +248,109 @@ export async function checkUserExists(email: string, correlationId: string): Pro
 }
 
 /**
- * Create a new user in IAM Identity Center and add to NDX group.
+ * Look up an existing IDC user by `UserName` (email). Returns the stored
+ * `GivenName` / `FamilyName` if a user is found, otherwise `null`. Used by
+ * the squatting-detection `WARN` path when `CreateUser` returns 409.
  *
- * This function:
- * 1. Creates the user in the identity store
- * 2. Adds the user to the NDX users group
+ * @param email - Normalized email used as IDC `UserName`
+ * @param correlationId - Request correlation ID for logging
+ */
+export async function getExistingUserNames(
+  email: string,
+  correlationId: string,
+): Promise<{ givenName: string | undefined; familyName: string | undefined } | null> {
+  validateConfiguration()
+
+  try {
+    const identityClient = await getClient()
+    const listResponse: ListUsersCommandOutput = await identityClient.send(
+      new ListUsersCommand({
+        IdentityStoreId: getIdentityStoreId(),
+        Filters: [
+          {
+            AttributePath: "UserName",
+            AttributeValue: email,
+          },
+        ],
+      }),
+    )
+
+    const users = listResponse.Users ?? []
+    if (users.length > 1) {
+      // IDC `UserName` is unique, so this should never happen. If it does,
+      // the squatting-check oracle is unsound — log and bail rather than
+      // pick an arbitrary record.
+      console.log(
+        JSON.stringify({
+          level: "WARN",
+          message: "ListUsers returned multiple matches for UserName — skipping squatting check",
+          matchCount: users.length,
+          correlationId,
+        }),
+      )
+      return null
+    }
+    const user = users[0]
+    if (!user?.UserId) {
+      return null
+    }
+
+    const describeResponse = await identityClient.send(
+      new DescribeUserCommand({
+        IdentityStoreId: getIdentityStoreId(),
+        UserId: user.UserId,
+      }),
+    )
+
+    return {
+      givenName: describeResponse.Name?.GivenName,
+      familyName: describeResponse.Name?.FamilyName,
+    }
+  } catch (error) {
+    console.log(
+      JSON.stringify({
+        level: "DEBUG",
+        message: "Failed to fetch existing IDC user for squatting check (non-blocking)",
+        error: error instanceof Error ? error.message : "Unknown error",
+        correlationId,
+      }),
+    )
+    return null
+  }
+}
+
+/**
+ * Create a new user in IAM Identity Center **without** group membership.
+ *
+ * Used directly by the waitlist branch (unlisted domain): waitlisted users
+ * exist in IDC but have no NDX group membership and thus no NDX permissions
+ * until manually promoted. Also called by the wrapper `createUser` (below)
+ * for the recognised-domain branch.
  *
  * Note: Email verification is NOT sent on user creation. With "Send email OTP
  * for users created from API" enabled in IAM Identity Center, users receive
- * a one-time password email when they first attempt to sign in at the access portal.
+ * a one-time password email when they first attempt to sign in at the access
+ * portal.
  *
  * @param request - Signup request with user details
  * @param correlationId - Request correlation ID for logging
  * @returns Promise resolving to created user ID
  * @throws ConflictException if user already exists
  */
-export async function createUser(request: SignupRequest, correlationId: string): Promise<string> {
+export async function createUserOnly(request: SignupRequest, correlationId: string): Promise<string> {
   validateConfiguration()
 
   const { firstName, lastName, email } = request
+  // Derive domain server-side from email — used in log lines only.
+  // Coerce malformed `user@` (where split[1] is "") to "unknown" so the log
+  // line never carries an empty `domain` field.
+  const logDomain = (email.includes("@") && email.split("@")[1]) || "unknown"
 
   console.log(
     JSON.stringify({
       level: "INFO",
       message: "Creating user in Identity Store",
-      domain: request.domain,
+      domain: logDomain,
       correlationId,
     }),
   )
@@ -279,7 +358,6 @@ export async function createUser(request: SignupRequest, correlationId: string):
   try {
     const identityClient = await getClient()
 
-    // Create user in Identity Store
     const createUserResponse: CreateUserCommandOutput = await identityClient.send(
       new CreateUserCommand({
         IdentityStoreId: getIdentityStoreId(),
@@ -304,86 +382,14 @@ export async function createUser(request: SignupRequest, correlationId: string):
       throw new Error("CreateUser did not return a UserId")
     }
 
-    console.log(
-      JSON.stringify({
-        level: "INFO",
-        message: "User created, adding to group",
-        domain: request.domain,
-        correlationId,
-      }),
-    )
-
-    // Add user to NDX group — if this fails, roll back user creation
-    // to avoid leaving orphaned users who can't re-register
-    try {
-      await identityClient.send(
-        new CreateGroupMembershipCommand({
-          IdentityStoreId: getIdentityStoreId(),
-          GroupId: getGroupId(),
-          MemberId: {
-            UserId: userId,
-          },
-        }),
-      )
-    } catch (groupError) {
-      console.log(
-        JSON.stringify({
-          level: "ERROR",
-          message: "Failed to add user to group, rolling back user creation",
-          error: groupError instanceof Error ? groupError.message : "Unknown error",
-          domain: request.domain,
-          correlationId,
-        }),
-      )
-
-      try {
-        await identityClient.send(
-          new DeleteUserCommand({
-            IdentityStoreId: getIdentityStoreId(),
-            UserId: userId,
-          }),
-        )
-        console.log(
-          JSON.stringify({
-            level: "INFO",
-            message: "User rolled back successfully after group membership failure",
-            domain: request.domain,
-            correlationId,
-          }),
-        )
-      } catch (rollbackError) {
-        console.log(
-          JSON.stringify({
-            level: "ERROR",
-            message: "Failed to roll back user creation — orphaned user may exist",
-            error: rollbackError instanceof Error ? rollbackError.message : "Unknown error",
-            domain: request.domain,
-            correlationId,
-          }),
-        )
-      }
-
-      throw groupError
-    }
-
-    console.log(
-      JSON.stringify({
-        level: "INFO",
-        message: "User created and added to group successfully",
-        domain: request.domain,
-        correlationId,
-      }),
-    )
-
     return userId
   } catch (error) {
-    // Handle ConflictException (user already exists)
     if (error instanceof ConflictException) {
       console.log(
         JSON.stringify({
           level: "WARN",
           message: "User already exists (conflict)",
-          domain: request.domain,
+          domain: logDomain,
           correlationId,
         }),
       )
@@ -395,12 +401,130 @@ export async function createUser(request: SignupRequest, correlationId: string):
         level: "ERROR",
         message: "Failed to create user",
         error: error instanceof Error ? error.message : "Unknown error",
-        domain: request.domain,
+        domain: logDomain,
         correlationId,
       }),
     )
     throw error
   }
+}
+
+/**
+ * Add an existing IDC user to the NDX users group.
+ *
+ * The `domain` parameter is retained for **log correlation only** — it
+ * appears in the structured log line, not in the IDC SDK call. This keeps
+ * the log shape stable for ops dashboards.
+ *
+ * @param userId - The IDC user ID returned by `createUserOnly`
+ * @param correlationId - Request correlation ID for logging
+ * @param domain - Email domain (log-only — derived server-side from email)
+ */
+export async function addUserToNdxGroup(userId: string, correlationId: string, domain: string): Promise<void> {
+  validateConfiguration()
+
+  console.log(
+    JSON.stringify({
+      level: "INFO",
+      message: "User created, adding to group",
+      domain,
+      correlationId,
+    }),
+  )
+
+  const identityClient = await getClient()
+
+  await identityClient.send(
+    new CreateGroupMembershipCommand({
+      IdentityStoreId: getIdentityStoreId(),
+      GroupId: getGroupId(),
+      MemberId: {
+        UserId: userId,
+      },
+    }),
+  )
+}
+
+/**
+ * Roll back a created user. Internal helper for the recognised-domain
+ * branch's two-step (create user + add to group) failure path.
+ */
+async function deleteUserById(userId: string, correlationId: string, domain: string): Promise<void> {
+  const identityClient = await getClient()
+  try {
+    await identityClient.send(
+      new DeleteUserCommand({
+        IdentityStoreId: getIdentityStoreId(),
+        UserId: userId,
+      }),
+    )
+    console.log(
+      JSON.stringify({
+        level: "INFO",
+        message: "User rolled back successfully after group membership failure",
+        domain,
+        correlationId,
+      }),
+    )
+  } catch (rollbackError) {
+    console.log(
+      JSON.stringify({
+        level: "ERROR",
+        message: "Failed to roll back user creation — orphaned user may exist",
+        error: rollbackError instanceof Error ? rollbackError.message : "Unknown error",
+        domain,
+        correlationId,
+      }),
+    )
+  }
+}
+
+/**
+ * Create a new user in IAM Identity Center and add to the NDX group.
+ *
+ * Orchestrator used by the **recognised-domain** branch: calls
+ * `createUserOnly` then `addUserToNdxGroup`. If group membership fails,
+ * the freshly-created user is rolled back via `DeleteUser` to avoid
+ * leaving orphaned users.
+ *
+ * @param request - Signup request with user details
+ * @param correlationId - Request correlation ID for logging
+ * @returns Promise resolving to created user ID
+ * @throws ConflictException if user already exists
+ */
+export async function createUser(request: SignupRequest, correlationId: string): Promise<string> {
+  const { email } = request
+  const logDomain = (email.includes("@") && email.split("@")[1]) || "unknown"
+
+  const userId = await createUserOnly(request, correlationId)
+
+  try {
+    await addUserToNdxGroup(userId, correlationId, logDomain)
+  } catch (groupError) {
+    console.log(
+      JSON.stringify({
+        level: "ERROR",
+        message: "Failed to add user to group, rolling back user creation",
+        error: groupError instanceof Error ? groupError.message : "Unknown error",
+        domain: logDomain,
+        correlationId,
+      }),
+    )
+
+    await deleteUserById(userId, correlationId, logDomain)
+    throw groupError
+  }
+
+  console.log(
+    JSON.stringify({
+      level: "INFO",
+      message: "User created and added to group successfully",
+      domain: logDomain,
+      correlationId,
+    }),
+  )
+
+  return userId
 }
 
 /**

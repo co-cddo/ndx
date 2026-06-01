@@ -201,6 +201,62 @@ describe("SignupStack", () => {
     })
   })
 
+  describe("Blocklist regression alarm", () => {
+    it("creates a metric filter that counts blocked signups", () => {
+      template.hasResourceProperties("AWS::Logs::MetricFilter", {
+        MetricTransformations: [
+          {
+            MetricNamespace: "NDX/Signup",
+            MetricName: "BlockedSignupCount",
+            MetricValue: "1",
+          },
+        ],
+      })
+    })
+
+    it("creates a metric filter that counts total signup attempts", () => {
+      template.hasResourceProperties("AWS::Logs::MetricFilter", {
+        MetricTransformations: [
+          {
+            MetricNamespace: "NDX/Signup",
+            MetricName: "AttemptedSignupCount",
+            MetricValue: "1",
+          },
+        ],
+      })
+    })
+
+    it("creates the BlockedSignupCountZeroAlarm sub-alarm (< 1 blocked over 24h)", () => {
+      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+        AlarmName: "ndx-signup-blocked-count-zero",
+        ComparisonOperator: "LessThanThreshold",
+        Threshold: 1,
+        TreatMissingData: "breaching",
+      })
+    })
+
+    it("creates the AttemptedSignupAboveFloorAlarm sub-alarm (> 5 attempts over 24h)", () => {
+      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+        AlarmName: "ndx-signup-attempted-above-floor",
+        ComparisonOperator: "GreaterThanThreshold",
+        Threshold: 5,
+        TreatMissingData: "notBreaching",
+      })
+    })
+
+    it("creates the composite BlocklistRegressionAlarm wired to the signup alerts SNS topic", () => {
+      // AlarmRule renders as a CloudFormation Fn::Join intrinsic (not a plain
+      // string), so we assert on the structural properties: composite type,
+      // name, and AlarmActions pointing at the SNS topic. The semantic
+      // "ANDs both sub-alarms" is covered by the two sub-alarm tests above
+      // plus the unit-level CDK definition.
+      template.hasResourceProperties("AWS::CloudWatch::CompositeAlarm", {
+        AlarmName: "ndx-signup-blocklist-regression",
+        AlarmActions: Match.anyValue(),
+      })
+    })
+  })
+
   describe("Outputs", () => {
     it("should output Lambda function ARN", () => {
       template.hasOutput("SignupHandlerArn", {})

@@ -11,6 +11,8 @@
 
 import * as cdk from "aws-cdk-lib"
 import * as chatbot from "aws-cdk-lib/aws-chatbot"
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch"
+import * as cloudwatchActions from "aws-cdk-lib/aws-cloudwatch-actions"
 import * as events from "aws-cdk-lib/aws-events"
 import * as targets from "aws-cdk-lib/aws-events-targets"
 import * as iam from "aws-cdk-lib/aws-iam"
@@ -364,6 +366,112 @@ export class SignupStack extends cdk.Stack {
       cdk.Tags.of(slackChannel).add("managedby", "cdk")
       cdk.Tags.of(slackChannel).add("feature", "signup")
     }
+
+    // =========================================================================
+    // CloudWatch metric filters + regression alarm for the blocklist
+    // =========================================================================
+    // Detective control for the personal/disposable email blocklist
+    // (`infra-signup/lib/lambda/signup/blocklist.ts`). The handler emits
+    // `signupBlocked: "personal" | "disposable"` on the structured INFO log
+    // line for each rejected submission. A metric filter counts those log
+    // lines; a paired filter counts total POST /signup-api/signup attempts
+    // (the "Processing signup request" line, which runs after email
+    // normalisation and BEFORE the blocklist check, so total = blocked +
+    // recognised + waitlist).
+    //
+    // The alarm fires when, over a 24-hour window, total signup attempts
+    // exceed a small floor (filters out genuinely quiet days) but blocked
+    // count is zero — the signature of a regression that disabled the
+    // blocklist (typo'd suffix-match, accidental short-circuit, etc.).
+    // Action: existing `signupAlertsTopic` (already wired to Slack via
+    // Chatbot), so the alarm shows up in `#ndx-sandbox-alerts` next to
+    // every other signup event.
+
+    const blockedMetricFilter = new logs.MetricFilter(this, "BlockedSignupMetricFilter", {
+      logGroup: this.signupHandler.logGroup,
+      metricNamespace: "NDX/Signup",
+      metricName: "BlockedSignupCount",
+      filterPattern: logs.FilterPattern.stringValue("$.signupBlocked", "=", "*"),
+      metricValue: "1",
+      defaultValue: 0,
+    })
+
+    const attemptedMetricFilter = new logs.MetricFilter(this, "AttemptedSignupMetricFilter", {
+      logGroup: this.signupHandler.logGroup,
+      metricNamespace: "NDX/Signup",
+      metricName: "AttemptedSignupCount",
+      // Counts the "Processing signup request" INFO log emitted just before
+      // the blocklist check, so this captures every well-formed signup that
+      // got past CSRF / body-size / email validation. Total = blocked +
+      // recognised + waitlist + downstream error.
+      filterPattern: logs.FilterPattern.literal('{ $.message = "Processing signup request" }'),
+      metricValue: "1",
+      defaultValue: 0,
+    })
+
+    const blockedMetric = blockedMetricFilter.metric({
+      statistic: cloudwatch.Stats.SUM,
+      period: cdk.Duration.hours(24),
+    })
+    const attemptedMetric = attemptedMetricFilter.metric({
+      statistic: cloudwatch.Stats.SUM,
+      period: cdk.Duration.hours(24),
+    })
+
+    // Two sub-alarms ANDed into a composite, so the regression signal is
+    // "blocked count is zero AND attempted count exceeded the noise floor".
+    // Built as a composite instead of a single metric-math alarm because
+    // CloudWatch's metric-math MAX/IF can't mix time-series and scalar
+    // operands cleanly — composite alarms express the same intent more
+    // readably and survive CDK→CloudFormation translation.
+
+    const blockedZeroAlarm = new cloudwatch.Alarm(this, "BlockedSignupCountZeroAlarm", {
+      alarmName: "ndx-signup-blocked-count-zero",
+      alarmDescription:
+        "Signup blocklist rejected zero submissions in the last 24h. " +
+        "On its own this is just a quiet day; the composite BlocklistRegressionAlarm " +
+        "ANDs this with attempted > 5 before paging.",
+      metric: blockedMetric,
+      threshold: 1,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+      // Missing data → no log lines yet → assume "zero blocked" (BREACHING) so the
+      // composite alarm gates on attempted-count alone.
+      treatMissingData: cloudwatch.TreatMissingData.BREACHING,
+    })
+
+    const attemptedHighAlarm = new cloudwatch.Alarm(this, "AttemptedSignupAboveFloorAlarm", {
+      alarmName: "ndx-signup-attempted-above-floor",
+      alarmDescription:
+        "Signup attempts in the last 24h exceeded the quiet-day noise floor (5). " +
+        "On its own this is normal traffic; the composite BlocklistRegressionAlarm " +
+        "ANDs this with zero blocked count before paging.",
+      metric: attemptedMetric,
+      threshold: 5,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    })
+
+    const blocklistRegressionAlarm = new cloudwatch.CompositeAlarm(this, "BlocklistRegressionAlarm", {
+      compositeAlarmName: "ndx-signup-blocklist-regression",
+      alarmDescription:
+        "Blocklist appears to have stopped rejecting personal/disposable email signups. " +
+        "Triggered when total signup attempts in the last 24h exceed 5 but zero were blocked. " +
+        "Investigate: blocklist.ts, recent deploys, suffix-match logic.",
+      alarmRule: cloudwatch.AlarmRule.allOf(
+        cloudwatch.AlarmRule.fromAlarm(blockedZeroAlarm, cloudwatch.AlarmState.ALARM),
+        cloudwatch.AlarmRule.fromAlarm(attemptedHighAlarm, cloudwatch.AlarmState.ALARM),
+      ),
+    })
+    blocklistRegressionAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.signupAlertsTopic))
+
+    cdk.Tags.of(blocklistRegressionAlarm).add("project", "ndx")
+    cdk.Tags.of(blocklistRegressionAlarm).add("environment", env)
+    cdk.Tags.of(blocklistRegressionAlarm).add("managedby", "cdk")
+    cdk.Tags.of(blocklistRegressionAlarm).add("feature", "signup")
 
     // =========================================================================
     // Outputs

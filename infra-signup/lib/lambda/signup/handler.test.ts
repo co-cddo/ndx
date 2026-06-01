@@ -1055,9 +1055,8 @@ describe("handler", () => {
       it("does not let Slack metacharacters survive into the SNS publish payload", async () => {
         process.env.EVENTS_TOPIC_ARN = "arn:aws:sns:us-west-2:000000000000:fake-topic"
         const snsClientModule = await import("@aws-sdk/client-sns")
-        const snsSend = jest
-          .spyOn(snsClientModule.SNSClient.prototype, "send")
-          .mockImplementation(() => Promise.resolve({ MessageId: "msg-1" })) as jest.SpyInstance
+        const snsSend = jest.spyOn(snsClientModule.SNSClient.prototype, "send") as jest.SpyInstance
+        snsSend.mockResolvedValue({ MessageId: "msg-1" })
 
         try {
           // names containing parens fail validation, so use a clean name and
@@ -1248,12 +1247,10 @@ describe("handler", () => {
         // also forced to reject; both dispatches must be non-blocking.
         const lambdaClientModule = await import("@aws-sdk/client-lambda")
         const snsClientModule = await import("@aws-sdk/client-sns")
-        const lambdaSend = jest
-          .spyOn(lambdaClientModule.LambdaClient.prototype, "send")
-          .mockImplementation(() => Promise.reject(new Error("simulated notify lambda failure"))) as jest.SpyInstance
-        const snsSend = jest
-          .spyOn(snsClientModule.SNSClient.prototype, "send")
-          .mockImplementation(() => Promise.reject(new Error("simulated SNS failure"))) as jest.SpyInstance
+        const lambdaSend = jest.spyOn(lambdaClientModule.LambdaClient.prototype, "send") as jest.SpyInstance
+        lambdaSend.mockRejectedValue(new Error("simulated notify lambda failure"))
+        const snsSend = jest.spyOn(snsClientModule.SNSClient.prototype, "send") as jest.SpyInstance
+        snsSend.mockRejectedValue(new Error("simulated SNS failure"))
 
         try {
           const event = createMockEvent(
@@ -1290,12 +1287,10 @@ describe("handler", () => {
         process.env.EVENTS_TOPIC_ARN = "arn:aws:sns:us-west-2:000000000000:fake-topic"
         const lambdaClientModule = await import("@aws-sdk/client-lambda")
         const snsClientModule = await import("@aws-sdk/client-sns")
-        const lambdaSend = jest
-          .spyOn(lambdaClientModule.LambdaClient.prototype, "send")
-          .mockImplementation(() => Promise.resolve({ StatusCode: 202 })) as jest.SpyInstance
-        const snsSend = jest
-          .spyOn(snsClientModule.SNSClient.prototype, "send")
-          .mockImplementation(() => Promise.resolve({ MessageId: "m-1" })) as jest.SpyInstance
+        const lambdaSend = jest.spyOn(lambdaClientModule.LambdaClient.prototype, "send") as jest.SpyInstance
+        lambdaSend.mockResolvedValue({ StatusCode: 202 })
+        const snsSend = jest.spyOn(snsClientModule.SNSClient.prototype, "send") as jest.SpyInstance
+        snsSend.mockResolvedValue({ MessageId: "m-1" })
 
         // Capture payloads from the published commands — strip variable fields
         // (correlation IDs, UUIDs, timestamps) so the diff is meaningful.

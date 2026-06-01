@@ -106,7 +106,11 @@ export class NdxNotificationStack extends cdk.Stack {
     // Synth-time assertion: fail fast if WaitlistAdded template ID is still
     // the placeholder when deploying to prod. Mirrors the pattern in
     // infra/lib/waf-stack.ts:53. Non-prod environments are exempt.
-    if (env === "prod" && NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED === "") {
+    // Cast through string to defeat the literal-type narrowing — once the
+    // template ID is set, TS narrows the field to its literal value and the
+    // comparison provably can't be true; the cast preserves the runtime
+    // guard for the case where a future edit reverts the ID to "".
+    if (env === "prod" && (NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED as string) === "") {
       throw new Error(
         "NOTIFY_TEMPLATE_IDS.WAITLIST_ADDED is empty — set the GOV.UK Notify " +
           "template ID in infra/lib/config.ts before deploying to prod. " +

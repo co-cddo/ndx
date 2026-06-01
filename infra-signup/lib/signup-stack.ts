@@ -418,34 +418,53 @@ export class SignupStack extends cdk.Stack {
       period: cdk.Duration.hours(24),
     })
 
-    // Math expression: blockedDeficit = max(0, attempted - 5) - blocked.
-    // When attempted ≤ 5 (a quiet day), the expression collapses to
-    // `0 - blocked ≤ 0` and never breaches. When attempted > 5 AND
-    // blocked == 0, deficit > 0 and the alarm fires. Threshold of 5
-    // chosen to swallow the obvious noise of a slow Tuesday; tune via
-    // CDK context if real traffic patterns demand otherwise.
-    const blockedDeficitExpression = new cloudwatch.MathExpression({
-      expression: "MAX([attempted - 5, 0]) - blocked",
-      usingMetrics: {
-        attempted: attemptedMetric,
-        blocked: blockedMetric,
-      },
-      period: cdk.Duration.hours(24),
-      label: "Signup attempts unprotected by the blocklist (24h)",
+    // Two sub-alarms ANDed into a composite, so the regression signal is
+    // "blocked count is zero AND attempted count exceeded the noise floor".
+    // Built as a composite instead of a single metric-math alarm because
+    // CloudWatch's metric-math MAX/IF can't mix time-series and scalar
+    // operands cleanly — composite alarms express the same intent more
+    // readably and survive CDK→CloudFormation translation.
+
+    const blockedZeroAlarm = new cloudwatch.Alarm(this, "BlockedSignupCountZeroAlarm", {
+      alarmName: "ndx-signup-blocked-count-zero",
+      alarmDescription:
+        "Signup blocklist rejected zero submissions in the last 24h. " +
+        "On its own this is just a quiet day; the composite BlocklistRegressionAlarm " +
+        "ANDs this with attempted > 5 before paging.",
+      metric: blockedMetric,
+      threshold: 1,
+      evaluationPeriods: 1,
+      datapointsToAlarm: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+      // Missing data → no log lines yet → assume "zero blocked" (BREACHING) so the
+      // composite alarm gates on attempted-count alone.
+      treatMissingData: cloudwatch.TreatMissingData.BREACHING,
     })
 
-    const blocklistRegressionAlarm = new cloudwatch.Alarm(this, "BlocklistRegressionAlarm", {
-      alarmName: "ndx-signup-blocklist-regression",
+    const attemptedHighAlarm = new cloudwatch.Alarm(this, "AttemptedSignupAboveFloorAlarm", {
+      alarmName: "ndx-signup-attempted-above-floor",
       alarmDescription:
-        "Blocklist appears to have stopped rejecting personal/disposable email signups. " +
-        "Triggered when total signup attempts in the last 24h exceed 5 but zero were blocked. " +
-        "Investigate: blocklist.ts, recent deploys, suffix-match logic.",
-      metric: blockedDeficitExpression,
-      threshold: 0,
+        "Signup attempts in the last 24h exceeded the quiet-day noise floor (5). " +
+        "On its own this is normal traffic; the composite BlocklistRegressionAlarm " +
+        "ANDs this with zero blocked count before paging.",
+      metric: attemptedMetric,
+      threshold: 5,
       evaluationPeriods: 1,
       datapointsToAlarm: 1,
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    })
+
+    const blocklistRegressionAlarm = new cloudwatch.CompositeAlarm(this, "BlocklistRegressionAlarm", {
+      compositeAlarmName: "ndx-signup-blocklist-regression",
+      alarmDescription:
+        "Blocklist appears to have stopped rejecting personal/disposable email signups. " +
+        "Triggered when total signup attempts in the last 24h exceed 5 but zero were blocked. " +
+        "Investigate: blocklist.ts, recent deploys, suffix-match logic.",
+      alarmRule: cloudwatch.AlarmRule.allOf(
+        cloudwatch.AlarmRule.fromAlarm(blockedZeroAlarm, cloudwatch.AlarmState.ALARM),
+        cloudwatch.AlarmRule.fromAlarm(attemptedHighAlarm, cloudwatch.AlarmState.ALARM),
+      ),
     })
     blocklistRegressionAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.signupAlertsTopic))
 

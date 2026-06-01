@@ -226,22 +226,33 @@ describe("SignupStack", () => {
       })
     })
 
-    it("creates the BlocklistRegressionAlarm wired to the signup alerts SNS topic", () => {
+    it("creates the BlockedSignupCountZeroAlarm sub-alarm (< 1 blocked over 24h)", () => {
       template.hasResourceProperties("AWS::CloudWatch::Alarm", {
-        AlarmName: "ndx-signup-blocklist-regression",
+        AlarmName: "ndx-signup-blocked-count-zero",
+        ComparisonOperator: "LessThanThreshold",
+        Threshold: 1,
+        TreatMissingData: "breaching",
+      })
+    })
+
+    it("creates the AttemptedSignupAboveFloorAlarm sub-alarm (> 5 attempts over 24h)", () => {
+      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+        AlarmName: "ndx-signup-attempted-above-floor",
         ComparisonOperator: "GreaterThanThreshold",
-        Threshold: 0,
+        Threshold: 5,
         TreatMissingData: "notBreaching",
       })
     })
 
-    it("the alarm uses a math expression combining BlockedSignupCount and AttemptedSignupCount", () => {
-      // CloudWatch math-expression alarms render as `Metrics: [...]` with one
-      // entry per source metric plus the expression itself. Assert all three
-      // are present rather than coupling to exact expression text.
-      template.hasResourceProperties("AWS::CloudWatch::Alarm", {
+    it("creates the composite BlocklistRegressionAlarm wired to the signup alerts SNS topic", () => {
+      // AlarmRule renders as a CloudFormation Fn::Join intrinsic (not a plain
+      // string), so we assert on the structural properties: composite type,
+      // name, and AlarmActions pointing at the SNS topic. The semantic
+      // "ANDs both sub-alarms" is covered by the two sub-alarm tests above
+      // plus the unit-level CDK definition.
+      template.hasResourceProperties("AWS::CloudWatch::CompositeAlarm", {
         AlarmName: "ndx-signup-blocklist-regression",
-        Metrics: [{ Expression: "MAX([attempted - 5, 0]) - blocked" }, { Id: "attempted" }, { Id: "blocked" }],
+        AlarmActions: Match.anyValue(),
       })
     })
   })

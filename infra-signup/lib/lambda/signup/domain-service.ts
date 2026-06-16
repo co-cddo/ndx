@@ -17,8 +17,7 @@ import type { DomainInfo } from "@ndx/signup-types"
  * (org renamed from govuk-digital-backbone on 2026-06-16; GitHub's rename
  * redirect is a temporary alias that breaks if the old name is reclaimed)
  */
-const GITHUB_DOMAIN_URL =
-  "https://raw.githubusercontent.com/gds-dtx/ukps-domains/main/data/user_domains.json"
+const GITHUB_DOMAIN_URL = "https://raw.githubusercontent.com/gds-dtx/ukps-domains/main/data/user_domains.json"
 
 /**
  * Cache TTL in milliseconds (5 minutes per ADR-044, NFR12)

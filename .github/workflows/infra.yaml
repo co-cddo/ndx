@@ -416,12 +416,19 @@ jobs:
           role-to-assume: arn:aws:iam::955063685555:role/GitHubActions-ISB-InfraDeploy
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Validate required secrets
+      # The NDX Users group ID is not a secret: it is already committed in
+      # infra-signup/cdk.json (the `groupId` context the signup Lambda deploys
+      # with). Source it from there so the cross-account role scope stays in
+      # lockstep with the Lambda's GROUP_ID, with a single source of truth.
+      - name: Resolve GroupId from CDK context
+        id: groupid
         run: |
-          if [ -z "${{ secrets.ISB_NDX_USERS_GROUP_ID }}" ]; then
-            echo "::error::ISB_NDX_USERS_GROUP_ID secret is not set"
+          GROUP_ID=$(jq -r '.context.groupId // empty' infra-signup/cdk.json)
+          if [ -z "$GROUP_ID" ]; then
+            echo "::error::groupId not found in infra-signup/cdk.json context"
             exit 1
           fi
+          echo "group-id=$GROUP_ID" >> "$GITHUB_OUTPUT"
 
       - name: Deploy Cross-Account Role
         run: |
@@ -430,7 +437,7 @@ jobs:
             --stack-name ndx-signup-cross-account-role \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides \
-              GroupId=${{ secrets.ISB_NDX_USERS_GROUP_ID }} \
+              GroupId=${{ steps.groupid.outputs.group-id }} \
             --tags \
               project=ndx \
               feature=signup \

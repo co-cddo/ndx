@@ -13,10 +13,11 @@ import type { DomainInfo } from "@ndx/signup-types"
 
 /**
  * GitHub raw URL for the UK public sector domain list.
- * Source: govuk-digital-backbone/ukps-domains repository
+ * Source: gds-dtx/ukps-domains repository
+ * (org renamed from govuk-digital-backbone on 2026-06-16; GitHub's rename
+ * redirect is a temporary alias that breaks if the old name is reclaimed)
  */
-const GITHUB_DOMAIN_URL =
-  "https://raw.githubusercontent.com/govuk-digital-backbone/ukps-domains/main/data/user_domains.json"
+const GITHUB_DOMAIN_URL = "https://raw.githubusercontent.com/gds-dtx/ukps-domains/main/data/user_domains.json"
 
 /**
  * Cache TTL in milliseconds (5 minutes per ADR-044, NFR12)
@@ -30,7 +31,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000
 let domainCache: { data: DomainInfo[]; timestamp: number } | null = null
 
 /**
- * Raw domain entry from the govuk-digital-backbone/ukps-domains repository.
+ * Raw domain entry from the gds-dtx/ukps-domains repository.
  */
 interface GitHubDomainEntry {
   domain_pattern: string
@@ -42,7 +43,7 @@ interface GitHubDomainEntry {
 
 /**
  * Expected structure of the GitHub JSON response from the
- * govuk-digital-backbone/ukps-domains repository.
+ * gds-dtx/ukps-domains repository.
  */
 interface GitHubDomainsResponse {
   version: string

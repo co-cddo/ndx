@@ -21,4 +21,5 @@ The signup form displays a dropdown of allowed email domains, fetched from a Git
 ## Implementation
 - Cache logic: `infra-signup/lib/lambda/signup/domain-service.ts`
 - TTL constant: `CACHE_TTL_MS = 5 * 60 * 1000`
-- Source URL: `https://raw.githubusercontent.com/govuk-digital-backbone/ukps-domains/main/data/user_domains.json`
+- Source URL: `https://raw.githubusercontent.com/gds-dtx/ukps-domains/main/data/user_domains.json`
+  - Note: the `gds-dtx` org was renamed from `govuk-digital-backbone` on 2026-06-16. GitHub's rename redirect is a temporary alias only — it is released if the old org name is reclaimed, so the URL is pinned to the new name directly rather than relying on the redirect.

@@ -80,7 +80,7 @@ describe("domain-service", () => {
 
       expect(result).toEqual(sampleDomains)
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://raw.githubusercontent.com/govuk-digital-backbone/ukps-domains/main/data/user_domains.json",
+        "https://raw.githubusercontent.com/gds-dtx/ukps-domains/main/data/user_domains.json",
         expect.objectContaining({ signal: expect.any(AbortSignal) }),
       )
     })

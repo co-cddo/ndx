@@ -22,7 +22,7 @@
     "@types/node": "25.9.0",
     "aws-cdk": "2.1122.0",
     "aws-sdk-client-mock": "^4.1.0",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "10.4.0",
     "eslint-plugin-awscdk": "4.3.3",
     "jest": "30.4.2",

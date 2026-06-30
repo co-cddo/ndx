@@ -30,11 +30,11 @@ jobs:
       frontend-changed: ${{ steps.changes.outputs.frontend }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6.0.1
+      - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v6.0.1
 
       - name: Check for frontend changes
         uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
@@ -92,11 +92,11 @@ jobs:
     needs: [build]
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6.0.1
+      - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v6.0.1
 
       - name: Skip notification
         if: needs.build.outputs.frontend-changed != 'true'
@@ -133,11 +133,11 @@ jobs:
         shardTotal: [2]
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6.0.1
+      - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v6.0.1
 
       - name: Skip notification
         if: needs.build.outputs.frontend-changed != 'true'
@@ -160,7 +160,7 @@ jobs:
 
       - name: Cache Playwright browsers
         if: needs.build.outputs.frontend-changed == 'true'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
@@ -195,11 +195,11 @@ jobs:
         shardTotal: [2]
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6.0.1
+      - uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v6.0.1
 
       - name: Skip notification
         if: needs.build.outputs.frontend-changed != 'true'
@@ -222,7 +222,7 @@ jobs:
 
       - name: Cache Playwright browsers
         if: needs.build.outputs.frontend-changed == 'true'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
@@ -263,7 +263,7 @@ jobs:
       url: https://ndx.digital.cabinet-office.gov.uk
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
@@ -275,7 +275,7 @@ jobs:
         run: tar -xvf site.tar
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           role-to-assume: arn:aws:iam::568672915267:role/GitHubActions-NDX-ContentDeploy
           aws-region: ${{ env.AWS_REGION }}
@@ -314,17 +314,17 @@ jobs:
       semantic_version: ${{ steps.semver.outputs.semantic_version }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
           egress-policy: audit
 
       - name: Checkout repo
-        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4
+        uses: actions/checkout@b9e0990d219a03df7633c93f6f005a8fecbcab22 # v4
         with:
           fetch-depth: "0"
       - name: Semver run
         id: semver
-        uses: lukaszraczylo/semver-generator@5f205e98567f537739f06c0254705ea2414cfaec # 1.16.5
+        uses: lukaszraczylo/semver-generator@888415366ad365c38329a9db6fdac96b724d43d8 # 1.17.3
         with:
           config_file: .github/semver.yaml
           repository_local: true
